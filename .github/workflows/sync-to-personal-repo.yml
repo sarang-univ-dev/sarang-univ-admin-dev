@@ -1,0 +1,34 @@
+name: Sync to Personal Private Repo
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    if: github.repository == 'Sarang-Univ/sarang-univ-admin'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add personal repo as remote
+        run: |
+          git remote add personal git@github.com:heeseopark/sarang-univ-admin.git
+
+      - name: Verify Remote URLs
+        run: git remote -v
+
+      - name: Force push to personal repo
+        run: |
+          git push personal ${GITHUB_REF}:refs/heads/${GITHUB_REF#refs/heads/} --force
