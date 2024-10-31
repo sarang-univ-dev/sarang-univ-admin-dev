@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -12,265 +12,194 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/custom-checkbox";
+import {
+  RetreatRegisterStatus,
+  TRetreatRegisterSchedule,
+  TRetreatUserRegistration
+} from "@/app/types";
 
-type RegistrationStatus =
-  | "입금 전"
-  | "입금 확인 완료"
-  | "취소"
-  | "환불 필요"
-  | "추가 입금 필요";
+import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
 
-interface Registrant {
-  id: number;
-  groupNumber: number;
-  sex: "남" | "여";
-  grade: number;
-  phoneNumber: string;
-  schedule: {
-    [key: string]: boolean;
-  };
-  registeredTime: string;
-  registerFee: number;
-  registerStatus: RegistrationStatus;
+interface Props {
+  retreatUserRegistrations: TRetreatUserRegistration[];
+  retreatRegisterSchedules: TRetreatRegisterSchedule[];
 }
 
-const mockData: Registrant[] = [
-  {
-    id: 1,
-    groupNumber: 1,
-    sex: "남",
-    grade: 10,
-    phoneNumber: "010-1234-5678",
-    schedule: {
-      수점: true,
-      수저: false,
-      수숙: true,
-      목아: false,
-      목점: true,
-      목저: false,
-      목숙: true,
-      금아: false,
-      금점: true,
-      금저: false,
-      금숙: true,
-      토아: false,
-      토점: true
-    },
-    registeredTime: "2023-05-01 14:30",
-    registerFee: 50000,
-    registerStatus: "입금 전"
-  },
-  {
-    id: 2,
-    groupNumber: 3,
-    sex: "여",
-    grade: 8,
-    phoneNumber: "010-9876-5432",
-    schedule: {
-      수점: false,
-      수저: true,
-      수숙: true,
-      목아: true,
-      목점: false,
-      목저: true,
-      목숙: false,
-      금아: true,
-      금점: false,
-      금저: true,
-      금숙: false,
-      토아: true,
-      토점: false
-    },
-    registeredTime: "2023-05-02 09:15",
-    registerFee: 45000,
-    registerStatus: "입금 확인 완료"
-  },
-  {
-    id: 3,
-    groupNumber: 5,
-    sex: "남",
-    grade: 12,
-    phoneNumber: "010-2468-1357",
-    schedule: {
-      수점: true,
-      수저: true,
-      수숙: false,
-      목아: true,
-      목점: true,
-      목저: false,
-      목숙: true,
-      금아: false,
-      금점: true,
-      금저: true,
-      금숙: false,
-      토아: true,
-      토점: true
-    },
-    registeredTime: "2023-05-03 16:45",
-    registerFee: 55000,
-    registerStatus: "환불 필요"
-  },
-  {
-    id: 4,
-    groupNumber: 2,
-    sex: "여",
-    grade: 9,
-    phoneNumber: "010-1357-2468",
-    schedule: {
-      수점: true,
-      수저: true,
-      수숙: true,
-      목아: true,
-      목점: true,
-      목저: true,
-      목숙: true,
-      금아: true,
-      금점: true,
-      금저: true,
-      금숙: true,
-      토아: true,
-      토점: true
-    },
-    registeredTime: "2023-05-04 11:20",
-    registerFee: 60000,
-    registerStatus: "취소"
-  },
-  {
-    id: 5,
-    groupNumber: 7,
-    sex: "남",
-    grade: 11,
-    phoneNumber: "010-8642-9753",
-    schedule: {
-      수점: false,
-      수저: false,
-      수숙: false,
-      목아: true,
-      목점: true,
-      목저: true,
-      목숙: true,
-      금아: true,
-      금점: true,
-      금저: true,
-      금숙: true,
-      토아: false,
-      토점: false
-    },
-    registeredTime: "2023-05-05 13:10",
-    registerFee: 40000,
-    registerStatus: "추가 입금 필요"
-  }
-];
-
-const statusColors: Record<RegistrationStatus, string> = {
-  "입금 전": "bg-yellow-500",
-  "입금 확인 완료": "bg-green-500",
-  취소: "bg-red-500",
-  "환불 필요": "bg-purple-500",
-  "추가 입금 필요": "bg-blue-500"
+// 등록 상태에 따른 색상 매핑
+const statusColors: Record<RetreatRegisterStatus, string> = {
+  PENDING: "bg-yellow-500",
+  CONFIRMED: "bg-green-500",
+  REQUEST_CANCEL: "bg-red-500",
+  CANCELED: "bg-purple-500"
+  // "추가 입금 필요": "bg-blue-500" // 필요 시 추가
 };
 
-const scheduleHeaders = [
-  "수점",
-  "수저",
-  "수숙",
-  "목아",
-  "목점",
-  "목저",
-  "목숙",
-  "금아",
-  "금점",
-  "금저",
-  "금숙",
-  "토아",
-  "토점"
-];
-
-const dayColors: Record<string, { unchecked: string; checked: string }> = {
-  수: { unchecked: "bg-red-100", checked: "bg-red-300" },
-  목: { unchecked: "bg-orange-100", checked: "bg-orange-300" },
-  금: { unchecked: "bg-yellow-100", checked: "bg-yellow-300" },
-  토: { unchecked: "bg-green-100", checked: "bg-green-300" }
+// 등록 상태에 따른 한국어 레이블 매핑
+const statusLabels: Record<RetreatRegisterStatus, string> = {
+  PENDING: "입금 확인 대기중",
+  CONFIRMED: "입금 확인됨",
+  REQUEST_CANCEL: "취소 요청",
+  CANCELED: "취소됨"
+  // "추가 입금 필요": "추가 입금 필요" // 필요 시 추가
 };
 
-export function AccountTable() {
-  const handleSendMessage = (registrant: Registrant) => {
-    // Implement message sending logic here
-    console.log(`Sending message to ${registrant.phoneNumber}`);
-  };
+// 무지개 색상 쌍 정의 (checked, unchecked)
+const rainbowColorPairs: { checked: string; unchecked: string }[] = [
+  { checked: "bg-red-300", unchecked: "bg-gray-300" },
+  { checked: "bg-orange-300", unchecked: "bg-gray-300" },
+  { checked: "bg-yellow-300", unchecked: "bg-gray-300" },
+  { checked: "bg-green-300", unchecked: "bg-gray-300" },
+  { checked: "bg-blue-300", unchecked: "bg-gray-300" },
+  { checked: "bg-indigo-300", unchecked: "bg-gray-300" },
+  { checked: "bg-purple-300", unchecked: "bg-gray-300" }
+];
+
+export function AccountTable({
+  retreatUserRegistrations,
+  retreatRegisterSchedules
+}: Props) {
+  // 날짜별 색상 매핑 생성
+  const dateColorMap = useMemo(() => {
+    // 고유한 날짜 추출 및 정렬
+    const uniqueDates = Array.from(
+      new Set(retreatRegisterSchedules.map((schedule) => schedule.date))
+    ).sort();
+
+    const map: Record<string, { checked: string; unchecked: string }> = {};
+    uniqueDates.forEach((date, index) => {
+      const colorPair = rainbowColorPairs[index % rainbowColorPairs.length];
+      map[date] = colorPair;
+    });
+
+    return map;
+  }, [retreatRegisterSchedules]);
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-5">Retreat Registration Admin</h1>
+      <h1 className="text-2xl font-bold mb-5 text-center">입금 확인 페이지</h1>
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead rowSpan={2}>부서</TableHead>
-              <TableHead rowSpan={2}>성별</TableHead>
-              <TableHead rowSpan={2}>학년</TableHead>
-              <TableHead rowSpan={2}>휴대전화</TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                부서
+              </TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                성별
+              </TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                학년
+              </TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                이름
+              </TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                휴대전화
+              </TableHead>
               <TableHead
                 className="text-center"
-                colSpan={scheduleHeaders.length}
+                colSpan={retreatRegisterSchedules.length}
               >
                 일정
               </TableHead>
-              <TableHead rowSpan={2}>등록 시각</TableHead>
-              <TableHead rowSpan={2}>등록비</TableHead>
-              <TableHead rowSpan={2}>등록 상태</TableHead>
-              <TableHead rowSpan={2}>문자 전송</TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                등록 시각
+              </TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                등록비
+              </TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                등록 상태
+              </TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                문자 전송
+              </TableHead>
             </TableRow>
             <TableRow>
-              {scheduleHeaders.map((header) => (
-                <TableHead key={header} className="text-center p-2">
-                  {header}
+              {retreatRegisterSchedules.map((retreatRegisterSchedule) => (
+                <TableHead
+                  key={retreatRegisterSchedule.id}
+                  className="text-center p-2 whitespace-nowrap"
+                >
+                  {getRegisterScheduleAlias(
+                    retreatRegisterSchedule.date,
+                    retreatRegisterSchedule.type
+                  )}
                 </TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockData.map((registrant) => (
-              <TableRow key={registrant.id}>
-                <TableCell>{registrant.groupNumber}</TableCell>
-                <TableCell>{registrant.sex}</TableCell>
-                <TableCell>{registrant.grade}</TableCell>
-                <TableCell>{registrant.phoneNumber}</TableCell>
-                {scheduleHeaders.map((header) => (
-                  <TableCell key={header} className="text-center p-2">
-                    <Checkbox
-                      checked={registrant.schedule[header]}
-                      uncheckedColor={dayColors[header[0]].unchecked}
-                      checkedColor={dayColors[header[0]].checked}
-                      className="border-gray-300"
-                    />
-                  </TableCell>
-                ))}
-                <TableCell>{registrant.registeredTime}</TableCell>
-                <TableCell>
-                  {registrant.registerFee.toLocaleString()} 원
+            {retreatUserRegistrations.map((retreatUserRegistration) => (
+              <TableRow key={retreatUserRegistration.id}>
+                <TableCell className="whitespace-nowrap text-center">
+                  {retreatUserRegistration.univ_group_number}부
                 </TableCell>
-                <TableCell>
-                  <Badge className={statusColors[registrant.registerStatus]}>
-                    {registrant.registerStatus}
+                <TableCell className="whitespace-nowrap text-center">
+                  {retreatUserRegistration.gender === "MALE" ? "남" : "여"}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-center">
+                  {retreatUserRegistration.grade_number}학년
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-center">
+                  {retreatUserRegistration.name}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-center">
+                  {retreatUserRegistration.phone_number}
+                </TableCell>
+                {retreatRegisterSchedules.map((registerSchedule) => {
+                  // 날짜에 따른 색상 쌍 가져오기
+                  const colorPair = dateColorMap[registerSchedule.date] || {
+                    checked: "bg-gray-500",
+                    unchecked: "bg-gray-300"
+                  };
+
+                  const isChecked =
+                    retreatUserRegistration.retreat_register_schedule_ids.includes(
+                      registerSchedule.id
+                    );
+
+                  return (
+                    <TableCell
+                      key={registerSchedule.id}
+                      className="text-center p-2 whitespace-nowrap"
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        uncheckedColor={colorPair.unchecked}
+                        checkedColor={colorPair.checked}
+                        className="border-gray-300"
+                      />
+                    </TableCell>
+                  );
+                })}
+                <TableCell className="whitespace-nowrap text-center">
+                  {new Date(retreatUserRegistration.created_at).toLocaleString(
+                    "ko-KR",
+                    { timeZone: "Asia/Seoul" }
+                  )}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-center">
+                  {retreatUserRegistration.price.toLocaleString()} 원
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-center">
+                  <Badge
+                    className={statusColors[retreatUserRegistration.status]}
+                  >
+                    {statusLabels[retreatUserRegistration.status]}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  {registrant.registerStatus === "입금 전" && (
-                    <Button onClick={() => handleSendMessage(registrant)}>
+                <TableCell className="whitespace-nowrap text-center">
+                  {retreatUserRegistration.status ===
+                    RetreatRegisterStatus.PENDING && (
+                    <Button
+                      // onClick={() => handleSendMessage(retreatUserRegistration)}
+                      className="bg-slate-500 hover:bg-slate-600"
+                    >
                       입금 확인 문자 전송
                     </Button>
                   )}
-                  {registrant.registerStatus === "환불 필요" && (
-                    <Button onClick={() => handleSendMessage(registrant)}>
-                      환불 완료 문자 전송
-                    </Button>
-                  )}
-                  {registrant.registerStatus === "추가 입금 필요" && (
-                    <Button onClick={() => handleSendMessage(registrant)}>
-                      입금 확인 문자 전송
-                    </Button>
-                  )}
+                  {/* 추가적인 상태에 따른 버튼 로직이 필요한 경우 여기에 추가 */}
                 </TableCell>
               </TableRow>
             ))}

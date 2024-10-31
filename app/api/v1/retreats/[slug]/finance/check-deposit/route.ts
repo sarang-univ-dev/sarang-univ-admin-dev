@@ -1,12 +1,14 @@
 import axios from "axios";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { handleError } from "../../../../../../../utils/errorHandler";
+import { TRetreatRegisterSchedule, TRetreatUserRegistration } from "@/app/types";
 
 export async function GET(
-  request: Request,
-  { params }: { params: { slug: string } }
+  request: NextRequest,
 ) {
-  const { slug } = await params;
+  const pathSegments = request.nextUrl.pathname.split('/');
+  const slug = pathSegments[pathSegments.length - 3];
+
   const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
   if (!SERVER_URL) {
@@ -17,23 +19,38 @@ export async function GET(
   }
 
   try {
-    const response = await axios.get(
-      `${SERVER_URL}/api/v1/retreats/${slug}/finance/check-deposit`
+    const retreatUserRegistrationsResponse = await axios.get(
+      `${SERVER_URL}/api/v1/retreat-registrations/${slug}`
     );
 
-    if (response.status !== 200) {
-      console.error("서버 오류:", response.data);
+    if (retreatUserRegistrationsResponse.status !== 200) {
+      console.error("서버 오류:", retreatUserRegistrationsResponse.data);
       return NextResponse.json(
         {
-          error: response.data.error || "서버에서 데이터를 불러오지 못했습니다."
+          error: retreatUserRegistrationsResponse.data.error || "서버에서 데이터를 불러오지 못했습니다."
         },
-        { status: response.status }
+        { status: retreatUserRegistrationsResponse.status }
       );
     }
 
-    const depositData = response.data;
+    const retreatRegisterSchedulesResponse = await axios.get(
+      `${SERVER_URL}/api/v1/retreats/${slug}/schedules`
+    );
 
-    return NextResponse.json(depositData);
+    if (retreatRegisterSchedulesResponse.status !== 200) {
+      console.error("서버 오류:", retreatRegisterSchedulesResponse.data);
+      return NextResponse.json(
+        {
+          error: retreatRegisterSchedulesResponse.data.error || "서버에서 데이터를 불러오지 못했습니다."
+        },
+        { status: retreatRegisterSchedulesResponse.status }
+      );
+    }
+
+    const retreatUserRegistrations = retreatUserRegistrationsResponse.data.retreatUserRegistrations as TRetreatUserRegistration[];
+
+    const retreatRegisterSchedules = retreatRegisterSchedulesResponse.data.schedules as TRetreatRegisterSchedule[];
+    return NextResponse.json({retreatUserRegistrations, retreatRegisterSchedules: retreatRegisterSchedules});
   } catch (error) {
     return handleError(error);
   }
