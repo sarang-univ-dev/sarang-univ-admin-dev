@@ -20,6 +20,9 @@ import {
 
 import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
 
+// SheetJS 라이브러리 임포트
+import * as XLSX from "xlsx";
+
 interface Props {
   retreatUserRegistrations: TRetreatUserRegistration[];
   retreatRegisterSchedules: TRetreatRegisterSchedule[];
@@ -73,6 +76,48 @@ export function AccountTable({
 
     return map;
   }, [retreatRegisterSchedules]);
+
+  // 엑셀 다운로드 핸들러
+  const handleDownloadExcel = () => {
+    // 엑셀에 포함할 데이터 배열 생성
+    const data = retreatUserRegistrations.map((registration) => {
+      // 각 스케줄에 대한 체크 여부를 문자열로 변환
+      const schedules = retreatRegisterSchedules.map((schedule) =>
+        registration.retreat_register_schedule_ids.includes(schedule.id)
+          ? "1"
+          : "0"
+      );
+
+      return {
+        부서: `${registration.univ_group_number}부`,
+        성별: registration.gender === "MALE" ? "남" : "여",
+        학년: `${registration.grade_number}학년`,
+        이름: registration.name,
+        휴대전화: registration.phone_number,
+        ...retreatRegisterSchedules.reduce((acc, schedule, idx) => {
+          acc[getRegisterScheduleAlias(schedule.date, schedule.type)] =
+            schedules[idx];
+          return acc;
+        }, {} as Record<string, string>),
+        등록시각: new Date(registration.created_at).toLocaleString("ko-KR", {
+          timeZone: "Asia/Seoul"
+        }),
+        등록비: `${registration.price}`,
+        등록상태: statusLabels[registration.status]
+        // '문자 전송' 열은 제외
+      };
+    });
+
+    // 워크시트 생성
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // 워크북 생성 및 워크시트 추가
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "등록자 목록");
+
+    // 엑셀 파일 생성 및 다운로드
+    XLSX.writeFile(workbook, "등록자_목록.xlsx");
+  };
 
   return (
     <div className="container mx-auto py-10">
@@ -205,6 +250,15 @@ export function AccountTable({
             ))}
           </TableBody>
         </Table>
+      </div>
+      {/* 엑셀 다운로드 버튼 추가 */}
+      <div className="flex justify-end mt-4">
+        <Button
+          onClick={handleDownloadExcel}
+          className="bg-blue-500 hover:bg-blue-600"
+        >
+          엑셀로 다운로드
+        </Button>
       </div>
     </div>
   );
