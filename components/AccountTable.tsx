@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/custom-checkbox";
 import {
+  ReteratRegisterUserType,
   RetreatRegisterStatus,
   TRetreatRegisterSchedule,
   TRetreatUserRegistration
@@ -47,6 +48,18 @@ const statusLabels: Record<RetreatRegisterStatus, string> = {
   REQUEST_CANCEL: "취소 요청",
   CANCELED: "취소됨"
   // "추가 입금 필요": "추가 입금 필요" // 필요 시 추가
+};
+
+const typeColors: Record<ReteratRegisterUserType, string> = {
+  NEW_COMER: "bg-green-500",
+  STAFF: "bg-slate-500",
+  SOLDIER: "bg-gray-500"
+};
+
+const typeLabels: Record<ReteratRegisterUserType, string> = {
+  NEW_COMER: "새가족",
+  STAFF: "간사",
+  SOLDIER: "군지체"
 };
 
 // 무지개 색상 쌍 정의 (checked, unchecked)
@@ -190,7 +203,7 @@ export function AccountTable({
             요약 이미지 다운로드
           </Button>
         </div>
-        <div className="overflow-x-auto" ref={summaryTableRef}>
+        <div className="table-auto" ref={summaryTableRef}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -208,6 +221,9 @@ export function AccountTable({
                     <TableHead
                       key={schedule.id}
                       className={`whitespace-nowrap text-center ${color} text-white`}
+                      style={{
+                        textShadow: "1px 1px 1px black" // 텍스트 스트로크 효과 (텍스트 그림자)
+                      }}
                     >
                       {scheduleAlias}
                     </TableHead>
@@ -272,6 +288,12 @@ export function AccountTable({
               </TableHead>
               <TableHead rowSpan={2} className="whitespace-nowrap text-center">
                 등록 시각
+              </TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                입금 확인 시각
+              </TableHead>
+              <TableHead rowSpan={2} className="whitespace-nowrap text-center">
+                타입
               </TableHead>
               <TableHead rowSpan={2} className="whitespace-nowrap text-center">
                 등록비
@@ -345,6 +367,19 @@ export function AccountTable({
                   {new Date(retreatUserRegistration.created_at).toLocaleString(
                     "ko-KR",
                     { timeZone: "Asia/Seoul" }
+                  )}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-center">
+                  {retreatUserRegistration.payment_confirmed_at &&
+                    new Date(
+                      retreatUserRegistration.payment_confirmed_at
+                    ).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-center">
+                  {retreatUserRegistration.type && (
+                    <Badge className={typeColors[retreatUserRegistration.type]}>
+                      {typeLabels[retreatUserRegistration.type]}
+                    </Badge>
                   )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-center">
