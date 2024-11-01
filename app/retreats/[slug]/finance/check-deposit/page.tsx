@@ -10,6 +10,7 @@ import {
 } from "@/app/types";
 import { AccountTable } from "@/components/AccountTable";
 import axios, { AxiosError } from "axios";
+import { AccountTableSkeletonComponent } from "@/components/AccountTableSkeletonComponent";
 
 export default function CheckDepositPage() {
   const params = useParams<{ slug: string }>();
@@ -70,7 +71,7 @@ export default function CheckDepositPage() {
 
   console.log("Fetched Data:", data);
 
-  if (loading) return <p>로딩 중...</p>;
+  if (loading) return <AccountTableSkeletonComponent />;
   if (error) return <p>에러: {error}</p>;
   if (
     data.retreatUserRegistrations.length === 0 &&
