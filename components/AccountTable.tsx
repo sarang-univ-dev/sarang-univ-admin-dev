@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -22,6 +22,9 @@ import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
 
 // SheetJS 라이브러리 임포트
 import * as XLSX from "xlsx";
+
+// html-to-image 라이브러리 임포트
+import { toPng } from "html-to-image";
 
 interface Props {
   retreatUserRegistrations: TRetreatUserRegistration[];
@@ -77,6 +80,59 @@ export function AccountTable({
     return map;
   }, [retreatRegisterSchedules]);
 
+  // 부서 및 일정별 등록 인원 수 계산
+  const departmentScheduleCount = useMemo(() => {
+    const counts: Record<string, Record<string, number>> = {};
+
+    retreatUserRegistrations.forEach((registration) => {
+      const department = `${registration.univ_group_number}부`;
+      if (!counts[department]) {
+        counts[department] = {};
+      }
+
+      retreatRegisterSchedules.forEach((schedule) => {
+        const scheduleAlias = getRegisterScheduleAlias(
+          schedule.date,
+          schedule.type
+        );
+        if (!counts[department][scheduleAlias]) {
+          counts[department][scheduleAlias] = 0;
+        }
+        if (registration.retreat_register_schedule_ids.includes(schedule.id)) {
+          counts[department][scheduleAlias] += 1;
+        }
+      });
+    });
+
+    return counts;
+  }, [retreatUserRegistrations, retreatRegisterSchedules]);
+
+  // 부서 목록 추출 및 정렬
+  const departments = useMemo(() => {
+    return Object.keys(departmentScheduleCount).sort();
+  }, [departmentScheduleCount]);
+
+  // 요약 테이블 참조 추가
+  const summaryTableRef = useRef<HTMLDivElement>(null);
+
+  // 요약 테이블 이미지 다운로드 핸들러
+  const handleDownloadSummaryImage = () => {
+    if (summaryTableRef.current === null) {
+      return;
+    }
+
+    toPng(summaryTableRef.current, { cacheBust: true })
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = "부서별_일정_등록_현황.png";
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error("이미지 변환 오류:", err);
+      });
+  };
+
   // 엑셀 다운로드 핸들러
   const handleDownloadExcel = () => {
     // 엑셀에 포함할 데이터 배열 생성
@@ -122,6 +178,73 @@ export function AccountTable({
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold mb-5 text-center">입금 확인 페이지</h1>
+
+      {/* 요약 테이블 및 다운로드 버튼 추가 */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">부서별 일정 등록 현황</h2>
+          <Button
+            onClick={handleDownloadSummaryImage}
+            className="bg-slate-500 hover:bg-slate-600"
+          >
+            요약 이미지 다운로드
+          </Button>
+        </div>
+        <div className="overflow-x-auto" ref={summaryTableRef}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="whitespace-nowrap text-center bg-white">
+                  부서
+                </TableHead>
+                {retreatRegisterSchedules.map((schedule) => {
+                  const scheduleAlias = getRegisterScheduleAlias(
+                    schedule.date,
+                    schedule.type
+                  );
+                  const color =
+                    dateColorMap[schedule.date]?.checked || "bg-white";
+                  return (
+                    <TableHead
+                      key={schedule.id}
+                      className={`whitespace-nowrap text-center ${color} text-white`}
+                    >
+                      {scheduleAlias}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {departments.map((department) => (
+                <TableRow key={department}>
+                  <TableCell className="whitespace-nowrap text-center font-semibold bg-white">
+                    {department}
+                  </TableCell>
+                  {retreatRegisterSchedules.map((schedule) => {
+                    const scheduleAlias = getRegisterScheduleAlias(
+                      schedule.date,
+                      schedule.type
+                    );
+                    const count =
+                      departmentScheduleCount[department][scheduleAlias] || 0;
+                    return (
+                      <TableCell
+                        key={schedule.id}
+                        className="whitespace-nowrap text-center bg-white"
+                      >
+                        {count}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* 기존 사용자 등록 테이블 */}
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -251,6 +374,7 @@ export function AccountTable({
           </TableBody>
         </Table>
       </div>
+
       {/* 엑셀 다운로드 버튼 추가 */}
       <div className="flex justify-end mt-4">
         <Button
