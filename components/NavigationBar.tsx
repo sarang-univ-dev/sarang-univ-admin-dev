@@ -19,9 +19,8 @@ const navigationItems: {
   재정: {
     link: "/finance",
     subItems: [
-      { name: "미입금자 입금 확인", link: "/users/all" },
-      { name: "신청자 명단", link: "/finance/all" },
-      { name: "신청 변동", link: "/users/roles" }
+      { name: "신청자 명단", link: `/retreats/${window.location.pathname.split('/')[2]}/finance/check-deposit` },
+      { name: "신청 변동", link: `/retreats/${window.location.pathname.split('/')[2]}/finance/modify-registration` }
     ]
   },
   라인업: {

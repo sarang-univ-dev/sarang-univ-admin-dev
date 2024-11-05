@@ -1,7 +1,7 @@
-/* File: app/layout.tsx */
+/* File: app/retreats/layout.tsx */
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import "./globals.css";
+import "@/app/globals.css";
 import NavigationBar from "@/components/NavigationBar";
 
 // const geistSans = localFont({
@@ -16,9 +16,9 @@ import NavigationBar from "@/components/NavigationBar";
 // });
 
 const pretendard = localFont({
-  src: './fonts/PretendardVariable.woff2',
-  display: 'swap',
-  weight: '45 920',
+  src: "../fonts/PretendardVariable.woff2",
+  display: "swap",
+  weight: "45 920"
 })
 
 export const metadata: Metadata = {

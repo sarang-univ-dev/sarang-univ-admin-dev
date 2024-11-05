@@ -22,7 +22,7 @@ import {
 import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
 
 // SheetJS 라이브러리 임포트
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 
 // html-to-image 라이브러리 임포트
 import { toPng } from "html-to-image";
@@ -137,7 +137,17 @@ export function AccountTable({
     toPng(summaryTableRef.current, { cacheBust: true })
       .then((dataUrl) => {
         const link = document.createElement("a");
-        link.download = "부서별_일정_등록_현황.png";
+        const currentTime =
+          new Date()
+            .toLocaleString("ko-KR", {
+              timeZone: "Asia/Seoul",
+              month: "long",
+              day: "numeric",
+              hour: "numeric",
+              hour12: true
+            })
+            .replace("일", "일") + " 기준";
+        link.download = `부서별 일정 등록 현황 ${currentTime}.png`;
         link.href = dataUrl;
         link.click();
       })
@@ -159,7 +169,7 @@ export function AccountTable({
 
       return {
         부서: `${registration.univ_group_number}부`,
-        성별: registration.gender === "MALE" ? "남" : "여",
+        성별: registration.gender === "MALE" ? "남" : "여", 
         학년: `${registration.grade_number}학년`,
         이름: registration.name,
         휴대전화: registration.phone_number,
@@ -171,6 +181,7 @@ export function AccountTable({
         등록시각: new Date(registration.created_at).toLocaleString("ko-KR", {
           timeZone: "Asia/Seoul"
         }),
+        타입: registration.type ? typeLabels[registration.type] : "",
         등록비: `${registration.price}`,
         등록상태: statusLabels[registration.status]
         // '문자 전송' 열은 제외
@@ -180,12 +191,142 @@ export function AccountTable({
     // 워크시트 생성
     const worksheet = XLSX.utils.json_to_sheet(data);
 
+    // 컬럼 너비 설정
+    // Get headers from first row of data
+    const headers = Object.keys(data[0]);
+
+    // Define widths for specific columns
+    const columnWidthMap = {
+      '부서': 6,
+      '성별': 6,
+      '학년': 10,
+      '이름': 8,
+      '휴대전화': 20,
+      '등록시각': 25,
+      '타입': 10,
+      '등록비': 10,
+      '등록상태': 15
+    };
+
+    // Default width for schedule columns
+    const scheduleWidth = 6;
+
+    // Create array of column widths matching header order
+    const columnWidths = headers.map(header => ({
+      wch: columnWidthMap[header as keyof typeof columnWidthMap] || scheduleWidth // Use scheduleWidth if no specific width defined
+    }));
+
+    worksheet['!cols'] = columnWidths;
+
+    // Set center alignment and colors for all cells
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for(let R = range.s.r; R <= range.e.r; ++R) {
+      for(let C = range.s.c; C <= range.e.c; ++C) {
+        const cell_address = {r: R, c: C};
+        const cell_ref = XLSX.utils.encode_cell(cell_address);
+        if(!worksheet[cell_ref]) continue;
+        
+        // Initialize style object if it doesn't exist
+        if(!worksheet[cell_ref].s) worksheet[cell_ref].s = {};
+        
+        // Set center alignment
+        worksheet[cell_ref].s.alignment = { horizontal: 'center' };
+        
+        const header = headers[C];
+        // Check if this header corresponds to a schedule
+        const matchingSchedule = retreatRegisterSchedules.find(schedule => 
+          getRegisterScheduleAlias(schedule.date, schedule.type) === header
+        );
+        
+        if(matchingSchedule) {
+          // Get the color from dateColorMap
+          const colorClass = dateColorMap[matchingSchedule.date]?.checked || "";
+          // Convert Tailwind class to RGB
+          let fillColor;
+          
+          if (R === 0) {
+            // Header color
+            switch(colorClass) {
+              case "bg-red-300":
+                fillColor = { rgb: "FCA5A5" };
+                break;
+              case "bg-orange-300":
+                fillColor = { rgb: "FDBA74" };
+                break;
+              case "bg-yellow-300":
+                fillColor = { rgb: "FDE047" };
+                break;
+              case "bg-green-300":
+                fillColor = { rgb: "86EFAC" };
+                break;
+              case "bg-blue-300":
+                fillColor = { rgb: "93C5FD" };
+                break;
+              case "bg-indigo-300":
+                fillColor = { rgb: "A5B4FC" };
+                break;
+              case "bg-purple-300":
+                fillColor = { rgb: "C4B5FD" };
+                break;
+              default:
+                fillColor = { rgb: "FFFFFF" };
+            }
+          } else {
+            // Data cells color based on value
+            const cellValue = worksheet[cell_ref].v;
+            if (cellValue === "1") {
+              switch(colorClass) {
+                case "bg-red-300":
+                  fillColor = { rgb: "FCA5A5" };
+                  break;
+                case "bg-orange-300":
+                  fillColor = { rgb: "FDBA74" };
+                  break;
+                case "bg-yellow-300":
+                  fillColor = { rgb: "FDE047" };
+                  break;
+                case "bg-green-300":
+                  fillColor = { rgb: "86EFAC" };
+                  break;
+                case "bg-blue-300":
+                  fillColor = { rgb: "93C5FD" };
+                  break;
+                case "bg-indigo-300":
+                  fillColor = { rgb: "A5B4FC" };
+                  break;
+                case "bg-purple-300":
+                  fillColor = { rgb: "C4B5FD" };
+                  break;
+              }
+            } else if (cellValue === "0") {
+              fillColor = { rgb: "D1D5DB" }; // bg-gray-300
+            }
+          }
+          
+          if (fillColor) {
+            worksheet[cell_ref].s.fill = { fgColor: fillColor };
+          }
+        }
+      }
+    }
+
     // 워크북 생성 및 워크시트 추가
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "등록자 목록");
 
     // 엑셀 파일 생성 및 다운로드
-    XLSX.writeFile(workbook, "등록자_목록.xlsx");
+    const currentTime = new Date()
+      .toLocaleString("ko-KR", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        hour12: true
+      })
+      .replace("일", "일")
+      .replace(":", "시");
+    XLSX.writeFile(workbook, `수양회 등록자 목록 ${currentTime} 기준.xlsx`);
   };
 
   return (
@@ -193,7 +334,7 @@ export function AccountTable({
       <h1 className="text-2xl font-bold mb-5 text-center">입금 확인 페이지</h1>
 
       {/* 요약 테이블 및 다운로드 버튼 추가 */}
-      <div className="mb-8">
+      <div className="mb-8 bg-white p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">부서별 일정 등록 현황</h2>
           <Button
@@ -203,11 +344,14 @@ export function AccountTable({
             요약 이미지 다운로드
           </Button>
         </div>
-        <div className="table-auto" ref={summaryTableRef}>
+        <div
+          className="table-auto overflow-hidden bg-white"
+          ref={summaryTableRef}
+        >
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="whitespace-nowrap text-center bg-white">
+                <TableHead className="whitespace-nowrap text-center">
                   부서
                 </TableHead>
                 {retreatRegisterSchedules.map((schedule) => {
@@ -215,48 +359,91 @@ export function AccountTable({
                     schedule.date,
                     schedule.type
                   );
-                  const color =
-                    dateColorMap[schedule.date]?.checked || "bg-white";
+                  const color = dateColorMap[schedule.date]?.checked || "";
                   return (
                     <TableHead
                       key={schedule.id}
                       className={`whitespace-nowrap text-center ${color} text-white`}
                       style={{
-                        textShadow: "1px 1px 1px black" // 텍스트 스트로크 효과 (텍스트 그림자)
+                        textShadow: "1px 1px 1px black"
                       }}
                     >
                       {scheduleAlias}
                     </TableHead>
                   );
                 })}
+                <TableHead className="whitespace-nowrap text-center">
+                  전참
+                </TableHead>
+                <TableHead className="whitespace-nowrap text-center">
+                  부분참
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {departments.map((department) => (
-                <TableRow key={department}>
-                  <TableCell className="whitespace-nowrap text-center font-semibold bg-white">
-                    {department}
-                  </TableCell>
-                  {retreatRegisterSchedules.map((schedule) => {
-                    const scheduleAlias = getRegisterScheduleAlias(
-                      schedule.date,
-                      schedule.type
-                    );
-                    const count =
-                      departmentScheduleCount[department][scheduleAlias] || 0;
-                    return (
-                      <TableCell
-                        key={schedule.id}
-                        className="whitespace-nowrap text-center bg-white"
-                      >
-                        {count}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
+              {departments.map((department) => {
+                // Get registrations for this department
+                const departmentRegistrations = retreatUserRegistrations.filter(
+                  (reg) => `${reg.univ_group_number}부` === department
+                );
+
+                // Count full and partial participants
+                let fullParticipants = 0;
+                let partialParticipants = 0;
+
+                departmentRegistrations.forEach((registration) => {
+                  const registeredSchedules =
+                    registration.retreat_register_schedule_ids.length;
+                  const totalSchedules = retreatRegisterSchedules.length;
+
+                  if (registeredSchedules === totalSchedules) {
+                    fullParticipants++;
+                  } else if (registeredSchedules > 0) {
+                    partialParticipants++;
+                  }
+                });
+
+                return (
+                  <TableRow key={department}>
+                    <TableCell className="whitespace-nowrap text-center font-semibold">
+                      {department}
+                    </TableCell>
+                    {retreatRegisterSchedules.map((schedule) => {
+                      const scheduleAlias = getRegisterScheduleAlias(
+                        schedule.date,
+                        schedule.type
+                      );
+                      const count =
+                        departmentScheduleCount[department][scheduleAlias] || 0;
+                      return (
+                        <TableCell
+                          key={schedule.id}
+                          className="whitespace-nowrap text-center"
+                        >
+                          {count}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="whitespace-nowrap text-center">
+                      {fullParticipants}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-center">
+                      {partialParticipants}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
+          <div className="text-right text-sm text-gray-500 mt-2">
+            {new Date().toLocaleString("ko-KR", {
+              month: "long",
+              day: "numeric",
+              hour: "numeric",
+              timeZone: "Asia/Seoul"
+            })}{" "}
+            기준
+          </div>
         </div>
       </div>
 

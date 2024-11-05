@@ -1,6 +1,6 @@
 import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
-import { handleError } from "../../../../../../../utils/errorHandler";
+import { handleError } from "@/utils/errorHandler";
 import { TRetreatRegisterSchedule, TRetreatUserRegistration } from "@/app/types";
 
 export async function GET(
