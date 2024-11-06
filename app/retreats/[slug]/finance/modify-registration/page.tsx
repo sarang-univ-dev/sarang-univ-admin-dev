@@ -10,7 +10,6 @@ import {
 } from "@/app/types";
 import { RetreatRegistrationModifierComponent } from "@/components/retreat-registration-modifier";
 import axios, { AxiosError } from "axios";
-import { AccountTableSkeletonComponent } from "@/components/AccountTableSkeletonComponent";
 
 export default function ModifyRegistrationPage() {
   const params = useParams<{ slug: string }>();

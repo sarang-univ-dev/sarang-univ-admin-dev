@@ -24,8 +24,8 @@ import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
 // SheetJS 라이브러리 임포트
 import * as XLSX from "xlsx-js-style";
 
-// html-to-image 라이브러리 임포트
-import { toPng } from "html-to-image";
+// html2canvas 라이브러리 임포트
+import html2canvas from "html2canvas";
 
 interface Props {
   retreatUserRegistrations: TRetreatUserRegistration[];
@@ -134,8 +134,9 @@ export function AccountTable({
       return;
     }
 
-    toPng(summaryTableRef.current, { cacheBust: true })
-      .then((dataUrl) => {
+    html2canvas(summaryTableRef.current)
+      .then((canvas: any) => {
+        const dataUrl = canvas.toDataURL("image/png");
         const link = document.createElement("a");
         const currentTime =
           new Date()
@@ -151,7 +152,7 @@ export function AccountTable({
         link.href = dataUrl;
         link.click();
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error("이미지 변환 오류:", err);
       });
   };
@@ -169,7 +170,7 @@ export function AccountTable({
 
       return {
         부서: `${registration.univ_group_number}부`,
-        성별: registration.gender === "MALE" ? "남" : "여", 
+        성별: registration.gender === "MALE" ? "남" : "여",
         학년: `${registration.grade_number}학년`,
         이름: registration.name,
         휴대전화: registration.phone_number,
@@ -197,56 +198,58 @@ export function AccountTable({
 
     // Define widths for specific columns
     const columnWidthMap = {
-      '부서': 6,
-      '성별': 6,
-      '학년': 10,
-      '이름': 8,
-      '휴대전화': 20,
-      '등록시각': 25,
-      '타입': 10,
-      '등록비': 10,
-      '등록상태': 15
+      부서: 6,
+      성별: 6,
+      학년: 10,
+      이름: 8,
+      휴대전화: 20,
+      등록시각: 25,
+      타입: 10,
+      등록비: 10,
+      등록상태: 15
     };
 
     // Default width for schedule columns
     const scheduleWidth = 6;
 
     // Create array of column widths matching header order
-    const columnWidths = headers.map(header => ({
-      wch: columnWidthMap[header as keyof typeof columnWidthMap] || scheduleWidth // Use scheduleWidth if no specific width defined
+    const columnWidths = headers.map((header) => ({
+      wch:
+        columnWidthMap[header as keyof typeof columnWidthMap] || scheduleWidth // Use scheduleWidth if no specific width defined
     }));
 
-    worksheet['!cols'] = columnWidths;
+    worksheet["!cols"] = columnWidths;
 
     // Set center alignment and colors for all cells
-    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-    for(let R = range.s.r; R <= range.e.r; ++R) {
-      for(let C = range.s.c; C <= range.e.c; ++C) {
-        const cell_address = {r: R, c: C};
+    const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell_address = { r: R, c: C };
         const cell_ref = XLSX.utils.encode_cell(cell_address);
-        if(!worksheet[cell_ref]) continue;
-        
+        if (!worksheet[cell_ref]) continue;
+
         // Initialize style object if it doesn't exist
-        if(!worksheet[cell_ref].s) worksheet[cell_ref].s = {};
-        
+        if (!worksheet[cell_ref].s) worksheet[cell_ref].s = {};
+
         // Set center alignment
-        worksheet[cell_ref].s.alignment = { horizontal: 'center' };
-        
+        worksheet[cell_ref].s.alignment = { horizontal: "center" };
+
         const header = headers[C];
         // Check if this header corresponds to a schedule
-        const matchingSchedule = retreatRegisterSchedules.find(schedule => 
-          getRegisterScheduleAlias(schedule.date, schedule.type) === header
+        const matchingSchedule = retreatRegisterSchedules.find(
+          (schedule) =>
+            getRegisterScheduleAlias(schedule.date, schedule.type) === header
         );
-        
-        if(matchingSchedule) {
+
+        if (matchingSchedule) {
           // Get the color from dateColorMap
           const colorClass = dateColorMap[matchingSchedule.date]?.checked || "";
           // Convert Tailwind class to RGB
           let fillColor;
-          
+
           if (R === 0) {
             // Header color
-            switch(colorClass) {
+            switch (colorClass) {
               case "bg-red-300":
                 fillColor = { rgb: "FCA5A5" };
                 break;
@@ -275,7 +278,7 @@ export function AccountTable({
             // Data cells color based on value
             const cellValue = worksheet[cell_ref].v;
             if (cellValue === "1") {
-              switch(colorClass) {
+              switch (colorClass) {
                 case "bg-red-300":
                   fillColor = { rgb: "FCA5A5" };
                   break;
@@ -302,7 +305,7 @@ export function AccountTable({
               fillColor = { rgb: "D1D5DB" }; // bg-gray-300
             }
           }
-          
+
           if (fillColor) {
             worksheet[cell_ref].s.fill = { fgColor: fillColor };
           }
