@@ -10,17 +10,17 @@ import {
   NavigationMenuTrigger
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 
-const navigationItems: {
+const baseNavigationItems: {
   [key: string]: { link: string; subItems?: { name: string; link: string }[] };
 } = {
   "관리자 페이지": { link: "" },
   재정: {
     link: "/finance",
     subItems: [
-      { name: "신청자 명단", link: `/retreats/${window.location.pathname.split('/')[2]}/finance/check-deposit` },
-      { name: "신청 변동", link: `/retreats/${window.location.pathname.split('/')[2]}/finance/modify-registration` }
+      { name: "신청자 명단", link: "" },
+      { name: "신청 변동", link: "" }
     ]
   },
   라인업: {
@@ -43,6 +43,19 @@ const navigationItems: {
 
 export default function NavigationBar() {
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const [navigationItems, setNavigationItems] = useState(baseNavigationItems);
+
+  useEffect(() => {
+    const retreatId = window.location.pathname.split('/')[2];
+    const updatedItems = {...baseNavigationItems};
+    if (retreatId) {
+      updatedItems.재정.subItems = [
+        { name: "신청자 명단", link: `/retreats/${retreatId}/finance/check-deposit` },
+        { name: "신청 변동", link: `/retreats/${retreatId}/finance/modify-registration` }
+      ];
+    }
+    setNavigationItems(updatedItems);
+  }, []);
 
   return (
     <header className="border-b">

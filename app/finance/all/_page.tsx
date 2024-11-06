@@ -1,6 +1,4 @@
-// app/admin/users/page.tsx
-
-"use client"; // Ensure this is a client component
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
