@@ -1,14 +1,13 @@
-'use client'
+import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
+import { ShieldAlert, ArrowLeft } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { ShieldAlert, ArrowLeft } from "lucide-react"
-
-export function NotAuthorizedComponent() {
+function NotAuthorizedComponentInner() {
   const goBack = () => {
-    if (typeof window !== 'undefined') {
-      window.history.back()
+    if (typeof window !== "undefined") {
+      window.history.back();
     }
-  }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
@@ -24,5 +23,12 @@ export function NotAuthorizedComponent() {
         이전 페이지로 돌아가기
       </Button>
     </div>
-  )
+  );
 }
+
+export const NotAuthorizedComponent = dynamic(
+  () => Promise.resolve(NotAuthorizedComponentInner),
+  { ssr: false }
+);
+
+// TODO: fix ssr error related to window object
