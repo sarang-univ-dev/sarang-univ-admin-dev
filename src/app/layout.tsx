@@ -16,7 +16,7 @@ import NavigationBar from "@/components/NavigationBar";
 // });
 
 const pretendard = localFont({
-  src: "./fonts/PretendardVariable.woff2",
+  src: "../styles/fonts/PretendardVariable.woff2",
   display: "swap",
   weight: "45 920",
 });
