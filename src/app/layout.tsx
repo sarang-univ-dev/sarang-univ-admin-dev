@@ -1,7 +1,7 @@
 /* File: app/retreats/layout.tsx */
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import "@/app/globals.css";
+import "@/styles/global.css";
 import NavigationBar from "@/components/NavigationBar";
 
 // const geistSans = localFont({
