@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   TRetreatRegisterSchedule,
-  TRetreatUserRegistration
+  TRetreatUserRegistration,
 } from "@/app/types";
 import { RetreatRegistrationModifierComponent } from "@/components/retreat-registration-modifier";
 import axios, { AxiosError } from "axios";
@@ -20,7 +20,7 @@ export default function ModifyRegistrationPage() {
     retreatRegisterSchedules: TRetreatRegisterSchedule[];
   }>({
     retreatUserRegistrations: [],
-    retreatRegisterSchedules: []
+    retreatRegisterSchedules: [],
   });
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -47,7 +47,7 @@ export default function ModifyRegistrationPage() {
         ) {
           setData({
             retreatUserRegistrations: response.data.retreatUserRegistrations,
-            retreatRegisterSchedules: response.data.retreatRegisterSchedules
+            retreatRegisterSchedules: response.data.retreatRegisterSchedules,
           });
         } else {
           setError("API 응답 데이터 형식이 올바르지 않습니다.");

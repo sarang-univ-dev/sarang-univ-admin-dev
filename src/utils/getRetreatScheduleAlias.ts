@@ -1,4 +1,4 @@
-import { format } from "date-fns";  // date-fns 라이브러리 사용을 가정합니다.
+import { format } from "date-fns"; // date-fns 라이브러리 사용을 가정합니다.
 
 export function getRegisterScheduleAlias(date: string, type: string): string {
   // 요일 축약어 설정 (수: 수요일, 목: 목요일 등)

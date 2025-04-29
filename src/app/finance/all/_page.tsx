@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   TRetreatRegisterSchedule,
-  TRetreatUserRegistration
+  TRetreatUserRegistration,
 } from "@/app/types";
 import { AccountTable } from "@/components/AccountTable";
 import axios, { AxiosError } from "axios";
@@ -18,7 +18,7 @@ export default function CheckDepositPage() {
     retreatRegisterSchedules: TRetreatRegisterSchedule[];
   }>({
     retreatUserRegistrations: [],
-    retreatRegisterSchedules: []
+    retreatRegisterSchedules: [],
   });
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -45,7 +45,7 @@ export default function CheckDepositPage() {
         ) {
           setData({
             retreatUserRegistrations: response.data.retreatUserRegistrations,
-            retreatRegisterSchedules: response.data.retreatRegisterSchedules
+            retreatRegisterSchedules: response.data.retreatRegisterSchedules,
           });
         } else {
           setError("API 응답 데이터 형식이 올바르지 않습니다.");

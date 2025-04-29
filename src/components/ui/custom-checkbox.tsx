@@ -1,15 +1,19 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { Check } from "lucide-react"
+import * as React from "react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { Check } from "lucide-react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 // checked와 unchecked 상태에 따른 동적 클래스 적용 및 읽기 전용 처리
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> & { checked?: boolean; uncheckedColor?: string; checkedColor?: string }
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> & {
+    checked?: boolean;
+    uncheckedColor?: string;
+    checkedColor?: string;
+  }
 >(({ className, checked, uncheckedColor, checkedColor, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
@@ -28,7 +32,7 @@ const Checkbox = React.forwardRef<
       {checked && <Check className="h-4 w-4" />} {/* 체크 상태에 따라 표시 */}
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
-))
-Checkbox.displayName = CheckboxPrimitive.Root.displayName
+));
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 
-export { Checkbox }
+export { Checkbox };

@@ -1,29 +1,35 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle } from 'lucide-react'
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
 
 export function AdminLoginOauth() {
-  const [error, setError] = useState('')
+  const [error, setError] = useState("");
 
   const handleGoogleSignIn = async () => {
     try {
       // This is a placeholder for the actual OAuth flow
       // In a real application, you would initiate the OAuth process here
-      console.log('Initiating Google Sign In')
+      console.log("Initiating Google Sign In");
       // Simulating an API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 1000));
       // If successful, you might redirect to the admin dashboard
-      console.log('Successfully signed in with Google')
+      console.log("Successfully signed in with Google");
       // For demo purposes, we'll just log a message
-      setError('')
+      setError("");
     } catch (err) {
-      console.error('Error signing in with Google:', err)
-      setError('Failed to sign in with Google. Please try again.')
+      console.error("Error signing in with Google:", err);
+      setError("Failed to sign in with Google. Please try again.");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -33,8 +39,8 @@ export function AdminLoginOauth() {
           <CardDescription>Sign in to access the admin panel</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button 
-            onClick={handleGoogleSignIn} 
+          <Button
+            onClick={handleGoogleSignIn}
             className="w-full flex items-center justify-center space-x-2"
           >
             <svg
@@ -61,5 +67,5 @@ export function AdminLoginOauth() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

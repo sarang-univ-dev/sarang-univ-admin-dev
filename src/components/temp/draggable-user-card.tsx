@@ -42,7 +42,7 @@ export function DraggableUserCardComponent({
   data,
   index,
   registerSchedules,
-  scheduleTypeMap
+  scheduleTypeMap,
 }: DraggableUserCardComponentProps) {
   const { user, register_schedule, memo } = data;
   const userInfo = `${user.univ_group_number}부 ${
@@ -51,9 +51,9 @@ export function DraggableUserCardComponent({
 
   const isFullyRegistered =
     register_schedule.length === registerSchedules.length &&
-    register_schedule.every((id) => registerSchedules.some((s) => s.id === id));
+    register_schedule.every(id => registerSchedules.some(s => s.id === id));
 
-  const userSchedules = registerSchedules.filter((s) =>
+  const userSchedules = registerSchedules.filter(s =>
     register_schedule.includes(s.id)
   );
 
@@ -63,12 +63,12 @@ export function DraggableUserCardComponent({
     return {
       formatted: `${date.getMonth() + 1}/${date.getDate()}(${dayName})`,
       dayName,
-      date: date.toISOString().split("T")[0]
+      date: date.toISOString().split("T")[0],
     };
   };
 
   const getScheduleText = (types: ScheduleType[], dayName: string) => {
-    return types.map((type) => `${dayName}${scheduleTypeMap[type]}`).join(", ");
+    return types.map(type => `${dayName}${scheduleTypeMap[type]}`).join(", ");
   };
 
   const groupedSchedules = userSchedules.reduce(

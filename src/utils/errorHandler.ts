@@ -11,10 +11,13 @@ export function handleError(error: unknown) {
   if (axios.isAxiosError(error)) {
     console.error("Axios error:", error.message);
     return NextResponse.json(
-      { error: error.response?.data?.error || "데이터를 불러오는 데 실패했습니다." },
+      {
+        error:
+          error.response?.data?.error || "데이터를 불러오는 데 실패했습니다.",
+      },
       { status: error.response?.status || 500 }
     );
-  } 
+  }
   // 일반적인 에러 처리
   else if (error instanceof Error) {
     console.error("Unexpected error:", error.message);
@@ -22,7 +25,7 @@ export function handleError(error: unknown) {
       { error: "예상치 못한 오류가 발생했습니다." },
       { status: 500 }
     );
-  } 
+  }
   // 기타 타입의 에러 처리
   else {
     console.error("Unknown error:", error);

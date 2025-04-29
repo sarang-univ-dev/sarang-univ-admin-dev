@@ -7,7 +7,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ import {
   ReteratRegisterUserType,
   RetreatRegisterStatus,
   TRetreatRegisterSchedule,
-  TRetreatUserRegistration
+  TRetreatUserRegistration,
 } from "@/app/types";
 
 import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
@@ -37,7 +37,7 @@ const statusColors: Record<RetreatRegisterStatus, string> = {
   PENDING: "bg-yellow-500",
   CONFIRMED: "bg-green-500",
   REQUEST_CANCEL: "bg-red-500",
-  CANCELED: "bg-purple-500"
+  CANCELED: "bg-purple-500",
   // "추가 입금 필요": "bg-blue-500" // 필요 시 추가
 };
 
@@ -46,20 +46,20 @@ const statusLabels: Record<RetreatRegisterStatus, string> = {
   PENDING: "입금 확인 대기중",
   CONFIRMED: "입금 확인됨",
   REQUEST_CANCEL: "취소 요청",
-  CANCELED: "취소됨"
+  CANCELED: "취소됨",
   // "추가 입금 필요": "추가 입금 필요" // 필요 시 추가
 };
 
 const typeColors: Record<ReteratRegisterUserType, string> = {
   NEW_COMER: "bg-green-500",
   STAFF: "bg-slate-500",
-  SOLDIER: "bg-gray-500"
+  SOLDIER: "bg-gray-500",
 };
 
 const typeLabels: Record<ReteratRegisterUserType, string> = {
   NEW_COMER: "새가족",
   STAFF: "간사",
-  SOLDIER: "군지체"
+  SOLDIER: "군지체",
 };
 
 // 무지개 색상 쌍 정의 (checked, unchecked)
@@ -70,18 +70,18 @@ const rainbowColorPairs: { checked: string; unchecked: string }[] = [
   { checked: "bg-green-300", unchecked: "bg-gray-300" },
   { checked: "bg-blue-300", unchecked: "bg-gray-300" },
   { checked: "bg-indigo-300", unchecked: "bg-gray-300" },
-  { checked: "bg-purple-300", unchecked: "bg-gray-300" }
+  { checked: "bg-purple-300", unchecked: "bg-gray-300" },
 ];
 
 export function AccountTable({
   retreatUserRegistrations,
-  retreatRegisterSchedules
+  retreatRegisterSchedules,
 }: Props) {
   // 날짜별 색상 매핑 생성
   const dateColorMap = useMemo(() => {
     // 고유한 날짜 추출 및 정렬
     const uniqueDates = Array.from(
-      new Set(retreatRegisterSchedules.map((schedule) => schedule.date))
+      new Set(retreatRegisterSchedules.map(schedule => schedule.date))
     ).sort();
 
     const map: Record<string, { checked: string; unchecked: string }> = {};
@@ -97,13 +97,13 @@ export function AccountTable({
   const departmentScheduleCount = useMemo(() => {
     const counts: Record<string, Record<string, number>> = {};
 
-    retreatUserRegistrations.forEach((registration) => {
+    retreatUserRegistrations.forEach(registration => {
       const department = `${registration.univ_group_number}부`;
       if (!counts[department]) {
         counts[department] = {};
       }
 
-      retreatRegisterSchedules.forEach((schedule) => {
+      retreatRegisterSchedules.forEach(schedule => {
         const scheduleAlias = getRegisterScheduleAlias(
           schedule.date,
           schedule.type
@@ -145,7 +145,7 @@ export function AccountTable({
               month: "long",
               day: "numeric",
               hour: "numeric",
-              hour12: true
+              hour12: true,
             })
             .replace("일", "일") + " 기준";
         link.download = `부서별 일정 등록 현황 ${currentTime}.png`;
@@ -160,9 +160,9 @@ export function AccountTable({
   // 엑셀 다운로드 핸들러
   const handleDownloadExcel = () => {
     // 엑셀에 포함할 데이터 배열 생성
-    const data = retreatUserRegistrations.map((registration) => {
+    const data = retreatUserRegistrations.map(registration => {
       // 각 스케줄에 대한 체크 여부를 문자열로 변환
-      const schedules = retreatRegisterSchedules.map((schedule) =>
+      const schedules = retreatRegisterSchedules.map(schedule =>
         registration.retreat_register_schedule_ids.includes(schedule.id)
           ? "1"
           : "0"
@@ -174,17 +174,20 @@ export function AccountTable({
         학년: `${registration.grade_number}학년`,
         이름: registration.name,
         휴대전화: registration.phone_number,
-        ...retreatRegisterSchedules.reduce((acc, schedule, idx) => {
-          acc[getRegisterScheduleAlias(schedule.date, schedule.type)] =
-            schedules[idx];
-          return acc;
-        }, {} as Record<string, string>),
+        ...retreatRegisterSchedules.reduce(
+          (acc, schedule, idx) => {
+            acc[getRegisterScheduleAlias(schedule.date, schedule.type)] =
+              schedules[idx];
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
         등록시각: new Date(registration.created_at).toLocaleString("ko-KR", {
-          timeZone: "Asia/Seoul"
+          timeZone: "Asia/Seoul",
         }),
         타입: registration.type ? typeLabels[registration.type] : "",
         등록비: `${registration.price}`,
-        등록상태: statusLabels[registration.status]
+        등록상태: statusLabels[registration.status],
         // '문자 전송' 열은 제외
       };
     });
@@ -206,16 +209,16 @@ export function AccountTable({
       등록시각: 25,
       타입: 10,
       등록비: 10,
-      등록상태: 15
+      등록상태: 15,
     };
 
     // Default width for schedule columns
     const scheduleWidth = 6;
 
     // Create array of column widths matching header order
-    const columnWidths = headers.map((header) => ({
+    const columnWidths = headers.map(header => ({
       wch:
-        columnWidthMap[header as keyof typeof columnWidthMap] || scheduleWidth // Use scheduleWidth if no specific width defined
+        columnWidthMap[header as keyof typeof columnWidthMap] || scheduleWidth, // Use scheduleWidth if no specific width defined
     }));
 
     worksheet["!cols"] = columnWidths;
@@ -237,7 +240,7 @@ export function AccountTable({
         const header = headers[C];
         // Check if this header corresponds to a schedule
         const matchingSchedule = retreatRegisterSchedules.find(
-          (schedule) =>
+          schedule =>
             getRegisterScheduleAlias(schedule.date, schedule.type) === header
         );
 
@@ -325,7 +328,7 @@ export function AccountTable({
         month: "long",
         day: "numeric",
         hour: "numeric",
-        hour12: true
+        hour12: true,
       })
       .replace("일", "일")
       .replace(":", "시");
@@ -357,7 +360,7 @@ export function AccountTable({
                 <TableHead className="whitespace-nowrap text-center">
                   부서
                 </TableHead>
-                {retreatRegisterSchedules.map((schedule) => {
+                {retreatRegisterSchedules.map(schedule => {
                   const scheduleAlias = getRegisterScheduleAlias(
                     schedule.date,
                     schedule.type
@@ -368,7 +371,7 @@ export function AccountTable({
                       key={schedule.id}
                       className={`whitespace-nowrap text-center ${color} text-white`}
                       style={{
-                        textShadow: "1px 1px 1px black"
+                        textShadow: "1px 1px 1px black",
                       }}
                     >
                       {scheduleAlias}
@@ -384,17 +387,17 @@ export function AccountTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {departments.map((department) => {
+              {departments.map(department => {
                 // Get registrations for this department
                 const departmentRegistrations = retreatUserRegistrations.filter(
-                  (reg) => `${reg.univ_group_number}부` === department
+                  reg => `${reg.univ_group_number}부` === department
                 );
 
                 // Count full and partial participants
                 let fullParticipants = 0;
                 let partialParticipants = 0;
 
-                departmentRegistrations.forEach((registration) => {
+                departmentRegistrations.forEach(registration => {
                   const registeredSchedules =
                     registration.retreat_register_schedule_ids.length;
                   const totalSchedules = retreatRegisterSchedules.length;
@@ -411,7 +414,7 @@ export function AccountTable({
                     <TableCell className="whitespace-nowrap text-center font-semibold">
                       {department}
                     </TableCell>
-                    {retreatRegisterSchedules.map((schedule) => {
+                    {retreatRegisterSchedules.map(schedule => {
                       const scheduleAlias = getRegisterScheduleAlias(
                         schedule.date,
                         schedule.type
@@ -443,7 +446,7 @@ export function AccountTable({
               month: "long",
               day: "numeric",
               hour: "numeric",
-              timeZone: "Asia/Seoul"
+              timeZone: "Asia/Seoul",
             })}{" "}
             기준
           </div>
@@ -496,7 +499,7 @@ export function AccountTable({
               </TableHead>
             </TableRow>
             <TableRow>
-              {retreatRegisterSchedules.map((retreatRegisterSchedule) => (
+              {retreatRegisterSchedules.map(retreatRegisterSchedule => (
                 <TableHead
                   key={retreatRegisterSchedule.id}
                   className="text-center p-2 whitespace-nowrap"
@@ -510,7 +513,7 @@ export function AccountTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {retreatUserRegistrations.map((retreatUserRegistration) => (
+            {retreatUserRegistrations.map(retreatUserRegistration => (
               <TableRow key={retreatUserRegistration.id}>
                 <TableCell className="whitespace-nowrap text-center">
                   {retreatUserRegistration.univ_group_number}부
@@ -527,11 +530,11 @@ export function AccountTable({
                 <TableCell className="whitespace-nowrap text-center">
                   {retreatUserRegistration.phone_number}
                 </TableCell>
-                {retreatRegisterSchedules.map((registerSchedule) => {
+                {retreatRegisterSchedules.map(registerSchedule => {
                   // 날짜에 따른 색상 쌍 가져오기
                   const colorPair = dateColorMap[registerSchedule.date] || {
                     checked: "bg-gray-500",
-                    unchecked: "bg-gray-300"
+                    unchecked: "bg-gray-300",
                   };
 
                   const isChecked =
