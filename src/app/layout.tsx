@@ -3,6 +3,14 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "@/styles/global.css";
 import NavigationBar from "@/components/NavigationBar";
+import type React from "react";
+import "@/app/globals.css";
+import { Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/auth-provider";
+import { ProtectedLayout } from "@/components/protected-layout";
+
+const inter = Inter({ subsets: ["latin"] });
 
 // const geistSans = localFont({
 //   src: "./fonts/GeistVF.woff",
@@ -32,17 +40,40 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${pretendard.className} antialiased`}>
-        <div className="flex flex-col min-h-screen">
-          {/* NavigationBar를 추가합니다 */}
-          <NavigationBar />
-          {/* 페이지 콘텐츠를 렌더링합니다 */}
-          <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
-        </div>
+    <html lang="ko" suppressHydrationWarning>
+      <body className={inter.className}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <ProtectedLayout>{children}</ProtectedLayout>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
 }
+
+// export default function RootLayout({
+//   children,
+// }: {
+//   children: React.ReactNode;
+// }) {
+//   return (
+//     <html lang="en">
+//       <body className={`${pretendard.className} antialiased`}>
+//         <div className="flex flex-col min-h-screen">
+//           {/* NavigationBar를 추가합니다 */}
+//           <NavigationBar />
+//           {/* 페이지 콘텐츠를 렌더링합니다 */}
+//           <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
+//         </div>
+//       </body>
+//     </html>
+//   );
+// }
 
 // TODO: retreat/[id]/users, retreat/[id]/lineup 이렇게 retreat/[id]로 시작하는 페이지들로 수정하기
