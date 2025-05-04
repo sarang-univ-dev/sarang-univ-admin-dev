@@ -1,15 +1,15 @@
-import fs from 'fs';
-import path from 'path';
-import clipboardy from 'clipboardy';
+import fs from "fs";
+import path from "path";
+import clipboardy from "clipboardy";
 
 // 스캔할 디렉토리 배열을 만듭니다.
 const directoriesToScan = [
-  path.join(process.cwd(), 'app/'),
-  path.join(process.cwd(), 'components/')
+  path.join(process.cwd(), "app/"),
+  path.join(process.cwd(), "components/"),
 ];
 
 // 지원하는 파일 확장자
-const supportedExtensions = ['.tsx'];
+const supportedExtensions = [".tsx"];
 
 // 디렉토리의 파일을 재귀적으로 읽는 함수
 function readFilesRecursively(dir) {
@@ -38,10 +38,10 @@ directoriesToScan.forEach(directory => {
 });
 
 // 클립보드에 복사할 문자열을 만듭니다.
-let clipboardContent = '';
+let clipboardContent = "";
 
 files.forEach(file => {
-  const content = fs.readFileSync(file, 'utf-8');
+  const content = fs.readFileSync(file, "utf-8");
   const relativePath = path.relative(process.cwd(), file);
   clipboardContent += `/* File: ${relativePath} */\n${content}\n\n`;
 });
