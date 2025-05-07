@@ -24,7 +24,7 @@ jobs:
 
       - name: Add personal repo as remote
         run: |
-          git remote add personal git@github.com:heeseopark/sarang-univ-admin.git
+          git remote add personal git@github.com:sarang-univ-dev/sarang-univ-admin.git
 
       - name: Verify Remote URLs
         run: git remote -v
