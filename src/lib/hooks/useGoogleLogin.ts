@@ -1,0 +1,28 @@
+import config from "../constant/config";
+
+export function useGoogleLogin() {
+  const redirectToGoogle = () => {
+    const { GOOGLE_CLIENT_ID: clientId, API_HOST } = config;
+
+    const redirectUri = encodeURIComponent(
+      `${API_HOST}/api/v1/auth/google/callback`
+    );
+    const scope = encodeURIComponent("profile email");
+
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope,
+      access_type: "offline",
+      include_granted_scopes: "true",
+      prompt: "consent",
+    });
+
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/auth?${params.toString()}`;
+
+    window.location.href = googleAuthUrl;
+  };
+
+  return { redirectToGoogle };
+}
