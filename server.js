@@ -16,6 +16,6 @@ app.prepare().then(() => {
   }).listen(443, err => {
     if (err) throw err;
     // eslint-disable-next-line no-console
-    console.log("> Server started on https://local.sarang-admin.co.kr");
+    console.log("> Server started on https://local.admin.sarang-univ.com ");
   });
 });
