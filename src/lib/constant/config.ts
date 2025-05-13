@@ -1,13 +1,13 @@
 const prodConfig = {
   ENV: "production",
   API_HOST: "https://api.sarang-univ.com",
-  GOOGLE_CLIENT_ID: "6gY7YyfcSJaH4QbxaHck",
+  GOOGLE_CLIENT_ID: "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",
 };
 
 const devConfig: typeof prodConfig = {
   ENV: "development",
   API_HOST: "https://dev.api.sarang-univ.com",
-  GOOGLE_CLIENT_ID: "6gY7YyfcSJaH4QbxaHck",
+  GOOGLE_CLIENT_ID: "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",
 };
 const localConfig: typeof prodConfig = {
   ...devConfig,
