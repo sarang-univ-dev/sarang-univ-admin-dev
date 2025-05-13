@@ -19,7 +19,7 @@ export function useGoogleLogin() {
       prompt: "consent",
     });
 
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/auth?${params.toString()}`;
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 
     window.location.href = googleAuthUrl;
   };
