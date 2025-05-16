@@ -14,7 +14,7 @@ export interface IUserRetreatRegistration {
   price: number;
   userType: UserRetreatRegistrationType | null;
   paymentStatus: UserRetreatRegistrationPaymentStatus;
-  createdAt: Date;
+  createdAt: string;
   paymentConfirmUserName?: string | null;
   paymentConfirmedAt?: string | null;
 }

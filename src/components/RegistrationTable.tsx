@@ -289,9 +289,12 @@ export function RegistrationTable({
         <div className="space-y-4">
           <SearchBar onSearch={handleSearchResults} data={data} />
 
-          <div className="rounded-md border" ref={tableContainerRef}>
-            <div className="overflow-x-auto">
-              <Table className="w-full whitespace-nowrap">
+          <div
+            className="rounded-md border h-[calc(100vh-300px)]"
+            ref={tableContainerRef}
+          >
+            <div className="overflow-y-auto overflow-x-auto h-full">
+              <Table className="w-full whitespace-nowrap relative">
                 <TableHeader className="bg-gray-50 sticky top-0 z-10">
                   <TableRow>
                     <TableHead
@@ -364,7 +367,7 @@ export function RegistrationTable({
                       rowSpan={2}
                       className="text-center whitespace-nowrap"
                     >
-                      <span>처리 일시</span>
+                      <span>처리 시각</span>
                     </TableHead>
                   </TableRow>
                   <TableRow>
@@ -414,7 +417,7 @@ export function RegistrationTable({
                         {row.amount.toLocaleString()}원
                       </TableCell>
                       <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        {formatDate(row.createdAt)}
+                        {row.createdAt ? formatDate(row.createdAt) : "-"}
                       </TableCell>
                       <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
                         <StatusBadge status={row.status} />

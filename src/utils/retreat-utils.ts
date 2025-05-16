@@ -283,6 +283,7 @@ export function transformRegistrationsForTable(
         schedule: scheduleMap,
         type: reg.userType || null,
         amount: reg.price || 0,
+        createdAt: reg.createdAt || null,
         status: reg.paymentStatus,
         paymentConfirmedAt: reg.paymentConfirmedAt || null,
         confirmedBy: reg.paymentConfirmUserName || null,
