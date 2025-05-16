@@ -6,7 +6,7 @@ import type React from "react";
 import "@/styles/global.css";
 import "@/app/globals.css";
 
-import RootLayoutProvider from "./components/RootLayoutProvider";
+import RootLayoutProvider from "@/components/providers/RootLayoutProvider";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import Footer from "@/components/common/Footer";

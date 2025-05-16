@@ -6,7 +6,7 @@ const prodConfig = {
 
 const devConfig: typeof prodConfig = {
   ENV: "development",
-  API_HOST: "https://dev.api.sarang-univ.com",
+  API_HOST: "http://localhost:4000",
   GOOGLE_CLIENT_ID: "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",
 };
 const localConfig: typeof prodConfig = {

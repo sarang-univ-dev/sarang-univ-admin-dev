@@ -1,4 +1,4 @@
-import { SummaryTable } from "./summary-table"
+import { SummaryTable } from "./SummaryTable";
 
 export function MealSummary() {
   // 동적 데이터를 위한 예시 데이터
@@ -14,7 +14,7 @@ export function MealSummary() {
     { id: "friday_dinner", header: "금저" },
     { id: "saturday_morning", header: "토아" },
     { id: "saturday_lunch", header: "토점" },
-  ]
+  ];
 
   const rows = [
     {
@@ -170,7 +170,14 @@ export function MealSummary() {
         saturday_lunch: <span className="font-semibold">242명</span>,
       },
     },
-  ]
+  ];
 
-  return <SummaryTable title="식수 인원 집계 표" description="부서별 식수 인원 현황" columns={columns} rows={rows} />
+  return (
+    <SummaryTable
+      title="식수 인원 집계 표"
+      description="부서별 식수 인원 현황"
+      columns={columns}
+      rows={rows}
+    />
+  );
 }
