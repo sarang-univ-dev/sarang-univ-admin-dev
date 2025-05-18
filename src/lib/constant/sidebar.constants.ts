@@ -1,3 +1,3 @@
-export const SIDEBAR_MENU = [
-  { label: "payment", text: "임금조회", href: "/payment" },
+export const STATIC_SIDEBAR_ITEMS = [
+  { label: "payment", text: "입금조회", path: "confirm-payment" },
 ];

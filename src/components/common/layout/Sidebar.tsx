@@ -1,15 +1,19 @@
-// src/components/common/layout/Sidebar.tsx
 "use client";
 
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SIDEBAR_MENU } from "@/lib/constant/sidebar.constants";
+import { getSidebarMenu } from "@/utils/sidebar";
 import { useSidebarStore } from "@/store/sidebar-store";
 
 const Sidebar = () => {
   const pathname = usePathname();
   const { isOpen } = useSidebarStore();
+
+  const match = pathname.match(/^\/retreat\/([^/]+)/);
+  const retreatSlug = match?.[1];
+
+  const menuItems = retreatSlug ? getSidebarMenu(retreatSlug) : [];
 
   return (
     <aside
@@ -18,7 +22,7 @@ const Sidebar = () => {
       } w-64 bg-gray-100 p-4 border-r min-h-screen md:block`}
     >
       <ul className="space-y-2">
-        {SIDEBAR_MENU.map(menu => (
+        {menuItems.map(menu => (
           <li key={menu.label}>
             <Link
               href={menu.href}
