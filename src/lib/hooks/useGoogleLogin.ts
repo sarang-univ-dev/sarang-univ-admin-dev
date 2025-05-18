@@ -4,10 +4,8 @@ export function useGoogleLogin() {
   const redirectToGoogle = () => {
     const { GOOGLE_CLIENT_ID: clientId, API_HOST } = config;
 
-    const redirectUri = encodeURIComponent(
-      `${API_HOST}/api/v1/auth/google/callback`
-    );
-    const scope = encodeURIComponent("profile email");
+    const redirectUri = `${API_HOST}/api/v1/auth/google/callback`;
+    const scope = "https://www.googleapis.com/auth/userinfo.email";
 
     const params = new URLSearchParams({
       client_id: clientId,

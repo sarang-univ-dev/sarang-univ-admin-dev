@@ -1,13 +1,11 @@
 import { webAxios } from "./axios";
 
 const AuthAPI = {
-  loginGoogle: async (token: string): Promise<IAuth | null> => {
-    // const {
-    //   data: { accessToken, refreshToken },
-    // } = await webAxios.post(`/auth/oauth/token`, {
-    //   token: token,
-    // });
-    // return { accessToken, refreshToken };
+  getUser: async (): Promise<TUser> => {
+    const {
+      data: { user },
+    } = await webAxios.get("/auth/check");
+    return user;
   },
 
   logout: async (token: string) => {

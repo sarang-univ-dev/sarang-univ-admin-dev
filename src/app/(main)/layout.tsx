@@ -1,4 +1,3 @@
-/* File: app/retreats/layout.tsx */
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type React from "react";
@@ -7,10 +6,11 @@ import "@/styles/global.css";
 import "@/app/globals.css";
 
 import RootLayoutProvider from "@/components/providers/RootLayoutProvider";
-import Header from "@/components/common/Header";
-import Sidebar from "@/components/common/Sidebar";
-import Footer from "@/components/common/Footer";
-import Toast from "@/components/common/Toast";
+import Header from "@/components/common/layout/Header";
+import Sidebar from "@/components/common/layout/Sidebar";
+import Footer from "@/components/common/layout/Footer";
+import Toast from "@/components/common/layout/Toast";
+import ConfirmModal from "@/components/common/layout/ConfirmModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,6 +35,7 @@ export default function RootLayout({
           </div>
           <Footer />
           <Toast />
+          <ConfirmModal />
         </RootLayoutProvider>
       </body>
     </html>
