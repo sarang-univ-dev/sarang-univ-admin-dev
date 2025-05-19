@@ -35,7 +35,7 @@ import {
 } from "@/types";
 import { formatDate } from "@/utils/formatDate";
 import useSWR, { mutate } from "swr";
-import { useToast } from "@/hooks/use-toast";
+import { useToastStore } from "@/store/toast-store";
 import { webAxios } from "@/lib/api/axios";
 
 export function RegistrationTable({
@@ -47,7 +47,7 @@ export function RegistrationTable({
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
 }) {
-  const { toast } = useToast();
+  const addToast = useToastStore(state => state.add);
   const [data, setData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
@@ -108,16 +108,16 @@ export function RegistrationTable({
       await mutate(registrationsEndpoint);
 
       // 성공 토스트 메시지
-      toast({
+      addToast({
         title: "성공",
         description: "입금이 성공적으로 확인되었습니다.",
-        variant: "default",
+        variant: "success",
       });
     } catch (error) {
       console.error("입금 확인 중 오류 발생:", error);
 
       // 실패 토스트 메시지
-      toast({
+      addToast({
         title: "오류 발생",
         description: "입금 확인 처리 중 오류가 발생했습니다.",
         variant: "destructive",
@@ -142,7 +142,7 @@ export function RegistrationTable({
       await mutate(registrationsEndpoint);
 
       // 성공 토스트 메시지
-      toast({
+      addToast({
         title: "성공",
         description: "환불이 성공적으로 처리되었습니다.",
         variant: "default",
@@ -151,7 +151,7 @@ export function RegistrationTable({
       console.error("환불 처리 중 오류 발생:", error);
 
       // 실패 토스트 메시지
-      toast({
+      addToast({
         title: "오류 발생",
         description: "환불 처리 중 오류가 발생했습니다.",
         variant: "destructive",
@@ -174,7 +174,7 @@ export function RegistrationTable({
         );
 
         // 성공 토스트 메시지
-        toast({
+        addToast({
           title: "성공",
           description: "입금 요청 메시지가 성공적으로 전송되었습니다.",
           variant: "default",
@@ -184,7 +184,7 @@ export function RegistrationTable({
       console.error(`${messageType} 메시지 전송 중 오류 발생:`, error);
 
       // 실패 토스트 메시지
-      toast({
+      addToast({
         title: "오류 발생",
         description: "메시지 전송 중 오류가 발생했습니다.",
         variant: "destructive",

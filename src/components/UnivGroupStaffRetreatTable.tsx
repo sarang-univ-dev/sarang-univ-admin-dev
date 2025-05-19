@@ -51,7 +51,7 @@ import {
 } from "@/types";
 import { formatDate } from "@/utils/formatDate";
 import { mutate } from "swr";
-import { useToast } from "@/hooks/use-toast";
+import { useToastStore } from "@/store/toast-store";
 import { webAxios } from "@/lib/api/axios";
 
 const transformStaffRegistrationsForTable = (
@@ -94,7 +94,7 @@ export function UnivGroupStaffRetreatTable({
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
 }) {
-  const { toast } = useToast();
+  const addToast = useToastStore(state => state.add);
   const [allData, setAllData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
@@ -125,7 +125,7 @@ export function UnivGroupStaffRetreatTable({
         setAllData(transformedData);
       } catch (error) {
         console.error("데이터 변환 중 오류 발생:", error);
-        toast({
+        addToast({
           title: "오류",
           description: "데이터를 불러오는 중 오류가 발생했습니다.",
           variant: "destructive",
@@ -134,7 +134,7 @@ export function UnivGroupStaffRetreatTable({
     } else {
       setAllData([]);
     }
-  }, [initialRegistrations, schedules, toast]);
+  }, [initialRegistrations, schedules, addToast]);
 
   useEffect(() => {
     let dataToFilter = [...allData];
@@ -203,13 +203,13 @@ export function UnivGroupStaffRetreatTable({
         { userRetreatRegistrationId: id }
       );
       if (registrationsEndpoint) await mutate(registrationsEndpoint);
-      toast({
+      addToast({
         title: "성공",
         description: "입금이 성공적으로 확인되었습니다.",
       });
     } catch (error) {
       console.error("입금 확인 중 오류 발생:", error);
-      toast({
+      addToast({
         title: "오류",
         description: "입금 확인 처리 중 오류가 발생했습니다.",
         variant: "destructive",
@@ -227,13 +227,13 @@ export function UnivGroupStaffRetreatTable({
         { userRetreatRegistrationId: id }
       );
       if (registrationsEndpoint) await mutate(registrationsEndpoint);
-      toast({
+      addToast({
         title: "성공",
         description: "환불이 성공적으로 처리되었습니다.",
       });
     } catch (error) {
       console.error("환불 처리 중 오류 발생:", error);
-      toast({
+      addToast({
         title: "오류",
         description: "환불 처리 중 오류가 발생했습니다.",
         variant: "destructive",
@@ -251,14 +251,14 @@ export function UnivGroupStaffRetreatTable({
           `/api/v1/retreat/${retreatSlug}/account/request-payment`,
           { userRetreatRegistrationId: id }
         );
-        toast({
+        addToast({
           title: "성공",
           description: "입금 요청 메시지가 성공적으로 전송되었습니다.",
         });
       }
     } catch (error) {
       console.error(`${messageType} 메시지 전송 중 오류 발생:`, error);
-      toast({
+      addToast({
         title: "오류",
         description: "메시지 전송 중 오류가 발생했습니다.",
         variant: "destructive",
@@ -279,7 +279,7 @@ export function UnivGroupStaffRetreatTable({
         }
       );
       if (registrationsEndpoint) await mutate(registrationsEndpoint);
-      toast({
+      addToast({
         title: "성공",
         description: `새가족 신청이 성공적으로 ${
           approve ? "승인" : "거절"
@@ -287,7 +287,7 @@ export function UnivGroupStaffRetreatTable({
       });
     } catch (error) {
       console.error("새가족 신청 처리 중 오류 발생:", error);
-      toast({
+      addToast({
         title: "오류",
         description: "새가족 신청 처리 중 오류가 발생했습니다.",
         variant: "destructive",
@@ -308,7 +308,7 @@ export function UnivGroupStaffRetreatTable({
         }
       );
       if (registrationsEndpoint) await mutate(registrationsEndpoint);
-      toast({
+      addToast({
         title: "성공",
         description: `군지체 신청이 성공적으로 ${
           approve ? "승인" : "거절"
@@ -316,7 +316,7 @@ export function UnivGroupStaffRetreatTable({
       });
     } catch (error) {
       console.error("군지체 신청 처리 중 오류 발생:", error);
-      toast({
+      addToast({
         title: "오류",
         description: "군지체 신청 처리 중 오류가 발생했습니다.",
         variant: "destructive",
@@ -338,7 +338,7 @@ export function UnivGroupStaffRetreatTable({
         }
       );
       if (registrationsEndpoint) await mutate(registrationsEndpoint);
-      toast({
+      addToast({
         title: "성공",
         description: "메모가 성공적으로 저장되었습니다.",
       });
@@ -347,7 +347,7 @@ export function UnivGroupStaffRetreatTable({
       setCurrentRowId(null);
     } catch (error) {
       console.error("메모 저장 중 오류 발생:", error);
-      toast({
+      addToast({
         title: "오류",
         description: "메모 저장 중 오류가 발생했습니다.",
         variant: "destructive",
@@ -374,10 +374,10 @@ export function UnivGroupStaffRetreatTable({
       link.click();
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast({ title: "성공", description: "QR 코드가 다운로드되었습니다." });
+      addToast({ title: "성공", description: "QR 코드가 다운로드되었습니다." });
     } catch (error) {
       console.error("QR 코드 다운로드 중 오류 발생:", error);
-      toast({
+      addToast({
         title: "오류",
         description: "QR 코드 다운로드 중 오류가 발생했습니다.",
         variant: "destructive",

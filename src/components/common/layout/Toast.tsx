@@ -15,11 +15,12 @@ const Toast = () => {
 
   return (
     <ToastProvider>
-      {toasts.map(({ id, title, description, open }) => (
+      {toasts.map(({ id, title, description, open, variant }) => (
         <ToastPrimitive
           key={id}
           open={open}
           onOpenChange={open => !open && remove(id)}
+          variant={variant ?? "success"}
         >
           <div>
             <ToastTitle>{title}</ToastTitle>
@@ -28,6 +29,7 @@ const Toast = () => {
           <ToastClose />
         </ToastPrimitive>
       ))}
+
       <ToastViewport />
     </ToastProvider>
   );

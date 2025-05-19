@@ -29,9 +29,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <RootLayoutProvider>
           <Header />
-          <div className="flex min-h-screen">
+          <div className="flex min-h-screen relative">
             <Sidebar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 overflow-x-hidden">{children}</main>
           </div>
           <Footer />
           <Toast />

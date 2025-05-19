@@ -1,15 +1,20 @@
 import { create } from "zustand";
 
+export type ToastVariant = "default" | "destructive" | "success";
+
 export type Toast = {
   id: string;
   title: string;
   description?: string;
   open: boolean;
+  variant?: ToastVariant;
 };
 
 interface ToastStore {
   toasts: Toast[];
-  add: (toast: Omit<Toast, "id" | "open">) => string;
+  add: (
+    toast: Omit<Toast, "id" | "open"> & { variant?: ToastVariant }
+  ) => string;
   dismiss: (id: string) => void;
   remove: (id: string) => void;
 }
