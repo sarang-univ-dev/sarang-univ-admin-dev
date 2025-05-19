@@ -65,12 +65,15 @@ const transformStaffRegistrationsForTable = (
     grade: `${reg.gradeNumber}학년`,
     name: reg.userName,
     phone: reg.userPhoneNumber,
-    schedule: schedules.reduce((acc, cur) => {
-      acc[cur.id.toString()] = (
-        reg.userRetreatRegistrationScheduleIds || []
-      ).includes(cur.id);
-      return acc;
-    }, {} as Record<string, boolean>),
+    schedule: schedules.reduce(
+      (acc, cur) => {
+        acc[cur.id.toString()] = (
+          reg.userRetreatRegistrationScheduleIds || []
+        ).includes(cur.id);
+        return acc;
+      },
+      {} as Record<string, boolean>
+    ),
     type: reg.userType,
     amount: reg.price,
     createdAt: reg.createdAt,
