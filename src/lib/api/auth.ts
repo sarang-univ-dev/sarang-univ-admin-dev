@@ -14,7 +14,7 @@ const AuthAPI = {
     const { data } = await webAxios.get(
       `/api/v1/auth/google/callback?${qs.stringify({
         code,
-        env: process.env.NEXT_PUBLIC_APP_ENV,
+        env: process.env.NEXT_PUBLIC_SARANG_ENV,
       })}`
     );
     return data;
