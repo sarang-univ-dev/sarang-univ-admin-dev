@@ -1,12 +1,21 @@
 import { IAuth, TUser } from "../types/common";
 import { webAxios } from "./axios";
 import qs from "qs";
+import Cookies from "js-cookie";
 
 const AuthAPI = {
-  getUser: async (): Promise<TUser> => {
+  getUser: async (): Promise<TUser | null> => {
+    const accessToken = Cookies.get("accessToken");
+    if (!accessToken) {
+      return null;
+    }
     const {
       data: { user },
-    } = await webAxios.get("/api/v1/auth/check-auth");
+    } = await webAxios.get("/api/v1/auth/check-auth", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
     return user;
   },
 
