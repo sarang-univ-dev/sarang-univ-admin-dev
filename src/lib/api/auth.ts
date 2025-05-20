@@ -12,7 +12,10 @@ const AuthAPI = {
 
   googleLogin: async (code: string): Promise<IAuth | void> => {
     const { data } = await webAxios.get(
-      `/api/v1/auth/google/callback?${qs.stringify({ code })}`
+      `/api/v1/auth/google/callback?${qs.stringify({
+        code,
+        env: process.env.NEXT_PUBLIC_APP_ENV,
+      })}`
     );
     return data;
   },
