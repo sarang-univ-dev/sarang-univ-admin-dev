@@ -4,9 +4,11 @@ import React, { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 import useUser from "@/lib/hooks/swr/useUser";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import LoadingIndicator from "@/components/common/LoadingIndicator";
 
 const Redirect = () => {
-  // const { user, mutate } = useUser();
+  const { user, mutate } = useUser();
   const router = useRouter();
   const [error, setError] = useState(false);
 
@@ -33,28 +35,27 @@ const Redirect = () => {
         return;
       }
 
-      //   await mutate();
+      await mutate();
 
-      //   router.replace("/");
-      //   router.refresh();
+      router.replace("/");
+      router.refresh();
     } catch (error) {
       //NOTE - 오류
       setError(true);
     }
   };
 
-  handleLogin();
-  //   useEffect(() => {
-  //     if (!user) {
-  //       handleLogin();
-  //     } else {
-  //     //   router.replace("/");
-  //     //   router.refresh();
-  //     }
-  //   }, [user, router]);
+  useEffect(() => {
+    if (!user) {
+      handleLogin();
+    } else {
+      router.replace("/");
+      router.refresh();
+    }
+  }, [user, router]);
 
-  //   if (error) return <div>에러</div>;
-  //   return <div>로딩</div>;
+  if (error) return <ErrorMessage />;
+  return <LoadingIndicator />;
 };
 
 export default Redirect;
