@@ -1,25 +1,6 @@
+import { IAuth, TUser } from "../types/common";
 import { webAxios } from "./axios";
 import qs from "qs";
-
-export interface IAuth {
-  accessToken: string;
-  refreshToken: string;
-}
-
-export enum Gender {
-  MALE = "MALE",
-  FEMALE = "FEMALE",
-}
-
-export type TUser = {
-  id: number;
-  name: string;
-  phoneNumber: string;
-  gender: Gender;
-  gradeId: number;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 const AuthAPI = {
   getUser: async (): Promise<TUser> => {
@@ -33,7 +14,6 @@ const AuthAPI = {
     const { data } = await webAxios.get(
       `/api/v1/auth/google/callback?${qs.stringify({ code })}`
     );
-    console.log("✅ 구글 로그인 응답 데이터:", data);
     return data;
   },
 
