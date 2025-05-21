@@ -18,7 +18,6 @@ import {
   RotateCcw,
   Send,
   Search,
-  ArrowUpDown,
   X,
   QrCode,
   CheckSquare,
@@ -53,6 +52,8 @@ import { formatDate } from "@/utils/formatDate";
 import { mutate } from "swr";
 import { useToastStore } from "@/store/toast-store";
 import { webAxios } from "@/lib/api/axios";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { AxiosError } from "axios";
 
 const transformStaffRegistrationsForTable = (
   registrations: IUnivGroupStaffRetreat[],
@@ -66,7 +67,7 @@ const transformStaffRegistrationsForTable = (
     name: reg.userName,
     phone: reg.userPhoneNumber,
     schedule: schedules.reduce((acc, cur) => {
-      acc[cur.id.toString()] = (
+      acc[`schedule_${cur.id}`] = (
         reg.userRetreatRegistrationScheduleIds || []
       ).includes(cur.id);
       return acc;
@@ -95,6 +96,7 @@ export function UnivGroupStaffRetreatTable({
   retreatSlug: string;
 }) {
   const addToast = useToastStore(state => state.add);
+  const confirmDialog = useConfirmDialogStore();
   const [allData, setAllData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
@@ -102,10 +104,6 @@ export function UnivGroupStaffRetreatTable({
   );
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: "ascending" | "descending";
-  } | null>(null);
 
   const [memoDialogOpen, setMemoDialogOpen] = useState(false);
   const [currentRowId, setCurrentRowId] = useState<string | null>(null);
@@ -127,7 +125,12 @@ export function UnivGroupStaffRetreatTable({
         console.error("데이터 변환 중 오류 발생:", error);
         addToast({
           title: "오류",
-          description: "데이터를 불러오는 중 오류가 발생했습니다.",
+          description:
+            error instanceof AxiosError
+              ? error.response?.data?.message || error.message
+              : error instanceof Error
+              ? error.message
+              : "데이터를 불러오는 중 오류가 발생했습니다.",
           variant: "destructive",
         });
       }
@@ -153,36 +156,8 @@ export function UnivGroupStaffRetreatTable({
       );
     }
 
-    if (sortConfig !== null) {
-      dataToFilter.sort((a, b) => {
-        let valA = a[sortConfig.key];
-        let valB = b[sortConfig.key];
-
-        if (
-          sortConfig.key === "amount" ||
-          sortConfig.key === "grade" ||
-          sortConfig.key === "department"
-        ) {
-          valA = parseFloat(valA?.replace(/[^\d.-]/g, "")) || 0;
-          valB = parseFloat(valB?.replace(/[^\d.-]/g, "")) || 0;
-        } else if (typeof valA === "string") {
-          valA = valA.toLowerCase();
-        }
-        if (typeof valB === "string") {
-          valB = valB.toLowerCase();
-        }
-
-        if (valA < valB) {
-          return sortConfig.direction === "ascending" ? -1 : 1;
-        }
-        if (valA > valB) {
-          return sortConfig.direction === "ascending" ? 1 : -1;
-        }
-        return 0;
-      });
-    }
     setFilteredData(dataToFilter);
-  }, [allData, searchTerm, sortConfig]);
+  }, [allData, searchTerm]);
 
   const setLoading = (id: string, action: string, isLoading: boolean) => {
     setLoadingStates(prev => ({
@@ -195,31 +170,8 @@ export function UnivGroupStaffRetreatTable({
     return !!loadingStates[`${id}_${action}`];
   };
 
-  const handleConfirmPayment = async (id: string) => {
-    setLoading(id, "confirm", true);
-    try {
-      await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/account/confirm-payment`,
-        { userRetreatRegistrationId: id }
-      );
-      if (registrationsEndpoint) await mutate(registrationsEndpoint);
-      addToast({
-        title: "성공",
-        description: "입금이 성공적으로 확인되었습니다.",
-      });
-    } catch (error) {
-      console.error("입금 확인 중 오류 발생:", error);
-      addToast({
-        title: "오류",
-        description: "입금 확인 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(id, "confirm", false);
-    }
-  };
-
-  const handleCompleteRefund = async (id: string) => {
+  // 실제 환불 처리 함수
+  const performCompleteRefund = async (id: string) => {
     setLoading(id, "refund", true);
     try {
       await webAxios.post(
@@ -235,12 +187,116 @@ export function UnivGroupStaffRetreatTable({
       console.error("환불 처리 중 오류 발생:", error);
       addToast({
         title: "오류",
-        description: "환불 처리 중 오류가 발생했습니다.",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "환불 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
       setLoading(id, "refund", false);
     }
+  };
+
+  // 환불 처리 함수
+  const handleCompleteRefund = (id: string) => {
+    confirmDialog.show({
+      title: "환불 처리",
+      description: "정말로 환불 처리를 완료하시겠습니까?",
+      onConfirm: () => performCompleteRefund(id),
+    });
+  };
+
+  // 실제 새가족 신청 처리 함수
+  const performNewFamilyRequest = async (id: string, approve: boolean) => {
+    setLoading(id, "newFamily", true);
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/registration/${id}/assign-user-type`,
+        {
+          userType: approve ? "NEW_COMER" : null,
+        }
+      );
+      if (registrationsEndpoint) await mutate(registrationsEndpoint);
+      addToast({
+        title: "성공",
+        description: `새가족 신청이 성공적으로 ${
+          approve ? "승인" : "거절"
+        }되었습니다.`,
+      });
+    } catch (error) {
+      console.error("새가족 신청 처리 중 오류 발생:", error);
+      addToast({
+        title: "오류",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "새가족 신청 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(id, "newFamily", false);
+    }
+  };
+
+  // 새가족 신청 처리 함수
+  const handleNewFamilyRequest = (id: string, approve: boolean) => {
+    confirmDialog.show({
+      title: approve ? "새가족 신청 승인" : "새가족 신청 거절",
+      description: approve
+        ? "정말로 새가족 신청을 승인하시겠습니까? 새가족으로 입금 안내 문자가 전송됩니다."
+        : "정말로 새가족 신청을 거절하시겠습니까? 일반 지체로 입금 안내 문자가 전송됩니다.",
+      onConfirm: () => performNewFamilyRequest(id, approve),
+    });
+  };
+
+  // 실제 군지체 신청 처리 함수
+  const performMilitaryRequest = async (id: string, approve: boolean) => {
+    setLoading(id, "military", true);
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/registration/${id}/assign-user-type`,
+        {
+          userType: approve ? "SOLDIER" : null,
+        }
+      );
+      if (registrationsEndpoint) await mutate(registrationsEndpoint);
+      addToast({
+        title: "성공",
+        description: `군지체 신청이 성공적으로 ${
+          approve ? "승인" : "거절"
+        }되었습니다.`,
+      });
+    } catch (error) {
+      console.error("군지체 신청 처리 중 오류 발생:", error);
+      addToast({
+        title: "오류",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "군지체 신청 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(id, "military", false);
+    }
+  };
+
+  // 군지체 신청 처리 함수
+  const handleMilitaryRequest = (id: string, approve: boolean) => {
+    confirmDialog.show({
+      title: approve ? "군지체 신청 승인" : "군지체 신청 거절",
+      description: approve
+        ? "정말로 군지체 신청을 승인하시겠습니까? 군지체로 입금 안내 문자가 전송됩니다."
+        : "정말로 군지체 신청을 거절하시겠습니까? 일반 지체로 입금 안내 문자가 전송됩니다.",
+      onConfirm: () => performMilitaryRequest(id, approve),
+    });
   };
 
   const handleSendMessage = async (id: string, messageType: string) => {
@@ -260,69 +316,16 @@ export function UnivGroupStaffRetreatTable({
       console.error(`${messageType} 메시지 전송 중 오류 발생:`, error);
       addToast({
         title: "오류",
-        description: "메시지 전송 중 오류가 발생했습니다.",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "메시지 전송 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
       setLoading(id, messageType, false);
-    }
-  };
-
-  const handleNewFamilyRequest = async (id: string, approve: boolean) => {
-    setLoading(id, "newFamily", true);
-    try {
-      await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/univ-group-staff/request/new-comer`,
-        {
-          univGroupStaffRetreatId: parseInt(id),
-          isApproved: approve,
-        }
-      );
-      if (registrationsEndpoint) await mutate(registrationsEndpoint);
-      addToast({
-        title: "성공",
-        description: `새가족 신청이 성공적으로 ${
-          approve ? "승인" : "거절"
-        }되었습니다.`,
-      });
-    } catch (error) {
-      console.error("새가족 신청 처리 중 오류 발생:", error);
-      addToast({
-        title: "오류",
-        description: "새가족 신청 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(id, "newFamily", false);
-    }
-  };
-
-  const handleMilitaryRequest = async (id: string, approve: boolean) => {
-    setLoading(id, "military", true);
-    try {
-      await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/univ-group-staff/request/soldier`,
-        {
-          univGroupStaffRetreatId: parseInt(id),
-          isApproved: approve,
-        }
-      );
-      if (registrationsEndpoint) await mutate(registrationsEndpoint);
-      addToast({
-        title: "성공",
-        description: `군지체 신청이 성공적으로 ${
-          approve ? "승인" : "거절"
-        }되었습니다.`,
-      });
-    } catch (error) {
-      console.error("군지체 신청 처리 중 오류 발생:", error);
-      addToast({
-        title: "오류",
-        description: "군지체 신청 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(id, "military", false);
     }
   };
 
@@ -331,9 +334,8 @@ export function UnivGroupStaffRetreatTable({
     setLoading(currentRowId, "memo", true);
     try {
       await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/univ-group-staff/memo`,
+        `/api/v1/retreat/${retreatSlug}/registration/${currentRowId}/schedule-change-request-memo`,
         {
-          univGroupStaffRetreatId: parseInt(currentRowId),
           memo: memoText,
         }
       );
@@ -349,12 +351,30 @@ export function UnivGroupStaffRetreatTable({
       console.error("메모 저장 중 오류 발생:", error);
       addToast({
         title: "오류",
-        description: "메모 저장 중 오류가 발생했습니다.",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "메모 저장 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
       if (currentRowId) setLoading(currentRowId, "memo", false);
     }
+  };
+
+  const handleOpenMemoDialog = (id: string) => {
+    setCurrentRowId(id);
+    const currentRow = filteredData.find(row => row.id === id);
+    setMemoText(currentRow?.memo || "");
+    setMemoDialogOpen(true);
+  };
+
+  const handleCloseMemoDialog = () => {
+    setMemoDialogOpen(false);
+    setMemoText("");
+    setCurrentRowId(null);
   };
 
   const handleDownloadQR = async (id: string, name: string) => {
@@ -379,7 +399,12 @@ export function UnivGroupStaffRetreatTable({
       console.error("QR 코드 다운로드 중 오류 발생:", error);
       addToast({
         title: "오류",
-        description: "QR 코드 다운로드 중 오류가 발생했습니다.",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "QR 코드 다운로드 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -387,73 +412,10 @@ export function UnivGroupStaffRetreatTable({
     }
   };
 
-  const requestSort = (key: string) => {
-    let direction: "ascending" | "descending" = "ascending";
-    if (
-      sortConfig &&
-      sortConfig.key === key &&
-      sortConfig.direction === "ascending"
-    ) {
-      direction = "descending";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const getSortIndicator = (columnKey: string) => {
-    if (!sortConfig || sortConfig.key !== columnKey) {
-      return <ArrowUpDown className="h-3 w-3 opacity-30" />;
-    }
-    return sortConfig.direction === "ascending" ? "🔼" : "🔽";
-  };
-
-  const handleOpenMemoDialog = (id: string) => {
-    setCurrentRowId(id);
-    const currentRow = filteredData.find(row => row.id === id);
-    setMemoText(currentRow?.memo || "");
-    setMemoDialogOpen(true);
-  };
-
-  const handleCloseMemoDialog = () => {
-    setMemoDialogOpen(false);
-    setMemoText("");
-    setCurrentRowId(null);
-  };
-
   const getActionButtons = (row: any) => {
     switch (row.status) {
       case UserRetreatRegistrationPaymentStatus.PENDING:
-        return (
-          <div className="flex flex-col gap-1">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleConfirmPayment(row.id)}
-              disabled={isLoading(row.id, "confirm")}
-              className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
-            >
-              {isLoading(row.id, "confirm") ? (
-                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              )}
-              <span>입금 확인</span>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleSendMessage(row.id, "payment_request")}
-              disabled={isLoading(row.id, "payment_request")}
-              className="flex items-center gap-1.5"
-            >
-              {isLoading(row.id, "payment_request") ? (
-                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Send className="h-3.5 w-3.5" />
-              )}
-              <span>입금 요청</span>
-            </Button>
-          </div>
-        );
+        return null;
       case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
         return (
           <Button
@@ -585,11 +547,9 @@ export function UnivGroupStaffRetreatTable({
     <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b px-4 py-3">
         <div>
-          <CardTitle className="text-lg">
-            스태프 신청 현황 및 입금 조회
-          </CardTitle>
+          <CardTitle className="text-lg">부서 현황 및 입금 조회</CardTitle>
           <CardDescription className="text-sm">
-            전체 스태프 신청자 목록
+            부서 신청자 목록
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
@@ -626,76 +586,36 @@ export function UnivGroupStaffRetreatTable({
             ref={tableContainerRef}
           >
             <div className="overflow-x-auto">
-              <div className="max-h-[calc(100vh-420px)] overflow-y-auto">
+              <div className="max-h-[80vh] overflow-y-auto">
                 <Table className="min-w-full whitespace-nowrap relative text-sm">
                   <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
                     <TableRow>
-                      <TableHead
-                        className="sticky left-0 bg-gray-100 z-20 px-3 py-2.5"
-                        rowSpan={2}
-                      >
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>부서</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("department")}
-                          >
-                            {getSortIndicator("department")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>성별</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("gender")}
-                          >
-                            {getSortIndicator("gender")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>학년</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("grade")}
-                          >
-                            {getSortIndicator("grade")}
-                          </Button>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead
+                        className="sticky left-0 bg-gray-100 z-20 px-3 py-2.5"
+                        rowSpan={2}
+                      >
                         <div className="flex items-center space-x-1 justify-center">
                           <span>이름</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("name")}
-                          >
-                            {getSortIndicator("name")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>전화번호</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("phone")}
-                          >
-                            {getSortIndicator("phone")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead
@@ -707,57 +627,21 @@ export function UnivGroupStaffRetreatTable({
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>타입</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("type")}
-                          >
-                            {getSortIndicator("type")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>금액</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("amount")}
-                          >
-                            {getSortIndicator("amount")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>신청시각</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("createdAt")}
-                          >
-                            {getSortIndicator("createdAt")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>입금 현황</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("status")}
-                          >
-                            {getSortIndicator("status")}
-                          </Button>
-                          {/* <FilterDropdown
-                            column="status"
-                            options={statusOptions}
-                          /> */}
                         </div>
                       </TableHead>
                       <TableHead
@@ -769,71 +653,26 @@ export function UnivGroupStaffRetreatTable({
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>처리자명</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("confirmedBy")}
-                          >
-                            {getSortIndicator("confirmedBy")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>처리시각</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("paymentConfirmedAt")}
-                          >
-                            {getSortIndicator("paymentConfirmedAt")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>GBS</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("gbs")}
-                          >
-                            {getSortIndicator("gbs")}
-                          </Button>
-                          {/* <FilterDropdown column="gbs" options={gbsOptions} /> */}
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>숙소</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("accommodation")}
-                          >
-                            {getSortIndicator("accommodation")}
-                          </Button>
-                          {/* <FilterDropdown
-                            column="accommodation"
-                            options={accommodationOptions}
-                          /> */}
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>메모</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("memo")}
-                          >
-                            {getSortIndicator("memo")}
-                          </Button>
+                          <span>일정 변동 요청 메모</span>
                         </div>
                       </TableHead>
                       <TableHead
@@ -845,27 +684,11 @@ export function UnivGroupStaffRetreatTable({
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>메모 처리자</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("memoBy")}
-                          >
-                            {getSortIndicator("memoBy")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>메모 처리시각</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 p-0"
-                            onClick={() => requestSort("memoAt")}
-                          >
-                            {getSortIndicator("memoAt")}
-                          </Button>
                         </div>
                       </TableHead>
                       <TableHead
@@ -885,14 +708,6 @@ export function UnivGroupStaffRetreatTable({
                             <span className="text-xs whitespace-normal">
                               {scheduleCol.label}
                             </span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 p-0 ml-0.5"
-                              onClick={() => requestSort(scheduleCol.key)}
-                            >
-                              {getSortIndicator(scheduleCol.key)}
-                            </Button>
                           </div>
                         </TableHead>
                       ))}
@@ -916,7 +731,7 @@ export function UnivGroupStaffRetreatTable({
                         key={row.id}
                         className="group hover:bg-gray-50 transition-colors duration-150"
                       >
-                        <TableCell className="sticky left-0 z-10 font-medium bg-white group-hover:bg-gray-50 text-center px-3 py-2.5">
+                        <TableCell className="text-center px-3 py-2.5">
                           {row.department}
                         </TableCell>
                         <TableCell className="text-center px-3 py-2.5">
@@ -925,7 +740,7 @@ export function UnivGroupStaffRetreatTable({
                         <TableCell className="text-center px-3 py-2.5">
                           {row.grade}
                         </TableCell>
-                        <TableCell className="font-medium text-center px-3 py-2.5">
+                        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5">
                           {row.name}
                         </TableCell>
                         <TableCell className="font-medium text-center px-3 py-2.5">
@@ -973,22 +788,23 @@ export function UnivGroupStaffRetreatTable({
                           {row.accommodation || "-"}
                         </TableCell>
                         <TableCell
-                          className="text-center max-w-[150px] truncate px-3 py-2.5"
+                          className="text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
                           title={row.memo}
                         >
                           {row.memo || "-"}
                         </TableCell>
                         <TableCell className="text-center px-3 py-2.5">
-                          {row.status ===
-                            UserRetreatRegistrationPaymentStatus.PAID ||
-                          row.memo ? (
+                          {row.memo ? (
+                            <span className="text-gray-600 text-sm">-</span>
+                          ) : row.status ===
+                            UserRetreatRegistrationPaymentStatus.PAID ? (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleOpenMemoDialog(row.id)}
                               className="flex items-center gap-1.5 text-xs h-7"
                             >
-                              <span>{row.memo ? "수정" : "작성"}</span>
+                              <span>작성</span>
                             </Button>
                           ) : (
                             <span className="text-gray-400 text-sm">-</span>
@@ -1029,7 +845,7 @@ export function UnivGroupStaffRetreatTable({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl transform transition-all duration-300 ease-out scale-100">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">메모 작성/수정</h3>
+              <h3 className="text-lg font-semibold">메모 작성</h3>
               <Button
                 variant="ghost"
                 size="icon"
@@ -1041,7 +857,7 @@ export function UnivGroupStaffRetreatTable({
             </div>
             <textarea
               className="w-full border rounded-md p-2 min-h-[120px] focus:ring-2 focus:ring-primary focus:border-primary"
-              placeholder="메모를 입력하세요..."
+              placeholder="메모를 입력하세요... ex) 전참 → 금숙 ~ 토점"
               value={memoText}
               onChange={e => setMemoText(e.target.value)}
             />
