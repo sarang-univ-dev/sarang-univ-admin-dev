@@ -1,8 +1,9 @@
 import useSWR from "swr";
 import { webAxios } from "@/lib/api/axios";
-import { Gender } from "@/types";
-import { UserRetreatRegistrationType } from "@/types";
-import { UserRetreatRegistrationPaymentStatus } from "@/types";
+import {
+  UserRetreatRegistrationType,
+  UserRetreatRegistrationPaymentStatus,
+} from "@/types";
 
 export interface IUserScheduleChangeRetreat {
   userType: UserRetreatRegistrationType | null;
@@ -23,7 +24,6 @@ export interface IUserScheduleChangeRetreat {
 
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
-  // API 응답 구조 변경 반영
   return response.data.scheduleChangeRequests;
 };
 
@@ -34,4 +34,3 @@ export function useUserScheduleChangeRetreat(retreatSlug?: string) {
 
   return useSWR<IUserScheduleChangeRetreat[], Error>(endpoint, fetcher);
 }
-

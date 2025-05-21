@@ -36,7 +36,6 @@ import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { generateScheduleColumns } from "../utils/retreat-utils";
 import {
   TRetreatRegistrationSchedule,
-  TRetreatPaymentSchedule,
   UserRetreatRegistrationPaymentStatus,
 } from "@/types";
 import { formatDate, formatSimpleDate } from "@/utils/formatDate";
@@ -45,9 +44,6 @@ import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import { mutate } from "swr";
 import { calculateRegistrationPrice } from "@/utils/calculateRegistrationPrice";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import useSWR from "swr";
-import { AxiosError } from "axios";
 
 // 이벤트 타입을 한글로 매핑
 const EVENT_TYPE_MAP: Record<string, string> = {
@@ -94,10 +90,9 @@ export function RetreatScheduleChangeRequestTable({
   registrations: IUserScheduleChangeRetreat[];
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
-  payments: TRetreatPaymentSchedule[];
+  payments?: any[];
 }) {
   const addToast = useToastStore(state => state.add);
-  const confirmDialog = useConfirmDialogStore();
   const [data, setData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -110,7 +105,6 @@ export function RetreatScheduleChangeRequestTable({
   const [selectedSchedules, setSelectedSchedules] = useState<number[]>([]);
   const [calculatedPrice, setCalculatedPrice] = useState<number>(0);
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const [retreatInfo, setRetreatInfo] = useState<any>(null);
 
   const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/schedule-change-request`;
 
@@ -127,12 +121,7 @@ export function RetreatScheduleChangeRequestTable({
         console.error("데이터 변환 중 오류 발생:", error);
         addToast({
           title: "오류",
-          description:
-            error instanceof AxiosError
-              ? error.response?.data?.message || error.message
-              : error instanceof Error
-              ? error.message
-              : "데이터를 불러오는 중 오류가 발생했습니다.",
+          description: "데이터를 불러오는 중 오류가 발생했습니다.",
           variant: "destructive",
         });
       }
@@ -172,40 +161,27 @@ export function RetreatScheduleChangeRequestTable({
     return !!loadingStates[`${id}_${action}`];
   };
 
-  // TODO: 일정 변동 시 변동 금액 계산하는 로직 필요
   // 현재 날짜에 유효한 payment를 찾는 함수
   const findCurrentPayment = () => {
-    const currentDate = new Date();
-    if (payments.length === 0) {
-      return null;
-    }
+    if (!payments || payments.length === 0) return null;
 
-    // 현재 유효한 payment 찾기
+    const currentDate = new Date();
     const validPayment = payments.find(
-      (payment: TRetreatPaymentSchedule) =>
+      payment =>
         new Date(payment.startAt) <= currentDate &&
         new Date(payment.endAt) >= currentDate
     );
 
     if (validPayment) {
       return validPayment;
+    } else {
+      // 유효한 payment가 없으면 가장 최신의 payment를 반환
+      return payments.reduce((latest, current) => {
+        return new Date(current.endAt) > new Date(latest.endAt)
+          ? current
+          : latest;
+      });
     }
-
-    // 유효한 payment가 없는 경우
-    // 현재 이후 가장 이른 payment 찾기
-    return payments.reduce(
-      (earliest: TRetreatPaymentSchedule, current: TRetreatPaymentSchedule) => {
-        const currentEndDate = new Date(current.endAt);
-        const earliestEndDate = new Date(earliest.endAt);
-
-        // 현재 날짜 이후의 payment만 고려
-        if (currentEndDate < currentDate) return earliest;
-        if (earliestEndDate < currentDate) return current;
-
-        // 둘 다 현재 이후라면 더 이른 날짜의 payment 반환
-        return currentEndDate < earliestEndDate ? current : earliest;
-      }
-    );
   };
 
   // 표시 목적으로 일정에서 고유한 날짜 추출
@@ -223,18 +199,14 @@ export function RetreatScheduleChangeRequestTable({
 
   // 새로운 일정 선택 처리 함수
   const handleScheduleChange = (id: number) => {
-    console.log("체크박스 변경:", id);
     const newSelectedSchedules = selectedSchedules.includes(id)
       ? selectedSchedules.filter(scheduleId => scheduleId !== id)
       : [...selectedSchedules, id];
 
-    console.log("새로운 선택 일정:", newSelectedSchedules);
-
     setSelectedSchedules(newSelectedSchedules);
 
-    // 체크박스 변경 즉시 가격 계산
+    // 체크박스 변경 시 가격 바로 계산
     if (selectedRow && payments.length > 0) {
-      console.log("가격 계산 호출");
       calculateNewPrice(newSelectedSchedules);
     }
   };
@@ -243,25 +215,15 @@ export function RetreatScheduleChangeRequestTable({
   const calculateNewPrice = (newSelectedSchedules: number[]) => {
     try {
       const currentPayment = findCurrentPayment();
-      if (!currentPayment) {
-        return;
-      }
-
-      // 사용할 스케줄 데이터 결정
-      const schedulesToUse =
-        retreatInfo && retreatInfo.schedule ? retreatInfo.schedule : schedules;
-
-      console.log("사용할 스케줄 데이터:", schedulesToUse);
+      if (!currentPayment) return;
 
       const calculatedNewPrice = calculateRegistrationPrice(
         selectedRow.type,
-        schedulesToUse,
+        schedules,
         [currentPayment],
         newSelectedSchedules,
         parseInt(selectedRow.grade)
       );
-
-      console.log("계산된 가격:", calculatedNewPrice);
 
       // 새로운 가격은 max(이전 가격, 변경된 일정으로 계산된 가격)
       const calculatedMaxPrice = Math.max(
@@ -269,51 +231,24 @@ export function RetreatScheduleChangeRequestTable({
         calculatedNewPrice
       );
 
-      console.log("최종 가격:", calculatedMaxPrice);
       setCalculatedPrice(calculatedMaxPrice);
     } catch (error) {
       console.error("가격 계산 중 오류 발생:", error);
     }
   };
 
-  // 처음 모달이 열릴 때 선택된 일정에 대해 금액 계산하도록 수정
+  // 기존 useEffect 제거 또는 대체
   useEffect(() => {
-    if (selectedRow && selectedSchedules.length > 0 && payments.length > 0) {
-      console.log(
-        "useEffect에서 가격 계산 트리거:",
-        selectedRow.id,
-        selectedSchedules
-      );
+    if (selectedRow && selectedSchedules.length > 0) {
       calculateNewPrice(selectedSchedules);
     }
-  }, [selectedRow, selectedSchedules, payments]);
+  }, [selectedRow]);
 
   const handleProcessSchedule = (row: any) => {
-    console.log("모달 열기:", row);
     setSelectedRow(row);
     setMemoText(row.memo || "");
     setSelectedSchedules(row.scheduleIds || []);
     setIsModalOpen(true);
-
-    // 모달 열릴 때 바로 가격 계산
-    if (row.scheduleIds && row.scheduleIds.length > 0) {
-      console.log("모달 열기 시 가격 계산:", row.scheduleIds);
-      // 리트릿 정보가 로드되었는지 확인
-      if (retreatInfo) {
-        calculateNewPrice(row.scheduleIds);
-      } else {
-        console.log(
-          "리트릿 정보가 아직 로드되지 않았습니다. 가격 계산을 지연합니다."
-        );
-        // 필요한 정보가 없으면 토스트 메시지 표시
-        addToast({
-          title: "정보 로드 중",
-          description:
-            "리트릿 정보를 로드 중입니다. 잠시 후 다시 시도해주세요.",
-          variant: "default",
-        });
-      }
-    }
   };
 
   const handleCloseModal = () => {
@@ -327,50 +262,41 @@ export function RetreatScheduleChangeRequestTable({
   const handleConfirmScheduleChange = async () => {
     if (!selectedRow) return;
 
-    confirmDialog.show({
-      title: "일정 변동 처리 완료",
-      description: "해당 일정 변동 요청을 처리하시겠습니까?",
-      onConfirm: async () => {
-        setLoading(selectedRow.id, "confirm", true);
-        try {
-          // 일정 변경 요청 처리 API 호출
-          await webAxios.post(
-            `/api/v1/retreat/${retreatSlug}/account/schedule-history`,
-            {
-              userRetreatRegistrationId: selectedRow.id,
-              afterScheduleIds: selectedSchedules,
-            }
-          );
-
-          // 데이터 갱신
-          await mutate(registrationsEndpoint);
-
-          addToast({
-            title: "성공",
-            description: "일정 변경 요청이 처리되었습니다.",
-            variant: "success",
-          });
-
-          handleCloseModal();
-        } catch (error) {
-          console.error("일정 변경 요청 처리 중 오류 발생:", error);
-          addToast({
-            title: "오류",
-            description:
-              error instanceof AxiosError
-                ? error.response?.data?.message || error.message
-                : error instanceof Error
-                ? error.message
-                : "일정 변경 요청 처리 중 오류가 발생했습니다.",
-            variant: "destructive",
-          });
-        } finally {
-          if (selectedRow) {
-            setLoading(selectedRow.id, "confirm", false);
-          }
+    setLoading(selectedRow.id, "confirm", true);
+    try {
+      // 일정 변경 요청 처리 API 호출
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/account/schedule-change-request/${selectedRow.memoId}/resolve`,
+        {
+          memo: memoText,
+          scheduleIds: selectedSchedules,
+          price: calculatedPrice,
+          afterScheduleIds: selectedSchedules,
         }
-      },
-    });
+      );
+
+      // 데이터 갱신
+      await mutate(registrationsEndpoint);
+
+      addToast({
+        title: "성공",
+        description: "일정 변경 요청이 처리되었습니다.",
+        variant: "default",
+      });
+
+      handleCloseModal();
+    } catch (error) {
+      console.error("일정 변경 요청 처리 중 오류 발생:", error);
+      addToast({
+        title: "오류",
+        description: "일정 변경 요청 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      if (selectedRow) {
+        setLoading(selectedRow.id, "confirm", false);
+      }
+    }
   };
 
   const handleResolveScheduleChange = async (row: any) => {
@@ -413,12 +339,7 @@ export function RetreatScheduleChangeRequestTable({
       console.error("일정 변경 요청 처리 완료 중 오류 발생:", error);
       addToast({
         title: "오류",
-        description:
-          error instanceof AxiosError
-            ? error.response?.data?.message || error.message
-            : error instanceof Error
-            ? error.message
-            : "일정 변경 요청 처리 완료 중 오류가 발생했습니다.",
+        description: "일정 변경 요청 처리 완료 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -612,7 +533,7 @@ export function RetreatScheduleChangeRequestTable({
                             {formatDate(row.paymentConfirmedAt)}
                           </TableCell>
                           <TableCell
-                            className="group-hover:bg-gray-50 text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
+                            className="group-hover:bg-gray-50 text-center min-w-[150px] max-w-[200px] truncate"
                             title={row.memo}
                           >
                             {row.memo || "-"}
@@ -698,12 +619,6 @@ export function RetreatScheduleChangeRequestTable({
                 </div>
               </div>
               <div className="mt-4">
-                <h4 className="font-medium mb-2">메모</h4>
-                <p className="text-sm text-gray-500">
-                  {memoText || "메모 없음"}
-                </p>
-              </div>
-              <div className="mt-4">
                 <h4 className="font-medium mb-2">일정 변경</h4>
                 <div className="overflow-x-auto">
                   <Table>
@@ -786,6 +701,12 @@ export function RetreatScheduleChangeRequestTable({
               <div className="mt-2 flex justify-between">
                 <p className="font-medium">변경 후 금액:</p>
                 <p>{calculatedPrice.toLocaleString()}원</p>
+              </div>
+              <div className="mt-4">
+                <h4 className="font-medium mb-2">메모</h4>
+                <p className="text-sm text-gray-500">
+                  {memoText || "메모 없음"}
+                </p>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">

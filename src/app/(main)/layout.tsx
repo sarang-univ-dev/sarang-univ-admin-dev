@@ -27,16 +27,16 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={inter.className}>
-        <RootLayoutProvider>
-          <Header />
-          <div className="flex min-h-screen relative">
-            <Sidebar />
-            <main className="flex-1 overflow-x-hidden">{children}</main>
-          </div>
-          <Footer />
-          <Toast />
-          <ConfirmModal />
-        </RootLayoutProvider>
+        {/* <RootLayoutProvider> */}
+        <Header />
+        <div className="flex min-h-screen relative">
+          <Sidebar />
+          <main className="flex-1 overflow-x-hidden">{children}</main>
+        </div>
+        <Footer />
+        <Toast />
+        <ConfirmModal />
+        {/* </RootLayoutProvider> */}
       </body>
     </html>
   );

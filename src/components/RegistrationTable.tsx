@@ -37,6 +37,8 @@ import { formatDate } from "@/utils/formatDate";
 import useSWR, { mutate } from "swr";
 import { useToastStore } from "@/store/toast-store";
 import { webAxios } from "@/lib/api/axios";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { AxiosError } from "axios";
 
 export function RegistrationTable({
   registrations = [],
@@ -54,6 +56,7 @@ export function RegistrationTable({
     {}
   );
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const confirmDialog = useConfirmDialogStore();
 
   // API 엔드포인트
   const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/user-retreat-registration`;
@@ -93,7 +96,7 @@ export function RegistrationTable({
   };
 
   // 액션 처리 함수들
-  const handleConfirmPayment = async (id: string) => {
+  const performConfirmPayment = async (id: string) => {
     setLoading(id, "confirm", true);
     try {
       // 실제 API 호출
@@ -119,12 +122,27 @@ export function RegistrationTable({
       // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
-        description: "입금 확인 처리 중 오류가 발생했습니다.",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "입금 확인 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
       setLoading(id, "confirm", false);
     }
+  };
+
+  // 입금 확인 처리 함수
+  const handleConfirmPayment = (id: string) => {
+    confirmDialog.show({
+      title: "입금 확인",
+      description:
+        "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
+      onConfirm: () => performConfirmPayment(id),
+    });
   };
 
   const handleCompleteRefund = async (id: string) => {
@@ -153,7 +171,12 @@ export function RegistrationTable({
       // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
-        description: "환불 처리 중 오류가 발생했습니다.",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "환불 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -161,7 +184,7 @@ export function RegistrationTable({
     }
   };
 
-  const handleSendMessage = async (id: string, messageType: string) => {
+  const performSendMessage = async (id: string, messageType: string) => {
     setLoading(id, messageType, true);
     try {
       // 입금 요청 메시지 전송 API 호출
@@ -186,11 +209,28 @@ export function RegistrationTable({
       // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
-        description: "메시지 전송 중 오류가 발생했습니다.",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "메시지 전송 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
       setLoading(id, messageType, false);
+    }
+  };
+
+  // 입금 요청 처리 함수
+  const handleSendMessage = (id: string, messageType: string) => {
+    if (messageType === "payment_request") {
+      confirmDialog.show({
+        title: "입금 요청",
+        description:
+          "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",
+        onConfirm: () => performSendMessage(id, messageType),
+      });
     }
   };
 
@@ -290,151 +330,159 @@ export function RegistrationTable({
           <SearchBar onSearch={handleSearchResults} data={data} />
 
           <div
-            className="rounded-md border h-[calc(100vh-300px)]"
+            className="rounded-md border flex flex-col h-[80vh]"
             ref={tableContainerRef}
           >
-            <div className="overflow-y-auto overflow-x-auto h-full">
-              <Table className="w-full whitespace-nowrap relative">
-                <TableHeader className="bg-gray-50 sticky top-0 z-10">
-                  <TableRow>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>부서</span>
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>성별</span>
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>학년</span>
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>이름</span>
-                    </TableHead>
-                    <TableHead
-                      colSpan={scheduleColumns.length}
-                      className="whitespace-nowrap"
-                    >
-                      <div className="text-center">수양회 신청 일정</div>
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>타입</span>
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>금액</span>
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>신청 시각</span>
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>입금 현황</span>
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      액션
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>처리자명</span>
-                    </TableHead>
-                    <TableHead
-                      rowSpan={2}
-                      className="text-center whitespace-nowrap"
-                    >
-                      <span>처리 시각</span>
-                    </TableHead>
-                  </TableRow>
-                  <TableRow>
-                    {scheduleColumns.map(scheduleCol => (
+            <div className="overflow-y-auto flex-grow">
+              <div className="overflow-x-auto">
+                <Table className="w-full whitespace-nowrap relative">
+                  <TableHeader className="bg-gray-50 sticky top-0 z-10">
+                    <TableRow>
                       <TableHead
-                        key={scheduleCol.key}
-                        className="p-2 text-center whitespace-nowrap"
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
                       >
-                        <span className="text-xs">{scheduleCol.label}</span>
+                        <span>부서</span>
                       </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredData.map(row => (
-                    <TableRow key={row.id} className="group">
-                      <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        {row.department}
-                      </TableCell>
-                      <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        <GenderBadge gender={row.gender} />
-                      </TableCell>
-                      <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        {row.grade}
-                      </TableCell>
-                      <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        {row.name}
-                      </TableCell>
-                      {scheduleColumns.map(col => (
-                        <TableCell
-                          key={`${row.id}-${col.key}`}
-                          className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
-                        >
-                          <Checkbox
-                            checked={row.schedule[col.key]}
-                            disabled
-                            className={
-                              row.schedule[col.key] ? col.bgColorClass : ""
-                            }
-                          />
-                        </TableCell>
-                      ))}
-                      <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        <TypeBadge type={row.type} />
-                      </TableCell>
-                      <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        {row.amount.toLocaleString()}원
-                      </TableCell>
-                      <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        {row.createdAt ? formatDate(row.createdAt) : "-"}
-                      </TableCell>
-                      <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        <StatusBadge status={row.status} />
-                      </TableCell>
-                      <TableCell className="min-w-[180px] group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        {getActionButtons(row)}
-                      </TableCell>
-                      <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        {row.confirmedBy || "-"}
-                      </TableCell>
-                      <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                        {formatDate(row.paymentConfirmedAt)}
-                      </TableCell>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>성별</span>
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>학년</span>
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="sticky left-0 bg-gray-50 z-20 text-center whitespace-nowrap px-3 py-2.5"
+                      >
+                        <span>이름</span>
+                      </TableHead>
+                      <TableHead
+                        colSpan={scheduleColumns.length}
+                        className="whitespace-nowrap"
+                      >
+                        <div className="text-center">수양회 신청 일정</div>
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>타입</span>
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>금액</span>
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>신청 시각</span>
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>입금 현황</span>
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        액션
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>처리자명</span>
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>처리 시각</span>
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                    <TableRow>
+                      {scheduleColumns.map(scheduleCol => (
+                        <TableHead
+                          key={scheduleCol.key}
+                          className="p-2 text-center whitespace-nowrap"
+                        >
+                          <span className="text-xs">{scheduleCol.label}</span>
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredData.map(row => (
+                      <TableRow
+                        key={row.id}
+                        className="group transition-colors duration-150 hover:bg-gray-50"
+                      >
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.department}
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          <GenderBadge gender={row.gender} />
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.grade}
+                        </TableCell>
+                        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center whitespace-nowrap px-3 py-2.5">
+                          {row.name}
+                        </TableCell>
+                        {scheduleColumns.map(col => (
+                          <TableCell
+                            key={`${row.id}-${col.key}`}
+                            className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
+                          >
+                            <Checkbox
+                              checked={row.schedule[col.key]}
+                              disabled
+                              className={
+                                row.schedule[col.key] ? col.bgColorClass : ""
+                              }
+                            />
+                          </TableCell>
+                        ))}
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          <TypeBadge type={row.type} />
+                        </TableCell>
+                        <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.amount.toLocaleString()}원
+                        </TableCell>
+                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.createdAt ? formatDate(row.createdAt) : "-"}
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          <StatusBadge status={row.status} />
+                        </TableCell>
+                        <TableCell className="min-w-[180px] group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {getActionButtons(row)}
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.confirmedBy || "-"}
+                        </TableCell>
+                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {formatDate(row.paymentConfirmedAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+            <div className="overflow-x-auto border-t sticky bottom-0 bg-white">
+              <div className="w-full" style={{ height: "8px" }}></div>
             </div>
           </div>
         </div>

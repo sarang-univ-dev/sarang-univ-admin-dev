@@ -6,13 +6,19 @@ import { RetreatScheduleChangeRequestTable } from "@/components/RetreatScheduleC
 import { PaymentSummary } from "@/components/PaymentSummary";
 import { AccountStatus } from "@/components/account-status";
 import { useParams } from "next/navigation";
-import { TRetreatRegistrationSchedule, TRetreatUnivGroup } from "@/types";
+import {
+  TRetreatRegistrationSchedule,
+  TRetreatUnivGroup,
+  TRetreatPaymentSchedule
+} from "@/types";
 import { webAxios } from "@/lib/api/axios";
 
 export default function ScheduleChangeRequestPage() {
   const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(
     []
   );
+
+  const [payments, setPayments] = useState<TRetreatPaymentSchedule[]>([]);
 
   const [retreatUnivGroup, setRetreatUnivGroup] = useState<TRetreatUnivGroup[]>(
     []
@@ -59,6 +65,8 @@ export default function ScheduleChangeRequestPage() {
       <RetreatScheduleChangeRequestTable
         registrations={data || []}
         schedules={schedules}
+        retreatSlug={retreatSlug}
+        payments={payments}
       />
     </div>
   );
