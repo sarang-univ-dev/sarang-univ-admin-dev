@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={inter.className}>
-        {/* <RootLayoutProvider> */}
+        <RootLayoutProvider>
         <Header />
         <div className="flex min-h-screen relative">
           <Sidebar />
@@ -36,7 +36,7 @@ export default function RootLayout({
         <Footer />
         <Toast />
         <ConfirmModal />
-        {/* </RootLayoutProvider> */}
+        </RootLayoutProvider>
       </body>
     </html>
   );
