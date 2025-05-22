@@ -2,9 +2,10 @@
 
 import { usePathname, useRouter } from "next/navigation";
 
-// import LoadingComponent from "@/components/common/LoadingComponent";
+import LoadingIndicator from "@/components/common/LoadingIndicator";
 import { SWRConfig } from "swr";
 import { useEffect } from "react";
+import useUser from "@/lib/hooks/swr/useUser";
 
 // /, /login, /login/redirect, /register, /books, /book/[id] 페이지에 관한 WHITE LIST
 const WHITELIST_REGEXP = new RegExp(
@@ -16,27 +17,27 @@ interface AuthWrapperProps {
 }
 
 const AuthWrapper = ({ children }: AuthWrapperProps) => {
-  // const { user, isLoading } = useUser();
-  // const router = useRouter();
-  // const pathname = usePathname();
-  // useEffect(() => {
-  //   if (isLoading) return;
-  //   if (WHITELIST_REGEXP.test(pathname)) return;
+  const { user, isLoading } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
+  useEffect(() => {
+    if (isLoading) return;
+    if (WHITELIST_REGEXP.test(pathname)) return;
 
-  //   if (!user) {
-  //     router.replace(`/login?redirect=${pathname}`);
-  //     return;
-  //   }
+    if (!user) {
+      router.replace(`/login?redirect=${pathname}`);
+      return;
+    }
 
-  //   // // only allow dev site access for team members
-  //   // if (config.ENV !== "production" && !user.isAdmin) {
-  //   //   router.replace(`/`);
-  //   //   return;
-  //   // }
-  // }, [isLoading, router, user, pathname]);
+    // // only allow dev site access for team members
+    // if (config.ENV !== "production" && !user.isAdmin) {
+    //   router.replace(`/`);
+    //   return;
+    // }
+  }, [isLoading, router, user, pathname]);
 
-  // // Show loading screen during initial auth check
-  // if (!user && !WHITELIST_REGEXP.test(pathname)) return <LoadingComponent />;
+  // Show loading screen during initial auth check
+  if (!user && !WHITELIST_REGEXP.test(pathname)) return <LoadingIndicator />;
   return <>{children}</>;
 };
 
