@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUnivGroupStaffRetreat } from "@/hooks/use-univ-group-staff-retreat";
-import { RegistrationTable } from "@/components/RegistrationTable";
+import { RegistrationTable } from "@/components/registration-table";
 import { PaymentSummary } from "@/components/PaymentSummary";
 import { AccountStatus } from "@/components/account-status";
 import { useParams } from "next/navigation";

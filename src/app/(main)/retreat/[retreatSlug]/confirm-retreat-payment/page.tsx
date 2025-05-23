@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
-import { RegistrationTable } from "@/components/RegistrationTable";
+import { RegistrationTable } from "@/components/registration-table";
 import { PaymentSummary } from "@/components/PaymentSummary";
 import { AccountStatus } from "@/components/account-status";
 import { useParams } from "next/navigation";
@@ -56,9 +56,7 @@ export default function ConfirmPaymentPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">입금 조회</h1>
 
-      <PaymentSummary
-        registrations={data || []}
-      />
+      <PaymentSummary registrations={data || []} />
 
       <RegistrationTable
         registrations={data || []}
@@ -66,9 +64,7 @@ export default function ConfirmPaymentPage() {
         retreatSlug={retreatSlug}
       />
 
-      <AccountStatus
-        registrations={data || []}
-      />
+      <AccountStatus registrations={data || []} />
     </div>
   );
 }
