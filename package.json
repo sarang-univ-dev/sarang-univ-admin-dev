@@ -2,6 +2,7 @@
   "name": "sarang-univ-admin",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "sudo node server.js",
     "build": "npm run check:case && NEXT_PUBLIC_SARANG_ENV=production next build",
