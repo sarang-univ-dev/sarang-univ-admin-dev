@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { useGoogleLogin } from "@/lib/hooks/useGoogleLogin";
 import IconGoogleLogo from "@/components/icons/IconGoogleLogo";
 
@@ -18,7 +17,7 @@ export default function LoginPage() {
             <div className="absolute inset-0 bg-[url('/abstract-geometric-flow.png')] opacity-10 bg-cover bg-center"></div>
             <div className="relative z-10 text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm">
-                <Image
+                <img
                   src="/sarangchurch_logo2.png"
                   alt="사랑의교회 로고"
                   width={40}
