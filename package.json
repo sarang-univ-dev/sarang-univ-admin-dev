@@ -4,11 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "sudo node server.js",
-    "build": "NEXT_PUBLIC_SARANG_ENV=production next build",
+    "build": "npm run check:case && NEXT_PUBLIC_SARANG_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
-    "check:case": "node scripts/check-case-sensitivity.js",
-    "prebuild": "npm run check:case"
+    "check:case": "node scripts/check-case-sensitivity.js"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",
