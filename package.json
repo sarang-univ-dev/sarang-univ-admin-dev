@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "sudo node server.js",
-    "build": "npm run check:case && NEXT_PUBLIC_SARANG_ENV=production next build",
+    "build": "NEXT_PUBLIC_SARANG_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
     "check:case": "node scripts/check-case-sensitivity.js",

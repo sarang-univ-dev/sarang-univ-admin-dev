@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
 /**
  * 대소문자 일치성을 검증하는 스크립트
