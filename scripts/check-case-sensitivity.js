@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 /**
  * 대소문자 일치성을 검증하는 스크립트
@@ -8,6 +9,8 @@ import path from "path";
  * Node.js 내장 모듈만 사용하여 외부 의존성 제거
  */
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const srcDir = path.join(__dirname, "../src");
 const errors = [];
 
