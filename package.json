@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "sudo node server.js",
-    "build": "NEXT_PUBLIC_SARANG_ENV=production next build",
+    "build": "npm run check:case && NEXT_PUBLIC_SARANG_ENV=production next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:case": "node scripts/check-case-sensitivity.js",
+    "prebuild": "npm run check:case"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",
@@ -84,8 +86,9 @@
     "eslint-plugin-prettier": "^5.2.5",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.2.0",
-    "typescript": "5.8.2",
+    "glob": "^11.0.2",
     "prettier-plugin-tailwindcss": "^0.6.11",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "typescript": "5.8.2"
   }
 }
