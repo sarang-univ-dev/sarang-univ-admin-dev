@@ -17,14 +17,13 @@ export interface IUserScheduleChangeHistory {
   afterPrice: number;
   createdUserName: string;
   createdAt: string;
-  resolvedUserName?: string | null;
-  resolvedAt?: string | null;
+  resolvedUserName: string | null;
+  resolvedAt: string | null;
 }
 
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
-  // API 응답 구조 변경 반영
-  return response.data.userRetreatRegistrations;
+  return response.data.scheduleChangeHistories;
 };
 
 export function useUserScheduleChangeHistory(retreatSlug?: string) {
