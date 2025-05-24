@@ -13,16 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
-  Download,
   Search,
-  X,
-  PenLine,
-  Loader2,
-  Sunrise,
-  Sun,
-  Sunset,
-  Bed,
-  Check,
 } from "lucide-react";
 import {
   Card,
@@ -32,107 +23,148 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
+import { GenderBadge } from "@/components/Badge";
 import { generateScheduleColumns } from "../utils/retreat-utils";
 import {
   TRetreatRegistrationSchedule,
-  UserRetreatRegistrationPaymentStatus,
 } from "@/types";
-import { formatDate, formatSimpleDate } from "@/utils/formatDate";
-import { IUserScheduleChangeRetreat } from "@/hooks/user-schedule-change-retreat-request";
-import { webAxios } from "@/lib/api/axios";
+import { formatDate } from "@/utils/formatDate";
 import { useToastStore } from "@/store/toast-store";
-import { mutate } from "swr";
-import { calculateRegistrationPrice } from "@/utils/calculateRegistrationPrice";
+import { AxiosError } from "axios";
+import { IUserScheduleChangeHistory } from "@/hooks/user-schedule-change-retreat-history";
 
-// 이벤트 타입을 한글로 매핑
-const EVENT_TYPE_MAP: Record<string, string> = {
-  BREAKFAST: "아침",
-  LUNCH: "점심",
-  DINNER: "저녁",
-  SLEEP: "숙박",
-};
-
-const transformScheduleChangeRequestForTable = (
-  requests: IUserScheduleChangeRetreat[],
+const transformScheduleChangeHistoryForTable = (
+  histories: IUserScheduleChangeHistory[],
   schedules: TRetreatRegistrationSchedule[]
 ) => {
-  return requests.map(req => ({
-    id: req.userRetreatRegistrationId.toString(),
-    department: `${req.univGroupNumber}부`,
-    grade: `${req.gradeNumber}학년`,
-    name: req.userName,
-    schedule: schedules.reduce((acc, cur) => {
-      acc[`schedule_${cur.id}`] = (
-        req.userRetreatRegistrationScheduleIds || []
-      ).includes(cur.id);
+  const transformedData: any[] = [];
+
+  console.log("변환 시작:", { histories, schedules });
+
+  histories.forEach((history, index) => {
+    // 안전한 배열 처리
+    const beforeScheduleIds = Array.isArray(history.beforeUserRetreatRegistrationScheduleIds) 
+      ? history.beforeUserRetreatRegistrationScheduleIds 
+      : [];
+    const afterScheduleIds = Array.isArray(history.afterUserRetreatRegistrationScheduleIds)
+      ? history.afterUserRetreatRegistrationScheduleIds
+      : [];
+
+    console.log(`History ${index}:`, {
+      before: beforeScheduleIds,
+      after: afterScheduleIds,
+      beforeType: typeof beforeScheduleIds[0],
+      afterType: typeof afterScheduleIds[0]
+    });
+
+    // Before row
+    const beforeScheduleMap = schedules.reduce((acc, cur) => {
+      // 타입 안전성을 위해 문자열로도 비교
+      const scheduleId = cur.id;
+      const isIncluded = beforeScheduleIds.includes(scheduleId) || 
+                         beforeScheduleIds.includes(scheduleId.toString() as any) ||
+                         beforeScheduleIds.includes(parseInt(scheduleId.toString()));
+      acc[`schedule_${cur.id}`] = isIncluded;
+      console.log(`Before Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`);
       return acc;
-    }, {} as Record<string, boolean>),
-    type: req.userType,
-    amount: req.price,
-    createdAt: req.createdAt,
-    status: req.paymentStatus,
-    issuerName: req.issuerName,
-    paymentConfirmedAt: req.paymentConfirmedAt,
-    memo: req.memo,
-    memoCreatedAt: req.memoCreatedAt,
-    memoId: req.userRetreatRegistrationHistoryMemoId,
-    scheduleIds: req.userRetreatRegistrationScheduleIds || [],
-  }));
+    }, {} as Record<string, boolean>);
+
+    const beforeRow = {
+      id: `${history.userRetreatRegistrationId}_${index}_before`,
+      registrationId: history.userRetreatRegistrationId,
+      department: `${history.univGroupNumber}부`,
+      gender: history.gender,
+      grade: `${history.gradeNumber}학년`,
+      name: history.name,
+      phone: history.phoneNumber,
+      schedule: beforeScheduleMap,
+      price: history.beforePrice,
+      userName: history.createdUserName,
+      timestamp: history.createdAt,
+      type: 'before',
+      rowIndex: index,
+    };
+
+    // After row
+    const afterScheduleMap = schedules.reduce((acc, cur) => {
+      // 타입 안전성을 위해 문자열로도 비교
+      const scheduleId = cur.id;
+      const isIncluded = afterScheduleIds.includes(scheduleId) || 
+                         afterScheduleIds.includes(scheduleId.toString() as any) ||
+                         afterScheduleIds.includes(parseInt(scheduleId.toString()));
+      acc[`schedule_${cur.id}`] = isIncluded;
+      console.log(`After Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`);
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    const afterRow = {
+      id: `${history.userRetreatRegistrationId}_${index}_after`,
+      registrationId: history.userRetreatRegistrationId,
+      department: `${history.univGroupNumber}부`,
+      gender: history.gender,
+      grade: `${history.gradeNumber}학년`,
+      name: history.name,
+      phone: history.phoneNumber,
+      schedule: afterScheduleMap,
+      price: history.afterPrice,
+      userName: history.resolvedUserName,
+      timestamp: history.resolvedAt,
+      type: 'after',
+      rowIndex: index,
+    };
+
+    console.log('Before row schedule:', beforeRow.schedule);
+    console.log('After row schedule:', afterRow.schedule);
+
+    transformedData.push(beforeRow, afterRow);
+  });
+
+  return transformedData;
 };
 
-export function RetreatScheduleChangeRequestTable({
-  registrations = [],
+export function RetreatScheduleChangeHistoryTable({
+  scheduleChangeHistories = [],
   schedules = [],
   retreatSlug,
-  payments = [],
 }: {
-  registrations: IUserScheduleChangeRetreat[];
+  scheduleChangeHistories: IUserScheduleChangeHistory[];
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
-  payments?: any[];
 }) {
   const addToast = useToastStore(state => state.add);
-  const [data, setData] = useState<any[]>([]);
+  const [allData, setAllData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<any | null>(null);
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [memoText, setMemoText] = useState("");
-  const [selectedSchedules, setSelectedSchedules] = useState<number[]>([]);
-  const [calculatedPrice, setCalculatedPrice] = useState<number>(0);
   const tableContainerRef = useRef<HTMLDivElement>(null);
-
-  const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/schedule-change-request`;
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (registrations.length > 0 && schedules.length > 0) {
+    if (scheduleChangeHistories.length > 0 && schedules.length > 0) {
       try {
-        const transformedData = transformScheduleChangeRequestForTable(
-          registrations,
+        const transformedData = transformScheduleChangeHistoryForTable(
+          scheduleChangeHistories,
           schedules
         );
-        setData(transformedData);
-        setFilteredData(transformedData);
+        setAllData(transformedData);
       } catch (error) {
         console.error("데이터 변환 중 오류 발생:", error);
         addToast({
           title: "오류",
-          description: "데이터를 불러오는 중 오류가 발생했습니다.",
+          description:
+            error instanceof AxiosError
+              ? error.response?.data?.message || error.message
+              : error instanceof Error
+              ? error.message
+              : "데이터를 불러오는 중 오류가 발생했습니다.",
           variant: "destructive",
         });
       }
     } else {
-      setData([]);
-      setFilteredData([]);
+      setAllData([]);
     }
-  }, [registrations, schedules, addToast]);
+  }, [scheduleChangeHistories, schedules, addToast]);
 
   useEffect(() => {
-    let dataToFilter = [...data];
+    let dataToFilter = [...allData];
 
     if (searchTerm) {
       dataToFilter = dataToFilter.filter(row =>
@@ -140,228 +172,132 @@ export function RetreatScheduleChangeRequestTable({
           row.name,
           row.department,
           row.grade?.toString(),
-          row.type?.toString(),
-          row.confirmedBy?.toString(),
-          row.memo?.toString(),
+          row.phone?.toString(),
+          row.userName?.toString(),
         ].some(field => field?.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
     setFilteredData(dataToFilter);
-  }, [data, searchTerm]);
-
-  const setLoading = (id: string, action: string, isLoading: boolean) => {
-    setLoadingStates(prev => ({
-      ...prev,
-      [`${id}_${action}`]: isLoading,
-    }));
-  };
-
-  const isLoading = (id: string, action: string) => {
-    return !!loadingStates[`${id}_${action}`];
-  };
-
-  // 현재 날짜에 유효한 payment를 찾는 함수
-  const findCurrentPayment = () => {
-    if (!payments || payments.length === 0) return null;
-
-    const currentDate = new Date();
-    const validPayment = payments.find(
-      payment =>
-        new Date(payment.startAt) <= currentDate &&
-        new Date(payment.endAt) >= currentDate
-    );
-
-    if (validPayment) {
-      return validPayment;
-    } else {
-      // 유효한 payment가 없으면 가장 최신의 payment를 반환
-      return payments.reduce((latest, current) => {
-        return new Date(current.endAt) > new Date(latest.endAt)
-          ? current
-          : latest;
-      });
-    }
-  };
-
-  // 표시 목적으로 일정에서 고유한 날짜 추출
-  const retreatDatesForDisplay = useMemo(
-    () =>
-      schedules.length > 0
-        ? Array.from(
-            new Set(
-              schedules.map(s => new Date(s.time).toISOString().split("T")[0])
-            )
-          ).sort()
-        : [],
-    [schedules]
-  );
-
-  // 새로운 일정 선택 처리 함수
-  const handleScheduleChange = (id: number) => {
-    const newSelectedSchedules = selectedSchedules.includes(id)
-      ? selectedSchedules.filter(scheduleId => scheduleId !== id)
-      : [...selectedSchedules, id];
-
-    setSelectedSchedules(newSelectedSchedules);
-
-    // 체크박스 변경 시 가격 바로 계산
-    if (selectedRow && payments.length > 0) {
-      calculateNewPrice(newSelectedSchedules);
-    }
-  };
-
-  // 가격 계산 함수
-  const calculateNewPrice = (newSelectedSchedules: number[]) => {
-    try {
-      const currentPayment = findCurrentPayment();
-      if (!currentPayment) return;
-
-      const calculatedNewPrice = calculateRegistrationPrice(
-        selectedRow.type,
-        schedules,
-        [currentPayment],
-        newSelectedSchedules,
-        parseInt(selectedRow.grade)
-      );
-
-      // 새로운 가격은 max(이전 가격, 변경된 일정으로 계산된 가격)
-      const calculatedMaxPrice = Math.max(
-        selectedRow.amount,
-        calculatedNewPrice
-      );
-
-      setCalculatedPrice(calculatedMaxPrice);
-    } catch (error) {
-      console.error("가격 계산 중 오류 발생:", error);
-    }
-  };
-
-  // 기존 useEffect 제거 또는 대체
-  useEffect(() => {
-    if (selectedRow && selectedSchedules.length > 0) {
-      calculateNewPrice(selectedSchedules);
-    }
-  }, [selectedRow]);
-
-  const handleProcessSchedule = (row: any) => {
-    setSelectedRow(row);
-    setMemoText(row.memo || "");
-    setSelectedSchedules(row.scheduleIds || []);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedRow(null);
-    setMemoText("");
-    setSelectedSchedules([]);
-    setCalculatedPrice(0);
-  };
-
-  const handleConfirmScheduleChange = async () => {
-    if (!selectedRow) return;
-
-    setLoading(selectedRow.id, "confirm", true);
-    try {
-      // 일정 변경 요청 처리 API 호출
-      await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/account/schedule-change-request/${selectedRow.memoId}/resolve`,
-        {
-          memo: memoText,
-          scheduleIds: selectedSchedules,
-          price: calculatedPrice,
-          afterScheduleIds: selectedSchedules,
-        }
-      );
-
-      // 데이터 갱신
-      await mutate(registrationsEndpoint);
-
-      addToast({
-        title: "성공",
-        description: "일정 변경 요청이 처리되었습니다.",
-        variant: "default",
-      });
-
-      handleCloseModal();
-    } catch (error) {
-      console.error("일정 변경 요청 처리 중 오류 발생:", error);
-      addToast({
-        title: "오류",
-        description: "일정 변경 요청 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      if (selectedRow) {
-        setLoading(selectedRow.id, "confirm", false);
-      }
-    }
-  };
-
-  const handleResolveScheduleChange = async (row: any) => {
-    if (!row.memoId) {
-      console.error("memoId가 없습니다.");
-      addToast({
-        title: "오류",
-        description: "메모 ID가 없습니다.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(row.id, "resolve", true);
-    try {
-      // 일정 변경 요청 처리 완료 API 호출
-      console.log(
-        "API 호출 시작",
-        `/api/v1/retreat/${retreatSlug}/account/schedule-history/resolve-memo`
-      );
-
-      const response = await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/account/schedule-history/resolve-memo`,
-        {
-          userRetreatRegistrationHistoryMemoId: row.memoId,
-        }
-      );
-
-      console.log("API 응답", response.data);
-
-      // 데이터 갱신
-      await mutate(registrationsEndpoint);
-
-      addToast({
-        title: "성공",
-        description: "일정 변경 요청이 처리 완료되었습니다.",
-        variant: "success",
-      });
-    } catch (error) {
-      console.error("일정 변경 요청 처리 완료 중 오류 발생:", error);
-      addToast({
-        title: "오류",
-        description: "일정 변경 요청 처리 완료 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(row.id, "resolve", false);
-    }
-  };
-
-  const exportToExcel = () => {
-    alert("엑셀 내보내기 기능은 구현이 필요합니다.");
-  };
+  }, [allData, searchTerm]);
 
   const scheduleColumns = useMemo(
     () => generateScheduleColumns(schedules),
     [schedules]
   );
 
+  const renderTableRow = (row: any, index: number) => {
+    const isBeforeRow = row.type === 'before';
+    const nextRow = filteredData[index + 1];
+    const isLastRowOfPair = !nextRow || nextRow.rowIndex !== row.rowIndex;
+
+    return (
+      <TableRow
+        key={row.id}
+        className="group hover:bg-gray-50 transition-colors duration-150"
+      >
+        {/* 부서 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell 
+            className="text-center px-3 py-2.5" 
+            rowSpan={2}
+          >
+            {row.department}
+          </TableCell>
+        )}
+
+        {/* 성별 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell 
+            className="text-center px-3 py-2.5" 
+            rowSpan={2}
+          >
+            <GenderBadge gender={row.gender} />
+          </TableCell>
+        )}
+
+        {/* 학년 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell 
+            className="text-center px-3 py-2.5" 
+            rowSpan={2}
+          >
+            {row.grade}
+          </TableCell>
+        )}
+
+        {/* 이름 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell 
+            className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5" 
+            rowSpan={2}
+          >
+            {row.name}
+          </TableCell>
+        )}
+
+        {/* 전화번호 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell 
+            className="font-medium text-center px-3 py-2.5" 
+            rowSpan={2}
+          >
+            {row.phone || "-"}
+          </TableCell>
+        )}
+
+        {/* 구분 */}
+        <TableCell className="text-center px-3 py-2.5 font-medium">
+          {isBeforeRow ? "변경 전" : "변경 후"}
+        </TableCell>
+
+        {/* 스케줄 컬럼들 */}
+        {scheduleColumns.map(col => {
+          const isChecked = !!row.schedule?.[col.key];
+          console.log(`Row ${row.id}, Col ${col.key}, Checked: ${isChecked}`, row.schedule);
+          
+          return (
+            <TableCell
+              key={`${row.id}-${col.key}`}
+              className="p-2 text-center"
+            >
+              <Checkbox
+                checked={isChecked}
+                disabled
+                className={
+                  isChecked ? col.bgColorClass : ""
+                }
+              />
+            </TableCell>
+          );
+        })}
+
+        {/* 금액 */}
+        <TableCell className="font-medium text-center px-3 py-2.5">
+          {row.price?.toLocaleString()}원
+        </TableCell>
+
+        {/* 처리자명 */}
+        <TableCell className="text-center px-3 py-2.5">
+          {row.userName || "-"}
+        </TableCell>
+
+        {/* 처리시각 */}
+        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
+          {formatDate(row.timestamp)}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <Card className="shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b">
-        <div className="whitespace-nowrap">
-          <CardTitle>일정 변경 요청 조회</CardTitle>
-          <CardDescription>일정 변경 요청 목록</CardDescription>
+      <CardHeader className="bg-gray-50 border-b px-4 py-3">
+        <div>
+          <CardTitle className="text-lg">일정 변경 이력 조회</CardTitle>
+          <CardDescription className="text-sm">
+            일정 변경 이력 목록
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="p-4">
@@ -369,7 +305,7 @@ export function RetreatScheduleChangeRequestTable({
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="검색 (이름, 부서, 학년, 타입, 처리자, 메모 등)..."
+              placeholder="통합 검색 (이름, 부서, 학년, 전화번호, 처리자 등)..."
               className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -377,206 +313,98 @@ export function RetreatScheduleChangeRequestTable({
           </div>
 
           <div
-            className="rounded-md border flex flex-col h-[calc(100vh-300px)]"
+            className="rounded-md border overflow-hidden"
             ref={tableContainerRef}
           >
-            <div className="overflow-y-auto flex-grow">
-              <div className="overflow-x-auto">
-                <Table className="w-full whitespace-nowrap relative">
-                  <TableHeader className="bg-gray-50 sticky top-0 z-10">
+            <div className="overflow-x-auto">
+              <div className="max-h-[80vh] overflow-y-auto">
+                <Table className="min-w-full whitespace-nowrap relative text-sm">
+                  <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
                     <TableRow>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>부서</span>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>부서</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>성별</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>학년</span>
+                        </div>
                       </TableHead>
                       <TableHead
+                        className="sticky left-0 bg-gray-100 z-20 px-3 py-2.5"
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
                       >
-                        <span>학년</span>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>이름</span>
+                        </div>
                       </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap sticky left-0 bg-gray-50 z-20"
-                      >
-                        <span>이름</span>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>전화번호</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>구분</span>
+                        </div>
                       </TableHead>
                       <TableHead
                         colSpan={scheduleColumns.length}
-                        className="whitespace-nowrap"
+                        className="text-center px-3 py-2.5"
                       >
-                        <div className="text-center">수양회 신청 일정</div>
+                        수양회 일정
                       </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>타입</span>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>금액</span>
+                        </div>
                       </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>금액</span>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>처리자명</span>
+                        </div>
                       </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>신청 시각</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>입금 현황</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>메모 작성자명</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>메모 작성 시각</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>메모 내용</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>메모 작성일</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>액션</span>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>처리시각</span>
+                        </div>
                       </TableHead>
                     </TableRow>
                     <TableRow>
                       {scheduleColumns.map(scheduleCol => (
                         <TableHead
                           key={scheduleCol.key}
-                          className="p-2 text-center whitespace-nowrap"
+                          className="p-2 text-center"
                         >
-                          <span className="text-xs">{scheduleCol.label}</span>
+                          <div className="flex items-center justify-center">
+                            <span className="text-xs whitespace-normal">
+                              {scheduleCol.label}
+                            </span>
+                          </div>
                         </TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
-                    {filteredData.length === 0 ? (
+                  <TableBody className="divide-y divide-gray-200">
+                    {filteredData.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={13 + scheduleColumns.length}
-                          className="text-center py-8 text-gray-500"
+                          colSpan={10 + scheduleColumns.length}
+                          className="text-center py-10 text-gray-500"
                         >
-                          데이터가 없습니다
+                          {allData.length > 0
+                            ? "검색 결과가 없습니다."
+                            : "표시할 데이터가 없습니다."}
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      filteredData.map(row => (
-                        <TableRow
-                          key={row.id}
-                          className="group hover:bg-gray-50 transition-colors duration-150"
-                        >
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.department}
-                          </TableCell>
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.grade}
-                          </TableCell>
-                          <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center whitespace-nowrap">
-                            {row.name}
-                          </TableCell>
-                          {scheduleColumns.map(col => (
-                            <TableCell
-                              key={`${row.id}-${col.key}`}
-                              className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
-                            >
-                              <Checkbox
-                                checked={row.schedule[col.key]}
-                                disabled
-                                className={
-                                  row.schedule[col.key] ? col.bgColorClass : ""
-                                }
-                              />
-                            </TableCell>
-                          ))}
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            <TypeBadge type={row.type} />
-                          </TableCell>
-                          <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.amount.toLocaleString()}원
-                          </TableCell>
-                          <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.createdAt ? formatDate(row.createdAt) : "-"}
-                          </TableCell>
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            <StatusBadge status={row.status} />
-                          </TableCell>
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.confirmedBy || "-"}
-                          </TableCell>
-                          <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {formatDate(row.paymentConfirmedAt)}
-                          </TableCell>
-                          <TableCell
-                            className="group-hover:bg-gray-50 text-center min-w-[150px] max-w-[200px] truncate"
-                            title={row.memo}
-                          >
-                            {row.memo || "-"}
-                          </TableCell>
-                          <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {formatDate(row.memoCreatedAt)}
-                          </TableCell>
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            <div className="flex flex-col space-y-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleProcessSchedule(row)}
-                                disabled={isLoading(row.id, "confirm")}
-                                className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
-                              >
-                                {isLoading(row.id, "confirm") ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <PenLine className="h-3.5 w-3.5" />
-                                )}
-                                <span>일정 처리</span>
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleResolveScheduleChange(row)}
-                                disabled={isLoading(row.id, "resolve")}
-                                className="flex items-center gap-1.5 hover:bg-green-600 hover:text-white transition-colors"
-                              >
-                                {isLoading(row.id, "resolve") ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <Check className="h-3.5 w-3.5" />
-                                )}
-                                <span>처리 완료</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
                     )}
+                    {filteredData.map((row, index) => renderTableRow(row, index))}
                   </TableBody>
                 </Table>
               </div>
@@ -584,149 +412,6 @@ export function RetreatScheduleChangeRequestTable({
           </div>
         </div>
       </CardContent>
-
-      {isModalOpen && selectedRow && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl shadow-xl transform transition-all duration-300 ease-out scale-100">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">일정 변경 처리</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleCloseModal}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="mb-4">
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <p className="text-sm text-gray-500">이름</p>
-                  <p className="font-medium">{selectedRow.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">부서</p>
-                  <p className="font-medium">
-                    {selectedRow.department} {selectedRow.grade}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">타입</p>
-                  <p className="font-medium">
-                    <TypeBadge type={selectedRow.type} />
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4">
-                <h4 className="font-medium mb-2">일정 변경</h4>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-center whitespace-nowrap sm:px-2 px-1">
-                          일정 선택
-                        </TableHead>
-                        {retreatDatesForDisplay.map((date: string) => (
-                          <TableHead
-                            key={date}
-                            className="text-center whitespace-nowrap sm:px-2 px-1"
-                          >
-                            {formatSimpleDate(date)}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {["BREAKFAST", "LUNCH", "DINNER", "SLEEP"].map(
-                        eventType => (
-                          <TableRow key={eventType}>
-                            <TableCell className="flex items-center justify-start whitespace-nowrap sm:px-2 px-1">
-                              {eventType === "BREAKFAST" && (
-                                <Sunrise className="mr-2" />
-                              )}
-                              {eventType === "LUNCH" && (
-                                <Sun className="mr-2" />
-                              )}
-                              {eventType === "DINNER" && (
-                                <Sunset className="mr-2" />
-                              )}
-                              {eventType === "SLEEP" && (
-                                <Bed className="mr-2" />
-                              )}
-                              {EVENT_TYPE_MAP[eventType]}
-                            </TableCell>
-                            {retreatDatesForDisplay.map((date: string) => {
-                              const event = schedules.find(
-                                s =>
-                                  new Date(s.time).toLocaleDateString(
-                                    "ko-KR"
-                                  ) ===
-                                    new Date(date).toLocaleDateString(
-                                      "ko-KR"
-                                    ) && s.type === eventType
-                              );
-                              return (
-                                <TableCell
-                                  key={`${date}-${eventType}`}
-                                  className="text-center p-2 sm:px-3 sm:py-2 whitespace-nowrap"
-                                >
-                                  {event ? (
-                                    <Checkbox
-                                      className="schedule-checkbox m-2"
-                                      checked={selectedSchedules.includes(
-                                        event.id
-                                      )}
-                                      onCheckedChange={() =>
-                                        handleScheduleChange(event.id)
-                                      }
-                                    />
-                                  ) : (
-                                    <span className="text-gray-300">-</span>
-                                  )}
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        )
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-              <div className="mt-4 flex justify-between">
-                <p className="font-medium">이전 금액:</p>
-                <p>{selectedRow.amount.toLocaleString()}원</p>
-              </div>
-              <div className="mt-2 flex justify-between">
-                <p className="font-medium">변경 후 금액:</p>
-                <p>{calculatedPrice.toLocaleString()}원</p>
-              </div>
-              <div className="mt-4">
-                <h4 className="font-medium mb-2">메모</h4>
-                <p className="text-sm text-gray-500">
-                  {memoText || "메모 없음"}
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={handleCloseModal}>
-                취소
-              </Button>
-              <Button
-                onClick={handleConfirmScheduleChange}
-                disabled={isLoading(selectedRow.id, "confirm")}
-                className="hover:bg-black hover:text-white transition-colors"
-              >
-                {isLoading(selectedRow.id, "confirm") ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : null}
-                일정 변동 처리 완료
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </Card>
   );
 }
