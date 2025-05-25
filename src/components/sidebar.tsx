@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { CreditCard, Calendar, Users, LogOut } from "lucide-react";
+import { CreditCard, Calendar, Users, LogOut, History } from "lucide-react";
 import { useAuth } from "./auth-provider";
 
 import {
@@ -38,67 +38,90 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive("/payment")}
+              isActive={isActive("/confirm-retreat-payment")}
               className="pl-6 transition-colors duration-200"
               style={{
-                backgroundColor: isActive("/payment")
+                backgroundColor: isActive("/confirm-retreat-payment")
                   ? "rgb(243, 244, 246)"
                   : "",
-                borderLeft: isActive("/payment")
+                borderLeft: isActive("/confirm-retreat-payment")
                   ? "3px solid var(--primary)"
                   : "3px solid transparent",
-                fontWeight: isActive("/payment") ? "600" : "400",
+                fontWeight: isActive("/confirm-retreat-payment") ? "600" : "400",
               }}
             >
-              <Link href="/payment">
+              <Link href="/confirm-retreat-payment">
                 <CreditCard
-                  className={`h-4 w-4 ${isActive("/payment") ? "text-primary" : ""}`}
+                  className={`h-4 w-4 ${isActive("/confirm-retreat-payment") ? "text-primary" : ""}`}
                 />
-                <span>입금 조회</span>
+                <span>입금 정보 조회</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive("/schedule")}
+              isActive={isActive("/schedule-change-request")}
               className="pl-6 transition-colors duration-200"
               style={{
-                backgroundColor: isActive("/schedule")
+                backgroundColor: isActive("/schedule-change-request")
                   ? "rgb(243, 244, 246)"
                   : "",
-                borderLeft: isActive("/schedule")
+                borderLeft: isActive("/schedule-change-request")
                   ? "3px solid var(--primary)"
                   : "3px solid transparent",
-                fontWeight: isActive("/schedule") ? "600" : "400",
+                fontWeight: isActive("/schedule-change-request") ? "600" : "400",
               }}
             >
-              <Link href="/schedule">
+              <Link href="/schedule-change-request">
                 <Calendar
-                  className={`h-4 w-4 ${isActive("/schedule") ? "text-primary" : ""}`}
+                  className={`h-4 w-4 ${isActive("/schedule-change-request") ? "text-primary" : ""}`}
                 />
-                <span>일정 변동</span>
+                <span>일정 변동 요청 페이지</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive("/department")}
+              isActive={isActive("/schedule-change-history")}
               className="pl-6 transition-colors duration-200"
               style={{
-                backgroundColor: isActive("/department")
+                backgroundColor: isActive("/schedule-change-history")
                   ? "rgb(243, 244, 246)"
                   : "",
-                borderLeft: isActive("/department")
+                borderLeft: isActive("/schedule-change-history")
                   ? "3px solid var(--primary)"
                   : "3px solid transparent",
-                fontWeight: isActive("/department") ? "600" : "400",
+                fontWeight: isActive("/schedule-change-history") ? "600" : "400",
               }}
             >
-              <Link href="/department">
+              <Link href="/schedule-change-history">
+                <History
+                  className={`h-4 w-4 ${isActive("/schedule-change-history") ? "text-primary" : ""}`}
+                />
+                <span>일정 변동 조회 페이지</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive("/univ-group-staff-retreat")}
+              className="pl-6 transition-colors duration-200"
+              style={{
+                backgroundColor: isActive("/univ-group-staff-retreat")
+                  ? "rgb(243, 244, 246)"
+                  : "",
+                borderLeft: isActive("/univ-group-staff-retreat")
+                  ? "3px solid var(--primary)"
+                  : "3px solid transparent",
+                fontWeight: isActive("/univ-group-staff-retreat") ? "600" : "400",
+              }}
+            >
+              <Link href="/univ-group-staff-retreat">
                 <Users
-                  className={`h-4 w-4 ${isActive("/department") ? "text-primary" : ""}`}
+                  className={`h-4 w-4 ${isActive("/univ-group-staff-retreat") ? "text-primary" : ""}`}
                 />
                 <span>부서 신청 내역</span>
               </Link>
