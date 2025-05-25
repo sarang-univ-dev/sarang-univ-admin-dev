@@ -1,7 +1,7 @@
 import { UserRole } from "@/types";
 
 export enum PagePath {
-  STAFF_LIST = '/univ-group-staff-retreat',
+  UNIV_GROUP_RETREAT = '/univ-group-staff-retreat',
   SCHEDULE_HISTORY = '/schedule-change-history',
   COMFIRM_PAYMENT = '/confirm-retreat-payment',
   SCHEDULRE_CHANGE = '/schedule-change-request',
@@ -19,7 +19,7 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
   ],
   
   [UserRole.UNIV_GROUP_ADMIN_STAFF]: [
-    PagePath.STAFF_LIST,
+    PagePath.UNIV_GROUP_RETREAT,
   ],
 
   [UserRole.UNIV_GROUP_LINEUP_MEMBER]:      [],  
