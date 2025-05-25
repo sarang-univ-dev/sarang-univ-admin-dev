@@ -9,8 +9,7 @@ export interface SidebarMenuItem {
 
 
 const PAGE_LABELS: Record<PagePath, string> = {
-  [PagePath.STAFF_LIST]: '신청 조회',
-  [PagePath.DEPARTMENT_INFO]:  '부서 정보 조회',
+  [PagePath.STAFF_LIST]:  '부서 정보 조회',
   [PagePath.SCHEDULE_HISTORY]: '일정 변동 내역',
   [PagePath.COMFIRM_PAYMENT]: '입금 조회',
   [PagePath.SCHEDULRE_CHANGE]: '일정 변동 요청'
