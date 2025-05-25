@@ -28,7 +28,6 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body className={inter.className}>
         <RootLayoutProvider>
-<<<<<<< Updated upstream:src/app/(main)/layout.tsx
         <Header />
         <div className="flex min-h-screen relative">
           <Sidebar />
@@ -37,16 +36,6 @@ export default function RootLayout({
         <Footer />
         <Toast />
         <ConfirmModal />
-=======
-          <Header />
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1">{children}</main>
-          </div>
-          <Footer />
-          <Toast />
-          <ConfirmModal />
->>>>>>> Stashed changes:src/app/layout.tsx
         </RootLayoutProvider>
       </body>
     </html>
