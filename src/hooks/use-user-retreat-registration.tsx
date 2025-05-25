@@ -3,6 +3,7 @@ import { webAxios } from "@/lib/api/axios";
 import { Gender } from "@/types";
 import { UserRetreatRegistrationType } from "@/types";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
+import Cookies from "js-cookie";
 
 export interface IUserRetreatRegistration {
   id: number;
@@ -20,7 +21,12 @@ export interface IUserRetreatRegistration {
 }
 
 const fetcher = async (url: string) => {
-  const response = await webAxios.get(url);
+  const accessToken = Cookies.get("accessToken");
+  const response = await webAxios.get(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
   // API 응답 구조 변경 반영
   return response.data.userRetreatRegistrations;
 };
