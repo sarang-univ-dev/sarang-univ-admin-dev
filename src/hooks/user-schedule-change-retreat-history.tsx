@@ -3,6 +3,7 @@ import { webAxios } from "@/lib/api/axios";
 import { Gender } from "@/types";
 import { UserRetreatRegistrationType } from "@/types";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
+import Cookies from "js-cookie";
 
 export interface IUserScheduleChangeHistory {
   userRetreatRegistrationId: number;
@@ -22,7 +23,12 @@ export interface IUserScheduleChangeHistory {
 }
 
 const fetcher = async (url: string) => {
-  const response = await webAxios.get(url);
+  const accessToken = Cookies.get("accessToken");
+  const response = await webAxios.get(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
   return response.data.scheduleChangeHistories;
 };
 
