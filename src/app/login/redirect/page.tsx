@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import useUser from "@/lib/hooks/swr/useUser";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import LoadingIndicator from "@/components/common/LoadingIndicator";
+import { useRetreatSlug } from "@/lib/hooks/swr/useRetreatSlug";
 
 const Redirect = () => {
-  const { user, mutate } = useUser();
+  const { user, mutate:userMutate } = useUser();
+  const { mutate:retreatSlugMutate } = useRetreatSlug();
   const router = useRouter();
   const [error, setError] = useState(false);
 
@@ -35,7 +37,10 @@ const Redirect = () => {
         return;
       }
 
-      await mutate();
+      await Promise.all([
+        userMutate(),          
+        retreatSlugMutate(),   
+      ]);
 
       router.replace("/");
       router.refresh();
@@ -54,7 +59,7 @@ const Redirect = () => {
     }
   }, [user, router]);
 
-  if (error) return <ErrorMessage />;
+  if (error) return <ErrorMessage message="로그인 중 오류가 발생했습니다."/>;
   return <LoadingIndicator />;
 };
 

@@ -17,27 +17,27 @@ interface AuthWrapperProps {
 }
 
 const AuthWrapper = ({ children }: AuthWrapperProps) => {
-  const { user, isLoading } = useUser();
-  const router = useRouter();
-  const pathname = usePathname();
-  useEffect(() => {
-    if (isLoading) return;
-    if (WHITELIST_REGEXP.test(pathname)) return;
+  // const { user, isLoading } = useUser();
+  // const router = useRouter();
+  // const pathname = usePathname();
+  // useEffect(() => {
+  //   if (isLoading) return;
+  //   if (WHITELIST_REGEXP.test(pathname)) return;
 
-    if (!user) {
-      router.replace(`/login?redirect=${pathname}`);
-      return;
-    }
+  //   if (!user) {
+  //     router.replace(`/login?redirect=${pathname}`);
+  //     return;
+  //   }
 
-    // // only allow dev site access for team members
-    // if (config.ENV !== "production" && !user.isAdmin) {
-    //   router.replace(`/`);
-    //   return;
-    // }
-  }, [isLoading, router, user, pathname]);
+  //   // // only allow dev site access for team members
+  //   // if (config.ENV !== "production" && !user.isAdmin) {
+  //   //   router.replace(`/`);
+  //   //   return;
+  //   // }
+  // }, [isLoading, router, user, pathname]);
 
-  // Show loading screen during initial auth check
-  if (!user && !WHITELIST_REGEXP.test(pathname)) return <LoadingIndicator />;
+  // // Show loading screen during initial auth check
+  // if (!user && !WHITELIST_REGEXP.test(pathname)) return <LoadingIndicator />;
   return <>{children}</>;
 };
 
