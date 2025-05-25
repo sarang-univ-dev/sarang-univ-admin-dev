@@ -27,7 +27,7 @@ const fetcher = async (url: string) => {
 
 export function useUserRetreatRegistration(retreatSlug?: string) {
   const endpoint = retreatSlug
-    ? `/api/v1/retreat/${retreatSlug}/account/user-retreat-registrations`
+    ? `/api/v1/retreat/${retreatSlug}/account/user-retreat-registration`
     : null;
 
   return useSWR<IUserRetreatRegistration[], Error>(endpoint, fetcher);
