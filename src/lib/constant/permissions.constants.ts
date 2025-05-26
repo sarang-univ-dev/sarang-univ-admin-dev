@@ -4,15 +4,19 @@ export enum PagePath {
   UNIV_GROUP_RETREAT = '/univ-group-staff-retreat',
   SCHEDULE_HISTORY = '/schedule-change-history',
   COMFIRM_PAYMENT = '/confirm-retreat-payment',
-  SCHEDULRE_CHANGE = '/schedule-change-request',
+  SCHEDULE_CHANGE = '/schedule-change-request',
+  CONFIRM_BUS_PAYMENT = '/confirm-bus-payment',
+  UNIV_GROUP_BUS = '/univ-group-staff-bus',
+  BUS_SCHEDULE_HISTORY = '/bus-schedule-change-history',
+  BUS_SCHEDULE_CHANGE = '/bus-schedule-change-request',
+  ACCOUNT_STAFF = '/account-staff',
 }
 
 export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
   [UserRole.ACCOUNT_STAFF]: [
     PagePath.SCHEDULE_HISTORY,
-    PagePath.SCHEDULRE_CHANGE,
-    PagePath.COMFIRM_PAYMENT,
-
+    PagePath.SCHEDULE_CHANGE,
+    PagePath.ACCOUNT_STAFF
   ],
   [UserRole.UNIV_GROUP_ACCOUNT_MEMBER]: [
     PagePath.COMFIRM_PAYMENT,
@@ -22,9 +26,14 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
     PagePath.UNIV_GROUP_RETREAT,
   ],
 
-  [UserRole.UNIV_GROUP_LINEUP_MEMBER]:      [],  
-  [UserRole.LINEUP_STAFF]:                  [],
-  [UserRole.UNIV_GROUP_DORMITORY_MEMBER]:   [],
-  [UserRole.DORMITORY_STAFF]:               [],
-  [UserRole.SHUTTLE_BUS_BOARDING_STAFF]:    [],
+  [UserRole.UNIV_GROUP_LINEUP_MEMBER]:      [
+  ],  
+  [UserRole.LINEUP_STAFF]:                  [
+  ],
+  [UserRole.UNIV_GROUP_DORMITORY_MEMBER]:   [
+  ],
+  [UserRole.DORMITORY_STAFF]:               [
+  ],
+  [UserRole.SHUTTLE_BUS_BOARDING_STAFF]:    [
+  ],
 };

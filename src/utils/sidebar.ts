@@ -7,10 +7,15 @@ export interface SidebarMenuItem {
 }
 
 const PAGE_LABELS: Record<PagePath, string> = {
-  [PagePath.UNIV_GROUP_RETREAT]:  '부서 정보 조회',
-  [PagePath.SCHEDULE_HISTORY]: '일정 변동 내역',
-  [PagePath.COMFIRM_PAYMENT]: '입금 조회',
-  [PagePath.SCHEDULRE_CHANGE]: '일정 변동 요청'
+  [PagePath.UNIV_GROUP_RETREAT]:  '수양회 부서 정보 조회',
+  [PagePath.SCHEDULE_HISTORY]: '수양회 일정 변동 내역',
+  [PagePath.COMFIRM_PAYMENT]: '수양회 입금 조회',
+  [PagePath.SCHEDULE_CHANGE]: '수양회 일정 변동 요청',
+  [PagePath.CONFIRM_BUS_PAYMENT]: '셔틀버스 입금 조회',
+  [PagePath.UNIV_GROUP_BUS] : '셔틀버스 부서 정보 조회',
+  [PagePath.BUS_SCHEDULE_HISTORY] : '셔틀버스 일정 변동 내역',
+  [PagePath.BUS_SCHEDULE_CHANGE] : '셔틀버스 일정 변동 요청',
+  [PagePath.ACCOUNT_STAFF] : '재정 간사 조회',
 }
 
 export function getSidebarMenu(
