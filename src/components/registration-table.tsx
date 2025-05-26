@@ -329,13 +329,10 @@ export function RegistrationTable({
         <div className="space-y-4">
           <SearchBar onSearch={handleSearchResults} data={data} />
 
-          <div
-            className="rounded-md border flex flex-col h-[80vh]"
-            ref={tableContainerRef}
-          >
-            <div className="overflow-y-auto flex-grow">
-              <div className="overflow-x-auto">
-                <Table className="w-full whitespace-nowrap relative min-w-max">
+          <div className="rounded-md border overflow-x-auto">
+            <div className="min-w-max">
+              <div className="max-h-[80vh] overflow-y-auto">
+                <Table className="w-full whitespace-nowrap relative">
                   <TableHeader className="bg-gray-50 sticky top-0 z-10">
                     <TableRow>
                       <TableHead
@@ -480,9 +477,6 @@ export function RegistrationTable({
                   </TableBody>
                 </Table>
               </div>
-            </div>
-            <div className="overflow-x-auto border-t bg-white">
-              <div className="w-full min-w-max h-px"></div>
             </div>
           </div>
         </div>

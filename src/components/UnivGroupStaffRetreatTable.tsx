@@ -589,12 +589,9 @@ export function UnivGroupStaffRetreatTable({
             />
           </div>
 
-          <div
-            className="rounded-md border flex flex-col h-[80vh]"
-            ref={tableContainerRef}
-          >
-            <div className="flex-1 overflow-y-auto">
-              <div className="overflow-x-auto">
+          <div className="rounded-md border overflow-x-auto">
+            <div className="min-w-max">
+              <div className="max-h-[80vh] overflow-y-auto">
                 <Table className="min-w-full whitespace-nowrap relative text-sm">
                   <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
                     <TableRow>
@@ -845,9 +842,6 @@ export function UnivGroupStaffRetreatTable({
                   </TableBody>
                 </Table>
               </div>
-            </div>
-            <div className="overflow-x-auto border-t bg-white">
-              <div className="w-full min-w-max h-px"></div>
             </div>
           </div>
         </div>
