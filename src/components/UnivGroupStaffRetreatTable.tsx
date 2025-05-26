@@ -378,7 +378,7 @@ export function UnivGroupStaffRetreatTable({
     setCurrentRowId(null);
   };
 
-  const handleDownloadQR = async (id: string, name: string, qrUrl: string | null) => {
+  const handleOpenQR = (qrUrl: string | null) => {
     if (!qrUrl) {
       addToast({
         title: "오류",
@@ -388,36 +388,7 @@ export function UnivGroupStaffRetreatTable({
       return;
     }
 
-    setLoading(id, "qrDownload", true);
-    try {
-      const response = await fetch(qrUrl);
-      if (!response.ok) {
-        throw new Error('QR 이미지를 가져올 수 없습니다.');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${name}_QR.png`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      addToast({ title: "성공", description: "QR 코드가 다운로드되었습니다." });
-    } catch (error) {
-      console.error("QR 코드 다운로드 중 오류 발생:", error);
-      addToast({
-        title: "오류",
-        description:
-          error instanceof Error
-            ? error.message
-            : "QR 코드 다운로드 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(id, "qrDownload", false);
-    }
+    window.open(qrUrl, '_blank');
   };
 
   const getActionButtons = (row: any) => {
@@ -825,15 +796,11 @@ export function UnivGroupStaffRetreatTable({
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDownloadQR(row.id, row.name, row.qrUrl)}
-                            disabled={isLoading(row.id, "qrDownload") || !row.qrUrl}
+                            onClick={() => handleOpenQR(row.qrUrl)}
+                            disabled={!row.qrUrl}
                             className="flex items-center gap-1.5 text-xs h-7"
                           >
-                            {isLoading(row.id, "qrDownload") ? (
-                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            ) : (
-                              <QrCode className="h-3 w-3" />
-                            )}
+                            <QrCode className="h-3 w-3" />
                             <span>QR</span>
                           </Button>
                         </TableCell>
