@@ -12,7 +12,16 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, CheckCircle2, RotateCcw, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Download,
+  CheckCircle2,
+  RotateCcw,
+  Edit,
+  Save,
+  X,
+  Trash2,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -28,7 +37,7 @@ import {
   generateScheduleColumns,
   transformRegistrationsForTable,
 } from "../utils/retreat-utils";
-import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
+import { IRetreatRegistration } from "@/hooks/use-account-staff";
 import {
   TRetreatRegistrationSchedule,
   UserRetreatRegistrationPaymentStatus,
@@ -40,12 +49,12 @@ import { webAxios } from "@/lib/api/axios";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { AxiosError } from "axios";
 
-export function RegistrationTable({
+export function AccountStaffTable({
   registrations = [],
   schedules = [],
   retreatSlug,
 }: {
-  registrations: IUserRetreatRegistration[];
+  registrations: IRetreatRegistration[];
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
 }) {
@@ -55,17 +64,19 @@ export function RegistrationTable({
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {}
   );
+  const [editingMemo, setEditingMemo] = useState<Record<string, boolean>>({});
+  const [memoValues, setMemoValues] = useState<Record<string, string>>({});
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const confirmDialog = useConfirmDialogStore();
 
   // API 엔드포인트
-  const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/user-retreat-registration`;
+  const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/retreat-registrations`;
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     if (registrations.length > 0 && schedules.length > 0) {
       try {
-        const transformedData = transformRegistrationsForTable(
+        const transformedData = transformRegistrationsForAccountStaff(
           registrations,
           schedules
         );
@@ -76,6 +87,41 @@ export function RegistrationTable({
       }
     }
   }, [registrations, schedules]);
+
+  // IRetreatRegistration을 테이블 데이터로 변환하는 함수
+  const transformRegistrationsForAccountStaff = (
+    registrations: IRetreatRegistration[],
+    schedules: TRetreatRegistrationSchedule[]
+  ) => {
+    return registrations.map(registration => {
+      // 스케줄 정보 변환
+      const scheduleData: Record<string, boolean> = {};
+      schedules.forEach(schedule => {
+        scheduleData[`schedule_${schedule.id}`] =
+          registration.userRetreatRegistrationScheduleIds?.includes(
+            schedule.id
+          ) || false;
+      });
+
+      return {
+        id: registration.id,
+        department: `${registration.univGroupNumber}부`,
+        gender: registration.gender,
+        grade: `${registration.gradeNumber}학년`,
+        name: registration.name,
+        phoneNumber: registration.phoneNumber,
+        schedule: scheduleData,
+        type: registration.userType,
+        amount: registration.price,
+        status: registration.paymentStatus,
+        createdAt: registration.createdAt,
+        confirmedBy: registration.paymentConfirmUserName,
+        paymentConfirmedAt: registration.paymentConfirmedAt,
+        accountMemo: registration.accountMemo,
+        accountMemoId: registration.accountMemoId,
+      };
+    });
+  };
 
   // 검색 결과 처리 함수
   const handleSearchResults = (results: any[], searchTerm: string) => {
@@ -96,142 +142,172 @@ export function RegistrationTable({
   };
 
   // 액션 처리 함수들
-  const performConfirmPayment = async (id: string) => {
-    setLoading(id, "confirm", true);
+  const performAssignStaff = async (id: string) => {
+    setLoading(id, "assign", true);
     try {
-      // 실제 API 호출
       const response = await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/account/confirm-payment`,
+        `/api/v1/retreat/${retreatSlug}/account/assign-staff`,
         {
           userRetreatRegistrationId: id,
         }
       );
 
-      // SWR 캐시 업데이트
       await mutate(registrationsEndpoint);
 
-      // 성공 토스트 메시지
       addToast({
         title: "성공",
-        description: "입금이 성공적으로 확인되었습니다.",
+        description: "간사 배정이 성공적으로 처리되었습니다.",
         variant: "success",
       });
     } catch (error) {
-      console.error("입금 확인 중 오류 발생:", error);
+      console.error("간사 배정 중 오류 발생:", error);
 
-      // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
         description:
           error instanceof AxiosError
             ? error.response?.data?.message || error.message
             : error instanceof Error
-            ? error.message
-            : "입금 확인 처리 중 오류가 발생했습니다.",
+              ? error.message
+              : "간사 배정 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
-      setLoading(id, "confirm", false);
+      setLoading(id, "assign", false);
     }
   };
 
-  // 입금 확인 처리 함수
-  const handleConfirmPayment = (id: string) => {
+  // 간사 배정 처리 함수
+  const handleAssignStaff = (id: string) => {
     confirmDialog.show({
-      title: "입금 확인",
-      description:
-        "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
-      onConfirm: () => performConfirmPayment(id),
+      title: "간사 배정",
+      description: "정말로 간사 배정 처리를 하시겠습니까?",
+      onConfirm: () => performAssignStaff(id),
     });
   };
 
-  const handleCompleteRefund = async (id: string) => {
-    setLoading(id, "refund", true);
-    try {
-      // 실제 API 호출
-      const response = await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/account/refund-complete`,
-        {
-          userRetreatRegistrationId: id,
-        }
-      );
+  // 환불 처리 함수 (임시 구현)
+  const handleRefundProcess = (id: string) => {
+    alert("환불 처리 기능은 구현이 필요합니다");
+  };
 
-      // SWR 캐시 업데이트
+  // 메모 편집 시작
+  const handleStartEditMemo = (id: string, currentMemo: string) => {
+    setEditingMemo(prev => ({ ...prev, [id]: true }));
+    setMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
+  };
+
+  // 메모 편집 취소
+  const handleCancelEditMemo = (id: string) => {
+    setEditingMemo(prev => ({ ...prev, [id]: false }));
+    setMemoValues(prev => ({ ...prev, [id]: "" }));
+  };
+
+  // 메모 저장
+  const handleSaveMemo = async (id: string) => {
+    const memo = memoValues[id];
+    const currentRow = filteredData.find(row => row.id === id);
+    const hasExistingMemo =
+      currentRow?.accountMemo && currentRow.accountMemo.trim();
+    const memoId = currentRow?.accountMemoId;
+
+    setLoading(id, "memo", true);
+
+    try {
+      if (memo && memo.trim()) {
+        if (hasExistingMemo && memoId) {
+          // 기존 메모가 있는 경우 - PUT 요청으로 수정
+          const response = await webAxios.put(
+            `/api/v1/retreat/${retreatSlug}/account/${memoId}/account-memo`,
+            {
+              memo: memo.trim(),
+            }
+          );
+        } else {
+          // 새 메모 생성 - POST 요청
+          const response = await webAxios.post(
+            `/api/v1/retreat/${retreatSlug}/account/${id}/account-memo`,
+            {
+              memo: memo.trim(),
+            }
+          );
+        }
+      }
+
       await mutate(registrationsEndpoint);
 
-      // 성공 토스트 메시지
+      setEditingMemo(prev => ({ ...prev, [id]: false }));
+      setMemoValues(prev => ({ ...prev, [id]: "" }));
+
       addToast({
         title: "성공",
-        description: "환불이 성공적으로 처리되었습니다.",
-        variant: "default",
+        description: hasExistingMemo
+          ? "메모가 성공적으로 수정되었습니다."
+          : "메모가 성공적으로 저장되었습니다.",
+        variant: "success",
       });
     } catch (error) {
-      console.error("환불 처리 중 오류 발생:", error);
+      console.error("메모 저장 중 오류 발생:", error);
 
-      // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
         description:
           error instanceof AxiosError
             ? error.response?.data?.message || error.message
             : error instanceof Error
-            ? error.message
-            : "환불 처리 중 오류가 발생했습니다.",
+              ? error.message
+              : "메모 저장 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
-      setLoading(id, "refund", false);
+      setLoading(id, "memo", false);
     }
   };
 
-  const performSendMessage = async (id: string, messageType: string) => {
-    setLoading(id, messageType, true);
+  // 메모 삭제
+  const handleDeleteMemo = async (id: string) => {
+    const currentRow = filteredData.find(row => row.id === id);
+    const memoId = currentRow?.accountMemoId;
+
+    setLoading(id, "delete_memo", true);
+
     try {
-      // 입금 요청 메시지 전송 API 호출
-      if (messageType === "payment_request") {
-        const response = await webAxios.post(
-          `/api/v1/retreat/${retreatSlug}/account/request-payment`,
-          {
-            userRetreatRegistrationId: id,
-          }
-        );
+      const response = await webAxios.delete(
+        `/api/v1/retreat/${retreatSlug}/account/${memoId}/account-memo`
+      );
 
-        // 성공 토스트 메시지
-        addToast({
-          title: "성공",
-          description: "입금 요청 메시지가 성공적으로 전송되었습니다.",
-          variant: "default",
-        });
-      }
+      await mutate(registrationsEndpoint);
+
+      addToast({
+        title: "성공",
+        description: "메모가 성공적으로 삭제되었습니다.",
+        variant: "success",
+      });
     } catch (error) {
-      console.error(`${messageType} 메시지 전송 중 오류 발생:`, error);
+      console.error("메모 삭제 중 오류 발생:", error);
 
-      // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
         description:
           error instanceof AxiosError
             ? error.response?.data?.message || error.message
             : error instanceof Error
-            ? error.message
-            : "메시지 전송 중 오류가 발생했습니다.",
+              ? error.message
+              : "메모 삭제 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
-      setLoading(id, messageType, false);
+      setLoading(id, "delete_memo", false);
     }
   };
 
-  // 입금 요청 처리 함수
-  const handleSendMessage = (id: string, messageType: string) => {
-    if (messageType === "payment_request") {
-      confirmDialog.show({
-        title: "입금 요청",
-        description:
-          "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",
-        onConfirm: () => performSendMessage(id, messageType),
-      });
-    }
+  // 메모 삭제 확인
+  const handleConfirmDeleteMemo = (id: string) => {
+    confirmDialog.show({
+      title: "메모 삭제",
+      description: "정말로 메모를 삭제하시겠습니까?",
+      onConfirm: () => handleDeleteMemo(id),
+    });
   };
 
   // 액션 버튼 렌더링
@@ -243,40 +319,26 @@ export function RegistrationTable({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => handleConfirmPayment(row.id)}
-              disabled={isLoading(row.id, "confirm")}
+              onClick={() => handleAssignStaff(row.id)}
+              disabled={isLoading(row.id, "assign")}
               className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
             >
-              {isLoading(row.id, "confirm") ? (
+              {isLoading(row.id, "assign") ? (
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
                 <CheckCircle2 className="h-3.5 w-3.5" />
               )}
-              <span>입금 확인</span>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleSendMessage(row.id, "payment_request")}
-              disabled={isLoading(row.id, "payment_request")}
-              className="flex items-center gap-1.5"
-            >
-              {isLoading(row.id, "payment_request") ? (
-                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Send className="h-3.5 w-3.5" />
-              )}
-              <span>입금 요청</span>
+              <span>간사 배정</span>
             </Button>
           </div>
         );
-      case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
+      case UserRetreatRegistrationPaymentStatus.PAID:
         return (
           <div className="flex flex-col gap-1">
             <Button
               size="sm"
               variant="outline"
-              onClick={() => handleCompleteRefund(row.id)}
+              onClick={() => handleRefundProcess(row.id)}
               disabled={isLoading(row.id, "refund")}
               className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
             >
@@ -285,13 +347,15 @@ export function RegistrationTable({
               ) : (
                 <RotateCcw className="h-3.5 w-3.5" />
               )}
-              <span>환불 처리 완료</span>
+              <span>환불 처리</span>
             </Button>
           </div>
         );
       case UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST:
         return null;
       case UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST:
+        return null;
+      case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
         return null;
       default:
         return null;
@@ -305,8 +369,8 @@ export function RegistrationTable({
     <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b">
         <div className="whitespace-nowrap">
-          <CardTitle>신청 현황 및 입금 조회</CardTitle>
-          <CardDescription>전체 신청자 목록</CardDescription>
+          <CardTitle>재정 간사 조회</CardTitle>
+          <CardDescription>대학부 전체 신청자 목록 조회</CardDescription>
         </div>
         <div className="flex items-center gap-2 whitespace-nowrap">
           <Button
@@ -360,6 +424,12 @@ export function RegistrationTable({
                         <span>이름</span>
                       </TableHead>
                       <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>전화번호</span>
+                      </TableHead>
+                      <TableHead
                         colSpan={scheduleColumns.length}
                         className="whitespace-nowrap"
                       >
@@ -407,6 +477,12 @@ export function RegistrationTable({
                       >
                         <span>처리 시각</span>
                       </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        className="text-center whitespace-nowrap"
+                      >
+                        <span>회계 메모</span>
+                      </TableHead>
                     </TableRow>
                     <TableRow>
                       {scheduleColumns.map(scheduleCol => (
@@ -436,6 +512,9 @@ export function RegistrationTable({
                         </TableCell>
                         <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center whitespace-nowrap px-3 py-2.5">
                           {row.name}
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.phoneNumber}
                         </TableCell>
                         {scheduleColumns.map(col => (
                           <TableCell
@@ -471,6 +550,98 @@ export function RegistrationTable({
                         </TableCell>
                         <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
                           {formatDate(row.paymentConfirmedAt)}
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-left min-w-[300px] max-w-[400px]">
+                          {editingMemo[row.id] ? (
+                            <div className="flex flex-col gap-2 p-2">
+                              <Textarea
+                                value={memoValues[row.id] || ""}
+                                onChange={e =>
+                                  setMemoValues(prev => ({
+                                    ...prev,
+                                    [row.id]: e.target.value,
+                                  }))
+                                }
+                                placeholder="메모를 입력하세요..."
+                                className="text-sm resize-none overflow-hidden w-full"
+                                style={{
+                                  height:
+                                    Math.max(
+                                      60,
+                                      Math.min(
+                                        200,
+                                        (memoValues[row.id] || "").split("\n")
+                                          .length *
+                                          20 +
+                                          20
+                                      )
+                                    ) + "px",
+                                }}
+                                disabled={isLoading(row.id, "memo")}
+                                rows={Math.max(
+                                  3,
+                                  Math.min(
+                                    10,
+                                    (memoValues[row.id] || "").split("\n")
+                                      .length + 1
+                                  )
+                                )}
+                              />
+                              <div className="flex gap-1 justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleSaveMemo(row.id)}
+                                  disabled={isLoading(row.id, "memo")}
+                                  className="h-7 px-2"
+                                >
+                                  {isLoading(row.id, "memo") ? (
+                                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                  ) : (
+                                    <Save className="h-3 w-3" />
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleCancelEditMemo(row.id)}
+                                  disabled={isLoading(row.id, "memo")}
+                                  className="h-7 px-2"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start gap-2 p-2">
+                              <div
+                                className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                                onClick={() =>
+                                  handleStartEditMemo(row.id, row.accountMemo)
+                                }
+                              >
+                                {row.accountMemo ||
+                                  "메모를 추가하려면 클릭하세요"}
+                              </div>
+                              {row.accountMemo && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    handleConfirmDeleteMemo(row.id)
+                                  }
+                                  disabled={isLoading(row.id, "delete_memo")}
+                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1"
+                                >
+                                  {isLoading(row.id, "delete_memo") ? (
+                                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                  ) : (
+                                    <Trash2 className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

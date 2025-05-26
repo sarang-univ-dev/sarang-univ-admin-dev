@@ -291,3 +291,142 @@ export function transformRegistrationsForTable(
     })
     .filter(Boolean); // null 항목 제거
 }
+
+// 부서별 식수 일정 집계 데이터 생성
+export function generateScheduleStats(
+  registrations: any[],
+  schedules: TRetreatRegistrationSchedule[]
+) {
+  if (!Array.isArray(registrations) || !Array.isArray(schedules)) {
+    return [];
+  }
+
+  // 입금 완료된 등록만 집계 (PAID 상태)
+  const paidRegistrations = registrations.filter(
+    reg => reg.paymentStatus === UserRetreatRegistrationPaymentStatus.PAID
+  );
+
+  // 부서 목록 추출 (입금완료자 기준, 중복 제거)
+  const departments = paidRegistrations
+    .map(reg => reg.univGroupNumber)
+    .filter((value, index, self) => self.indexOf(value) === index)
+    .sort((a, b) => a - b)
+    .map(num => `${num}부`);
+
+  // 각 부서별 스케줄 카운트 초기화
+  const stats = departments.map(dept => {
+    const scheduleCount: Record<string, number> = {};
+
+    // 각 스케줄에 대해 카운트 초기화
+    schedules.forEach(schedule => {
+      scheduleCount[`schedule_${schedule.id}`] = 0;
+    });
+
+    return {
+      id: dept.replace("부", ""),
+      label: dept,
+      cells: scheduleCount,
+    };
+  });
+
+  // 각 등록에 대해 스케줄별로 카운트
+  paidRegistrations.forEach(reg => {
+    const deptIndex = stats.findIndex(
+      s => s.label === `${reg.univGroupNumber}부`
+    );
+    if (deptIndex === -1) return;
+
+    // 사용자가 선택한 스케줄들에 대해 카운트 증가
+    if (Array.isArray(reg.userRetreatRegistrationScheduleIds)) {
+      reg.userRetreatRegistrationScheduleIds.forEach((scheduleId: number) => {
+        const scheduleKey = `schedule_${scheduleId}`;
+        if (stats[deptIndex].cells[scheduleKey] !== undefined) {
+          stats[deptIndex].cells[scheduleKey]++;
+        }
+      });
+    }
+  });
+
+  // 합계 계산
+  const totals = {
+    id: "total",
+    label: "합계",
+    cells: {} as Record<string, number>,
+  };
+
+  schedules.forEach(schedule => {
+    const scheduleKey = `schedule_${schedule.id}`;
+    totals.cells[scheduleKey] = stats.reduce(
+      (sum, dept) => sum + dept.cells[scheduleKey],
+      0
+    );
+  });
+
+  return [...stats, totals];
+}
+
+// 스케줄 컬럼을 요일별로 그룹화
+export function groupScheduleColumnsByDay(
+  schedules: TRetreatRegistrationSchedule[]
+) {
+  if (!schedules || schedules.length === 0) return [];
+
+  // 날짜별로 정렬
+  const sortedSchedules = [...schedules].sort(
+    (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
+  );
+
+  // 요일별로 그룹화
+  const groupedByDay: Record<string, any[]> = {};
+
+  sortedSchedules.forEach(schedule => {
+    const date = new Date(schedule.time);
+    const dayKey = getDayPrefix(date.getDay());
+    const dayName = getDayName(date.getDay());
+
+    if (!groupedByDay[dayName]) {
+      groupedByDay[dayName] = [];
+    }
+
+    const label = getScheduleLabel(
+      date,
+      schedule.type as RetreatRegistrationScheduleType
+    );
+
+    groupedByDay[dayName].push({
+      key: `schedule_${schedule.id}`,
+      id: schedule.id,
+      label: getTypeSuffix(schedule.type as RetreatRegistrationScheduleType),
+      fullLabel: label,
+      time: schedule.time,
+      type: schedule.type,
+    });
+  });
+
+  return Object.entries(groupedByDay).map(([dayName, schedules]) => ({
+    dayName,
+    schedules,
+  }));
+}
+
+// 요일 이름 반환
+function getDayName(day: number): string {
+  switch (day) {
+    case 0:
+      return "주일";
+    case 1:
+      return "월요일";
+    case 2:
+      return "화요일";
+    case 3:
+      return "수요일";
+    case 4:
+      return "목요일";
+    case 5:
+      return "금요일";
+    case 6:
+      return "토요일";
+    default:
+      return "";
+  }
+}
