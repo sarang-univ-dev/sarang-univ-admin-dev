@@ -8,6 +8,7 @@ import { AccountStatus } from "@/components/account-status";
 import { useParams } from "next/navigation";
 import { TRetreatRegistrationSchedule, TRetreatUnivGroup } from "@/types";
 import { webAxios } from "@/lib/api/axios";
+import { RetreatScheduleSummary } from "@/components/RetreatScheduleSummary";
 
 export default function ConfirmPaymentPage() {
   const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(
@@ -57,6 +58,11 @@ export default function ConfirmPaymentPage() {
       <h1 className="text-3xl font-bold">입금 조회</h1>
 
       <PaymentSummary registrations={data || []} />
+
+      <RetreatScheduleSummary
+        schedules={schedules}
+        registrations={data || []}
+      />
 
       <RegistrationTable
         registrations={data || []}
