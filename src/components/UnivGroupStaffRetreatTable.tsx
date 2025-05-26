@@ -80,6 +80,7 @@ const transformStaffRegistrationsForTable = (
     paymentConfirmedAt: reg.paymentConfirmedAt,
     gbs: reg.gbsName,
     accommodation: reg.dormitoryName,
+    qrUrl: reg.qrUrl,
     memo: reg.univGroupStaffScheduleHistoryMemo,
     memoBy: reg.univGroupStaffScheduleHistoryResolvedUserName,
     memoAt: reg.univGroupStaffScheduleHistoryResolvedAt,
@@ -377,16 +378,25 @@ export function UnivGroupStaffRetreatTable({
     setCurrentRowId(null);
   };
 
-  const handleDownloadQR = async (id: string, name: string) => {
+  const handleDownloadQR = async (id: string, name: string, qrUrl: string | null) => {
+    if (!qrUrl) {
+      addToast({
+        title: "오류",
+        description: "QR 코드 URL이 없습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(id, "qrDownload", true);
     try {
-      const response = await webAxios.get(
-        `/api/v1/retreat/${retreatSlug}/univ-group-staff/${id}/qr-code`,
-        {
-          responseType: "blob",
-        }
-      );
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const response = await fetch(qrUrl);
+      if (!response.ok) {
+        throw new Error('QR 이미지를 가져올 수 없습니다.');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `${name}_QR.png`);
@@ -400,9 +410,7 @@ export function UnivGroupStaffRetreatTable({
       addToast({
         title: "오류",
         description:
-          error instanceof AxiosError
-            ? error.response?.data?.message || error.message
-            : error instanceof Error
+          error instanceof Error
             ? error.message
             : "QR 코드 다운로드 중 오류가 발생했습니다.",
         variant: "destructive",
@@ -820,8 +828,8 @@ export function UnivGroupStaffRetreatTable({
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDownloadQR(row.id, row.name)}
-                            disabled={isLoading(row.id, "qrDownload")}
+                            onClick={() => handleDownloadQR(row.id, row.name, row.qrUrl)}
+                            disabled={isLoading(row.id, "qrDownload") || !row.qrUrl}
                             className="flex items-center gap-1.5 text-xs h-7"
                           >
                             {isLoading(row.id, "qrDownload") ? (
