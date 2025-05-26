@@ -12,7 +12,7 @@ export interface IUnivGroupStaffRetreat {
   univGroupNumber: number;
   gender: Gender;
   gradeNumber: number;
-  userName: string;
+  name: string;
   userPhoneNumber: string;
   userRetreatRegistrationScheduleIds?: number[];
   price: number;

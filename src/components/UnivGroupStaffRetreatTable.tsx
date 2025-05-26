@@ -64,7 +64,7 @@ const transformStaffRegistrationsForTable = (
     department: `${reg.univGroupNumber}부`,
     gender: reg.gender,
     grade: `${reg.gradeNumber}학년`,
-    name: reg.userName,
+    name: reg.name,
     phone: reg.userPhoneNumber,
     schedule: schedules.reduce((acc, cur) => {
       acc[`schedule_${cur.id}`] = (
