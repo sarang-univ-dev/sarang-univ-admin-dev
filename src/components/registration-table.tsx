@@ -335,7 +335,7 @@ export function RegistrationTable({
           >
             <div className="overflow-y-auto flex-grow">
               <div className="overflow-x-auto">
-                <Table className="w-full whitespace-nowrap relative">
+                <Table className="w-full whitespace-nowrap relative min-w-max">
                   <TableHeader className="bg-gray-50 sticky top-0 z-10">
                     <TableRow>
                       <TableHead
@@ -481,8 +481,8 @@ export function RegistrationTable({
                 </Table>
               </div>
             </div>
-            <div className="overflow-x-auto border-t sticky bottom-0 bg-white">
-              <div className="w-full" style={{ height: "8px" }}></div>
+            <div className="overflow-x-auto border-t bg-white">
+              <div className="w-full min-w-max h-px"></div>
             </div>
           </div>
         </div>
