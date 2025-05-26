@@ -10,7 +10,11 @@ const PAGE_LABELS: Record<PagePath, string> = {
   [PagePath.UNIV_GROUP_RETREAT]:  '부서 정보 조회',
   [PagePath.SCHEDULE_HISTORY]: '일정 변동 내역',
   [PagePath.COMFIRM_PAYMENT]: '입금 조회',
-  [PagePath.SCHEDULRE_CHANGE]: '일정 변동 요청'
+  [PagePath.SCHEDULE_CHANGE]: '일정 변동 요청',
+  [PagePath.CONFIRM_BUS_PAYMENT]: '버스 입금 조회',
+  [PagePath.UNIV_GROUP_BUS] : '부서 버스 정보 조회',
+  [PagePath.BUS_SCHEDULE_HISTORY] : '버스 일정 변동 내역',
+  [PagePath.BUS_SCHEDULE_CHANGE] : '버스 일정 변동 요청',
 }
 
 export function getSidebarMenu(
