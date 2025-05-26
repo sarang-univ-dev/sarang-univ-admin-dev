@@ -12,9 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import {
-  Search,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -25,9 +23,7 @@ import {
 
 import { GenderBadge } from "@/components/Badge";
 import { generateScheduleColumns } from "../utils/retreat-utils";
-import {
-  TRetreatRegistrationSchedule,
-} from "@/types";
+import { TRetreatRegistrationSchedule } from "@/types";
 import { formatDate } from "@/utils/formatDate";
 import { useToastStore } from "@/store/toast-store";
 import { AxiosError } from "axios";
@@ -39,35 +35,36 @@ const transformScheduleChangeHistoryForTable = (
 ) => {
   const transformedData: any[] = [];
 
-  console.log("변환 시작:", { histories, schedules });
-
   histories.forEach((history, index) => {
     // 안전한 배열 처리
-    const beforeScheduleIds = Array.isArray(history.beforeUserRetreatRegistrationScheduleIds) 
-      ? history.beforeUserRetreatRegistrationScheduleIds 
+    const beforeScheduleIds = Array.isArray(
+      history.beforeUserRetreatRegistrationScheduleIds
+    )
+      ? history.beforeUserRetreatRegistrationScheduleIds
       : [];
-    const afterScheduleIds = Array.isArray(history.afterUserRetreatRegistrationScheduleIds)
+    const afterScheduleIds = Array.isArray(
+      history.afterUserRetreatRegistrationScheduleIds
+    )
       ? history.afterUserRetreatRegistrationScheduleIds
       : [];
 
-    console.log(`History ${index}:`, {
-      before: beforeScheduleIds,
-      after: afterScheduleIds,
-      beforeType: typeof beforeScheduleIds[0],
-      afterType: typeof afterScheduleIds[0]
-    });
-
     // Before row
-    const beforeScheduleMap = schedules.reduce((acc, cur) => {
-      // 타입 안전성을 위해 문자열로도 비교
-      const scheduleId = cur.id;
-      const isIncluded = beforeScheduleIds.includes(scheduleId) || 
-                         beforeScheduleIds.includes(scheduleId.toString() as any) ||
-                         beforeScheduleIds.includes(parseInt(scheduleId.toString()));
-      acc[`schedule_${cur.id}`] = isIncluded;
-      console.log(`Before Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`);
-      return acc;
-    }, {} as Record<string, boolean>);
+    const beforeScheduleMap = schedules.reduce(
+      (acc, cur) => {
+        // 타입 안전성을 위해 문자열로도 비교
+        const scheduleId = cur.id;
+        const isIncluded =
+          beforeScheduleIds.includes(scheduleId) ||
+          beforeScheduleIds.includes(scheduleId.toString() as any) ||
+          beforeScheduleIds.includes(parseInt(scheduleId.toString()));
+        acc[`schedule_${cur.id}`] = isIncluded;
+        console.log(
+          `Before Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`
+        );
+        return acc;
+      },
+      {} as Record<string, boolean>
+    );
 
     const beforeRow = {
       id: `${history.userRetreatRegistrationId}_${index}_before`,
@@ -81,21 +78,27 @@ const transformScheduleChangeHistoryForTable = (
       price: history.beforePrice,
       userName: history.createdUserName,
       timestamp: history.createdAt,
-      type: 'before',
+      type: "before",
       rowIndex: index,
     };
 
     // After row
-    const afterScheduleMap = schedules.reduce((acc, cur) => {
-      // 타입 안전성을 위해 문자열로도 비교
-      const scheduleId = cur.id;
-      const isIncluded = afterScheduleIds.includes(scheduleId) || 
-                         afterScheduleIds.includes(scheduleId.toString() as any) ||
-                         afterScheduleIds.includes(parseInt(scheduleId.toString()));
-      acc[`schedule_${cur.id}`] = isIncluded;
-      console.log(`After Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`);
-      return acc;
-    }, {} as Record<string, boolean>);
+    const afterScheduleMap = schedules.reduce(
+      (acc, cur) => {
+        // 타입 안전성을 위해 문자열로도 비교
+        const scheduleId = cur.id;
+        const isIncluded =
+          afterScheduleIds.includes(scheduleId) ||
+          afterScheduleIds.includes(scheduleId.toString() as any) ||
+          afterScheduleIds.includes(parseInt(scheduleId.toString()));
+        acc[`schedule_${cur.id}`] = isIncluded;
+        console.log(
+          `After Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`
+        );
+        return acc;
+      },
+      {} as Record<string, boolean>
+    );
 
     const afterRow = {
       id: `${history.userRetreatRegistrationId}_${index}_after`,
@@ -109,12 +112,9 @@ const transformScheduleChangeHistoryForTable = (
       price: history.afterPrice,
       userName: history.resolvedUserName,
       timestamp: history.resolvedAt,
-      type: 'after',
+      type: "after",
       rowIndex: index,
     };
-
-    console.log('Before row schedule:', beforeRow.schedule);
-    console.log('After row schedule:', afterRow.schedule);
 
     transformedData.push(beforeRow, afterRow);
   });
@@ -153,8 +153,8 @@ export function RetreatScheduleChangeHistoryTable({
             error instanceof AxiosError
               ? error.response?.data?.message || error.message
               : error instanceof Error
-              ? error.message
-              : "데이터를 불러오는 중 오류가 발생했습니다.",
+                ? error.message
+                : "데이터를 불러오는 중 오류가 발생했습니다.",
           variant: "destructive",
         });
       }
@@ -187,7 +187,7 @@ export function RetreatScheduleChangeHistoryTable({
   );
 
   const renderTableRow = (row: any, index: number) => {
-    const isBeforeRow = row.type === 'before';
+    const isBeforeRow = row.type === "before";
     const nextRow = filteredData[index + 1];
     const isLastRowOfPair = !nextRow || nextRow.rowIndex !== row.rowIndex;
 
@@ -198,38 +198,29 @@ export function RetreatScheduleChangeHistoryTable({
       >
         {/* 부서 - rowspan 2 for first row of pair */}
         {isBeforeRow && (
-          <TableCell 
-            className="text-center px-3 py-2.5" 
-            rowSpan={2}
-          >
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
             {row.department}
           </TableCell>
         )}
 
         {/* 성별 - rowspan 2 for first row of pair */}
         {isBeforeRow && (
-          <TableCell 
-            className="text-center px-3 py-2.5" 
-            rowSpan={2}
-          >
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
             <GenderBadge gender={row.gender} />
           </TableCell>
         )}
 
         {/* 학년 - rowspan 2 for first row of pair */}
         {isBeforeRow && (
-          <TableCell 
-            className="text-center px-3 py-2.5" 
-            rowSpan={2}
-          >
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
             {row.grade}
           </TableCell>
         )}
 
         {/* 이름 - rowspan 2 for first row of pair */}
         {isBeforeRow && (
-          <TableCell 
-            className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5" 
+          <TableCell
+            className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5"
             rowSpan={2}
           >
             {row.name}
@@ -238,8 +229,8 @@ export function RetreatScheduleChangeHistoryTable({
 
         {/* 전화번호 - rowspan 2 for first row of pair */}
         {isBeforeRow && (
-          <TableCell 
-            className="font-medium text-center px-3 py-2.5" 
+          <TableCell
+            className="font-medium text-center px-3 py-2.5"
             rowSpan={2}
           >
             {row.phone || "-"}
@@ -254,19 +245,17 @@ export function RetreatScheduleChangeHistoryTable({
         {/* 스케줄 컬럼들 */}
         {scheduleColumns.map(col => {
           const isChecked = !!row.schedule?.[col.key];
-          console.log(`Row ${row.id}, Col ${col.key}, Checked: ${isChecked}`, row.schedule);
-          
+          console.log(
+            `Row ${row.id}, Col ${col.key}, Checked: ${isChecked}`,
+            row.schedule
+          );
+
           return (
-            <TableCell
-              key={`${row.id}-${col.key}`}
-              className="p-2 text-center"
-            >
+            <TableCell key={`${row.id}-${col.key}`} className="p-2 text-center">
               <Checkbox
                 checked={isChecked}
                 disabled
-                className={
-                  isChecked ? col.bgColorClass : ""
-                }
+                className={isChecked ? col.bgColorClass : ""}
               />
             </TableCell>
           );
@@ -404,7 +393,9 @@ export function RetreatScheduleChangeHistoryTable({
                         </TableCell>
                       </TableRow>
                     )}
-                    {filteredData.map((row, index) => renderTableRow(row, index))}
+                    {filteredData.map((row, index) =>
+                      renderTableRow(row, index)
+                    )}
                   </TableBody>
                 </Table>
               </div>
