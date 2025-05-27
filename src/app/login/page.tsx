@@ -1,14 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useGoogleLogin } from "@/lib/hooks/useGoogleLogin";
+
 import IconGoogleLogo from "@/components/icons/IconGoogleLogo";
+import { redirectToGoogle } from "@/lib/utils/googleLogin";
 
 export default function LoginPage() {
-  // Initialize with error message showing
-
-  const { redirectToGoogle } = useGoogleLogin();
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="w-full max-w-md px-6">

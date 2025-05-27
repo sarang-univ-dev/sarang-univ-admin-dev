@@ -9,7 +9,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import { ReactNode, useState, useEffect } from "react";
 
 const baseNavigationItems: {

@@ -4,7 +4,7 @@ import * as React from "react";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { Check } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 // checked와 unchecked 상태에 따른 동적 클래스 적용 및 읽기 전용 처리
 const Checkbox = React.forwardRef<
