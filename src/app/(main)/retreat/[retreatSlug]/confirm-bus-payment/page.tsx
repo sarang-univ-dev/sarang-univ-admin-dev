@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useUserBusRegistration } from "@/hooks/use-user-bus-registration";
 import { RegistrationTable } from "@/components/bus-registration-table";
 import { PaymentSummary } from "@/components/PaymentSummary";
-//TODO 
-import { AccountStatus } from "@/components/account-status";
+import { AccountStatus } from "@/components/bus-account-status";
 import { useParams } from "next/navigation";
 import { TRetreatShuttleBus, TRetreatUnivGroup } from "@/types";
 import { webAxios } from "@/lib/api/axios";
@@ -57,7 +56,7 @@ export default function BusConfirmPaymentPage() {
         retreatSlug={retreatSlug}
       />
 
-      {/*<AccountStatus registrations={data || []} />*/}
+      {<AccountStatus registrations={data || []} />}
     </div>
   );
 }
