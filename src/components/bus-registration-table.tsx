@@ -298,8 +298,8 @@ export function RegistrationTable({
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b">
             <div className="whitespace-nowrap">
-              <CardTitle>신청 현황 및 입금 조회</CardTitle>
-              <CardDescription>전체 신청자 목록</CardDescription>
+              <CardTitle>버스 신청 현황 및 입금 조회</CardTitle>
+              <CardDescription>전체 버스 신청자 목록</CardDescription>
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap">
               <Button

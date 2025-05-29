@@ -5,19 +5,21 @@ import { UserRetreatRegistrationType } from "@/types";
 import { UserRetreatShuttleBusPaymentStatus } from "@/types";
 import Cookies from "js-cookie";
 
-export interface IUserBusRegistration {
+export interface IUnivGroupStaffBus {
   id: number;
   univGroupNumber: number;
   gender: Gender;
   gradeNumber: number;
   name: string;
   price: number;
-  userRetreatShuttleBusRegistrationScheduleIds: number[];
+  userRetreatShuttleBusRegistrationScheduleIds?: number[];
   isAdminContact: boolean;
   shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus;
   createdAt: string;
   paymentConfirmUserName?: string | null;
   paymentConfirmedAt?: string | null;
+  userPhoneNumber: string;
+  univGroupStaffShuttleBusHistoryMemo?: string | null;
 }
 
 const fetcher = async (url: string) => {
@@ -31,7 +33,7 @@ const fetcher = async (url: string) => {
   // API 응답 구조 변경 반영
     const response = {
     data: {
-      retreatShuttleBusRegistrations: [
+      univGroupShuttleBusRegistrations: [
         {
           id: 1,
           univGroupNumber: 3,
@@ -44,7 +46,9 @@ const fetcher = async (url: string) => {
           shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus.PAID,
           createdAt: "2025-05-27T14:32:45.000Z",
           paymentConfirmUserName: "김관리",
-          paymentConfirmedAt: "2025-05-28T02:20:30.000Z"
+          paymentConfirmedAt: "2025-05-28T02:20:30.000Z",
+          userPhoneNumber: "010-1234-5678",
+          univGroupStaffShuttleBusHistoryMemo: "정상 처리됨"
         },
         {
           id: 2,
@@ -58,7 +62,9 @@ const fetcher = async (url: string) => {
           shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus.PENDING,
           createdAt: "2025-05-28T00:15:00.000Z",
           paymentConfirmUserName: null,
-          paymentConfirmedAt: null
+          paymentConfirmedAt: null,
+          userPhoneNumber: "010-9876-5432",
+          univGroupStaffShuttleBusHistoryMemo: null
         },
         {
           id: 3,
@@ -72,18 +78,37 @@ const fetcher = async (url: string) => {
           shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus.PENDING,
           createdAt: "2025-05-28T08:45:10.123Z",
           paymentConfirmUserName: null,
-          paymentConfirmedAt: null
-        }
+          paymentConfirmedAt: null,
+          userPhoneNumber: "010-1111-2222",
+          univGroupStaffShuttleBusHistoryMemo: "현장 결제 예정"
+        },
+        {
+          id: 4,
+          univGroupNumber: 5,
+          gender: Gender.FEMALE,
+          gradeNumber: 1,
+          name: "김조원",
+          price: 15000,
+          userRetreatShuttleBusRegistrationScheduleIds: [1, 2, 3, 4, 5],
+          isAdminContact: false,
+          shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus.PAID,
+          createdAt: "2025-05-28T08:45:10.123Z",
+          paymentConfirmUserName: null,
+          paymentConfirmedAt: null,
+          userPhoneNumber: "010-0000-0000",
+          univGroupStaffShuttleBusHistoryMemo: null
+        },
       ]
     }
   };
-  return response.data.retreatShuttleBusRegistrations;
+  return response.data.univGroupShuttleBusRegistrations;
 };
 
-export function useUserBusRegistration(retreatSlug?: string) {
+export function useUnivGroupStaffBus(retreatSlug?: string) {
+  //TODO once api is made
   const endpoint = retreatSlug
-    ? `/api/v1/retreat/${retreatSlug}/shuttle-bus/registrations`
+    ? `/api/v1/retreat/${retreatSlug}/registration/univ-group-registrations`
     : null;
 
-  return useSWR<IUserBusRegistration[], Error>(endpoint, fetcher);
+  return useSWR<IUnivGroupStaffBus[], Error>(endpoint, fetcher);
 }

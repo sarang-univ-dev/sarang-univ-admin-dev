@@ -44,6 +44,7 @@ const fetcher = async (url: string) => {
 };
 
 export function useUnivGroupStaffRetreat(retreatSlug?: string) {
+  //TODO once api is made
   const endpoint = retreatSlug
     ? `/api/v1/retreat/${retreatSlug}/registration/univ-group-registrations`
     : null;

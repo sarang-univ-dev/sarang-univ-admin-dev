@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useUserBusRegistration } from "@/hooks/use-user-bus-registration";
 import { RegistrationTable } from "@/components/bus-registration-table";
-import { PaymentSummary } from "@/components/PaymentSummary";
+import { PaymentSummary } from "@/components/BusPaymentSummary";
 import { AccountStatus } from "@/components/bus-account-status";
 import { useParams } from "next/navigation";
 import { TRetreatShuttleBus, TRetreatUnivGroup } from "@/types";
@@ -46,8 +46,9 @@ export default function BusConfirmPaymentPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">입금 조회</h1>
+      <h1 className="text-3xl font-bold">셔틀버스 입금 조회</h1>
 
+      {/* Not working yet bc SWR endpoint */}
       <PaymentSummary registrations={data || []} />
 
       <RegistrationTable
