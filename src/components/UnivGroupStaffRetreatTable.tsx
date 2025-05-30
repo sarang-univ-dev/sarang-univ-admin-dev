@@ -505,7 +505,7 @@ export function UnivGroupStaffRetreatTable({
               setLoadingStates(prev => ({ ...prev, exportExcel: true }));
               try {
                 const response = await webAxios.get(
-                  `/api/v1/retreat/${retreatSlug}/registration/download-univ-group-staff-registration-excel`,
+                  `/api/v1/retreat/${retreatSlug}/registration/download-univ-group-registration-excel`,
                   { responseType: 'blob' }
                 );
                 
