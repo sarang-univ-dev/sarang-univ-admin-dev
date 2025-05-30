@@ -488,40 +488,6 @@ export function UnivGroupStaffRetreatTable({
     [schedules]
   );
 
-  const exportToExcel = () => {
-    alert("엑셀 내보내기 기능은 구현이 필요합니다.");
-    // Consider using a library like 'xlsx' or a server-side export.
-    // Example using 'xlsx' (needs installation: npm install xlsx)
-    /*
-    if (typeof window !== 'undefined') { // Ensure this runs client-side
-      const XLSX = require('xlsx');
-      const worksheet = XLSX.utils.json_to_sheet(filteredData.map(row => ({
-        // Map row data to desired Excel column headers
-        '부서': row.department,
-        '성별': row.gender,
-        '학년': row.grade,
-        '이름': row.name,
-        '전화번호': row.phone,
-        // Add schedule columns dynamically if needed
-        '타입': row.type,
-        '금액': row.amount,
-        '신청시각': formatDate(row.createdAt),
-        '입금현황': statusOptions.find(s => s.value === row.status)?.label || row.status,
-        '처리자명': row.confirmedBy,
-        '처리시각': formatDate(row.paymentConfirmedAt),
-        'GBS': row.gbs,
-        '숙소': row.accommodation,
-        '메모': row.memo,
-        '메모 처리자명': row.memoBy,
-        '메모 처리 시각': formatDate(row.memoAt),
-      })));
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-      XLSX.writeFile(workbook, "스태프_수양회_신청현황.xlsx");
-    }
-    */
-  };
-
   return (
     <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b px-4 py-3">
@@ -535,11 +501,42 @@ export function UnivGroupStaffRetreatTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={exportToExcel}
-            disabled={isLoading("excelExport", "export")}
+            onClick={async () => {
+              setLoadingStates(prev => ({ ...prev, exportExcel: true }));
+              try {
+                const response = await webAxios.get(
+                  `/api/v1/retreat/${retreatSlug}/registration/download-univ-group-staff-registration-excel`,
+                  { responseType: 'blob' }
+                );
+                
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `수양회_신청현황_${formatDate(new Date().toISOString())}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                
+                addToast({
+                  title: "성공",
+                  description: "엑셀 파일이 다운로드되었습니다.",
+                  variant: "success",
+                });
+              } catch (error) {
+                console.error("엑셀 다운로드 중 오류 발생:", error);
+                addToast({
+                  title: "오류 발생",
+                  description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+                  variant: "destructive",
+                });
+              } finally {
+                setLoadingStates(prev => ({ ...prev, exportExcel: false }));
+              }
+            }}
+            disabled={loadingStates.exportExcel}
             className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
           >
-            {isLoading("excelExport", "export") ? (
+            {loadingStates.exportExcel ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <Download className="h-4 w-4" />

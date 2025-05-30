@@ -21,14 +21,11 @@ const UserAPI = {
     const accessToken = Cookies.get("accessToken");
     const {
       data: { retreatSlug },
-    } = await webAxios.get<{ retreatSlug: string }>(
-      `/api/v1/auth/slug`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    } = await webAxios.get<{ retreatSlug: string }>(`/api/v1/auth/slug`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
     return retreatSlug;
   },
