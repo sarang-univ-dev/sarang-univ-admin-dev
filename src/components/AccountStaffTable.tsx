@@ -376,7 +376,38 @@ export function AccountStaffTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => alert("엑셀로 내보내기 함수가 구현되어야합니다.")}
+            onClick={async () => {
+              setLoadingStates(prev => ({ ...prev, exportExcel: true }));
+              try {
+                const response = await webAxios.get(
+                  `/api/v1/retreat/${retreatSlug}/account/download-retreat-registration-excel`,
+                  { responseType: 'blob' }
+                );
+                
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `수양회_신청현황_${formatDate(new Date().toISOString())}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                
+                addToast({
+                  title: "성공",
+                  description: "엑셀 파일이 다운로드되었습니다.",
+                  variant: "success",
+                });
+              } catch (error) {
+                console.error("엑셀 다운로드 중 오류 발생:", error);
+                addToast({
+                  title: "오류 발생",
+                  description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+                  variant: "destructive",
+                });
+              } finally {
+                setLoadingStates(prev => ({ ...prev, exportExcel: false }));
+              }
+            }}
             disabled={loadingStates.exportExcel}
             className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
           >
