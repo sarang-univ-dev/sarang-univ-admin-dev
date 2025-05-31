@@ -23,91 +23,19 @@ export interface IUnivGroupStaffBus {
 }
 
 const fetcher = async (url: string) => {
-  //TODO once api is  made
-  // const accessToken = Cookies.get("accessToken");
-  // const response = await webAxios.get(url, {
-  //   headers: {
-  //     Authorization: `Bearer ${accessToken}`,
-  //   },
-  // });
-  // API 응답 구조 변경 반영
-    const response = {
-    data: {
-      univGroupShuttleBusRegistrations: [
-        {
-          id: 1,
-          univGroupNumber: 3,
-          gender: Gender.MALE,
-          gradeNumber: 2,
-          name: "홍길동",
-          price: 15000,
-          userRetreatShuttleBusRegistrationScheduleIds: [1, 2, 3],
-          isAdminContact: true,
-          shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus.PAID,
-          createdAt: "2025-05-27T14:32:45.000Z",
-          paymentConfirmUserName: "김관리",
-          paymentConfirmedAt: "2025-05-28T02:20:30.000Z",
-          userPhoneNumber: "010-1234-5678",
-          univGroupStaffShuttleBusHistoryMemo: "정상 처리됨"
-        },
-        {
-          id: 2,
-          univGroupNumber: 2,
-          gender: Gender.FEMALE,
-          gradeNumber: 3,
-          name: "이영희",
-          price: 15000,
-          userRetreatShuttleBusRegistrationScheduleIds: [1, 2, 3, 4],
-          isAdminContact: false,
-          shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus.PENDING,
-          createdAt: "2025-05-28T00:15:00.000Z",
-          paymentConfirmUserName: null,
-          paymentConfirmedAt: null,
-          userPhoneNumber: "010-9876-5432",
-          univGroupStaffShuttleBusHistoryMemo: null
-        },
-        {
-          id: 3,
-          univGroupNumber: 8,
-          gender: Gender.FEMALE,
-          gradeNumber: 1,
-          name: "최철수",
-          price: 15000,
-          userRetreatShuttleBusRegistrationScheduleIds: [1, 2, 3, 4, 5],
-          isAdminContact: false,
-          shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus.PENDING,
-          createdAt: "2025-05-28T08:45:10.123Z",
-          paymentConfirmUserName: null,
-          paymentConfirmedAt: null,
-          userPhoneNumber: "010-1111-2222",
-          univGroupStaffShuttleBusHistoryMemo: "현장 결제 예정"
-        },
-        {
-          id: 4,
-          univGroupNumber: 5,
-          gender: Gender.FEMALE,
-          gradeNumber: 1,
-          name: "김조원",
-          price: 15000,
-          userRetreatShuttleBusRegistrationScheduleIds: [1, 2, 3, 4, 5],
-          isAdminContact: false,
-          shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus.PAID,
-          createdAt: "2025-05-28T08:45:10.123Z",
-          paymentConfirmUserName: null,
-          paymentConfirmedAt: null,
-          userPhoneNumber: "010-0000-0000",
-          univGroupStaffShuttleBusHistoryMemo: null
-        },
-      ]
-    }
-  };
+  const accessToken = Cookies.get("accessToken");
+  const response = await webAxios.get(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
   return response.data.univGroupShuttleBusRegistrations;
 };
 
 export function useUnivGroupStaffBus(retreatSlug?: string) {
-  //TODO once api is made
   const endpoint = retreatSlug
-    ? `/api/v1/retreat/${retreatSlug}/registration/univ-group-registrations`
+    ? `/api/v1/retreat/${retreatSlug}/shuttle-bus/univ-group-registration`
     : null;
 
   return useSWR<IUnivGroupStaffBus[], Error>(endpoint, fetcher);

@@ -10,20 +10,18 @@ import { TRetreatShuttleBus, TRetreatUnivGroup } from "@/types";
 import { webAxios } from "@/lib/api/axios";
 
 export default function BusConfirmPaymentPage() {
-  const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>(
-      []
-    );
-  
-    const [retreatUnivGroup, setRetreatUnivGroup] = useState<TRetreatUnivGroup[]>(
-      []
-    );
-  
-    const params = useParams();
-    const retreatSlug = params.retreatSlug as string;
-  
-    const { data, isLoading, error } = useUserBusRegistration(retreatSlug);
+  const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>([]);
 
-    useEffect(() => {
+  const [retreatUnivGroup, setRetreatUnivGroup] = useState<TRetreatUnivGroup[]>(
+    []
+  );
+
+  const params = useParams();
+  const retreatSlug = params.retreatSlug as string;
+
+  const { data, isLoading, error } = useUserBusRegistration(retreatSlug);
+
+  useEffect(() => {
     const fetchSchedules = async () => {
       const response = await webAxios.get(
         `/api/v1/retreat/${retreatSlug}/shuttle-bus/info`
@@ -42,7 +40,6 @@ export default function BusConfirmPaymentPage() {
   if (isLoading) {
     return <div>데이터를 불러오는 중...</div>;
   }
-
 
   return (
     <div className="space-y-8">

@@ -110,9 +110,8 @@ export function UnivGroupStaffBusTable({
   const [currentRowId, setCurrentRowId] = useState<string | null>(null);
   const [memoText, setMemoText] = useState("");
 
-  //TODO once api is made
   const registrationsEndpoint = retreatSlug
-    ? `/api/v1/retreat/${retreatSlug}/registration/univ-group-registrations`
+    ? `/api/v1/retreat/${retreatSlug}/shuttle-bus/univ-group-registration`
     : null;
 
   useEffect(() => {
@@ -179,11 +178,12 @@ export function UnivGroupStaffBusTable({
       //   `/api/v1/retreat/${retreatSlug}/account/refund-complete`,
       //   { userShuttleBusRegistrationId: id }
       // );
-      if (registrationsEndpoint) await mutate(registrationsEndpoint);
-      addToast({
-        title: "성공",
-        description: "환불이 성공적으로 처리되었습니다.",
-      });
+      // if (registrationsEndpoint) await mutate(registrationsEndpoint);
+      // addToast({
+      //   title: "성공",
+      //   description: "환불이 성공적으로 처리되었습니다.",
+      // });
+      alert("환불 처리 기능은 구현이 필요합니다.");
     } catch (error) {
       console.error("환불 처리 중 오류 발생:", error);
       addToast({
@@ -246,12 +246,12 @@ export function UnivGroupStaffBusTable({
     setLoading(currentRowId, "memo", true);
     try {
       //TODO once api is made
-      // await webAxios.post(
-      //   `/api/v1/retreat/${retreatSlug}/registration/${currentRowId}/schedule-change-request-memo`,
-      //   {
-      //     memo: memoText,
-      //   }
-      // );
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${currentRowId}/schedule-change-memo`,
+        {
+          memo: memoText,
+        }
+      );
       if (registrationsEndpoint) await mutate(registrationsEndpoint);
       addToast({
         title: "성공",
@@ -606,7 +606,7 @@ export function UnivGroupStaffBusTable({
               </div>
               <textarea
                 className="w-full border rounded-md p-2 min-h-[120px] focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="메모를 입력하세요... ex) 전참 → 금숙 ~ 토점"
+                placeholder="메모를 입력하세요... ex) 수 정발 -> 수 부분참 7시"
                 value={memoText}
                 onChange={e => setMemoText(e.target.value)}
               />

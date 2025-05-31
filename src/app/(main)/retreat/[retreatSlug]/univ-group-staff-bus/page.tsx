@@ -10,7 +10,7 @@ import { TRetreatShuttleBus, TRetreatUnivGroup } from "@/types";
 import { webAxios } from "@/lib/api/axios";
 
 import { UnivGroupStaffBusTable } from "@/components/UnivGroupStaffBusTable";
-//import { RetreatScheduleSummary } from "@/components/RetreatScheduleSummary";
+import { RetreatScheduleSummary } from "@/components/RetreatScheduleSummary";
 
 export default function UnivGroupStaffBusPage() {
   const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>(
