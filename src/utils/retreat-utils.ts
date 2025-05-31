@@ -3,7 +3,7 @@ import {
   UserRetreatRegistrationType,
   RetreatRegistrationScheduleType,
   UserRetreatRegistrationPaymentStatus,
-  TRetreatRegistrationSchedule,
+  TRetreatRegistrationSchedule, TRetreatShuttleBus,
 } from "@/types";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 // 날짜와 타입에 따라 식수 이름을 결정하는 함수
@@ -22,6 +22,31 @@ export function getScheduleLabel(
 
   return `${dayPrefix}${typeSuffix}`;
 }
+
+function getShuttleBusScheduleLabel(departureTime: string | Date, name?: string) {
+  const date = typeof departureTime === "string"
+      ? new Date(departureTime)
+      : departureTime;
+  let hour = date.getHours();
+  const minute = date.getMinutes();
+
+  // 오전/오후 계산
+  const isAM = hour < 12;
+  const period = isAM ? "오전" : "오후";
+
+  // 12시간제 변환 (0시는 12시, 13~23시는 1~11시)
+  let hour12 = hour % 12;
+  if (hour12 === 0) hour12 = 12;
+
+  // 시간 문자열 만들기
+  const timeStr = `${hour12}:${minute.toString().padStart(2, "0")}`;
+
+  return name ? `${name}\n(${period} ${timeStr})` : `\n${period} ${timeStr}`;
+}
+
+
+
+
 
 // 요일에 따른 접두사 반환
 function getDayPrefix(day: number): string {
@@ -241,6 +266,68 @@ export function generateScheduleColumns(
       bgColorClass: colors[colorIndex].bgClass,
       time: schedule.time,
       type: schedule.type,
+    };
+  });
+}
+
+// 스케줄 데이터를 기반으로 컬럼 생성
+export function generateShuttleBusScheduleColumns(
+  schedules: TRetreatShuttleBus[]
+) {
+  if (!schedules || schedules.length === 0) return [];
+
+  // 날짜별로 정렬
+  const sortedSchedules = [...schedules].sort(
+    (a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()
+  );
+
+  // 날짜별로 그룹화하여 색상 할당
+  let currentDate = "";
+  let colorIndex = -1;
+  const colors = [
+    {
+      color: "rose",
+      bgClass:
+        "data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500",
+    },
+    {
+      color: "amber",
+      bgClass:
+        "data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500",
+    },
+    {
+      color: "teal",
+      bgClass:
+        "data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500",
+    },
+    {
+      color: "indigo",
+      bgClass:
+        "data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500",
+    },
+  ];
+
+  return sortedSchedules.map(schedule => {
+    const scheduleDate = new Date(schedule.departureTime).toDateString();
+
+    const label = getShuttleBusScheduleLabel(schedule.departureTime, schedule.name);
+
+    console.log("label ", label)
+
+    // 날짜가 바뀌면 색상 인덱스 증가
+    if (scheduleDate !== currentDate) {
+      currentDate = scheduleDate;
+      colorIndex = (colorIndex + 1) % colors.length;
+    }
+
+    return {
+      key: `schedule_${schedule.id}`,
+      id: schedule.id,
+      label,
+      color: colors[colorIndex].color,
+      bgColorClass: colors[colorIndex].bgClass,
+      time: schedule.departureTime,
+      // type: schedule.type,
     };
   });
 }
