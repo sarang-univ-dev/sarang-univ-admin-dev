@@ -2,33 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { useUserScheduleChangeShuttleBusHistory } from "@/hooks/user-schedule-change-bus-history";
-import { ShuttleBusScheduleChangeHistoryTable  } from "@/components/ShuttleBusScheduleChangeHistoryTable";
+import { ShuttleBusScheduleChangeHistoryTable } from "@/components/ShuttleBusScheduleChangeHistoryTable";
 import { useParams } from "next/navigation";
-import {
-  TRetreatRegistrationSchedule,
-  TRetreatUnivGroup,
-} from "@/types";
+import { TRetreatShuttleBus, TRetreatUnivGroup } from "@/types";
 import { webAxios } from "@/lib/api/axios";
 
 export default function ScheduleChangeHistoryPage() {
-  const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(
-      []
-  );
+  const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>([]);
 
   const [retreatUnivGroup, setRetreatUnivGroup] = useState<TRetreatUnivGroup[]>(
-      []
+    []
   );
 
   const params = useParams();
   const retreatSlug = params.retreatSlug as string;
 
-  const { data, isLoading, error } = useUserScheduleChangeShuttleBusHistory (retreatSlug);
+  const { data, isLoading, error } =
+    useUserScheduleChangeShuttleBusHistory(retreatSlug);
 
   useEffect(() => {
     const fetchSchedules = async () => {
       try {
         const response = await webAxios.get(
-            `/api/v1/retreat/${retreatSlug}/shuttle-bus/info` // 셔틀버스용 엔드포인트 필요시 수정
+          `/api/v1/retreat/${retreatSlug}/shuttle-bus/info` // 셔틀버스용 엔드포인트 필요시 수정
         );
         setSchedules(response.data.shuttleBusInfo.shuttleBuses);
       } catch (error) {
@@ -39,7 +35,7 @@ export default function ScheduleChangeHistoryPage() {
     const fetchRetreatUnivGroup = async () => {
       try {
         const response = await webAxios.get(
-            `/api/v1/retreat/${retreatSlug}/univ-group-info`
+          `/api/v1/retreat/${retreatSlug}/univ-group-info`
         );
         setRetreatUnivGroup(response.data.retreatUnivGroup);
       } catch (error) {
@@ -54,7 +50,7 @@ export default function ScheduleChangeHistoryPage() {
   }, [retreatSlug]);
 
   if (error) {
-    return <div>에러가 발생했습니다: {error.message}</div>;
+    return <div>에러가 발생했습니다: {error}</div>;
   }
 
   if (isLoading) {
@@ -62,14 +58,14 @@ export default function ScheduleChangeHistoryPage() {
   }
 
   return (
-      <div className="space-y-8">
-        <h1 className="text-3xl font-bold">일정 변경 이력</h1>
+    <div className="space-y-8">
+      <h1 className="text-3xl font-bold">일정 변경 이력</h1>
 
-        <ShuttleBusScheduleChangeHistoryTable
-            scheduleChangeHistories={data || []}
-            schedules={schedules}
-            retreatSlug={retreatSlug}
-        />
-      </div>
+      <ShuttleBusScheduleChangeHistoryTable
+        scheduleChangeHistories={data ? [data] : []}
+        schedules={schedules}
+        retreatSlug={retreatSlug}
+      />
+    </div>
   );
 }

@@ -29,39 +29,14 @@ const fetcher = async (url: string) => {
       Authorization: `Bearer ${accessToken}`,
     },
   });
-  return response.data.scheduleChangeRequests;
+  return response.data.shuttleBusScheduleChangeRequests;
 };
 
-const DUMMY_SHUTTLE_BUS_REQUESTS = [
-  {
-    price: 32000,
-    paymentStatus: "PAID",
-    paymentConfirmedAt: "2025-05-19T13:58:39.618Z",
-    userName: "박희서새가족",
-    createdAt: "2025-05-19T13:30:32.219Z",
-    userRetreatShuttleBusRegistrationId: 2,
-    userRetreatShuttleBusRegistrationHistoryMemoId: 9,
-    univGroupNumber: 3,
-    gradeNumber: 8,
-    userRetreatShuttleBusRegistrationScheduleIds: [
-      1, 2, 6, 7
-    ],
-    memo: "memo",
-    issuerName: "김상묵",
-    memoCreatedAt: "2025-05-22T15:27:27.527Z"
-  }
-];
-
 export function useUserScheduleChangeShuttleBus(retreatSlug?: string) {
-  // const endpoint = retreatSlug
-  //   ? `/api/v1/retreat/${retreatSlug}/account/schedule-change-request` // TODO: 이거 api 경로
-  //   : null;
-  //
-  // return useSWR<IUserScheduleChangeShuttleBus[], Error>(endpoint, fetcher);
+  const endpoint = retreatSlug
+    ? `/api/v1/retreat/${retreatSlug}/shuttle-bus/bus-registration-change-request`
+    : null;
+  
+  return useSWR<IUserScheduleChangeShuttleBus[], Error>(endpoint, fetcher);
 
-  return {
-    data: DUMMY_SHUTTLE_BUS_REQUESTS,
-    isLoading: false,
-    error: null,
-  };
 }
