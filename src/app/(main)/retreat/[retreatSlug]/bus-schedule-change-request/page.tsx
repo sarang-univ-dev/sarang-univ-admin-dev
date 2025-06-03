@@ -55,18 +55,18 @@ export default function BusScheduleChangeRequestPage() {
   }
 
   return (
-    // <div className="space-y-8">
-    //   <h1 className="text-3xl font-bold">셔틀버스 일정 변경 요청</h1>
-    //   <ShuttleBusScheduleChangeRequestTable
-    //     registrations={data || []}
-    //     schedules={schedules}
-    //     retreatLocation={retreatLocation}
-    //     retreatSlug={retreatSlug}
-    //     payments={payments}
-    //   />
-    // </div>\
-    <div className="flex items-center justify-center min-h-screen">
-      <h1 className="text-xl font-medium text-gray-600">셔틀버스 일정 변경 요청 페이지는 구현이 필요합니다.</h1>
+    <div className="space-y-8">
+      <h1 className="text-3xl font-bold">셔틀버스 일정 변경 요청</h1>
+      <ShuttleBusScheduleChangeRequestTable
+        registrations={data || []}
+        schedules={schedules}
+        retreatLocation={retreatLocation}
+        retreatSlug={retreatSlug}
+        payments={payments}
+      />
     </div>
+    // <div className="flex items-center justify-center min-h-screen">
+    //   <h1 className="text-xl font-medium text-gray-600">셔틀버스 일정 변경 요청 페이지는 구현이 필요합니다.</h1>
+    // </div>
   );
 }

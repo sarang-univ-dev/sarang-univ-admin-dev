@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -39,6 +39,11 @@ export function BusScheduleSummary({
 }: BusScheduleSummaryProps) {
   const tableRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  useEffect(() => {
+    console.log("Bus schedule summary ************");
+    console.log("Schedules: " + JSON.stringify(schedules));
+  }, [])
 
   // 부서 수 계산
   const uniqueDepartments = useMemo(() => {
@@ -254,10 +259,10 @@ export function BusScheduleSummary({
 
   if (schedules.length === 0) {
     return (
-      <Card>
+        <Card>
         <CardHeader>
-          {/* <CardTitle>식사 숙박 인원 집계 표</CardTitle> */}
-          {/* <CardDescription>수양회 식사 및 숙박 인원 현황</CardDescription> */}
+          <CardTitle>셔틀버스 스케줄 인원 집계 표</CardTitle>
+          <CardDescription>각 셔틀버스의 인원 현황</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-gray-500">
@@ -267,4 +272,145 @@ export function BusScheduleSummary({
       </Card>
     );
   }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>셔틀버스 스케줄 인원 집계 표</CardTitle>
+          <CardDescription>
+            각 셔틀버스의 인원 현황 (입금완료 기준)
+          </CardDescription>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDownloadImage}
+          disabled={isDownloading}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          이미지 저장
+        </Button>
+      </CardHeader>
+      <CardContent ref={tableRef}>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b-0">
+                <TableHead
+                  rowSpan={2}
+                  className="sticky left-0 bg-gray-100 z-10 border-r font-semibold"
+                >
+                  부서
+                </TableHead>
+                {dayGroups.map((group, index) => (
+                  <TableHead
+                    key={group.dayName}
+                    colSpan={group.schedules.length}
+                    className={`text-center font-semibold text-gray-800 border-b ${getDayColor(
+                      index
+                    )} ${index > 0 ? "border-l border-l-gray-300" : ""}`}
+                  >
+                    {group.dayName}
+                  </TableHead>
+                ))}
+                <TableHead
+                  colSpan={3}
+                  className="text-center bg-gray-100 font-semibold text-gray-800 border-l border-l-gray-300"
+                >
+                  요약
+                </TableHead>
+              </TableRow>
+              <TableRow>
+                {dayGroups.map((group, groupIndex) =>
+                  group.schedules.map((schedule, scheduleIndex) => {
+                    const isFirstInGroup = scheduleIndex === 0;
+                    return (
+                      <TableHead
+                        key={schedule.key}
+                        className={`text-center font-medium text-gray-700 ${getDayColor(
+                          groupIndex
+                        )} ${isFirstInGroup && groupIndex > 0 ? "border-l border-l-gray-300" : ""}`}
+                      >
+                        {schedule.label}
+                      </TableHead>
+                    );
+                  })
+                )}
+                <TableHead className="text-center font-medium text-gray-700 bg-gray-100 border-l border-l-gray-300">
+                  전참
+                </TableHead>
+                <TableHead className="text-center font-medium text-gray-700 bg-gray-100">
+                  부분참
+                </TableHead>
+                <TableHead className="text-center font-medium text-gray-700 bg-gray-100">
+                  합계
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {formattedRows.map(row => (
+                <TableRow
+                  key={row.id}
+                  className={
+                    row.id === "total" ? "bg-gray-50 font-semibold" : ""
+                  }
+                >
+                  <TableCell className="font-medium sticky left-0 bg-gray-50 z-10 border-r">
+                    <span
+                      className={`inline-flex px-2.5 py-1 rounded-md font-medium ${
+                        row.id === "total"
+                          ? "bg-gray-200 text-gray-800"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {row.label}
+                    </span>
+                  </TableCell>
+                  {dayGroups.map((group, groupIndex) =>
+                    group.schedules.map((schedule, scheduleIndex) => {
+                      const isFirstInGroup = scheduleIndex === 0;
+                      return (
+                        <TableCell
+                          key={`${row.id}-${schedule.key}`}
+                          className={`text-center ${
+                            isFirstInGroup && groupIndex > 0
+                              ? "border-l border-l-gray-300"
+                              : ""
+                          } ${row.id === "total" ? "bg-gray-50" : ""}`}
+                        >
+                          {row.cells[schedule.key]}
+                        </TableCell>
+                      );
+                    })
+                  )}
+                  <TableCell
+                    className={`text-center border-l border-l-gray-300 ${
+                      row.id === "total" ? "bg-gray-50" : ""
+                    }`}
+                  >
+                    {row.fullParticipation}
+                  </TableCell>
+                  <TableCell
+                    className={`text-center ${
+                      row.id === "total" ? "bg-gray-50" : ""
+                    }`}
+                  >
+                    {row.partialParticipation}
+                  </TableCell>
+                  <TableCell
+                    className={`text-center ${
+                      row.id === "total" ? "bg-gray-50" : ""
+                    }`}
+                  >
+                    {row.total}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }

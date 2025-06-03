@@ -78,6 +78,7 @@ const transformStaffRegistrationsForTable = (
     status: reg.shuttleBusPaymentStatus,
     confirmedBy: reg.paymentConfirmUserName,
     paymentConfirmedAt: reg.paymentConfirmedAt,
+    currentLeaderName: reg.currentLeaderName,
     // gbs: reg.gbsName,
     // accommodation: reg.dormitoryName,
     // qrUrl: reg.qrUrl,
@@ -413,12 +414,12 @@ export function UnivGroupStaffBusTable({
                             <span>처리시각</span>
                           </div>
                         </TableHead>
-                        {/* <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <TableHead className="px-3 py-2.5" rowSpan={2}>
                           <div className="flex items-center space-x-1 justify-center">
-                            <span>GBS</span>
+                            <span>리더 명</span>
                           </div>
                         </TableHead>
-                        <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        {/* <TableHead className="px-3 py-2.5" rowSpan={2}>
                           <div className="flex items-center space-x-1 justify-center">
                             <span>숙소</span>
                           </div>
@@ -534,12 +535,14 @@ export function UnivGroupStaffBusTable({
                           <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
                             {formatDate(row.paymentConfirmedAt)}
                           </TableCell>
-                          {/* <TableCell className="text-center px-3 py-2.5">
-                            {row.gbs || "-"}
-                          </TableCell>
                           <TableCell className="text-center px-3 py-2.5">
+                            {row.currentLeaderName || "-"}
+                          </TableCell>
+                          {/* <TableCell className="text-center px-3 py-2.5">
                             {row.accommodation || "-"}
                           </TableCell> */}
+
+                          {/* 일정 변동 요청 메모 */}
                           <TableCell
                             className="text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
                             title={row.memo}

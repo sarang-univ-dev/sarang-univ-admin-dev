@@ -10,7 +10,7 @@ import { TRetreatShuttleBus, TRetreatUnivGroup } from "@/types";
 import { webAxios } from "@/lib/api/axios";
 
 import { UnivGroupStaffBusTable } from "@/components/UnivGroupStaffBusTable";
-import { RetreatScheduleSummary } from "@/components/RetreatScheduleSummary";
+import { BusScheduleSummary } from "@/components/BusScheduleSummary";
 
 export default function UnivGroupStaffBusPage() {
   const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>(
@@ -61,15 +61,15 @@ export default function UnivGroupStaffBusPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">부서 셔틀버스 정보 조회</h1>
+      <h1 className="text-3xl font-bold">셔틀버스 부서 정보 조회</h1>
       
-      {/* Not working yet bc SWR endpoint */}
+      {/* Not working yet*/}
       <PaymentSummary registrations={data || []} />
 
-      {/* <RetreatScheduleSummary
+      <BusScheduleSummary
         schedules={schedules}
         registrations={data || []}
-      /> */}
+      />
 
       <UnivGroupStaffBusTable
         registrations={data || []}

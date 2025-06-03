@@ -20,6 +20,7 @@ export interface IUnivGroupStaffBus {
   paymentConfirmedAt?: string | null;
   userPhoneNumber: string;
   univGroupStaffShuttleBusHistoryMemo?: string | null;
+  currentLeaderName?: string | null;
 }
 
 const fetcher = async (url: string) => {
