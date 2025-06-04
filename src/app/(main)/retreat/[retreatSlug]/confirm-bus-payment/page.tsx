@@ -8,6 +8,7 @@ import { AccountStatus } from "@/components/bus-account-status";
 import { useParams } from "next/navigation";
 import { TRetreatShuttleBus, TRetreatUnivGroup } from "@/types";
 import { webAxios } from "@/lib/api/axios";
+import { BusScheduleSummary } from "@/components/BusScheduleSummary";
 
 export default function BusConfirmPaymentPage() {
   const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>([]);
@@ -47,6 +48,8 @@ export default function BusConfirmPaymentPage() {
 
       {/* Not working yet bc SWR endpoint */}
       <PaymentSummary registrations={data || []} />
+
+      <BusScheduleSummary registrations={data || []} schedules={schedules} />
 
       <RegistrationTable
         registrations={data || []}
