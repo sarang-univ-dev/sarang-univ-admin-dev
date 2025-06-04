@@ -36,16 +36,12 @@ const transformScheduleChangeHistoryForTable = (
   const transformedData: any[] = [];
 
   histories.forEach((history, index) => {
-    // 안전한 배열 처리
-    const beforeScheduleIds = Array.isArray(
-      history.beforeUserRetreatShuttleBusRegistrationScheduleIds
-    )
-      ? history.beforeUserRetreatShuttleBusRegistrationScheduleIds
+    // 안전한 배열 처리 - 필드명 수정
+    const beforeScheduleIds = Array.isArray(history.beforeShuttleBusIds)
+      ? history.beforeShuttleBusIds
       : [];
-    const afterScheduleIds = Array.isArray(
-      history.afterUserRetreatShuttleBusRegistrationScheduleIds
-    )
-      ? history.afterUserRetreatShuttleBusRegistrationScheduleIds
+    const afterScheduleIds = Array.isArray(history.afterShuttleBusIds)
+      ? history.afterShuttleBusIds
       : [];
 
     // Before row

@@ -12,8 +12,8 @@ export interface IUserScheduleChangeShuttleBusHistory {
   gradeNumber: number;
   name: string;
   phoneNumber: string;
-  beforeUserRetreatShuttleBusRegistrationScheduleIds: number[];
-  afterUserRetreatShuttleBusRegistrationScheduleIds: number[];
+  beforeShuttleBusIds: number[];
+  afterShuttleBusIds: number[];
   beforePrice: number;
   afterPrice: number;
   createdUserName: string;
@@ -37,5 +37,8 @@ export function useUserScheduleChangeShuttleBusHistory(retreatSlug?: string) {
     ? `/api/v1/retreat/${retreatSlug}/shuttle-bus/bus-registration-change-history`
     : null;
 
-  return useSWR<IUserScheduleChangeShuttleBusHistory[], Error>(endpoint, fetcher);
+  return useSWR<IUserScheduleChangeShuttleBusHistory[], Error>(
+    endpoint,
+    fetcher
+  );
 }
