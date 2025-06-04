@@ -62,7 +62,7 @@ export default function ScheduleChangeHistoryPage() {
       <h1 className="text-3xl font-bold">일정 변경 이력</h1>
 
       <ShuttleBusScheduleChangeHistoryTable
-        scheduleChangeHistories={data ? [data] : []}
+        scheduleChangeHistories={data || []}
         schedules={schedules}
         retreatSlug={retreatSlug}
       />

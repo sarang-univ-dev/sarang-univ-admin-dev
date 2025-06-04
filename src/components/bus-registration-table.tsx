@@ -21,10 +21,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
+import { GenderBadge, StatusBadge } from "@/components/Badge";
 import { SearchBar } from "@/components/RegistrationTableSearchBar";
 import {
-  generateScheduleColumns,
+  generateShuttleBusScheduleColumns,
   transformRegistrationsForTable,
 } from "../utils/bus-utils";
 import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
@@ -289,7 +289,7 @@ export function RegistrationTable({
   };
 
   // 일정 체크박스 컬럼 정의
-  const scheduleColumns = generateScheduleColumns(schedules);
+  const scheduleColumns = generateShuttleBusScheduleColumns(schedules);
 
   return (
     <Card className="shadow-sm">
@@ -355,12 +355,7 @@ export function RegistrationTable({
                       >
                         <div className="text-center">버스 신청 일정</div>
                       </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>타입</span>
-                      </TableHead>
+
                       <TableHead
                         rowSpan={2}
                         className="text-center whitespace-nowrap"
@@ -402,9 +397,11 @@ export function RegistrationTable({
                       {scheduleColumns.map(scheduleCol => (
                         <TableHead
                           key={scheduleCol.key}
-                          className="p-2 text-center whitespace-nowrap"
+                          className="p-2 text-center"
                         >
-                          <span className="text-xs">{scheduleCol.label}</span>
+                          <span className="text-xs whitespace-pre-line">
+                            {scheduleCol.label}
+                          </span>
                         </TableHead>
                       ))}
                     </TableRow>
@@ -441,9 +438,7 @@ export function RegistrationTable({
                             />
                           </TableCell>
                         ))}
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          <TypeBadge type={row.type} />
-                        </TableCell>
+
                         <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap">
                           {row.amount.toLocaleString()}원
                         </TableCell>
