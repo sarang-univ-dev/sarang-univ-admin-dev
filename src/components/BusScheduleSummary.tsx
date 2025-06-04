@@ -40,10 +40,10 @@ export function BusScheduleSummary({
   const tableRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  useEffect(() => {
-    console.log("Bus schedule summary ************");
-    console.log("Schedules: " + JSON.stringify(schedules));
-  }, [])
+  //DELETE
+  // useEffect(() => {
+  //   console.log("Schedules: " + JSON.stringify(schedules));
+  // }, [])
 
   // 부서 수 계산
   const uniqueDepartments = useMemo(() => {
@@ -54,6 +54,8 @@ export function BusScheduleSummary({
   const dayGroups = useMemo(() => {
     return groupScheduleColumnsByDay(schedules);
   }, [schedules]);
+
+  console.log("Day Groups: " + JSON.stringify(dayGroups));
 
   // 모든 스케줄 컬럼 (평면화)
   const allScheduleColumns = useMemo(() => {
@@ -134,95 +136,95 @@ export function BusScheduleSummary({
     }, [registrations]);
 
     const formattedRows = useMemo(() => {
-    return rows.map(row => {
-      // 부서별 총 인원수 계산
-      let totalParticipants = 0;
+      return rows.map(row => {
+        // 부서별 총 인원수 계산
+        let totalParticipants = 0;
 
-      if (row.id === "total") {
-        // 합계 행의 경우 모든 부서의 총 인원 합
-        totalParticipants = Object.values(calculateDepartmentTotals).reduce(
-          (sum: number, count: number) => sum + count,
-          0
-        );
-      } else {
-        // 개별 부서의 경우
-        const deptNumber = parseInt(row.id);
-        totalParticipants = calculateDepartmentTotals[deptNumber] || 0;
-      }
-
-      // 스케줄별 셀 생성
-      const scheduleCells: Record<string, JSX.Element> = {};
-      allScheduleColumns.forEach(column => {
-        const count = row.cells[column.key] || 0;
-        scheduleCells[column.key] = (
-          <div className="text-center">
-            {row.id === "total" ? (
-              <span className="font-semibold">{count}명</span>
-            ) : (
-              <span>{count}명</span>
-            )}
-          </div>
-        );
-      });
-
-      // 전참/부분참 계산
-      let fullParticipation = 0;
-      let partialParticipation = 0;
-
-      if (row.id === "total") {
-        // 합계 행의 경우 모든 부서의 합
-        Object.values(calculateParticipation).forEach(stats => {
-          fullParticipation += stats.full;
-          partialParticipation += stats.partial;
-        });
-      } else {
-        // 개별 부서의 경우
-        const deptNumber = parseInt(row.id);
-        const stats = calculateParticipation[deptNumber];
-        if (stats) {
-          fullParticipation = stats.full;
-          partialParticipation = stats.partial;
+        if (row.id === "total") {
+          // 합계 행의 경우 모든 부서의 총 인원 합
+          totalParticipants = Object.values(calculateDepartmentTotals).reduce(
+            (sum: number, count: number) => sum + count,
+            0
+          );
+        } else {
+          // 개별 부서의 경우
+          const deptNumber = parseInt(row.id);
+          totalParticipants = calculateDepartmentTotals[deptNumber] || 0;
         }
-      }
 
-      return {
-        ...row,
-        cells: scheduleCells,
-        fullParticipation: (
-          <div className="text-center">
-            {row.id === "total" ? (
-              <span className="font-semibold">{fullParticipation}명</span>
-            ) : (
-              <span>{fullParticipation}명</span>
-            )}
-          </div>
-        ),
-        partialParticipation: (
-          <div className="text-center">
-            {row.id === "total" ? (
-              <span className="font-semibold">{partialParticipation}명</span>
-            ) : (
-              <span>{partialParticipation}명</span>
-            )}
-          </div>
-        ),
-        total: (
-          <div className="text-center">
-            {row.id === "total" ? (
-              <span className="font-bold">{totalParticipants}명</span>
-            ) : (
-              <span className="font-semibold">{totalParticipants}명</span>
-            )}
-          </div>
-        ),
-      };
-    });
-  }, [
-    rows,
-    allScheduleColumns,
-    calculateParticipation,
-    calculateDepartmentTotals,
-  ]);
+        // 스케줄별 셀 생성
+        const scheduleCells: Record<string, JSX.Element> = {};
+        allScheduleColumns.forEach(column => {
+          const count = row.cells[column.key] || 0;
+          scheduleCells[column.key] = (
+            <div className="text-center">
+              {row.id === "total" ? (
+                <span className="font-semibold">{count}명</span>
+              ) : (
+                <span>{count}명</span>
+              )}
+            </div>
+          );
+        });
+
+        // 전참/부분참 계산
+        let fullParticipation = 0;
+        let partialParticipation = 0;
+
+        if (row.id === "total") {
+          // 합계 행의 경우 모든 부서의 합
+          Object.values(calculateParticipation).forEach(stats => {
+            fullParticipation += stats.full;
+            partialParticipation += stats.partial;
+          });
+        } else {
+          // 개별 부서의 경우
+          const deptNumber = parseInt(row.id);
+          const stats = calculateParticipation[deptNumber];
+          if (stats) {
+            fullParticipation = stats.full;
+            partialParticipation = stats.partial;
+          }
+        }
+
+        return {
+          ...row,
+          cells: scheduleCells,
+          fullParticipation: (
+            <div className="text-center">
+              {row.id === "total" ? (
+                <span className="font-semibold">{fullParticipation}명</span>
+              ) : (
+                <span>{fullParticipation}명</span>
+              )}
+            </div>
+          ),
+          partialParticipation: (
+            <div className="text-center">
+              {row.id === "total" ? (
+                <span className="font-semibold">{partialParticipation}명</span>
+              ) : (
+                <span>{partialParticipation}명</span>
+              )}
+            </div>
+          ),
+          total: (
+            <div className="text-center">
+              {row.id === "total" ? (
+                <span className="font-bold">{totalParticipants}명</span>
+              ) : (
+                <span className="font-semibold">{totalParticipants}명</span>
+              )}
+            </div>
+          ),
+        };
+      });
+    }, [
+      rows,
+      allScheduleColumns,
+      calculateParticipation,
+      calculateDepartmentTotals,
+    ]);
 
   const handleDownloadImage = async () => {
     if (!tableRef.current) return;
@@ -332,7 +334,7 @@ export function BusScheduleSummary({
                           groupIndex
                         )} ${isFirstInGroup && groupIndex > 0 ? "border-l border-l-gray-300" : ""}`}
                       >
-                        {schedule.label}
+                        {schedule.fullLabel.slice(2)}
                       </TableHead>
                     );
                   })
@@ -357,6 +359,7 @@ export function BusScheduleSummary({
                   }
                 >
                   <TableCell className="font-medium sticky left-0 bg-gray-50 z-10 border-r">
+                    {/*합계*/}
                     <span
                       className={`inline-flex px-2.5 py-1 rounded-md font-medium ${
                         row.id === "total"

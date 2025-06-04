@@ -248,7 +248,7 @@ export function generateScheduleStats(
 
   // 입금 완료된 등록만 집계 (PAID 상태)
   const paidRegistrations = registrations.filter(
-    reg => reg.paymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
+    reg => reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
   );
 
   // 부서 목록 추출 (입금완료자 기준, 중복 제거)
@@ -258,7 +258,7 @@ export function generateScheduleStats(
     .sort((a, b) => a - b)
     .map(num => `${num}부`);
 
-  // 각 부서별 스케줄 카운트 초기화
+  // 각 부서별 스케줄 카운트 초기화, For each department, set up a count of 0 for each schedule.
   const stats = departments.map(dept => {
     const scheduleCount: Record<string, number> = {};
 
@@ -281,8 +281,8 @@ export function generateScheduleStats(
     );
     if (deptIndex === -1) return;
 
-    // 사용자가 선택한 스케줄들에 대해 카운트 증가
-    if (Array.isArray(reg.userRetreatShuttleBusRegistrationId)) {
+    // 사용자가 선택한 스케줄들에 대해 카운트 증가 checks if user has registered shuttle schedules.
+    if (Array.isArray(reg.userRetreatShuttleBusRegistrationScheduleIds)) {
       reg.userRetreatShuttleBusRegistrationScheduleIds.forEach((scheduleId: number) => {
         const scheduleKey = `schedule_${scheduleId}`;
         if (stats[deptIndex].cells[scheduleKey] !== undefined) {

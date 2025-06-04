@@ -39,16 +39,16 @@ export default function UnivGroupStaffBusPage() {
         setSchedules(response.data.shuttleBusInfo.shuttleBuses);
     };
 
-    const fetchRetreatUnivGroup = async () => {
-      const response = await webAxios.get(
-        `/api/v1/retreat/${retreatSlug}/univ-group-info`
-      );
+      // const fetchRetreatUnivGroup = async () => {
+      //   const response = await webAxios.get(
+      //     `/api/v1/retreat/${retreatSlug}/univ-group-info`
+      //   );
 
-      setRetreatUnivGroup(response.data.retreatUnivGroup);
-    };
+      //   setRetreatUnivGroup(response.data.retreatUnivGroup);
+      // };
 
-    fetchSchedules();
-    fetchRetreatUnivGroup();
+      fetchSchedules();
+      //fetchRetreatUnivGroup();
   }, [retreatSlug]);
 
   if (error) {
