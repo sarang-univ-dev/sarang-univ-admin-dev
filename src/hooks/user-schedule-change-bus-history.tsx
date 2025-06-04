@@ -34,7 +34,7 @@ const fetcher = async (url: string) => {
 
 export function useUserScheduleChangeShuttleBusHistory(retreatSlug?: string) {
   const endpoint = retreatSlug
-    ? `/api/v1/retreat/${retreatSlug}/account/bus-schedule-change-history`
+    ? `/api/v1/retreat/${retreatSlug}/shuttle-bus/bus-registration-change-history`
     : null;
 
   return useSWR<IUserScheduleChangeShuttleBusHistory[], Error>(endpoint, fetcher);
