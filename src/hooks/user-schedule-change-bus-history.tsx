@@ -29,7 +29,7 @@ const fetcher = async (url: string) => {
       Authorization: `Bearer ${accessToken}`,
     },
   });
-  return response.data.scheduleChangeHistories;
+  return response.data.shuttleBusScheduleChangeHistories;
 };
 
 export function useUserScheduleChangeShuttleBusHistory(retreatSlug?: string) {
