@@ -84,6 +84,7 @@ export function GBSLineupTable({
         phoneNumber: registration.phoneNumber,
         schedule: scheduleData,
         type: registration.userType,
+        isLeader: registration.isLeader,
         isFullAttendance: registration.isFullAttendance,
         currentLeader: registration.currentLeader,
         gbsNumber: registration.gbsNumber,
@@ -170,11 +171,16 @@ export function GBSLineupTable({
           )
       );
 
+      await mutate(lineupEndpoint);
+
       addToast({
         title: "성공",
         description: "GBS가 배정되었습니다.",
         variant: "success",
       });
+
+
+
     } catch (error) {
       // 실패 시 에러 표시
       setFilteredData(prev =>
@@ -377,11 +383,22 @@ export function GBSLineupTable({
       if (!group[row.gbsNumber]) group[row.gbsNumber] = [];
       group[row.gbsNumber].push(row);
     });
+
     Object.keys(group).forEach(gbsNumStr => {
-      group[gbsNumStr].sort((a, b) => Number(b.isLeader) - Number(a.isLeader));
+      group[gbsNumStr].sort((a, b) => {
+        // 1. 리더 우선
+        if (a.isLeader && !b.isLeader) return -1;
+        if (!a.isLeader && b.isLeader) return 1;
+        // 2. 학년 내림차순
+        if (b.grade !== a.grade) return b.grade - a.grade;
+        // 3. 이름 가나다순
+        return a.name.localeCompare(b.name, "ko");
+      });
     });
+
     return group;
   }
+
 
   // 일정 체크박스 컬럼 정의
   const scheduleColumns = generateScheduleColumns(schedules);
@@ -428,20 +445,27 @@ export function GBSLineupTable({
                     </TableHeader>
                     <TableBody>
                       {Object.entries(grouped).map(([gbsNum, groupRows]) => {
-                          return groupRows.map((row, idx) => (
+                        // gbsNumber가 null인 row 개수와 아닌 row 개수 구분
+                        const withNumber = groupRows.filter(r => r.gbsNumber != null);
+                        const withoutNumber = groupRows.filter(r => r.gbsNumber == null);
+
+                        // gbsNumber가 null이 아닌 row(=withNumber)는 rowspan으로 합쳐서 표현
+                        // gbsNumber가 null인 row(=withoutNumber)는 각 row에서 빈 칸 3개
+                        return [
+                          ...withNumber.map((row, idx) => (
                               <TableRow key={row.id}>
                                 {idx === 0 && (
                                     <>
                                       {/* GBS번호: input, rowSpan */}
-                                      <TableCell rowSpan={groupRows.length} className="align-middle font-bold">
+                                      <TableCell rowSpan={withNumber.length} className="align-middle font-bold">
                                         {row.gbsNumber}
                                       </TableCell>
                                       {/* 전참/부분참 */}
-                                      <TableCell rowSpan={groupRows.length} className="align-middle font-semibold">
+                                      <TableCell rowSpan={withNumber.length} className="align-middle font-semibold">
                                         전참 {row.fullAttendanceCount} / 부분참 {row.partialAttendanceCount}
                                       </TableCell>
                                       {/* 남/여 */}
-                                      <TableCell rowSpan={groupRows.length} className="align-middle font-semibold">
+                                      <TableCell rowSpan={withNumber.length} className="align-middle font-semibold">
                                         남 {row.maleCount} / 여 {row.femaleCount}
                                       </TableCell>
                                     </>
@@ -450,8 +474,8 @@ export function GBSLineupTable({
                                 <TableCell>{row.department}</TableCell>
                                 <TableCell><GenderBadge gender={row.gender} /></TableCell>
                                 <TableCell>{row.grade}</TableCell>
-                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.name}</TableCell>
-                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.currentLeader}</TableCell>
+                                <TableCell className={row.isLeader ? "font-bold text-base" : ""}>{row.name}</TableCell>
+                                <TableCell>{row.currentLeader}</TableCell>
                                 <TableCell>{row.phoneNumber}</TableCell>
                                 {scheduleColumns.map(col => (
                                     <TableCell
@@ -461,32 +485,45 @@ export function GBSLineupTable({
                                       <Checkbox
                                           checked={row.schedule[col.key]}
                                           disabled
-                                          className={
-                                            row.schedule[col.key] ? col.bgColorClass : ""
-                                          }
+                                          className={row.schedule[col.key] ? col.bgColorClass : ""}
                                       />
                                     </TableCell>
                                 ))}
-                                <TableCell  className="align-middle">
-                                  <input
-                                      type="text"
-                                      defaultValue={row.gbsNumber}
-                                      className={"border border-blue-500 rounded px-2 py-1 font-bold text-center bg-blue-50" + (row.gbsNumberError ? " border-red-400" : " border-blue-500")}
-                                      style={{width: 60}}
-                                      onClick={e => e.currentTarget.select()}
-                                      onChange={e => setGbsNumberInputs(prev => ({
-                                        ...prev,
-                                        [row.id]: e.target.value,
-                                      }))}
-                                      onKeyDown={e => {
-                                        if (e.key === 'Enter') handleSaveGbsNumber(row);
-                                      }}
-                                      readOnly={false}
-                                  />
+                                <TableCell className="align-middle text-center py-3">
+                                  {row.isLeader ? (
+                                      <span className="
+                                        inline-block w-36 text-center py-1 font-semibold rounded
+                                        bg-gray-100 text-gray-800 border border-gray-400 text-base tracking-wide
+                                        ">
+                                        리더
+                                      </span>
+                                  ) : (
+                                      <input
+                                          type="text"
+                                          defaultValue={row.gbsNumber}
+                                          className={
+                                              "rounded px-2 py-1 text-center w-36 transition-all " +
+                                              ((gbsNumberInputs[row.id] ?? row.gbsNumber ?? "") // 값이 있으면
+                                                  ? "border border-blue-400 font-bold bg-blue-50"
+                                                  : "border border-gray-300 bg-white font-normal text-gray-700")
+                                          }
+                                          onClick={e => e.currentTarget.select()}
+                                          onChange={e => setGbsNumberInputs(prev => ({
+                                            ...prev,
+                                            [row.id]: e.target.value,
+                                          }))}
+                                          placeholder="gbs 번호 입력후 엔터"
+                                          onKeyDown={e => {
+                                            if (e.key === 'Enter') handleSaveGbsNumber(row);
+                                          }}
+                                          readOnly={false}
+                                      />
+                                  )}
                                 </TableCell>
+
                                 {/* GBS 메모 rowSpan */}
                                 {idx === 0 && (
-                                    <TableCell rowSpan={groupRows.length} className="align-middle">
+                                    <TableCell rowSpan={withNumber.length} className="align-middle">
                                       {row.gbsMemo}
                                     </TableCell>
                                 )}
@@ -504,8 +541,9 @@ export function GBSLineupTable({
                                                 }))
                                             }
                                             placeholder="메모를 입력하세요..."
-                                            className={"text-sm resize-none overflow-hidden w-full" +
-                                              (row.memoError ? " border border-red-400" : " border border-gray-200")
+                                            className={
+                                                "text-sm resize-none overflow-hidden w-full" +
+                                                (row.memoError ? " border border-red-400" : " border border-gray-200")
                                             }
                                             style={{
                                               height:
@@ -557,7 +595,135 @@ export function GBSLineupTable({
                                   )}
                                 </TableCell>
                               </TableRow>
-                          ));
+                          )),
+                          ...withoutNumber.map(row => (
+                              <TableRow key={row.id}>
+                                {/* 앞 3개 빈 칸 */}
+                                <TableCell />
+                                <TableCell />
+                                <TableCell />
+                                {/* 이하 나머지 컬럼 */}
+                                <TableCell>{row.department}</TableCell>
+                                <TableCell><GenderBadge gender={row.gender} /></TableCell>
+                                <TableCell>{row.grade}</TableCell>
+                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.name}</TableCell>
+                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.currentLeader}</TableCell>
+                                <TableCell>{row.phoneNumber}</TableCell>
+                                {scheduleColumns.map(col => (
+                                    <TableCell
+                                        key={`${row.id}-${col.key}`}
+                                        className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
+                                    >
+                                      <Checkbox
+                                          checked={row.schedule[col.key]}
+                                          disabled
+                                          className={row.schedule[col.key] ? col.bgColorClass : ""}
+                                      />
+                                    </TableCell>
+                                ))}
+                                <TableCell className="align-middle text-center py-3">
+                                  {row.isLeader ? (
+                                      <span className="
+                                        inline-block w-36 text-center py-1 font-semibold rounded
+                                        bg-gray-100 text-gray-800 border border-gray-400 text-base tracking-wide
+                                        ">
+                                        리더
+                                      </span>
+                                  ) : (
+                                      <input
+                                          type="text"
+                                          defaultValue={row.gbsNumber}
+                                          className={
+                                              "rounded px-2 py-1 text-center w-36 transition-all " +
+                                              ((gbsNumberInputs[row.id] ?? row.gbsNumber ?? "") // 값이 있으면
+                                                  ? "border border-blue-400 font-bold bg-blue-50"
+                                                  : "border border-gray-300 bg-white font-normal text-gray-700")
+                                          }
+                                          onClick={e => e.currentTarget.select()}
+                                          onChange={e => setGbsNumberInputs(prev => ({
+                                            ...prev,
+                                            [row.id]: e.target.value,
+                                          }))}
+                                          placeholder="gbs 번호 입력후 엔터"
+                                          onKeyDown={e => {
+                                            if (e.key === 'Enter') handleSaveGbsNumber(row);
+                                          }}
+                                          readOnly={false}
+                                      />
+                                  )}
+                                </TableCell>
+                                {/* GBS 메모는 없음 */}
+                                <TableCell/>
+                                {/* 라인업 메모(개별 row마다) */}
+                                <TableCell>
+                                  {editingMemo[row.id] ? (
+                                      /* 메모 수정 UI */
+                                      <div className="flex flex-col gap-2 p-2">
+                                        <Textarea
+                                            value={memoValues[row.id] || ""}
+                                            onChange={e =>
+                                                setMemoValues(prev => ({
+                                                  ...prev,
+                                                  [row.id]: e.target.value,
+                                                }))
+                                            }
+                                            placeholder="메모를 입력하세요..."
+                                            className={
+                                                "text-sm resize-none overflow-hidden w-full" +
+                                                (row.memoError ? " border border-red-400" : " border border-gray-200")
+                                            }
+                                            style={{
+                                              height:
+                                                  Math.max(
+                                                      60,
+                                                      Math.min(
+                                                          200,
+                                                          (memoValues[row.id] || "").split("\n").length * 20 + 20
+                                                      )
+                                                  ) + "px",
+                                            }}
+                                            disabled={isLoading(row.id, "memo")}
+                                            rows={Math.max(
+                                                3,
+                                                Math.min(10, (memoValues[row.id] || "").split("\n").length + 1)
+                                            )}
+                                        />
+                                        <div className="flex gap-1 justify-end">
+                                          <Button size="sm" variant="outline" onClick={() => handleSaveMemo(row.id)}
+                                                  disabled={isLoading(row.id, "memo")} className="h-7 px-2">
+                                            {isLoading(row.id, "memo") ? (
+                                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                            ) : <Save className="h-3 w-3" />}
+                                          </Button>
+                                          <Button size="sm" variant="ghost" onClick={() => handleCancelEditMemo(row.id)}
+                                                  disabled={isLoading(row.id, "memo")} className="h-7 px-2">
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                  ) : (
+                                      <div className="flex items-start gap-2 p-2">
+                                        <div
+                                            className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                                            onClick={() => handleStartEditMemo(row.id, row.lineupMemo)}
+                                        >
+                                          {row.lineupMemo || "메모를 추가하려면 클릭하세요"}
+                                        </div>
+                                        {row.lineupMemo && (
+                                            <Button size="sm" variant="ghost" onClick={() => handleConfirmDeleteMemo(row.id)}
+                                                    disabled={isLoading(row.id, "delete_memo")}
+                                                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1">
+                                              {isLoading(row.id, "delete_memo") ? (
+                                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                              ) : <Trash2 className="h-3 w-3" />}
+                                            </Button>
+                                        )}
+                                      </div>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                          )),
+                        ];
                       })}
                     </TableBody>
                   </Table>
