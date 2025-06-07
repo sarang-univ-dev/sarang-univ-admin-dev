@@ -13,16 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  CheckCircle2,
-  RotateCcw,
   Save,
   X,
   Trash2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
+import { GenderBadge} from "@/components/Badge";
 import { SearchBar } from "@/components/RegistrationTableSearchBar";
-import { formatDate } from "@/utils/formatDate";
 import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
@@ -30,7 +27,7 @@ import { mutate } from "swr";
 import { AxiosError } from "axios";
 import {
   generateScheduleColumns,
-} from "../utils/retreat-utils";
+} from "@/utils/retreat-utils";
 
 
 export function GBSLineupTable({
@@ -50,7 +47,6 @@ export function GBSLineupTable({
   const [memoValues, setMemoValues] = useState<Record<string, string>>({});
   const [gbsNumberInputs, setGbsNumberInputs] = useState<Record<string, string>>({});
 
-  const tableContainerRef = useRef<HTMLDivElement>(null);
   const confirmDialog = useConfirmDialogStore();
 
   // API 엔드포인트
@@ -114,7 +110,7 @@ export function GBSLineupTable({
   }, [registrations, schedules]);
 
   // 검색 결과 처리 함수
-  const handleSearchResults = (results: any[], searchTerm: string) => {
+  const handleSearchResults = (results: any[]) => {
     setFilteredData(results);
   };
 
@@ -128,7 +124,7 @@ export function GBSLineupTable({
 
   // 로딩 상태 확인 함수
   const isLoading = (id: string, action: string) => {
-    return !!loadingStates[`${id}_${action}`];
+    return loadingStates[`${id}_${action}`];
   };
 
   // 메모 편집 시작
@@ -222,7 +218,7 @@ export function GBSLineupTable({
       if (memo && memo.trim()) {
         if (hasExistingMemo && memoId) {
           // 기존 메모가 있는 경우 - PUT 요청으로 수정
-          const response = await webAxios.put(
+          await webAxios.put(
               `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`,
               {
                 memo: memo.trim(),
@@ -230,7 +226,7 @@ export function GBSLineupTable({
           );
         } else {
           // 새 메모 생성 - POST 요청
-          const response = await webAxios.post(
+          await webAxios.post(
               `/api/v1/retreat/${retreatSlug}/line-up/${id}/lineup-memo`,
               {
                 memo: memo.trim(),
@@ -307,7 +303,7 @@ export function GBSLineupTable({
     setLoading(id, "delete_memo", true);
 
     try {
-      const response = await webAxios.delete(
+      await webAxios.delete(
           `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`
       );
 
