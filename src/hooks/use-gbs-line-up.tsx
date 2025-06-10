@@ -44,5 +44,16 @@ export function useUserLineups(retreatSlug?: string) {
     ? `/api/v1/retreat/${retreatSlug}/line-up/user-lineups`
     : null;
 
-  return useSWR<IUserRetreatGBSLineup[], Error>(endpoint, fetcher);
+  return useSWR<IUserRetreatGBSLineup[], Error>(
+      endpoint,
+      fetcher,
+      {
+        // 2초마다 자동 리패치
+        refreshInterval: 2000,
+        // 탭 포커스 복귀 시 리패치
+        revalidateOnFocus: true,
+        // 네트워크 재연결 시 리패치
+        revalidateOnReconnect: true,
+      }
+  );
 }

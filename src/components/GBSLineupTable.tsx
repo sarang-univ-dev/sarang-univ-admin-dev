@@ -28,6 +28,7 @@ import { AxiosError } from "axios";
 import {
   generateScheduleColumns,
 } from "@/utils/retreat-utils";
+import {COMPLETE_GROUP_ROW_COUNT, MEMO_COLORS} from "@/lib/constant/lineup.constant";
 
 
 export function GBSLineupTable({
@@ -46,6 +47,8 @@ export function GBSLineupTable({
   const [editingMemo, setEditingMemo] = useState<Record<string, boolean>>({});
   const [memoValues, setMemoValues] = useState<Record<string, string>>({});
   const [gbsNumberInputs, setGbsNumberInputs] = useState<Record<string, string>>({});
+  const [memoBgColors, setMemoBgColors] = useState<Record<string, string>>({});
+
 
   const confirmDialog = useConfirmDialogStore();
 
@@ -87,6 +90,7 @@ export function GBSLineupTable({
         gbsMemo: registration.gbsMemo,
         lineupMemo: registration.lineupMemo,
         lineupMemoId: registration.lineupMemoId,
+        color: registration.color,
       };
     });
 
@@ -207,6 +211,7 @@ export function GBSLineupTable({
   // 메모 저장
   const handleSaveMemo = async (id: string) => {
     const memo = memoValues[id];
+    const color = memoBgColors[id];
     const currentRow = filteredData.find(row => row.id === id);
     const hasExistingMemo =
         currentRow?.lineupMemo && currentRow.lineupMemo.trim();
@@ -222,6 +227,7 @@ export function GBSLineupTable({
               `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`,
               {
                 memo: memo.trim(),
+                color: color.trim(),
               }
           );
         } else {
@@ -230,6 +236,7 @@ export function GBSLineupTable({
               `/api/v1/retreat/${retreatSlug}/line-up/${id}/lineup-memo`,
               {
                 memo: memo.trim(),
+                color: color.trim(),
               }
           );
         }
@@ -421,12 +428,12 @@ export function GBSLineupTable({
                         <TableHead rowSpan={2}>이름</TableHead>
                         <TableHead rowSpan={2}>부서 리더명</TableHead>
                         <TableHead rowSpan={2}>전화번호</TableHead>
+                        <TableHead rowSpan={2}>라인업 메모</TableHead>
                         <TableHead colSpan={scheduleColumns.length} className="whitespace-nowrap">
                           <div className="text-center">수양회 신청 일정</div>
                         </TableHead>
                         <TableHead rowSpan={2}>GBS 배정하기</TableHead>
                         <TableHead rowSpan={2}>GBS 메모</TableHead>
-                        <TableHead rowSpan={2}>라인업 메모</TableHead>
                       </TableRow>
                       <TableRow>
                         {scheduleColumns.map(scheduleCol => (
@@ -453,7 +460,7 @@ export function GBSLineupTable({
                                 {idx === 0 && (
                                     <>
                                       {/* GBS번호: input, rowSpan */}
-                                      <TableCell rowSpan={withNumber.length} className="align-middle font-bold">
+                                      <TableCell rowSpan={withNumber.length} className={`align-middle font-bold ${withNumber.length > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""}`}>
                                         {row.gbsNumber}
                                       </TableCell>
                                       {/* 전참/부분참 */}
@@ -467,16 +474,107 @@ export function GBSLineupTable({
                                     </>
                                 )}
                                 {/* 이하 기존 row 컬럼 렌더링 */}
-                                <TableCell>{row.department}</TableCell>
-                                <TableCell><GenderBadge gender={row.gender} /></TableCell>
-                                <TableCell>{row.grade}</TableCell>
-                                <TableCell className={row.isLeader ? "font-bold text-base" : ""}>{row.name}</TableCell>
-                                <TableCell>{row.currentLeader}</TableCell>
-                                <TableCell>{row.phoneNumber}</TableCell>
+                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}>{row.department}</TableCell>
+                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}><GenderBadge gender={row.gender} /></TableCell>
+                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}>{row.grade}</TableCell>
+                                <TableCell className={row.isLeader ? "bg-cyan-200 font-bold text-base" : ""}>{row.name}</TableCell>
+                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}>{row.currentLeader}</TableCell>
+                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}>{row.phoneNumber}</TableCell>
+                                {/* 라인업 메모(개별 row마다) */}
+                                <TableCell
+                                    className={
+                                      row.color
+                                          ? row.color
+                                          : row.isLeader
+                                              ? "bg-cyan-200"
+                                              : ""
+                                    }
+                                >
+                                  {editingMemo[row.id] ? (
+                                      /* 메모 수정 UI */
+                                      <div className="flex flex-col gap-2 p-2">
+                                        <Textarea
+                                            value={memoValues[row.id] || ""}
+                                            onChange={e =>
+                                                setMemoValues(prev => ({
+                                                  ...prev,
+                                                  [row.id]: e.target.value,
+                                                }))
+                                            }
+                                            placeholder="메모를 입력하세요..."
+                                            className={
+                                                "text-sm resize-none overflow-hidden w-full" +
+                                                (row.memoError ? " border border-red-400" : " border border-gray-200")
+                                            }
+                                            style={{
+                                              height:
+                                                  Math.max(
+                                                      60,
+                                                      Math.min(
+                                                          200,
+                                                          (memoValues[row.id] || "").split("\n").length * 20 + 20
+                                                      )
+                                                  ) + "px",
+                                            }}
+                                            disabled={isLoading(row.id, "memo")}
+                                            rows={Math.max(
+                                                3,
+                                                Math.min(10, (memoValues[row.id] || "").split("\n").length + 1)
+                                            )}
+                                        />
+                                        {/* 색상 선택 버튼들 */}
+                                        <div className="flex gap-1">
+                                          {MEMO_COLORS.map(color => (
+                                              <button
+                                                  key={color}
+                                                  style={{
+                                                    backgroundColor: color,
+                                                    border: memoBgColors[row.id] === color ? "2px solid black" : "1px solid #ccc",
+                                                  }}
+                                                  className="w-5 h-5 rounded-full"
+                                                  onClick={() =>
+                                                      setMemoBgColors(prev => ({ ...prev, [row.id]: color }))
+                                                  }
+                                              />
+                                          ))}
+                                        </div>
+                                        <div className="flex gap-1 justify-end">
+                                          <Button size="sm" variant="outline" onClick={() => handleSaveMemo(row.id)}
+                                                  disabled={isLoading(row.id, "memo")} className="h-7 px-2">
+                                            {isLoading(row.id, "memo") ? (
+                                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                            ) : <Save className="h-3 w-3" />}
+                                          </Button>
+                                          <Button size="sm" variant="ghost" onClick={() => handleCancelEditMemo(row.id)}
+                                                  disabled={isLoading(row.id, "memo")} className="h-7 px-2">
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                  ) : (
+                                      <div className="flex items-start gap-2 p-2">
+                                        <div
+                                            className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                                            onClick={() => handleStartEditMemo(row.id, row.lineupMemo)}
+                                        >
+                                          {row.lineupMemo || "메모를 추가하려면 클릭하세요"}
+                                        </div>
+                                        {row.lineupMemo && (
+                                            <Button size="sm" variant="ghost" onClick={() => handleConfirmDeleteMemo(row.id)}
+                                                    disabled={isLoading(row.id, "delete_memo")}
+                                                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1">
+                                              {isLoading(row.id, "delete_memo") ? (
+                                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                              ) : <Trash2 className="h-3 w-3" />}
+                                            </Button>
+                                        )}
+                                      </div>
+                                  )}
+                                </TableCell >
                                 {scheduleColumns.map(col => (
                                     <TableCell
                                         key={`${row.id}-${col.key}`}
-                                        className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
+                                        className={`p-2 text-center group-hover:bg-gray-50 whitespace-nowrap ${row.isLeader ? "bg-cyan-200" : ""}`}
                                     >
                                       <Checkbox
                                           checked={row.schedule[col.key]}
@@ -485,7 +583,7 @@ export function GBSLineupTable({
                                       />
                                     </TableCell>
                                 ))}
-                                <TableCell className="align-middle text-center py-3">
+                                <TableCell className={`align-middle text-center py-3 ${row.isLeader ? "bg-cyan-200" : ""}`}>
                                   {row.isLeader ? (
                                       <span className="
                                         inline-block w-36 text-center py-1 font-semibold rounded
@@ -523,6 +621,22 @@ export function GBSLineupTable({
                                       {row.gbsMemo}
                                     </TableCell>
                                 )}
+
+                              </TableRow>
+                          )),
+                          ...withoutNumber.map(row => (
+                              <TableRow key={row.id}>
+                                {/* 앞 3개 빈 칸 */}
+                                <TableCell />
+                                <TableCell />
+                                <TableCell />
+                                {/* 이하 나머지 컬럼 */}
+                                <TableCell>{row.department}</TableCell>
+                                <TableCell><GenderBadge gender={row.gender} /></TableCell>
+                                <TableCell>{row.grade}</TableCell>
+                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.name}</TableCell>
+                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.currentLeader}</TableCell>
+                                <TableCell>{row.phoneNumber}</TableCell>
                                 {/* 라인업 메모(개별 row마다) */}
                                 <TableCell>
                                   {editingMemo[row.id] ? (
@@ -557,6 +671,22 @@ export function GBSLineupTable({
                                                 Math.min(10, (memoValues[row.id] || "").split("\n").length + 1)
                                             )}
                                         />
+                                        {/* 색상 선택 버튼들 */}
+                                        <div className="flex gap-1">
+                                          {MEMO_COLORS.map(color => (
+                                              <button
+                                                  key={color}
+                                                  style={{
+                                                    backgroundColor: color,
+                                                    border: memoBgColors[row.id] === color ? "2px solid black" : "1px solid #ccc",
+                                                  }}
+                                                  className="w-5 h-5 rounded-full"
+                                                  onClick={() =>
+                                                      setMemoBgColors(prev => ({ ...prev, [row.id]: color }))
+                                                  }
+                                              />
+                                          ))}
+                                        </div>
                                         <div className="flex gap-1 justify-end">
                                           <Button size="sm" variant="outline" onClick={() => handleSaveMemo(row.id)}
                                                   disabled={isLoading(row.id, "memo")} className="h-7 px-2">
@@ -590,21 +720,6 @@ export function GBSLineupTable({
                                       </div>
                                   )}
                                 </TableCell>
-                              </TableRow>
-                          )),
-                          ...withoutNumber.map(row => (
-                              <TableRow key={row.id}>
-                                {/* 앞 3개 빈 칸 */}
-                                <TableCell />
-                                <TableCell />
-                                <TableCell />
-                                {/* 이하 나머지 컬럼 */}
-                                <TableCell>{row.department}</TableCell>
-                                <TableCell><GenderBadge gender={row.gender} /></TableCell>
-                                <TableCell>{row.grade}</TableCell>
-                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.name}</TableCell>
-                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.currentLeader}</TableCell>
-                                <TableCell>{row.phoneNumber}</TableCell>
                                 {scheduleColumns.map(col => (
                                     <TableCell
                                         key={`${row.id}-${col.key}`}
@@ -650,73 +765,7 @@ export function GBSLineupTable({
                                 </TableCell>
                                 {/* GBS 메모는 없음 */}
                                 <TableCell/>
-                                {/* 라인업 메모(개별 row마다) */}
-                                <TableCell>
-                                  {editingMemo[row.id] ? (
-                                      /* 메모 수정 UI */
-                                      <div className="flex flex-col gap-2 p-2">
-                                        <Textarea
-                                            value={memoValues[row.id] || ""}
-                                            onChange={e =>
-                                                setMemoValues(prev => ({
-                                                  ...prev,
-                                                  [row.id]: e.target.value,
-                                                }))
-                                            }
-                                            placeholder="메모를 입력하세요..."
-                                            className={
-                                                "text-sm resize-none overflow-hidden w-full" +
-                                                (row.memoError ? " border border-red-400" : " border border-gray-200")
-                                            }
-                                            style={{
-                                              height:
-                                                  Math.max(
-                                                      60,
-                                                      Math.min(
-                                                          200,
-                                                          (memoValues[row.id] || "").split("\n").length * 20 + 20
-                                                      )
-                                                  ) + "px",
-                                            }}
-                                            disabled={isLoading(row.id, "memo")}
-                                            rows={Math.max(
-                                                3,
-                                                Math.min(10, (memoValues[row.id] || "").split("\n").length + 1)
-                                            )}
-                                        />
-                                        <div className="flex gap-1 justify-end">
-                                          <Button size="sm" variant="outline" onClick={() => handleSaveMemo(row.id)}
-                                                  disabled={isLoading(row.id, "memo")} className="h-7 px-2">
-                                            {isLoading(row.id, "memo") ? (
-                                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                            ) : <Save className="h-3 w-3" />}
-                                          </Button>
-                                          <Button size="sm" variant="ghost" onClick={() => handleCancelEditMemo(row.id)}
-                                                  disabled={isLoading(row.id, "memo")} className="h-7 px-2">
-                                            <X className="h-3 w-3" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                  ) : (
-                                      <div className="flex items-start gap-2 p-2">
-                                        <div
-                                            className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
-                                            onClick={() => handleStartEditMemo(row.id, row.lineupMemo)}
-                                        >
-                                          {row.lineupMemo || "메모를 추가하려면 클릭하세요"}
-                                        </div>
-                                        {row.lineupMemo && (
-                                            <Button size="sm" variant="ghost" onClick={() => handleConfirmDeleteMemo(row.id)}
-                                                    disabled={isLoading(row.id, "delete_memo")}
-                                                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1">
-                                              {isLoading(row.id, "delete_memo") ? (
-                                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                              ) : <Trash2 className="h-3 w-3" />}
-                                            </Button>
-                                        )}
-                                      </div>
-                                  )}
-                                </TableCell>
+
                               </TableRow>
                           )),
                         ];
