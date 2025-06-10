@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +23,8 @@ import {
   QrCode,
   CheckSquare,
   XSquare,
+  Save,
+  Trash2,
 } from "lucide-react";
 import {
   Card,
@@ -106,9 +109,14 @@ export function UnivGroupStaffRetreatTable({
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  //schedule change request memo
   const [memoDialogOpen, setMemoDialogOpen] = useState(false);
   const [currentRowId, setCurrentRowId] = useState<string | null>(null);
   const [memoText, setMemoText] = useState("");
+
+  //editable memo
+  const [editingMemo, setEditingMemo] = useState<Record<string, boolean>>({});
+  const [memoValues, setMemoValues] = useState<Record<string, string>>({});
 
   const registrationsEndpoint = retreatSlug
     ? `/api/v1/retreat/${retreatSlug}/registration/univ-group-registrations`
@@ -330,6 +338,7 @@ export function UnivGroupStaffRetreatTable({
     }
   };
 
+  //schedule change request memo
   const handleSubmitMemo = async () => {
     if (!currentRowId || !memoText.trim()) return;
     setLoading(currentRowId, "memo", true);
@@ -377,6 +386,130 @@ export function UnivGroupStaffRetreatTable({
     setMemoText("");
     setCurrentRowId(null);
   };
+
+  //editable memo
+  // 메모 편집 시작
+  const handleStartEditMemo = (id: string, currentMemo: string) => {
+    setEditingMemo(prev => ({ ...prev, [id]: true }));
+    setMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
+  };
+
+  // 메모 편집 취소
+  const handleCancelEditMemo = (id: string) => {
+    setEditingMemo(prev => ({ ...prev, [id]: false }));
+    setMemoValues(prev => ({ ...prev, [id]: "" }));
+  };
+
+  // 메모 저장
+  const handleSaveMemo = async (id: string) => {
+    const memo = memoValues[id];
+    const currentRow = filteredData.find(row => row.id === id);
+    const hasExistingMemo =
+      currentRow?.accountMemo && currentRow.accountMemo.trim();
+    const memoId = currentRow?.accountMemoId;
+
+    setLoading(id, "memo", true);
+
+    try {
+      if (memo && memo.trim()) {
+        if (hasExistingMemo && memoId) {
+          //TODO: edit after api is made
+          //PUT으로 메모 수정
+          // const response = await webAxios.put(
+          //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${memoId}/change-memo`,
+          //   {
+          //     memo: memo.trim(),
+          //   }
+          // );
+        } else {
+          //TODO: edit after api is made
+          //POST 요청
+          // const response = await webAxios.post(
+          //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/add-memo`,
+          //   {
+          //     memo: memo.trim(),
+          //   }
+          // );
+        }
+      }
+
+      await mutate(registrationsEndpoint);
+
+      setEditingMemo(prev => ({ ...prev, [id]: false }));
+      setMemoValues(prev => ({ ...prev, [id]: "" }));
+
+      addToast({
+        title: "성공",
+        description: hasExistingMemo
+          ? "메모가 성공적으로 수정되었습니다."
+          : "메모가 성공적으로 저장되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("메모 저장 중 오류 발생:", error);
+
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "메모 저장 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(id, "memo", false);
+    }
+  };
+
+  // 메모 삭제
+  const handleDeleteMemo = async (id: string) => {
+    const currentRow = filteredData.find(row => row.id === id);
+    const memoId = currentRow?.accountMemoId;
+
+    setLoading(id, "delete_memo", true);
+
+    try {
+      //TODO: edit after api is made
+      // const response = await webAxios.delete(
+      //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${memoId}`
+      // );
+
+      await mutate(registrationsEndpoint);
+
+      addToast({
+        title: "성공",
+        description: "메모가 성공적으로 삭제되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("메모 삭제 중 오류 발생:", error);
+
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "메모 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(id, "delete_memo", false);
+    }
+  };
+
+  // 메모 삭제 확인
+  const handleConfirmDeleteMemo = (id: string) => {
+    confirmDialog.show({
+      title: "메모 삭제",
+      description: "정말로 메모를 삭제하시겠습니까?",
+      onConfirm: () => handleDeleteMemo(id),
+    });
+  };
+  
 
   const handleOpenQR = (qrUrl: string | null) => {
     if (!qrUrl) {
@@ -591,6 +724,11 @@ export function UnivGroupStaffRetreatTable({
                           <span>전화번호</span>
                         </div>
                       </TableHead>
+                      <TableHead className="px-9 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>리더 명</span>
+                        </div>
+                      </TableHead>
                       <TableHead
                         colSpan={scheduleColumns.length}
                         className="text-center px-3 py-2.5"
@@ -664,6 +802,11 @@ export function UnivGroupStaffRetreatTable({
                           <span>메모 처리시각</span>
                         </div>
                       </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>행정간사 메모</span>
+                        </div>
+                      </TableHead>
                       <TableHead
                         className="px-3 py-2.5 text-center"
                         rowSpan={2}
@@ -718,6 +861,9 @@ export function UnivGroupStaffRetreatTable({
                         </TableCell>
                         <TableCell className="font-medium text-center px-3 py-2.5">
                           {row.phone || "-"}
+                        </TableCell>
+                        <TableCell className="font-medium text-center px-3 py-2.5">
+                          {row.currentLeaderName || "-"}
                         </TableCell>
                         {scheduleColumns.map(col => (
                           <TableCell
@@ -788,6 +934,98 @@ export function UnivGroupStaffRetreatTable({
                         </TableCell>
                         <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
                           {formatDate(row.memoAt)}
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-left min-w-[300px] max-w-[400px]">
+                          {editingMemo[row.id] ? (
+                            <div className="flex flex-col gap-2 p-2">
+                              <Textarea
+                                value={memoValues[row.id] || ""}
+                                onChange={e =>
+                                  setMemoValues(prev => ({
+                                    ...prev,
+                                    [row.id]: e.target.value,
+                                  }))
+                                }
+                                placeholder="메모를 입력하세요..."
+                                className="text-sm resize-none overflow-hidden w-full"
+                                style={{
+                                  height:
+                                    Math.max(
+                                      60,
+                                      Math.min(
+                                        200,
+                                        (memoValues[row.id] || "").split("\n")
+                                          .length *
+                                          20 +
+                                          20
+                                      )
+                                    ) + "px",
+                                }}
+                                disabled={isLoading(row.id, "memo")}
+                                rows={Math.max(
+                                  3,
+                                  Math.min(
+                                    10,
+                                    (memoValues[row.id] || "").split("\n")
+                                      .length + 1
+                                  )
+                                )}
+                              />
+                              <div className="flex gap-1 justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleSaveMemo(row.id)}
+                                  disabled={isLoading(row.id, "memo")}
+                                  className="h-7 px-2"
+                                >
+                                  {isLoading(row.id, "memo") ? (
+                                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                  ) : (
+                                    <Save className="h-3 w-3" />
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleCancelEditMemo(row.id)}
+                                  disabled={isLoading(row.id, "memo")}
+                                  className="h-7 px-2"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start gap-2 p-2">
+                              <div
+                                className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                                onClick={() =>
+                                  handleStartEditMemo(row.id, row.accountMemo)
+                                }
+                              >
+                                {row.accountMemo ||
+                                  "메모를 추가하려면 클릭하세요"}
+                              </div>
+                              {row.accountMemo && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    handleConfirmDeleteMemo(row.id)
+                                  }
+                                  disabled={isLoading(row.id, "delete_memo")}
+                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1"
+                                >
+                                  {isLoading(row.id, "delete_memo") ? (
+                                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                  ) : (
+                                    <Trash2 className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-center px-3 py-2.5">
                           <Button

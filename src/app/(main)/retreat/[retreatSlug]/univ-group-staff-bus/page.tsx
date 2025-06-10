@@ -63,13 +63,7 @@ export default function UnivGroupStaffBusPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">셔틀버스 부서 정보 조회</h1>
       
-      {/* Not working yet*/}
       <PaymentSummary registrations={data || []} />
-
-      <BusScheduleSummary
-        schedules={schedules}
-        registrations={data || []}
-      />
 
       <UnivGroupStaffBusTable
         registrations={data || []}

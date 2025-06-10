@@ -38,7 +38,7 @@ export function generateDepartmentStats(registrations: any[]) {
     .map(reg => reg.univGroupNumber) //extract department numbers
     .filter((value, index, self) => self.indexOf(value) === index) // Remove duplicates
     .sort((a, b) => a - b) // Sort in ascending order
-    .map(num => `${num}부`); // Convert to label format like '1부', '2부'
+    .map(num => `${num}부`); // Convert to label format like '1부', '2부' 
 
   // 상태별 카운트 초기화 Each department starts with all status counts 0
   const stats = departments.map(dept => ({ 
@@ -51,6 +51,7 @@ export function generateDepartmentStats(registrations: any[]) {
       refund_completed: 0,
     },
   }));
+  
   // 각 등록에 대해 상태별로 카운트 Count registrations by payment status
     registrations.forEach(reg => {
       const deptIndex = stats.findIndex(
@@ -58,7 +59,7 @@ export function generateDepartmentStats(registrations: any[]) {
       );
       if (deptIndex === -1) return;
   
-      switch (reg.paymentStatus) {
+      switch (reg.shuttleBusPaymentStatus) {
         case UserRetreatShuttleBusPaymentStatus.PENDING:
           stats[deptIndex].cells.waiting++;
           break;
@@ -91,7 +92,6 @@ export function generateDepartmentStats(registrations: any[]) {
         ),
       },
     };
-  
     return [...stats, totals];
   }
 
