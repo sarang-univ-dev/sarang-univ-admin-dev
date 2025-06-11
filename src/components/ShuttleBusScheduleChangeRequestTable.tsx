@@ -598,7 +598,7 @@ export function ShuttleBusScheduleChangeRequestTable({
                           </TableCell>
                           <TableCell className="text-center">
                             {schedule.departureTime
-                              ? formatDate(schedule.departureTime.toISOString())
+                              ? formatDate(new Date(schedule.departureTime).toISOString()).slice(6)
                               : "-"}
                           </TableCell>
                         </TableRow>

@@ -87,6 +87,8 @@ const transformStaffRegistrationsForTable = (
     memo: reg.univGroupStaffScheduleHistoryMemo,
     memoBy: reg.univGroupStaffScheduleHistoryResolvedUserName,
     memoAt: reg.univGroupStaffScheduleHistoryResolvedAt,
+    //TODO: edit once api is made
+    staffMemo: "",
   }));
 };
 
@@ -114,7 +116,7 @@ export function UnivGroupStaffRetreatTable({
   const [currentRowId, setCurrentRowId] = useState<string | null>(null);
   const [memoText, setMemoText] = useState("");
 
-  //editable memo
+  //editable staff memo
   const [editingMemo, setEditingMemo] = useState<Record<string, boolean>>({});
   const [memoValues, setMemoValues] = useState<Record<string, string>>({});
 
@@ -387,7 +389,7 @@ export function UnivGroupStaffRetreatTable({
     setCurrentRowId(null);
   };
 
-  //editable memo
+  //editable staff memo
   // 메모 편집 시작
   const handleStartEditMemo = (id: string, currentMemo: string) => {
     setEditingMemo(prev => ({ ...prev, [id]: true }));
@@ -405,8 +407,8 @@ export function UnivGroupStaffRetreatTable({
     const memo = memoValues[id];
     const currentRow = filteredData.find(row => row.id === id);
     const hasExistingMemo =
-      currentRow?.accountMemo && currentRow.accountMemo.trim();
-    const memoId = currentRow?.accountMemoId;
+      currentRow?.staffMemo && currentRow.staffMemo.trim();
+    const memoId = currentRow?.staffMemoId;
 
     setLoading(id, "memo", true);
 
@@ -431,7 +433,12 @@ export function UnivGroupStaffRetreatTable({
           //   }
           // );
         }
+      //API 대신 임시로 변경
+      setFilteredData(prev => prev.map(
+        row => row.id === id ? {...row, staffMemo: memo} : row
+      ));
       }
+
 
       await mutate(registrationsEndpoint);
 
@@ -466,7 +473,7 @@ export function UnivGroupStaffRetreatTable({
   // 메모 삭제
   const handleDeleteMemo = async (id: string) => {
     const currentRow = filteredData.find(row => row.id === id);
-    const memoId = currentRow?.accountMemoId;
+    const memoId = currentRow?.staffMemoId;
 
     setLoading(id, "delete_memo", true);
 
@@ -475,6 +482,11 @@ export function UnivGroupStaffRetreatTable({
       // const response = await webAxios.delete(
       //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${memoId}`
       // );
+
+      //API 대신 임시로 변경
+      setFilteredData(prev => prev.map(
+        row => row.id === id ? {...row, staffMemo: ""} : row
+      ));
 
       await mutate(registrationsEndpoint);
 
@@ -1001,13 +1013,13 @@ export function UnivGroupStaffRetreatTable({
                               <div
                                 className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
                                 onClick={() =>
-                                  handleStartEditMemo(row.id, row.accountMemo)
+                                  handleStartEditMemo(row.id, row.staffMemo)
                                 }
                               >
-                                {row.accountMemo ||
+                                {row.staffMemo ||
                                   "메모를 추가하려면 클릭하세요"}
                               </div>
-                              {row.accountMemo && (
+                              {row.staffMemo && (
                                 <Button
                                   size="sm"
                                   variant="ghost"
