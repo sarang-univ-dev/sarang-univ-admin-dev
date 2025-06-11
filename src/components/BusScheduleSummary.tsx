@@ -19,17 +19,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import html2canvas from "html2canvas";
-import {
-  generateScheduleStats,
-  groupScheduleColumnsByDay,
-} from "../utils/bus-utils";
+import { groupScheduleColumnsByDay } from "../utils/bus-utils";
 import {
   TRetreatShuttleBus,
   UserRetreatShuttleBusPaymentStatus,
 } from "@/types";
+import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
+import { IUnivGroupStaffBus } from "@/hooks/use-univ-group-staff-bus";
 
 interface BusScheduleSummaryProps {
-  registrations: any[];
+  registrations: IUserBusRegistration[] | IUnivGroupStaffBus[];
   schedules: TRetreatShuttleBus[];
 }
 
@@ -39,11 +38,6 @@ export function BusScheduleSummary({
 }: BusScheduleSummaryProps) {
   const tableRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
-
-  //DELETE
-  // useEffect(() => {
-  //   console.log("Schedules: " + JSON.stringify(schedules));
-  // }, [])
 
   // 부서 수 계산
   const uniqueDepartments = useMemo(() => {
@@ -62,83 +56,105 @@ export function BusScheduleSummary({
     return dayGroups.flatMap(group => group.schedules);
   }, [dayGroups]);
 
-  // 부서별 스케줄 통계 생성
+  // 부서별 스케줄 통계 생성 (모든 등록자 기준)
   const allRows = useMemo(() => {
-    return generateScheduleStats(registrations, schedules);
+    if (!Array.isArray(registrations) || !Array.isArray(schedules)) {
+      return [];
+    }
+
+    // 부서 목록 추출 (모든 등록자 기준, 중복 제거)
+    const departments = registrations
+      .map(reg => reg.univGroupNumber)
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort((a, b) => a - b)
+      .map(num => `${num}부`);
+
+    // 각 부서별 스케줄 카운트 초기화
+    const stats = departments.map(dept => {
+      const scheduleCount: Record<string, number> = {};
+
+      // 각 스케줄에 대해 카운트 초기화
+      schedules.forEach(schedule => {
+        scheduleCount[`schedule_${schedule.id}`] = 0;
+      });
+
+      return {
+        id: dept.replace("부", ""),
+        label: dept,
+        cells: scheduleCount,
+      };
+    });
+
+    // 각 등록에 대해 스케줄별로 카운트
+    registrations.forEach(reg => {
+      const deptIndex = stats.findIndex(
+        s => s.label === `${reg.univGroupNumber}부`
+      );
+      if (deptIndex === -1) return;
+
+      // 사용자가 선택한 스케줄들에 대해 카운트 증가
+      if (Array.isArray(reg.userRetreatShuttleBusRegistrationScheduleIds)) {
+        reg.userRetreatShuttleBusRegistrationScheduleIds.forEach(
+          (scheduleId: number) => {
+            const scheduleKey = `schedule_${scheduleId}`;
+            if (stats[deptIndex].cells[scheduleKey] !== undefined) {
+              stats[deptIndex].cells[scheduleKey]++;
+            }
+          }
+        );
+      }
+    });
+
+    // 합계 계산
+    const totals = {
+      id: "total",
+      label: "합계",
+      cells: {} as Record<string, number>,
+    };
+
+    schedules.forEach(schedule => {
+      const scheduleKey = `schedule_${schedule.id}`;
+      totals.cells[scheduleKey] = stats.reduce(
+        (sum, dept) => sum + dept.cells[scheduleKey],
+        0
+      );
+    });
+
+    return [...stats, totals];
   }, [registrations, schedules]);
 
   // 부서가 1개인 경우 전체 행 제외
-    const rows = useMemo(() => {
-      if (uniqueDepartments <= 1) {
-        return allRows.filter(row => row.id !== "total");
-      }
-      return allRows;
-    }, [allRows, uniqueDepartments]);
-  
-    // 전참/부분참 계산 함수
-    const calculateParticipation = useMemo(() => {
-      const paidRegistrations = registrations.filter(
-        reg => reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
-      );
-  
-      const participationStats: Record<
-        string,
-        { full: number; partial: number }
-      > = {};
+  const rows = useMemo(() => {
+    if (uniqueDepartments <= 1) {
+      return allRows.filter(row => row.id !== "total");
+    }
+    return allRows;
+  }, [allRows, uniqueDepartments]);
 
-      // 부서별 초기화
+  // 부서별 총 인원수 계산 (모든 등록자 기준)
+  const calculateDepartmentTotals = useMemo(() => {
+    const departmentCounts: Record<string, number> = {};
+
+    // 부서별 초기화
     const departments = [
-      ...new Set(paidRegistrations.map(reg => reg.univGroupNumber)),
+      ...new Set(registrations.map(reg => reg.univGroupNumber)),
     ];
     departments.forEach(dept => {
-      participationStats[dept] = { full: 0, partial: 0 };
+      departmentCounts[dept] = 0;
     });
 
-    // 전체 스케줄 수
-    const totalSchedules = schedules.length;
-
-    paidRegistrations.forEach(reg => {
-      const userScheduleCount =
-        reg.userRetreatShuttleBusRegistrationScheduleIds?.length || 0;
-
-      if (userScheduleCount === totalSchedules) {
-        participationStats[reg.univGroupNumber].full++;
-      } else if (userScheduleCount > 0) {
-        participationStats[reg.univGroupNumber].partial++;
-      }
+    // 부서별 총 인원 계산 (모든 등록자)
+    registrations.forEach(reg => {
+      departmentCounts[reg.univGroupNumber]++;
     });
 
-    return participationStats;
-  }, [registrations, schedules]);
+    return departmentCounts;
+  }, [registrations]);
 
-  // 부서별 총 인원수 계산 (입금완료 기준)
-    const calculateDepartmentTotals = useMemo(() => {
-      const paidRegistrations = registrations.filter(
-        reg => reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
-      );
-  
-      const departmentCounts: Record<string, number> = {};
-  
-      // 부서별 초기화
-      const departments = [
-        ...new Set(paidRegistrations.map(reg => reg.univGroupNumber)),
-      ];
-      departments.forEach(dept => {
-        departmentCounts[dept] = 0;
-      });
-  
-      // 부서별 총 인원 계산 (입금완료된 모든 인원)
-      paidRegistrations.forEach(reg => {
-        departmentCounts[reg.univGroupNumber]++;
-      });
-  
-      return departmentCounts;
-    }, [registrations]);
-
-    const formattedRows = useMemo(() => {
-      return rows.map(row => {
-        // 부서별 총 인원수 계산
-        let totalParticipants = 0;
+  const formattedRows = useMemo(() => {
+    return rows.map(row => {
+      // 부서별 총 인원수 계산
+      let totalParticipants = 0;
 
         if (row.id === "total") {
           // 합계 행의 경우 모든 부서의 총 인원 합
@@ -152,79 +168,36 @@ export function BusScheduleSummary({
           totalParticipants = calculateDepartmentTotals[deptNumber] || 0;
         }
 
-        // 스케줄별 셀 생성
-        const scheduleCells: Record<string, JSX.Element> = {};
-        allScheduleColumns.forEach(column => {
-          const count = row.cells[column.key] || 0;
-          scheduleCells[column.key] = (
-            <div className="text-center">
-              {row.id === "total" ? (
-                <span className="font-semibold">{count}명</span>
-              ) : (
-                <span>{count}명</span>
-              )}
-            </div>
-          );
-        });
-
-        // 전참/부분참 계산
-        let fullParticipation = 0;
-        let partialParticipation = 0;
-
-        if (row.id === "total") {
-          // 합계 행의 경우 모든 부서의 합
-          Object.values(calculateParticipation).forEach(stats => {
-            fullParticipation += stats.full;
-            partialParticipation += stats.partial;
-          });
-        } else {
-          // 개별 부서의 경우
-          const deptNumber = parseInt(row.id);
-          const stats = calculateParticipation[deptNumber];
-          if (stats) {
-            fullParticipation = stats.full;
-            partialParticipation = stats.partial;
-          }
-        }
-
-        return {
-          ...row,
-          cells: scheduleCells,
-          fullParticipation: (
-            <div className="text-center">
-              {row.id === "total" ? (
-                <span className="font-semibold">{fullParticipation}명</span>
-              ) : (
-                <span>{fullParticipation}명</span>
-              )}
-            </div>
-          ),
-          partialParticipation: (
-            <div className="text-center">
-              {row.id === "total" ? (
-                <span className="font-semibold">{partialParticipation}명</span>
-              ) : (
-                <span>{partialParticipation}명</span>
-              )}
-            </div>
-          ),
-          total: (
-            <div className="text-center">
-              {row.id === "total" ? (
-                <span className="font-bold">{totalParticipants}명</span>
-              ) : (
-                <span className="font-semibold">{totalParticipants}명</span>
-              )}
-            </div>
-          ),
-        };
+      // 스케줄별 셀 생성
+      const scheduleCells: Record<string, JSX.Element> = {};
+      allScheduleColumns.forEach(column => {
+        const count = row.cells[column.key] || 0;
+        scheduleCells[column.key] = (
+          <div className="text-center">
+            {row.id === "total" ? (
+              <span className="font-semibold">{count}명</span>
+            ) : (
+              <span>{count}명</span>
+            )}
+          </div>
+        );
       });
-    }, [
-      rows,
-      allScheduleColumns,
-      calculateParticipation,
-      calculateDepartmentTotals,
-    ]);
+
+      return {
+        ...row,
+        cells: scheduleCells,
+        total: (
+          <div className="text-center">
+            {row.id === "total" ? (
+              <span className="font-bold">{totalParticipants}명</span>
+            ) : (
+              <span className="font-semibold">{totalParticipants}명</span>
+            )}
+          </div>
+        ),
+      };
+    });
+  }, [rows, allScheduleColumns, calculateDepartmentTotals]);
 
   const handleDownloadImage = async () => {
     if (!tableRef.current) return;
@@ -237,7 +210,7 @@ export function BusScheduleSummary({
 
       const link = document.createElement("a");
       link.href = data;
-      link.download = `식사숙박인원집계표_${new Date().toISOString().split("T")[0]}.png`;
+      link.download = `버스인원집계표_${new Date().toISOString().split("T")[0]}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -259,157 +232,114 @@ export function BusScheduleSummary({
     return colors[dayIndex % colors.length];
   };
 
-  if (schedules.length === 0) {
-    return (
-        <Card>
-        <CardHeader>
-          <CardTitle>셔틀버스 스케줄 인원 집계 표</CardTitle>
-          <CardDescription>각 셔틀버스의 인원 현황</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            스케줄 데이터가 없습니다.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // 데이터가 없어도 기본 테이블 구조는 보여주기
+  const showEmptyMessage = schedules.length === 0 || registrations.length === 0;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>셔틀버스 스케줄 인원 집계 표</CardTitle>
-          <CardDescription>
-            각 셔틀버스의 인원 현황 (입금완료 기준)
-          </CardDescription>
+    <Card className="shadow-sm">
+      <CardHeader className="bg-gray-50 border-b">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>버스 인원 집계 표</CardTitle>
+            <CardDescription>수양회 버스 인원 현황</CardDescription>
+          </div>
+          <Button
+            onClick={handleDownloadImage}
+            disabled={isDownloading}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {isDownloading ? "다운로드 중..." : "이미지 다운로드"}
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDownloadImage}
-          disabled={isDownloading}
-        >
-          <Download className="h-4 w-4 mr-2" />
-          이미지 저장
-        </Button>
       </CardHeader>
-      <CardContent ref={tableRef}>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-b-0">
-                <TableHead
-                  rowSpan={2}
-                  className="sticky left-0 bg-gray-100 z-10 border-r font-semibold"
-                >
+      <CardContent className="p-4">
+        <div ref={tableRef} className="overflow-x-auto">
+          <Table className="min-w-full whitespace-nowrap">
+            <TableHeader className="bg-gray-100">
+              <TableRow>
+                <TableHead rowSpan={2} className="text-center px-3 py-2.5">
                   부서
                 </TableHead>
-                {dayGroups.map((group, index) => (
-                  <TableHead
-                    key={group.dayName}
-                    colSpan={group.schedules.length}
-                    className={`text-center font-semibold text-gray-800 border-b ${getDayColor(
-                      index
-                    )} ${index > 0 ? "border-l border-l-gray-300" : ""}`}
-                  >
-                    {group.dayName}
+                {dayGroups.length > 0 ? (
+                  dayGroups.map((group, index) => (
+                    <TableHead
+                      key={group.dayName}
+                      colSpan={group.schedules.length}
+                      className={`text-center px-3 py-2.5 ${getDayColor(index)}`}
+                    >
+                      {group.dayName}
+                    </TableHead>
+                  ))
+                ) : (
+                  <TableHead className="text-center px-3 py-2.5">
+                    버스 일정
                   </TableHead>
-                ))}
-                <TableHead
-                  colSpan={3}
-                  className="text-center bg-gray-100 font-semibold text-gray-800 border-l border-l-gray-300"
-                >
-                  요약
+                )}
+                <TableHead rowSpan={2} className="text-center px-3 py-2.5">
+                  총 인원
                 </TableHead>
               </TableRow>
               <TableRow>
-                {dayGroups.map((group, groupIndex) =>
-                  group.schedules.map((schedule, scheduleIndex) => {
-                    const isFirstInGroup = scheduleIndex === 0;
-                    return (
-                      <TableHead
-                        key={schedule.key}
-                        className={`text-center font-medium text-gray-700 ${getDayColor(
-                          groupIndex
-                        )} ${isFirstInGroup && groupIndex > 0 ? "border-l border-l-gray-300" : ""}`}
-                      >
-                        {schedule.fullLabel.slice(2)}
-                      </TableHead>
-                    );
-                  })
+                {allScheduleColumns.length > 0 ? (
+                  allScheduleColumns.map(schedule => (
+                    <TableHead
+                      key={schedule.key}
+                      className="text-center px-2 py-2.5 text-xs"
+                    >
+                      <div className="whitespace-pre-line">
+                        {schedule.fullLabel}
+                      </div>
+                    </TableHead>
+                  ))
+                ) : (
+                  <TableHead className="text-center px-2 py-2.5 text-xs">
+                    -
+                  </TableHead>
                 )}
-                <TableHead className="text-center font-medium text-gray-700 bg-gray-100 border-l border-l-gray-300">
-                  전참
-                </TableHead>
-                <TableHead className="text-center font-medium text-gray-700 bg-gray-100">
-                  부분참
-                </TableHead>
-                <TableHead className="text-center font-medium text-gray-700 bg-gray-100">
-                  합계
-                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {formattedRows.map(row => (
-                <TableRow
-                  key={row.id}
-                  className={
-                    row.id === "total" ? "bg-gray-50 font-semibold" : ""
-                  }
-                >
-                  <TableCell className="font-medium sticky left-0 bg-gray-50 z-10 border-r">
-                    {/*합계*/}
-                    <span
-                      className={`inline-flex px-2.5 py-1 rounded-md font-medium ${
-                        row.id === "total"
-                          ? "bg-gray-200 text-gray-800"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {row.label}
-                    </span>
-                  </TableCell>
-                  {dayGroups.map((group, groupIndex) =>
-                    group.schedules.map((schedule, scheduleIndex) => {
-                      const isFirstInGroup = scheduleIndex === 0;
-                      return (
-                        <TableCell
-                          key={`${row.id}-${schedule.key}`}
-                          className={`text-center ${
-                            isFirstInGroup && groupIndex > 0
-                              ? "border-l border-l-gray-300"
-                              : ""
-                          } ${row.id === "total" ? "bg-gray-50" : ""}`}
-                        >
-                          {row.cells[schedule.key]}
-                        </TableCell>
-                      );
-                    })
-                  )}
+              {showEmptyMessage ? (
+                <TableRow>
                   <TableCell
-                    className={`text-center border-l border-l-gray-300 ${
-                      row.id === "total" ? "bg-gray-50" : ""
-                    }`}
+                    colSpan={Math.max(allScheduleColumns.length + 2, 3)}
+                    className="text-center py-10 text-gray-500"
                   >
-                    {row.fullParticipation}
-                  </TableCell>
-                  <TableCell
-                    className={`text-center ${
-                      row.id === "total" ? "bg-gray-50" : ""
-                    }`}
-                  >
-                    {row.partialParticipation}
-                  </TableCell>
-                  <TableCell
-                    className={`text-center ${
-                      row.id === "total" ? "bg-gray-50" : ""
-                    }`}
-                  >
-                    {row.total}
+                    {schedules.length === 0
+                      ? "스케줄 데이터가 없습니다."
+                      : "등록 데이터가 없습니다."}
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                formattedRows.map(row => (
+                  <TableRow
+                    key={row.id}
+                    className={
+                      row.id === "total"
+                        ? "bg-gray-50 font-semibold border-t-2"
+                        : ""
+                    }
+                  >
+                    <TableCell className="text-center px-3 py-2.5 font-medium">
+                      {row.label}
+                    </TableCell>
+                    {allScheduleColumns.map(schedule => (
+                      <TableCell
+                        key={schedule.key}
+                        className="text-center px-2 py-2.5"
+                      >
+                        {row.cells[schedule.key]}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center px-3 py-2.5">
+                      {row.total}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>

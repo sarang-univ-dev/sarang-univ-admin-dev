@@ -13,30 +13,24 @@ import { UnivGroupStaffBusTable } from "@/components/UnivGroupStaffBusTable";
 import { BusScheduleSummary } from "@/components/BusScheduleSummary";
 
 export default function UnivGroupStaffBusPage() {
-  const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>(
-      []
-    );
-  
-    const [retreatUnivGroup, setRetreatUnivGroup] = useState<TRetreatUnivGroup[]>(
-      []
-    );
-  
-    const params = useParams();
-    const retreatSlug = params.retreatSlug as string;
-  
-    console.log(retreatSlug);
-  
-    const { data, isLoading, error } = useUnivGroupStaffBus(retreatSlug);
-  
-    console.log(JSON.stringify(data, null, 2));
+  const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>([]);
 
-    useEffect(() => {
-      const fetchSchedules = async () => {
-        const response = await webAxios.get(
+  const [retreatUnivGroup, setRetreatUnivGroup] = useState<TRetreatUnivGroup[]>(
+    []
+  );
+
+  const params = useParams();
+  const retreatSlug = params.retreatSlug as string;
+
+  const { data, isLoading, error } = useUnivGroupStaffBus(retreatSlug);
+
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      const response = await webAxios.get(
         `/api/v1/retreat/${retreatSlug}/shuttle-bus/info`
       );
 
-        setSchedules(response.data.shuttleBusInfo.shuttleBuses);
+      setSchedules(response.data.shuttleBusInfo.shuttleBuses);
     };
 
       // const fetchRetreatUnivGroup = async () => {
@@ -61,9 +55,11 @@ export default function UnivGroupStaffBusPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">셔틀버스 부서 정보 조회</h1>
-      
+      <h1 className="text-3xl font-bold">부서 셔틀버스 정보 조회</h1>
+
       <PaymentSummary registrations={data || []} />
+
+      <BusScheduleSummary registrations={data || []} schedules={schedules} />
 
       <UnivGroupStaffBusTable
         registrations={data || []}

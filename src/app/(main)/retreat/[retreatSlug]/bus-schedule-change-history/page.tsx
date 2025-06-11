@@ -50,7 +50,11 @@ export default function ScheduleChangeHistoryPage() {
   }, [retreatSlug]);
 
   if (error) {
-    return <div>에러가 발생했습니다: {error}</div>;
+    return (
+      <div>
+        에러가 발생했습니다: {error.message || "알 수 없는 오류가 발생했습니다"}
+      </div>
+    );
   }
 
   if (isLoading) {
@@ -62,7 +66,7 @@ export default function ScheduleChangeHistoryPage() {
       <h1 className="text-3xl font-bold">일정 변경 이력</h1>
 
       <ShuttleBusScheduleChangeHistoryTable
-        scheduleChangeHistories={data ? [data] : []}
+        scheduleChangeHistories={data || []}
         schedules={schedules}
         retreatSlug={retreatSlug}
       />

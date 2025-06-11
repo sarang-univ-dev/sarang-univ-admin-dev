@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/card";
 
 import { StatusBadge } from "@/components/Badge";
-import { generateShuttleBusScheduleColumns } from "../utils/retreat-utils"; // 버스 전용이면 추후 수정
+import { generateShuttleBusScheduleColumns } from "../utils/bus-utils";
 import {
   // TRetreatRegistrationSchedule,
   TRetreatShuttleBus,
@@ -95,8 +95,8 @@ export function ShuttleBusScheduleChangeRequestTable({
   const [calculatedPrice, setCalculatedPrice] = useState<number>(0);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  // *** 엔드포인트: 반드시 'bus-schedule-change-request'로! ***
-  const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/bus-schedule-change-request`;
+  // *** 엔드포인트: 서버 라우트와 일치하도록 수정 ***
+  const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/shuttle-bus/bus-registration-change-request`;
 
   useEffect(() => {
     if (registrations.length > 0 && schedules.length > 0) {
@@ -176,9 +176,8 @@ export function ShuttleBusScheduleChangeRequestTable({
         setLoading(selectedRow.id, "confirm", true);
         try {
           await webAxios.post(
-            `/api/v1/retreat/${retreatSlug}/account/bus-schedule-history`,
+            `/api/v1/retreat/${retreatSlug}/shuttle-bus/${selectedRow.id}/confirm-schedule-change`,
             {
-              userRetreatShuttleBusRegistrationId: selectedRow.id,
               afterScheduleIds: selectedSchedules,
             }
           );
@@ -222,10 +221,8 @@ export function ShuttleBusScheduleChangeRequestTable({
     setLoading(row.id, "resolve", true);
     try {
       await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/account/bus-schedule-history/resolve-memo`,
-        {
-          userRetreatShuttleBusRegistrationHistoryMemoId: row.memoId,
-        }
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${row.memoId}/resolve-memo`,
+        {}
       );
       await mutate(registrationsEndpoint);
       addToast({
@@ -598,7 +595,11 @@ export function ShuttleBusScheduleChangeRequestTable({
                           </TableCell>
                           <TableCell className="text-center">
                             {schedule.departureTime
-                              ? formatDate(new Date(schedule.departureTime).toISOString()).slice(6)
+                              ? formatDate(
+                                  typeof schedule.departureTime === "string"
+                                    ? schedule.departureTime
+                                    : schedule.departureTime.toISOString()
+                                )
                               : "-"}
                           </TableCell>
                         </TableRow>

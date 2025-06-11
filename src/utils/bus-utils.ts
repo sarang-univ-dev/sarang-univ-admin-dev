@@ -41,7 +41,7 @@ export function generateDepartmentStats(registrations: any[]) {
     .map(num => `${num}부`); // Convert to label format like '1부', '2부' 
 
   // 상태별 카운트 초기화 Each department starts with all status counts 0
-  const stats = departments.map(dept => ({ 
+  const stats = departments.map(dept => ({
     id: dept.replace("부", ""),
     label: dept,
     cells: {
@@ -107,14 +107,17 @@ export function calculateAccountStatus(
   // 예상 입금 금액 (입금 완료된 금액)
   const expectedIncome = deptRegistrations
     .filter(
-      reg => reg.paymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
+      reg =>
+        reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
     )
     .reduce((sum, reg) => sum + reg.price, 0);
 
   // 예상 출금 금액 (환불 완료된 금액)
   const expectedExpense = deptRegistrations
     .filter(
-      reg => reg.paymentStatus === UserRetreatShuttleBusPaymentStatus.REFUNDED
+      reg =>
+        reg.shuttleBusPaymentStatus ===
+        UserRetreatShuttleBusPaymentStatus.REFUNDED
     )
     .reduce((sum, reg) => sum + reg.price, 0);
 
@@ -129,14 +132,13 @@ export function calculateAccountStatus(
 }
 
 // 스케줄 데이터를 기반으로 컬럼 생성
-export function generateScheduleColumns(
-  schedules: TRetreatShuttleBus[]
-) {
+export function generateScheduleColumns(schedules: TRetreatShuttleBus[]) {
   if (!schedules || schedules.length === 0) return [];
 
   // 날짜별로 정렬
   const sortedSchedules = [...schedules].sort(
-    (a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()
+    (a, b) =>
+      new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()
   );
 
   // 날짜별로 그룹화하여 색상 할당
@@ -227,7 +229,7 @@ export function transformRegistrationsForTable(
         name: reg.name || "",
         schedule: scheduleMap,
         amount: reg.price || 0,
-        isAdminContact : reg.isAdminContact,
+        isAdminContact: reg.isAdminContact,
         createdAt: reg.createdAt || null,
         status: reg.shuttleBusPaymentStatus,
         paymentConfirmedAt: reg.paymentConfirmedAt || null,
@@ -281,14 +283,16 @@ export function generateScheduleStats(
     );
     if (deptIndex === -1) return;
 
-    // 사용자가 선택한 스케줄들에 대해 카운트 증가 checks if user has registered shuttle schedules.
+    // 사용자가 선택한 스케줄들에 대해 카운트 증가
     if (Array.isArray(reg.userRetreatShuttleBusRegistrationScheduleIds)) {
-      reg.userRetreatShuttleBusRegistrationScheduleIds.forEach((scheduleId: number) => {
-        const scheduleKey = `schedule_${scheduleId}`;
-        if (stats[deptIndex].cells[scheduleKey] !== undefined) {
-          stats[deptIndex].cells[scheduleKey]++;
+      reg.userRetreatShuttleBusRegistrationScheduleIds.forEach(
+        (scheduleId: number) => {
+          const scheduleKey = `schedule_${scheduleId}`;
+          if (stats[deptIndex].cells[scheduleKey] !== undefined) {
+            stats[deptIndex].cells[scheduleKey]++;
+          }
         }
-      });
+      );
     }
   });
 
@@ -311,14 +315,13 @@ export function generateScheduleStats(
 }
 
 // 스케줄 컬럼을 요일별로 그룹화
-export function groupScheduleColumnsByDay(
-  schedules: TRetreatShuttleBus[]
-) {
+export function groupScheduleColumnsByDay(schedules: TRetreatShuttleBus[]) {
   if (!schedules || schedules.length === 0) return [];
 
   // 날짜별로 정렬 sort schedules by time
   const sortedSchedules = [...schedules].sort(
-    (a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()
+    (a, b) =>
+      new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()
   );
 
   // 요일별로 그룹화
@@ -332,7 +335,10 @@ export function groupScheduleColumnsByDay(
       groupedByDay[dayName] = [];
     }
 
-    const label = schedule.name;
+    const label = getShuttleBusScheduleLabel(
+      schedule.departureTime,
+      schedule.name
+    );
 
     groupedByDay[dayName].push({
       key: `schedule_${schedule.id}`,
@@ -367,4 +373,91 @@ function getDayName(day: number): string {
     default:
       return "";
   }
+}
+
+// 셔틀버스 스케줄 라벨 생성 함수
+export function getShuttleBusScheduleLabel(
+  departureTime: string | Date,
+  name?: string
+) {
+  const date =
+    typeof departureTime === "string" ? new Date(departureTime) : departureTime;
+  let hour = date.getHours();
+  const minute = date.getMinutes();
+
+  // 오전/오후 계산
+  const isAM = hour < 12;
+  const period = isAM ? "오전" : "오후";
+
+  // 12시간제 변환 (0시는 12시, 13~23시는 1~11시)
+  let hour12 = hour % 12;
+  if (hour12 === 0) hour12 = 12;
+
+  // 시간 문자열 만들기
+  const timeStr = `${hour12}:${minute.toString().padStart(2, "0")}`;
+
+  return name ? `${name}\n(${period} ${timeStr})` : `\n${period} ${timeStr}`;
+}
+
+// 셔틀버스 스케줄 데이터를 기반으로 컬럼 생성
+export function generateShuttleBusScheduleColumns(
+  schedules: TRetreatShuttleBus[]
+) {
+  if (!schedules || schedules.length === 0) return [];
+
+  // 날짜별로 정렬
+  const sortedSchedules = [...schedules].sort(
+    (a, b) =>
+      new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()
+  );
+
+  // 날짜별로 그룹화하여 색상 할당
+  let currentDate = "";
+  let colorIndex = -1;
+  const colors = [
+    {
+      color: "rose",
+      bgClass:
+        "data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500",
+    },
+    {
+      color: "amber",
+      bgClass:
+        "data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500",
+    },
+    {
+      color: "teal",
+      bgClass:
+        "data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500",
+    },
+    {
+      color: "indigo",
+      bgClass:
+        "data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500",
+    },
+  ];
+
+  return sortedSchedules.map(schedule => {
+    const scheduleDate = new Date(schedule.departureTime).toDateString();
+
+    const label = getShuttleBusScheduleLabel(
+      schedule.departureTime,
+      schedule.name
+    );
+
+    // 날짜가 바뀌면 색상 인덱스 증가
+    if (scheduleDate !== currentDate) {
+      currentDate = scheduleDate;
+      colorIndex = (colorIndex + 1) % colors.length;
+    }
+
+    return {
+      key: `schedule_${schedule.id}`,
+      id: schedule.id,
+      label,
+      color: colors[colorIndex].color,
+      bgColorClass: colors[colorIndex].bgClass,
+      time: schedule.departureTime,
+    };
+  });
 }
