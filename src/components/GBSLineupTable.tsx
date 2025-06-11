@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import {useState, useEffect, useRef, useMemo} from "react";
 import {
   Table,
   TableBody,
@@ -15,10 +15,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Save,
   X,
-  Trash2,
+  Trash2, Search, Download,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { GenderBadge} from "@/components/Badge";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
+import {GenderBadge, TypeBadge} from "@/components/Badge";
 import { SearchBar } from "@/components/RegistrationTableSearchBar";
 import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
@@ -29,6 +29,8 @@ import {
   generateScheduleColumns,
 } from "@/utils/retreat-utils";
 import {COMPLETE_GROUP_ROW_COUNT, MEMO_COLORS} from "@/lib/constant/lineup.constant";
+import {Input} from "@/components/ui/input";
+import {formatDate} from "@/utils/formatDate";
 
 
 export function GBSLineupTable({
@@ -48,6 +50,9 @@ export function GBSLineupTable({
   const [memoValues, setMemoValues] = useState<Record<string, string>>({});
   const [gbsNumberInputs, setGbsNumberInputs] = useState<Record<string, string>>({});
   const [memoBgColors, setMemoBgColors] = useState<Record<string, string>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
+
 
 
   const confirmDialog = useConfirmDialogStore();
@@ -90,7 +95,7 @@ export function GBSLineupTable({
         gbsMemo: registration.gbsMemo,
         lineupMemo: registration.lineupMemo,
         lineupMemoId: registration.lineupMemoId,
-        color: registration.color,
+        lineupMemocolor: registration.lineupMemocolor,
       };
     });
 
@@ -112,6 +117,33 @@ export function GBSLineupTable({
       }
     }
   }, [registrations, schedules]);
+
+
+  // 2. 검색 + "미배정만 조회" 필터 동시 적용
+  useEffect(() => {
+    let temp = data;
+
+    // 미배정만 체크되었으면 gbsNumber 없는 것만
+    if (showOnlyUnassigned) {
+      temp = temp.filter(row => !row.gbsNumber || row.gbsNumber === "" || row.gbsNumber === null);
+    }
+
+    // 검색어 필터
+    if (searchTerm.trim()) {
+      const lower = searchTerm.toLowerCase();
+      temp = temp.filter(row =>
+          String(row.gbsNumber ?? "").includes(lower) ||
+          (row.name?.toLowerCase().includes(lower) ?? false) ||
+          (row.lineupMemo?.toLowerCase().includes(lower) ?? false) ||
+          (row.department?.toLowerCase().includes(lower) ?? false) ||
+          (row.grade?.toLowerCase().includes(lower) ?? false) ||
+          (row.type?.toLowerCase().includes(lower) ?? false)
+      );
+    }
+
+    setFilteredData(temp);
+  }, [data, showOnlyUnassigned, searchTerm]);
+
 
   // 검색 결과 처리 함수
   const handleSearchResults = (results: any[]) => {
@@ -409,31 +441,184 @@ export function GBSLineupTable({
 
   return (
       <Card className="shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b">
+          <div className="whitespace-nowrap">
+            <CardTitle>GBS 라인업 현황 조회</CardTitle>
+            <CardDescription>대학부 전체 GBS 목록 조회 및 배정</CardDescription>
+          </div>
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  setLoadingStates(prev => ({ ...prev, exportExcel: true }));
+                  try {
+                    const response = await webAxios.get(
+                        `/api/v1/retreat/${retreatSlug}/account/download-`,
+                        { responseType: 'blob' }
+                    );
+
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `수양회_신청현황_${formatDate(new Date().toISOString())}.xlsx`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+
+                    addToast({
+                      title: "성공",
+                      description: "엑셀 파일이 다운로드되었습니다.",
+                      variant: "success",
+                    });
+                  } catch (error) {
+                    console.error("엑셀 다운로드 중 오류 발생:", error);
+                    addToast({
+                      title: "오류 발생",
+                      description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setLoadingStates(prev => ({ ...prev, exportExcel: false }));
+                  }
+                }}
+                disabled={loadingStates.exportExcel}
+                className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
+            >
+              {loadingStates.exportExcel ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                  <Download className="h-4 w-4" />
+              )}
+              <span>엑셀로 내보내기</span>
+            </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  setLoadingStates(prev => ({ ...prev, exportExcel: true }));
+                  try {
+                    const response = await webAxios.get(
+                        `/api/v1/retreat/${retreatSlug}/account/download-`,
+                        { responseType: 'blob' }
+                    );
+
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `수양회_신청현황_${formatDate(new Date().toISOString())}.xlsx`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+
+                    addToast({
+                      title: "성공",
+                      description: "엑셀 파일이 다운로드되었습니다.",
+                      variant: "success",
+                    });
+                  } catch (error) {
+                    console.error("엑셀 다운로드 중 오류 발생:", error);
+                    addToast({
+                      title: "오류 발생",
+                      description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setLoadingStates(prev => ({ ...prev, exportExcel: false }));
+                  }
+                }}
+                disabled={loadingStates.exportExcel}
+                className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
+            >
+              {loadingStates.exportExcel ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                  <Download className="h-4 w-4" />
+              )}
+              <span>부서 GBS 꼬리표 다운로드</span>
+            </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  setLoadingStates(prev => ({ ...prev, exportExcel: true }));
+                  try {
+                    const response = await webAxios.get(
+                        `/api/v1/retreat/${retreatSlug}/account/download-`,
+                        { responseType: 'blob' }
+                    );
+
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `수양회_신청현황_${formatDate(new Date().toISOString())}.xlsx`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+
+                    addToast({
+                      title: "성공",
+                      description: "엑셀 파일이 다운로드되었습니다.",
+                      variant: "success",
+                    });
+                  } catch (error) {
+                    console.error("엑셀 다운로드 중 오류 발생:", error);
+                    addToast({
+                      title: "오류 발생",
+                      description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setLoadingStates(prev => ({ ...prev, exportExcel: false }));
+                  }
+                }}
+                disabled={loadingStates.exportExcel}
+                className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
+            >
+              {loadingStates.exportExcel ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                  <Download className="h-4 w-4" />
+              )}
+              <span>수양회 GBS 꼬리표 다운로드</span>
+            </Button>
+          </div>
+        </CardHeader>
         <CardContent className="p-4">
           <div className="space-y-4">
-            <SearchBar onSearch={handleSearchResults} data={data} />
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400"/>
+              <Input
+                  placeholder={"GBS번호/부서/학년/이름/타입/메모로 검색 ..."}
+                  className="pl-8 pr-4 py-2 border-gray-200 focus:border-gray-300 focus:ring-0"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
             <div className="rounded-md border overflow-x-auto">
               <div className="min-w-max">
                 <div className="max-h-[80vh] overflow-y-auto">
                   <Table className="w-full whitespace-nowrap relative">
                     <TableHeader>
                       <TableRow>
-                        <TableHead rowSpan={2}>GBS번호</TableHead>
-                        <TableHead rowSpan={2}>전참/부분참</TableHead>
-                        <TableHead rowSpan={2}>남/여</TableHead>
+                        <TableHead rowSpan={2} className="text-center">GBS번호</TableHead>
+                        <TableHead rowSpan={2} className="text-center">전참/부분참</TableHead>
+                        <TableHead rowSpan={2} className="text-center">남/여</TableHead>
                         {/* 이하 기존 컬럼 */}
-                        <TableHead rowSpan={2}>부서</TableHead>
-                        <TableHead rowSpan={2}>성별</TableHead>
-                        <TableHead rowSpan={2}>학년</TableHead>
-                        <TableHead rowSpan={2}>이름</TableHead>
-                        <TableHead rowSpan={2}>부서 리더명</TableHead>
-                        <TableHead rowSpan={2}>전화번호</TableHead>
-                        <TableHead rowSpan={2}>라인업 메모</TableHead>
+                        <TableHead rowSpan={2} className="text-center">부서</TableHead>
+                        <TableHead rowSpan={2} className="text-center">성별</TableHead>
+                        <TableHead rowSpan={2} className="text-center">학년</TableHead>
+                        <TableHead rowSpan={2} className="text-center">이름</TableHead>
+                        <TableHead rowSpan={2} className="text-center">부서 리더명</TableHead>
+                        <TableHead rowSpan={2} className="text-center">전화번호</TableHead>
+                        <TableHead rowSpan={2} className="text-center">라인업 메모</TableHead>
+                        <TableHead rowSpan={2} className="text-center whitespace-nowrap"><span>타입</span></TableHead>
                         <TableHead colSpan={scheduleColumns.length} className="whitespace-nowrap">
                           <div className="text-center">수양회 신청 일정</div>
                         </TableHead>
-                        <TableHead rowSpan={2}>GBS 배정하기</TableHead>
-                        <TableHead rowSpan={2}>GBS 메모</TableHead>
+                        <TableHead className="text-center">GBS 배정하기</TableHead>
+                        <TableHead rowSpan={2} className="text-center">GBS 메모</TableHead>
                       </TableRow>
                       <TableRow>
                         {scheduleColumns.map(scheduleCol => (
@@ -444,6 +629,16 @@ export function GBSLineupTable({
                               <span className="text-xs">{scheduleCol.label}</span>
                             </TableHead>
                         ))}
+                        <TableHead>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-xs text-gray-600">미배정만 조회</span>
+                            <Checkbox
+                                checked={showOnlyUnassigned}
+                                onCheckedChange={() => setShowOnlyUnassigned(prev => !prev)}
+                                className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                            />
+                          </div>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -460,35 +655,34 @@ export function GBSLineupTable({
                                 {idx === 0 && (
                                     <>
                                       {/* GBS번호: input, rowSpan */}
-                                      <TableCell rowSpan={withNumber.length} className={`align-middle font-bold ${withNumber.length > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""}`}>
+                                      <TableCell rowSpan={withNumber.length} className={`align-middle font-bold text-center ${withNumber.length > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""}`}>
                                         {row.gbsNumber}
                                       </TableCell>
                                       {/* 전참/부분참 */}
-                                      <TableCell rowSpan={withNumber.length} className="align-middle font-semibold">
+                                      <TableCell rowSpan={withNumber.length} className="align-middle text-center font-semibold">
                                         전참 {row.fullAttendanceCount} / 부분참 {row.partialAttendanceCount}
                                       </TableCell>
                                       {/* 남/여 */}
-                                      <TableCell rowSpan={withNumber.length} className="align-middle font-semibold">
+                                      <TableCell rowSpan={withNumber.length} className="align-middle text-center font-semibold">
                                         남 {row.maleCount} / 여 {row.femaleCount}
                                       </TableCell>
                                     </>
                                 )}
                                 {/* 이하 기존 row 컬럼 렌더링 */}
-                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}>{row.department}</TableCell>
-                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}><GenderBadge gender={row.gender} /></TableCell>
-                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}>{row.grade}</TableCell>
-                                <TableCell className={row.isLeader ? "bg-cyan-200 font-bold text-base" : ""}>{row.name}</TableCell>
-                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}>{row.currentLeader}</TableCell>
-                                <TableCell className={row.isLeader ? "bg-cyan-200" : ""}>{row.phoneNumber}</TableCell>
+                                <TableCell className={row.isLeader ? "text-center bg-cyan-200" : "text-center"}>{row.department}</TableCell>
+                                <TableCell className={row.isLeader ? "text-center bg-cyan-200" : "text-center"}><GenderBadge gender={row.gender} /></TableCell>
+                                <TableCell className={row.isLeader ? "text-center bg-cyan-200" : "text-center"}>{row.grade}</TableCell>
+                                <TableCell className={row.isLeader ? "text-center bg-cyan-200 font-bold text-base" : "text-center"}>{row.name}</TableCell>
+                                <TableCell className={row.isLeader ? "text-center bg-cyan-200" : "text-center"}>{row.currentLeader}</TableCell>
+                                <TableCell className={row.isLeader ? "text-center bg-cyan-200" : "text-center"}>{row.phoneNumber}</TableCell>
                                 {/* 라인업 메모(개별 row마다) */}
                                 <TableCell
                                     className={
-                                      row.color
-                                          ? row.color
-                                          : row.isLeader
-                                              ? "bg-cyan-200"
-                                              : ""
+                                            row.isLeader
+                                                ? "bg-cyan-200 text-center"
+                                                : "text-center"
                                     }
+                                    style={{backgroundColor: row.lineupMemocolor}}
                                 >
                                   {editingMemo[row.id] ? (
                                       /* 메모 수정 UI */
@@ -523,7 +717,7 @@ export function GBSLineupTable({
                                             )}
                                         />
                                         {/* 색상 선택 버튼들 */}
-                                        <div className="flex gap-1">
+                                        <div className="flex flex-wrap gap-1">
                                           {MEMO_COLORS.map(color => (
                                               <button
                                                   key={color}
@@ -533,7 +727,7 @@ export function GBSLineupTable({
                                                   }}
                                                   className="w-5 h-5 rounded-full"
                                                   onClick={() =>
-                                                      setMemoBgColors(prev => ({ ...prev, [row.id]: color }))
+                                                      setMemoBgColors(prev => ({...prev, [row.id]: color}))
                                                   }
                                               />
                                           ))}
@@ -542,12 +736,13 @@ export function GBSLineupTable({
                                           <Button size="sm" variant="outline" onClick={() => handleSaveMemo(row.id)}
                                                   disabled={isLoading(row.id, "memo")} className="h-7 px-2">
                                             {isLoading(row.id, "memo") ? (
-                                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                            ) : <Save className="h-3 w-3" />}
+                                                <div
+                                                    className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"/>
+                                            ) : <Save className="h-3 w-3"/>}
                                           </Button>
                                           <Button size="sm" variant="ghost" onClick={() => handleCancelEditMemo(row.id)}
                                                   disabled={isLoading(row.id, "memo")} className="h-7 px-2">
-                                            <X className="h-3 w-3" />
+                                            <X className="h-3 w-3"/>
                                           </Button>
                                         </div>
                                       </div>
@@ -560,17 +755,22 @@ export function GBSLineupTable({
                                           {row.lineupMemo || "메모를 추가하려면 클릭하세요"}
                                         </div>
                                         {row.lineupMemo && (
-                                            <Button size="sm" variant="ghost" onClick={() => handleConfirmDeleteMemo(row.id)}
+                                            <Button size="sm" variant="ghost"
+                                                    onClick={() => handleConfirmDeleteMemo(row.id)}
                                                     disabled={isLoading(row.id, "delete_memo")}
                                                     className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1">
                                               {isLoading(row.id, "delete_memo") ? (
-                                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                              ) : <Trash2 className="h-3 w-3" />}
+                                                  <div
+                                                      className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"/>
+                                              ) : <Trash2 className="h-3 w-3"/>}
                                             </Button>
                                         )}
                                       </div>
                                   )}
-                                </TableCell >
+                                </TableCell>
+                                <TableCell className={`group-hover:bg-gray-50 text-center whitespace-nowrap ${row.isLeader ? "bg-cyan-200" : ""}`}>
+                                  <TypeBadge type={row.type} />
+                                </TableCell>
                                 {scheduleColumns.map(col => (
                                     <TableCell
                                         key={`${row.id}-${col.key}`}
@@ -627,18 +827,25 @@ export function GBSLineupTable({
                           ...withoutNumber.map(row => (
                               <TableRow key={row.id}>
                                 {/* 앞 3개 빈 칸 */}
-                                <TableCell />
-                                <TableCell />
-                                <TableCell />
+                                <TableCell className="text-center"/>
+                                <TableCell className="text-center"/>
+                                <TableCell className="text-center"/>
                                 {/* 이하 나머지 컬럼 */}
-                                <TableCell>{row.department}</TableCell>
-                                <TableCell><GenderBadge gender={row.gender} /></TableCell>
-                                <TableCell>{row.grade}</TableCell>
-                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.name}</TableCell>
-                                <TableCell className={row.isLeader ? "font-bold text-blue-600" : ""}>{row.currentLeader}</TableCell>
-                                <TableCell>{row.phoneNumber}</TableCell>
+                                <TableCell className="text-center">{row.department}</TableCell>
+                                <TableCell className="text-center"><GenderBadge gender={row.gender} /></TableCell>
+                                <TableCell className="text-center">{row.grade}</TableCell>
+                                <TableCell className={row.isLeader ? "font-bold text-blue-600 text-center" : "text-center"}>{row.name}</TableCell>
+                                <TableCell className={row.isLeader ? "font-bold text-blue-600 text-center" : "text-center"}>{row.currentLeader}</TableCell>
+                                <TableCell className="text-center">{row.phoneNumber}</TableCell>
                                 {/* 라인업 메모(개별 row마다) */}
-                                <TableCell>
+                                <TableCell
+                                    className={
+                                      row.isLeader
+                                          ? "bg-cyan-200 text-center"
+                                          : "text-center"
+                                    }
+                                    style={{backgroundColor: row.lineupMemocolor}}
+                                >
                                   {editingMemo[row.id] ? (
                                       /* 메모 수정 UI */
                                       <div className="flex flex-col gap-2 p-2">
@@ -672,7 +879,7 @@ export function GBSLineupTable({
                                             )}
                                         />
                                         {/* 색상 선택 버튼들 */}
-                                        <div className="flex gap-1">
+                                        <div className="flex flex-wrap gap-1">
                                           {MEMO_COLORS.map(color => (
                                               <button
                                                   key={color}
@@ -682,7 +889,7 @@ export function GBSLineupTable({
                                                   }}
                                                   className="w-5 h-5 rounded-full"
                                                   onClick={() =>
-                                                      setMemoBgColors(prev => ({ ...prev, [row.id]: color }))
+                                                      setMemoBgColors(prev => ({...prev, [row.id]: color}))
                                                   }
                                               />
                                           ))}
@@ -719,6 +926,9 @@ export function GBSLineupTable({
                                         )}
                                       </div>
                                   )}
+                                </TableCell>
+                                <TableCell className={`group-hover:bg-gray-50 text-center whitespace-nowrap ${row.isLeader ? "bg-cyan-200" : ""}`}>
+                                  <TypeBadge type={row.type} />
                                 </TableCell>
                                 {scheduleColumns.map(col => (
                                     <TableCell
