@@ -16,6 +16,7 @@ const PAGE_LABELS: Record<PagePath, string> = {
   [PagePath.BUS_SCHEDULE_HISTORY] : '셔틀버스 일정 변동 내역',
   [PagePath.BUS_SCHEDULE_CHANGE] : '셔틀버스 일정 변동 요청',
   [PagePath.ACCOUNT_STAFF] : '재정 간사 조회',
+  [PagePath.GBS_LINE_UP] : '수양회 GBS 라인업',
 }
 
 export function getSidebarMenu(
