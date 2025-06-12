@@ -161,6 +161,18 @@ export function RetreatScheduleChangeRequestTable({
     setFilteredData(dataToFilter);
   }, [data, searchTerm]);
 
+  useEffect(() => {
+    const getRetreatInfo = async () => {
+      try{
+        const response = await webAxios.get(`/api/v1/retreat/${retreatSlug}/info`);
+        setRetreatInfo(response.data.retreatInfo);
+      } catch(error){
+        console.error("Retreat 조회 중 오류 발생:", error);
+      }
+    }
+    getRetreatInfo();
+  }, []);
+
   const setLoading = (id: string, action: string, isLoading: boolean) => {
     setLoadingStates(prev => ({
       ...prev,
@@ -232,6 +244,8 @@ export function RetreatScheduleChangeRequestTable({
 
     setSelectedSchedules(newSelectedSchedules);
 
+
+
     // 체크박스 변경 즉시 가격 계산
     if (selectedRow && payments.length > 0) {
       console.log("가격 계산 호출");
@@ -241,6 +255,7 @@ export function RetreatScheduleChangeRequestTable({
 
   // 가격 계산 함수
   const calculateNewPrice = (newSelectedSchedules: number[]) => {
+
     try {
       const currentPayment = findCurrentPayment();
       if (!currentPayment) {
@@ -692,9 +707,9 @@ export function RetreatScheduleChangeRequestTable({
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">타입</p>
-                  <p className="font-medium">
+                  <div className="font-medium">
                     <TypeBadge type={selectedRow.type} />
-                  </p>
+                  </div>
                 </div>
               </div>
               <div className="mt-4">

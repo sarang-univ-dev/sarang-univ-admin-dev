@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -48,6 +48,8 @@ export function BusScheduleSummary({
   const dayGroups = useMemo(() => {
     return groupScheduleColumnsByDay(schedules);
   }, [schedules]);
+
+  console.log("Day Groups: " + JSON.stringify(dayGroups));
 
   // 모든 스케줄 컬럼 (평면화)
   const allScheduleColumns = useMemo(() => {
@@ -154,17 +156,17 @@ export function BusScheduleSummary({
       // 부서별 총 인원수 계산
       let totalParticipants = 0;
 
-      if (row.id === "total") {
-        // 합계 행의 경우 모든 부서의 총 인원 합
-        totalParticipants = Object.values(calculateDepartmentTotals).reduce(
-          (sum: number, count: number) => sum + count,
-          0
-        );
-      } else {
-        // 개별 부서의 경우
-        const deptNumber = parseInt(row.id);
-        totalParticipants = calculateDepartmentTotals[deptNumber] || 0;
-      }
+        if (row.id === "total") {
+          // 합계 행의 경우 모든 부서의 총 인원 합
+          totalParticipants = Object.values(calculateDepartmentTotals).reduce(
+            (sum: number, count: number) => sum + count,
+            0
+          );
+        } else {
+          // 개별 부서의 경우
+          const deptNumber = parseInt(row.id);
+          totalParticipants = calculateDepartmentTotals[deptNumber] || 0;
+        }
 
       // 스케줄별 셀 생성
       const scheduleCells: Record<string, JSX.Element> = {};

@@ -36,6 +36,7 @@ export default function ScheduleChangeRequestPage() {
       );
 
       setSchedules(response.data.retreatInfo.schedule);
+      setPayments(response.data.retreatInfo.payment);
     };
 
     const fetchRetreatUnivGroup = async () => {

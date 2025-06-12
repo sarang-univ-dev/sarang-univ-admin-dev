@@ -38,7 +38,7 @@ export function generateDepartmentStats(registrations: any[]) {
     .map(reg => reg.univGroupNumber) //extract department numbers
     .filter((value, index, self) => self.indexOf(value) === index) // Remove duplicates
     .sort((a, b) => a - b) // Sort in ascending order
-    .map(num => `${num}부`); // Convert to label format like '1부', '2부'
+    .map(num => `${num}부`); // Convert to label format like '1부', '2부' 
 
   // 상태별 카운트 초기화 Each department starts with all status counts 0
   const stats = departments.map(dept => ({
@@ -51,49 +51,49 @@ export function generateDepartmentStats(registrations: any[]) {
       refund_completed: 0,
     },
   }));
+  
   // 각 등록에 대해 상태별로 카운트 Count registrations by payment status
-  registrations.forEach(reg => {
-    const deptIndex = stats.findIndex(
-      s => s.label === `${reg.univGroupNumber}부`
-    );
-    if (deptIndex === -1) return;
-
-    switch (reg.shuttleBusPaymentStatus) {
-      case UserRetreatShuttleBusPaymentStatus.PENDING:
-        stats[deptIndex].cells.waiting++;
-        break;
-      case UserRetreatShuttleBusPaymentStatus.PAID:
-        stats[deptIndex].cells.confirmed++;
-        break;
-      case UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST:
-        stats[deptIndex].cells.refund_requested++;
-        break;
-      case UserRetreatShuttleBusPaymentStatus.REFUNDED:
-        stats[deptIndex].cells.refund_completed++;
-        break;
-    }
-  });
-
-  // 합계 계산 add a total row
-  const totals = {
-    id: "total",
-    label: "합계",
-    cells: {
-      waiting: stats.reduce((sum, dept) => sum + dept.cells.waiting, 0),
-      confirmed: stats.reduce((sum, dept) => sum + dept.cells.confirmed, 0),
-      refund_requested: stats.reduce(
-        (sum, dept) => sum + dept.cells.refund_requested,
-        0
-      ),
-      refund_completed: stats.reduce(
-        (sum, dept) => sum + dept.cells.refund_completed,
-        0
-      ),
-    },
-  };
-
-  return [...stats, totals];
-}
+    registrations.forEach(reg => {
+      const deptIndex = stats.findIndex(
+        s => s.label === `${reg.univGroupNumber}부`
+      );
+      if (deptIndex === -1) return;
+  
+      switch (reg.shuttleBusPaymentStatus) {
+        case UserRetreatShuttleBusPaymentStatus.PENDING:
+          stats[deptIndex].cells.waiting++;
+          break;
+        case UserRetreatShuttleBusPaymentStatus.PAID:
+          stats[deptIndex].cells.confirmed++;
+          break;
+        case UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST:
+          stats[deptIndex].cells.refund_requested++;
+          break;
+        case UserRetreatShuttleBusPaymentStatus.REFUNDED:
+          stats[deptIndex].cells.refund_completed++;
+          break;
+      }
+    });
+  
+    // 합계 계산 add a total row
+    const totals = {
+      id: "total",
+      label: "합계",
+      cells: {
+        waiting: stats.reduce((sum, dept) => sum + dept.cells.waiting, 0),
+        confirmed: stats.reduce((sum, dept) => sum + dept.cells.confirmed, 0),
+        refund_requested: stats.reduce(
+          (sum, dept) => sum + dept.cells.refund_requested,
+          0
+        ),
+        refund_completed: stats.reduce(
+          (sum, dept) => sum + dept.cells.refund_completed,
+          0
+        ),
+      },
+    };
+    return [...stats, totals];
+  }
 
 // 부서별 계좌 현황 계산
 export function calculateAccountStatus(
@@ -250,8 +250,7 @@ export function generateScheduleStats(
 
   // 입금 완료된 등록만 집계 (PAID 상태)
   const paidRegistrations = registrations.filter(
-    reg =>
-      reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
+    reg => reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
   );
 
   // 부서 목록 추출 (입금완료자 기준, 중복 제거)
@@ -261,7 +260,7 @@ export function generateScheduleStats(
     .sort((a, b) => a - b)
     .map(num => `${num}부`);
 
-  // 각 부서별 스케줄 카운트 초기화
+  // 각 부서별 스케줄 카운트 초기화, For each department, set up a count of 0 for each schedule.
   const stats = departments.map(dept => {
     const scheduleCount: Record<string, number> = {};
 

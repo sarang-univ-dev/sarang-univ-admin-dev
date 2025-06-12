@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -49,6 +49,8 @@ export function RetreatScheduleSummary({
   const dayGroups = useMemo(() => {
     return groupScheduleColumnsByDay(schedules);
   }, [schedules]);
+
+  console.log("Day Groups: " + JSON.stringify(dayGroups));
 
   // 모든 스케줄 컬럼 (평면화)
   const allScheduleColumns = useMemo(() => {

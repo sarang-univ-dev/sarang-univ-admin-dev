@@ -65,5 +65,8 @@ export default function BusScheduleChangeRequestPage() {
         payments={payments}
       />
     </div>
+    // <div className="flex items-center justify-center min-h-screen">
+    //   <h1 className="text-xl font-medium text-gray-600">셔틀버스 일정 변경 요청 페이지는 구현이 필요합니다.</h1>
+    // </div>
   );
 }
