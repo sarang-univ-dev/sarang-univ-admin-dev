@@ -34,10 +34,10 @@ import {formatDate} from "@/utils/formatDate";
 
 
 export function GBSLineupTable({
-                                    registrations = [],
-                                    schedules = [],
-                                    retreatSlug,
-                                  }: {
+  registrations = [],
+  schedules = [],
+  retreatSlug,
+  }: {
   registrations: any[];
   schedules: any[];
   retreatSlug: string;
@@ -451,6 +451,8 @@ export function GBSLineupTable({
                 variant="outline"
                 size="sm"
                 onClick={async () => {
+                  alert("엑셀 다운로드 기능은 구현이 필요합니다.");
+                  /*
                   setLoadingStates(prev => ({ ...prev, exportExcel: true }));
                   try {
                     const response = await webAxios.get(
@@ -481,6 +483,7 @@ export function GBSLineupTable({
                   } finally {
                     setLoadingStates(prev => ({ ...prev, exportExcel: false }));
                   }
+                  */
                 }}
                 disabled={loadingStates.exportExcel}
                 className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
@@ -496,7 +499,9 @@ export function GBSLineupTable({
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  setLoadingStates(prev => ({ ...prev, exportExcel: true }));
+                  alert("부서 GBS 꼬리표 다운로드 기능은 구현이 필요합니다.");
+                  /*
+                  setLoadingStates(prev => ({ ...prev, exportDepartmentGbsTags: true }));
                   try {
                     const response = await webAxios.get(
                         `/api/v1/retreat/${retreatSlug}/account/download-`,
@@ -524,13 +529,14 @@ export function GBSLineupTable({
                       variant: "destructive",
                     });
                   } finally {
-                    setLoadingStates(prev => ({ ...prev, exportExcel: false }));
+                    setLoadingStates(prev => ({ ...prev, exportDepartmentGbsTags: false }));
                   }
+                  */
                 }}
-                disabled={loadingStates.exportExcel}
+                disabled={loadingStates.exportDepartmentGbsTags}
                 className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
             >
-              {loadingStates.exportExcel ? (
+              {loadingStates.exportDepartmentGbsTags ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
                   <Download className="h-4 w-4" />
@@ -541,7 +547,9 @@ export function GBSLineupTable({
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  setLoadingStates(prev => ({ ...prev, exportExcel: true }));
+                  alert("수양회 GBS 꼬리표 다운로드 기능은 구현이 필요합니다.");
+                  /*
+                  setLoadingStates(prev => ({ ...prev, exportRetreatGbsTags: true }));
                   try {
                     const response = await webAxios.get(
                         `/api/v1/retreat/${retreatSlug}/account/download-`,
@@ -569,13 +577,14 @@ export function GBSLineupTable({
                       variant: "destructive",
                     });
                   } finally {
-                    setLoadingStates(prev => ({ ...prev, exportExcel: false }));
+                    setLoadingStates(prev => ({ ...prev, exportRetreatGbsTags: false }));
                   }
+                  */
                 }}
-                disabled={loadingStates.exportExcel}
+                disabled={loadingStates.exportRetreatGbsTags}
                 className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
             >
-              {loadingStates.exportExcel ? (
+              {loadingStates.exportRetreatGbsTags ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
                   <Download className="h-4 w-4" />
