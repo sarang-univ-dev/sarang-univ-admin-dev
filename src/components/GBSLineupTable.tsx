@@ -252,14 +252,14 @@ export function GBSLineupTable({
     setLoading(id, "memo", true);
 
     try {
-      if (memo && memo.trim()) {
+      if ((memo && memo.trim()) || (color && color.trim())) {
         if (hasExistingMemo && memoId) {
           // 기존 메모가 있는 경우 - PUT 요청으로 수정
           await webAxios.put(
               `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`,
               {
                 memo: memo.trim(),
-                color: color.trim(),
+                color: color ? color.trim() : undefined,
               }
           );
         } else {
@@ -268,7 +268,7 @@ export function GBSLineupTable({
               `/api/v1/retreat/${retreatSlug}/line-up/${id}/lineup-memo`,
               {
                 memo: memo.trim(),
-                color: color.trim(),
+                color: color ? color.trim() : undefined,
               }
           );
         }
