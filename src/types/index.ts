@@ -1,11 +1,11 @@
 // #region Common Types
 export type JSONValue =
-  | string
-  | number
-  | boolean
-  | null
-  | { [x: string]: JSONValue }
-  | Array<JSONValue>;
+    | string
+    | number
+    | boolean
+    | null
+    | { [x: string]: JSONValue }
+    | Array<JSONValue>;
 
 // #endregion
 
@@ -121,6 +121,7 @@ export type TUserRetreatRegistrationMemo = {
   userRetreatRegistrationId: number;
   memoType: UserRetreatRegistrationMemoType;
   memo: string;
+  color?: string; // 라인업 메모에서만 일단 색깔 사용
   createdUserId: number;
   createdAt: Date;
   updatedAt: Date;
@@ -245,8 +246,8 @@ export type TUserRetreatShuttleBusRegistrationSchedule = {
 export type TRetreatGBS = {
   id: number;
   retreatId: number;
-  number: number;
-  memo?: string;
+  number: number| null;
+  memo?: string | null;
   location?: string;
   leaderUserIds: number[];
   createdAt: Date;
@@ -278,20 +279,20 @@ export type UserInfo = {
 
 export enum Gender {
   MALE = "MALE",
-  FEMALE = "FEMALE",
+  FEMALE = "FEMALE"
 }
 
 export enum UserRetreatRegistrationType {
   NEW_COMER = "NEW_COMER",
   STAFF = "STAFF",
-  SOLDIER = "SOLDIER",
+  SOLDIER = "SOLDIER"
 }
 
 export enum RetreatRegistrationScheduleType {
   BREAKFAST = "BREAKFAST",
   LUNCH = "LUNCH",
   DINNER = "DINNER",
-  SLEEP = "SLEEP",
+  SLEEP = "SLEEP"
 }
 
 export enum UserRetreatRegistrationPaymentStatus {
@@ -300,14 +301,14 @@ export enum UserRetreatRegistrationPaymentStatus {
   PENDING = "PENDING", // 입금 확인 대기
   PAID = "PAID", // 입금 확인 완료
   REFUND_REQUEST = "REFUND_REQUEST", // 환불 요청
-  REFUNDED = "REFUNDED", // 환불 완료
+  REFUNDED = "REFUNDED" // 환불 완료
 }
 
 export enum UserRetreatRegistrationMemoType {
   UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사
   ACCOUNT_STAFF = "ACCOUNT_STAFF", // 재정 간사
   LINEUP_STAFF = "LINEUP_STAFF", // 라인업 간사
-  DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
+  DORMITORY_STAFF = "DORMITORY_STAFF" // 인원관리 간사
 }
 
 export enum UserRetreatRegistrationHistoryMemoType {
@@ -315,7 +316,7 @@ export enum UserRetreatRegistrationHistoryMemoType {
   DORMITORY_TEAM_MEMBER = "DORMITORY_TEAM_MEMBER", // 인원관리 팀원
   ACCOUNT_STAFF = "ACCOUNT_STAFF", // 재정 간사
   LINEUP_STAFF = "LINEUP_STAFF", // 라인업 간사
-  DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
+  DORMITORY_STAFF = "DORMITORY_STAFF" // 인원관리 간사
 }
 
 export enum UserRole {
@@ -326,12 +327,12 @@ export enum UserRole {
   UNIV_GROUP_DORMITORY_MEMBER = "UNIV_GROUP_DORMITORY_MEMBER", // 부서 인원관리 팀원
   DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
   SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF", // 부분참 선탑 간사
-  SHUTTLE_BUS_ACCOUNT_MEMBER = "SHUTTLE_BUS_ACCOUNT_MEMBER", // 총무 팀원
+  SHUTTLE_BUS_ACCOUNT_MEMBER = "SHUTTLE_BUS_ACCOUNT_MEMBER" // 총무 팀원
 }
 
 export enum RetreatShuttleBusDirection {
   FROM_CHURCH_TO_RETREAT = "FROM_CHURCH_TO_RETREAT",
-  FROM_RETREAT_TO_CHURCH = "FROM_RETREAT_TO_CHURCH",
+  FROM_RETREAT_TO_CHURCH = "FROM_RETREAT_TO_CHURCH"
 }
 
 export enum UserRetreatShuttleBusRegistrationMemoType {
@@ -340,19 +341,19 @@ export enum UserRetreatShuttleBusRegistrationMemoType {
   LINEUP_STAFF = "LINEUP_STAFF", // 라인업 간사
   DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
   SHUTTLE_BUS_ACCOUNT_MEMBER = "SHUTTLE_BUS_ACCOUNT_MEMBER", // 총무 팀원
-  SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF", // 부분참 선탑 간사
+  SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF" // 부분참 선탑 간사
 }
 
 export enum UserRetreatShuttleBusPaymentStatus {
   PENDING = "PENDING", // 입금 확인 대기
   PAID = "PAID", // 입금 확인 완료
   REFUND_REQUEST = "REFUND_REQUEST", // 환불 요청
-  REFUNDED = "REFUNDED", // 환불 완료
+  REFUNDED = "REFUNDED" // 환불 완료
 }
 
 // TODO: 셔틀 버스 명단에 없는데 탑승한 경우 메모만 생성 (SHUTTLE_BUS_STAFF에 대해)
 export enum UserRetreatShuttleBusRegistrationHistoryMemoType {
   UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사
-  SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF", // 부분참 선탑 간사
+  SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF" // 부분참 선탑 간사
 }
 // #endregion
