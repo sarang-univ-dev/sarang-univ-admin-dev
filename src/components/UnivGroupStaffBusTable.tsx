@@ -81,6 +81,7 @@ const transformStaffRegistrationsForTable = (
     status: reg.shuttleBusPaymentStatus,
     confirmedBy: reg.paymentConfirmUserName,
     paymentConfirmedAt: reg.paymentConfirmedAt,
+    currentLeaderName: reg.currentLeaderName,
     // gbs: reg.gbsName,
     // accommodation: reg.dormitoryName,
     // qrUrl: reg.qrUrl,
@@ -406,22 +407,17 @@ export function UnivGroupStaffBusTable({
                         >
                           액션
                         </TableHead> */}
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>처리자명</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>처리시각</span>
-                        </div>
-                      </TableHead>
-                      {/* <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <TableHead className="px-3 py-2.5" rowSpan={2}>
                           <div className="flex items-center space-x-1 justify-center">
-                            <span>GBS</span>
+                            <span>처리자명</span>
                           </div>
                         </TableHead>
                         <TableHead className="px-3 py-2.5" rowSpan={2}>
+                          <div className="flex items-center space-x-1 justify-center">
+                            <span>처리시각</span>
+                          </div>
+                        </TableHead>
+                        {/* <TableHead className="px-3 py-2.5" rowSpan={2}>
                           <div className="flex items-center space-x-1 justify-center">
                             <span>숙소</span>
                           </div>
@@ -529,42 +525,41 @@ export function UnivGroupStaffBusTable({
                         {/* <TableCell className="min-w-[150px] text-center px-3 py-2.5">
                             {getActionButtons(row)}
                           </TableCell> */}
-                        <TableCell className="text-center px-3 py-2.5">
-                          {row.confirmedBy || "-"}
-                        </TableCell>
-                        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
-                          {formatDate(row.paymentConfirmedAt)}
-                        </TableCell>
-                        {/* <TableCell className="text-center px-3 py-2.5">
-                            {row.gbs || "-"}
-                          </TableCell>
                           <TableCell className="text-center px-3 py-2.5">
+                            {row.confirmedBy || "-"}
+                          </TableCell>
+                          <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
+                            {formatDate(row.paymentConfirmedAt)}
+                          </TableCell>
+                          {/* <TableCell className="text-center px-3 py-2.5">
                             {row.accommodation || "-"}
                           </TableCell> */}
-                        <TableCell
-                          className="text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
-                          title={row.memo}
-                        >
-                          {row.memo || "-"}
-                        </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
-                          {row.memo ? (
-                            <span className="text-gray-600 text-sm">-</span>
-                          ) : row.status ===
-                            UserRetreatShuttleBusPaymentStatus.PAID ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleOpenMemoDialog(row.id)}
-                              className="flex items-center gap-1.5 text-xs h-7"
-                            >
-                              <span>작성</span>
-                            </Button>
-                          ) : (
-                            <span className="text-gray-400 text-sm">-</span>
-                          )}
-                        </TableCell>
-                        {/* <TableCell className="text-center px-3 py-2.5">
+
+                          {/* 일정 변동 요청 메모 */}
+                          <TableCell
+                            className="text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
+                            title={row.memo}
+                          >
+                            {row.memo || "-"}
+                          </TableCell>
+                          <TableCell className="text-center px-3 py-2.5">
+                            {row.memo ? (
+                              <span className="text-gray-600 text-sm">-</span>
+                            ) : row.status ===
+                              UserRetreatShuttleBusPaymentStatus.PAID ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenMemoDialog(row.id)}
+                                className="flex items-center gap-1.5 text-xs h-7"
+                              >
+                                <span>작성</span>
+                              </Button>
+                            ) : (
+                              <span className="text-gray-400 text-sm">-</span>
+                            )}
+                          </TableCell>
+                          {/* <TableCell className="text-center px-3 py-2.5">
                             {row.memoBy || "-"}
                           </TableCell> */}
                         {/* <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
