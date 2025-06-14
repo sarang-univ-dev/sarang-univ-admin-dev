@@ -80,8 +80,8 @@ const transformScheduleChangeHistoryForTable = (
       price: history.beforePrice,
       userName: history.createdUserName,
       timestamp: history.createdAt,
-      dormUserName: history.dormResolvedUserName,
-      dormTimestamp: history.dormResolvedAt,
+      lineupUserName: history.lineupResolvedUserName,
+      lineupTimestamp: history.lineupResolvedAt,
       type: "before",
       rowIndex: index,
     };
@@ -116,8 +116,8 @@ const transformScheduleChangeHistoryForTable = (
       price: history.afterPrice,
       userName: history.resolvedUserName,
       timestamp: history.resolvedAt,
-      dormUserName: history.dormResolvedUserName,
-      dormTimestamp: history.dormResolvedAt,
+      lineupUserName: history.lineupResolvedUserName,
+      lineupTimestamp: history.lineupResolvedAt,
       type: "after",
       rowIndex: index,
     };
@@ -291,12 +291,12 @@ export function RetreatScheduleChangeHistoryTable({
 
         {/* 처리자명 */}
         <TableCell className="text-center px-6 py-2.5">
-          {row.dormUserName || "-"}
+          {row.lineupUserName || "-"}
         </TableCell>
 
         {/* 처리시각 */}
         <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-6 py-2.5">
-          {formatDate(row.dormTimestamp) || "-"}
+          {formatDate(row.lineupTimestamp) || "-"}
         </TableCell>
       </TableRow>
     );
