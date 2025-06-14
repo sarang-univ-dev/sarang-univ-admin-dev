@@ -1,3 +1,3 @@
-export default function MyPage(){
+export default function ScheduleChangeHistoryForLineup(){
   return(<div></div>);
 }

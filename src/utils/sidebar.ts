@@ -17,8 +17,8 @@ const PAGE_LABELS: Record<PagePath, string> = {
   [PagePath.BUS_SCHEDULE_CHANGE] : '셔틀버스 일정 변동 요청',
   [PagePath.ACCOUNT_STAFF] : '재정 간사 조회',
   [PagePath.GBS_LINE_UP] : '수양회 GBS 라인업',
-  [PagePath.LINEUP_VIEW_CHANGES] : '라인업 변동 요청',
-  [PagePath.DORM_VIEW_CHANGES] : '숙소 변동 요청',
+  [PagePath.LINEUP_VIEW_CHANGES] : '라인업 간사 일정 변동 조회',
+  [PagePath.DORM_VIEW_CHANGES] : '인원관리 간사 일정 변동 조회',
 }
 
 export function getSidebarMenu(

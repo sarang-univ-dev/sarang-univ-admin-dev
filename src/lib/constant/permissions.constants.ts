@@ -20,6 +20,10 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
     PagePath.SCHEDULE_HISTORY,
     PagePath.SCHEDULE_CHANGE,
     PagePath.ACCOUNT_STAFF,
+    /*DELETE*/
+    PagePath.DORM_VIEW_CHANGES,
+    PagePath.LINEUP_VIEW_CHANGES,
+    PagePath.GBS_LINE_UP,
   ],
 
   [UserRole.UNIV_GROUP_ACCOUNT_MEMBER]: [PagePath.COMFIRM_PAYMENT],
