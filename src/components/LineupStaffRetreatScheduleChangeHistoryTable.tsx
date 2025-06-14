@@ -285,19 +285,19 @@ export function RetreatScheduleChangeHistoryTable({
         })}
 
         {/* 확인 액션버튼 */}
-        <TableCell className="font-medium text-center px-8 py-2.5">
+        { isBeforeRow && (<TableCell className="font-medium text-center px-8 py-2.5" rowSpan={2}>
           {getActionButtons(row)}
-        </TableCell>
+        </TableCell>)}
 
         {/* 처리자명 */}
-        <TableCell className="text-center px-6 py-2.5">
+        {isBeforeRow && (<TableCell className="text-center px-6 py-2.5" rowSpan={2}>
           {row.lineupUserName || "-"}
-        </TableCell>
+        </TableCell>)}
 
         {/* 처리시각 */}
-        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-6 py-2.5">
+        { isBeforeRow && (<TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-6 py-2.5" rowSpan={2}>
           {formatDate(row.lineupTimestamp) || "-"}
-        </TableCell>
+        </TableCell>)}
       </TableRow>
     );
   };
@@ -347,7 +347,7 @@ export function RetreatScheduleChangeHistoryTable({
 
   // 액션 버튼 렌더링
   const getActionButtons = (row: any) => {
-    if(!row.dormResolvedUserName){
+    if(!row.lineupResolvedUserName){
       return(
         <div className="flex flex-col gap-1">
           <Button
