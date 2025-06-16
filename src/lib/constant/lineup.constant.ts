@@ -13,6 +13,7 @@ export const COMPLETE_GROUP_ROW_COUNT = 6;
 // ];
 
 export const MEMO_COLORS = [
+    "transparent",  // 무색
     "#FECACA",  // Red
     "#FED7AA",  // Orange
     "#FEF08A",  // Yellow

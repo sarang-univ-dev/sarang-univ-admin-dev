@@ -74,20 +74,23 @@ export function GBSLineupManagementTable({
 }) {
     // State
     const addToast = useToastStore(state => state.add);
-    const [editingMemoId, setEditingMemoId] = useState<number | null>(null);
-    const [memoValues, setMemoValues] = useState<Record<number, string>>({});
+    const [memoValues, setMemoValues] = useState<Record<string, string>>({});
     const [memoError, setMemoError] = useState<Record<number, boolean>>({});
     const [leaderModalOpen, setLeaderModalOpen] = useState<number | null>(null); // GBS number
     const [selectedLeaders, setSelectedLeaders] = useState<Record<number, Set<number>>>({});
     const [createModalOpen, setCreateModalOpen] = useState(false);
-    const [newGbsNumber, setNewGbsNumber] = useState("");
+    const [multiCreate, setMultiCreate] = useState(false);
+    const [newGbsNumber, setNewGbsNumber] = useState([""]); // 배열로 관리
     const [newGbsMemo, setNewGbsMemo] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [leaderSelectModalOpen, setLeaderSelectModalOpen] = useState(false);
     const [newGroupLeaders, setNewGroupLeaders] = useState<any[]>([]);
     const [leaderSearchTerm, setLeaderSearchTerm] = useState("");
-    const [leaderSortOrder, setLeaderSortOrder] = useState<"asc" | "desc">("asc");
     const [createLoading, setCreateLoading] = useState(false);
+    const [assignTargetGbsNumber, setAssignTargetGbsNumber] = useState<number | null>(null);
+    const [editingMemo, setEditingMemo] = useState<Record<string, boolean>>({});
+
+    const confirmDialog = useConfirmDialogStore();
 
     const filteredData = useMemo(() => {
         if (!searchTerm.trim()) return gbsLists;
@@ -101,14 +104,28 @@ export function GBSLineupManagementTable({
 
     // 리더 후보: 검색, 정렬
     const filteredLeaders = useMemo(() => {
-        let arr = registrations.filter(r =>
-            r.name.includes(leaderSearchTerm) ||
-            String(r.id).includes(leaderSearchTerm) ||
-            (r.phoneNumber ?? "").includes(leaderSearchTerm)
-        );
-        arr = arr.sort((a, b) => leaderSortOrder === "asc" ? a.univGroupNumber - b.univGroupNumber : b.univGroupNumber - a.univGroupNumber);
+        let arr = registrations
+            .filter(r =>
+                    !r.isLeader && ( // << 여기 추가!
+                        r.name.includes(leaderSearchTerm) ||
+                        String(r.id).includes(leaderSearchTerm) ||
+                        (r.phoneNumber ?? "").includes(leaderSearchTerm)
+                    )
+            );
+        arr = arr.sort((a, b) => {
+            // 1. 부서 오름차순
+            if (a.univGroupNumber !== b.univGroupNumber) {
+                return a.univGroupNumber - b.univGroupNumber;
+            }
+            // 2. 학년 내림차순 (숫자가 클수록 우선, ex: 13 -> 1)
+            if (a.gradeNumber !== b.gradeNumber) {
+                return b.gradeNumber - a.gradeNumber;
+            }
+            // 3. 이름 가나다 (localeCompare)
+            return a.name.localeCompare(b.name, "ko");
+        });
         return arr;
-    }, [registrations, leaderSearchTerm, leaderSortOrder]);
+    }, [registrations, leaderSearchTerm]);
 
     // 이미 그룹장으로 지정된 사람 구분 (예시, 필요하면 props로 따로 받을 수 있음)
     const isAssignedLeader = (userId: number) =>
@@ -124,8 +141,6 @@ export function GBSLineupManagementTable({
                 `/api/v1/retreat/${retreatSlug}/line-up/create-gbs`,
                 {
                     gbsNumbers: newGbsNumber,
-                    gbsLeaders: null,
-                    memo: newGbsMemo || null,
                 }
             );
 
@@ -139,7 +154,7 @@ export function GBSLineupManagementTable({
             });
 
             setCreateModalOpen(false);
-            setNewGbsNumber("");
+            setNewGbsNumber([""]);
             setNewGbsMemo("");
         } catch (error) {
             addToast({
@@ -151,6 +166,133 @@ export function GBSLineupManagementTable({
             setCreateLoading(false);
         }
     };
+
+    const handleAssignGbsLeaders = async () => {
+        setCreateLoading(true);
+
+        try {
+            // leaderUserIds 배열
+            const leaderUserIds = newGroupLeaders.map(l => l.id);
+
+            // 실제 API 요청
+            await webAxios.post(
+                `/api/v1/retreat/${retreatSlug}/line-up/assign-gbs-leaders`,
+                {
+                    gbsNumber: assignTargetGbsNumber, // ★ 이게 해당 GBS 번호!
+                    leaderUserIds: leaderUserIds,     // ★ 선택한 리더 id들!
+                }
+            );
+
+            // 데이터 리프레시(혹은 mutate, 직접 set 등)
+            await mutate(gbsListEndpoint); // swr이면 이렇게!
+
+            addToast({
+                title: "성공",
+                description: "GBS에 리더가 배정되었습니다.",
+                variant: "success",
+            });
+
+            setLeaderSelectModalOpen(false)
+            setNewGroupLeaders([]);
+        } catch (error) {
+            addToast({
+                title: "오류 발생",
+                description: "리더 배정 중 오류가 발생했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setCreateLoading(false);
+        }
+    };
+
+    const handleGbsMemo = async (id: string) => {
+        setCreateLoading(true);
+        const memo = memoValues[id];
+
+        try {
+            // 실제 API 요청
+            await webAxios.put(
+                `/api/v1/retreat/${retreatSlug}/line-up/lineup-gbs-memo`,
+                {
+                    gbsNumber: id,
+                    memo: memo
+                }
+            );
+
+            // 데이터 리프레시(혹은 mutate, 직접 set 등)
+            await mutate(gbsListEndpoint); // swr이면 이렇게!
+
+            addToast({
+                title: "성공",
+                description: "GBS 메모가 저장되었습니다.",
+                variant: "success",
+            });
+
+        } catch (error) {
+            addToast({
+                title: "오류 발생",
+                description: "메모 저장 중 오류가 발생했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setCreateLoading(false);
+        }
+    };
+
+    const handleDeleteMemo = async (id: string) => {
+        setCreateLoading(true);
+        const memo = memoValues[id];
+
+        try {
+            // 실제 API 요청
+            await webAxios.delete(
+                `/api/v1/retreat/${retreatSlug}/line-up/lineup-gbs-memo`,
+                {
+                    data: { gbsNumber: id }
+                }
+            );
+
+            // 데이터 리프레시(혹은 mutate, 직접 set 등)
+            await mutate(gbsListEndpoint); // swr이면 이렇게!
+
+            addToast({
+                title: "성공",
+                description: "GBS 메모가 저장되었습니다.",
+                variant: "success",
+            });
+
+        } catch (error) {
+            addToast({
+                title: "오류 발생",
+                description: "메모 저장 중 오류가 발생했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setCreateLoading(false);
+        }
+    };
+
+    // 메모 편집 취소
+    const handleCancelEditMemo = (id: string) => {
+        setEditingMemo(prev => ({ ...prev, [id]: false }));
+        setMemoValues(prev => ({ ...prev, [id]: "" }));
+    };
+
+    // 메모 편집 시작
+    const handleStartEditMemo = (id: string, currentMemo: string) => {
+        setEditingMemo(prev => ({ ...prev, [id]: true }));
+        setMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
+    };
+
+    // 메모 삭제 확인
+    const handleConfirmDeleteMemo = (id: string) => {
+        confirmDialog.show({
+            title: "메모 삭제",
+            description: "정말로 메모를 삭제하시겠습니까?",
+            onConfirm: () => handleDeleteMemo(id),
+        });
+    };
+
 
     return (
         <div className="container mx-auto p-6 space-y-6">
@@ -186,10 +328,10 @@ export function GBSLineupManagementTable({
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>GBS 번호</TableHead>
-                                <TableHead>리더(여러명)</TableHead>
-                                <TableHead>메모</TableHead>
-                                <TableHead className="text-right">액션</TableHead>
+                                <TableHead className="px-2 py-1">GBS 번호</TableHead>
+                                <TableHead className="px-2 py-1">리더(여러명)</TableHead>
+                                <TableHead className="px-2 py-1">메모</TableHead>
+                                <TableHead className="text-right px-2 py-1">액션</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -203,17 +345,22 @@ export function GBSLineupManagementTable({
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => {
+                                                setAssignTargetGbsNumber(group.number);      // ★ 이 GBS 번호 기억
+                                                setLeaderSelectModalOpen(true);              // 모달 open
                                             }}
                                             className="h-auto p-1 justify-start"
                                         >
-                                            ???
+                                            {/* leaders 배열이 있으면 이름들을 ,로 구분해서 보여줌 */}
+                                            {
+                                                group.leaders && group.leaders.length > 0
+                                                    ? group.leaders.map((leaderInfo: { id: number; name: string }) => leaderInfo.name).join(", ")
+                                                    : <span className="text-gray-400">그룹장 없음</span>
+                                            }
                                         </Button>
                                     </TableCell>
-                                    {/* 그룹원 수 */}
-                                    {/* 메모 */}
                                     <TableCell className="max-w-xs">
-                                        {editingMemoId === group.number ? (
-                                            <div className="flex gap-1 items-start">
+                                        {editingMemo[group.number] ? (
+                                            <div className="flex flex-col gap-2 p-2">
                                                 <Textarea
                                                     value={memoValues[group.number] || ""}
                                                     onChange={e =>
@@ -223,33 +370,68 @@ export function GBSLineupManagementTable({
                                                         }))
                                                     }
                                                     className={
-                                                        "min-h-[60px] " +
+                                                        "text-sm resize-none overflow-hidden w-full" +
                                                         (memoError[group.number]
-                                                            ? "border border-red-500"
-                                                            : "border border-gray-200")
+                                                            ? " border border-red-400"
+                                                            : " border border-gray-200")
                                                     }
+                                                    style={{
+                                                        height:
+                                                            Math.max(
+                                                                60,
+                                                                Math.min(
+                                                                    200,
+                                                                    (memoValues[group.number] || "").split("\n").length * 20 + 20
+                                                                )
+                                                            ) + "px",
+                                                    }}
+                                                    rows={Math.max(
+                                                        3,
+                                                        Math.min(10, (memoValues[group.number] || "").split("\n").length + 1)
+                                                    )}
                                                     autoFocus
                                                 />
-                                                <Button size="sm" variant="outline" onClick={() => {
-                                                }}>
-                                                    <Save className="h-4 w-4"/>
-                                                </Button>
+                                                {/* 저장/취소 버튼 */}
+                                                <div className="flex gap-1 justify-end">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleGbsMemo(group.number)}
+                                                        className="h-7 px-2"
+                                                    >
+                                                        <Save className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => handleCancelEditMemo(group.number)}
+                                                        className="h-7 px-2"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ) : (
-                                            <div
-                                                className="cursor-pointer hover:bg-muted p-2 rounded min-h-[40px]"
-                                                onClick={() => {
-                                                }}
-                                            >
-                                                {group.memo ? (
-                                                    <div className="text-sm">{group.memo}</div>
-                                                ) : (
-                                                    <span className="text-muted-foreground text-sm">메모를 입력하려면 클릭</span>
+                                            <div className="flex items-start gap-2 p-2">
+                                                <div
+                                                    className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                                                    onClick={() => handleStartEditMemo(group.number, group.memo)}
+                                                >
+                                                    {group.memo || "메모를 추가하려면 클릭하세요"}
+                                                </div>
+                                                {group.memo && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => handleConfirmDeleteMemo(group.number)}
+                                                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1"
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
                                                 )}
                                             </div>
                                         )}
                                     </TableCell>
-                                    {/* 액션 */}
                                     <TableCell className="text-right">
                                         <div className="flex items-center gap-2 justify-end">
                                             <AlertDialog>
@@ -290,25 +472,49 @@ export function GBSLineupManagementTable({
                         <DialogTitle>GBS 그룹 생성</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <Input
-                            placeholder="예) 103"
-                            value={newGbsNumber}
-                            onChange={e => setNewGbsNumber(e.target.value)}
-                        />
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => setLeaderSelectModalOpen(true)}
-                        >
-                            <User className="h-4 w-4 mr-2" />
-                            {newGroupLeaders.length === 0 ? "그룹장 선택" : newGroupLeaders.map(l => l.name).join(", ")}
-                        </Button>
-                        <Textarea
-                            placeholder="메모 (선택)"
-                            value={newGbsMemo}
-                            onChange={e => setNewGbsMemo(e.target.value)}
-                        />
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                checked={multiCreate}
+                                onCheckedChange={val => setMultiCreate(!!val)}
+                                id="multiCreate"
+                            />
+                            <Label htmlFor="multiCreate" className="select-none">여러개 생성</Label>
+                        </div>
+                        {multiCreate ? (
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    placeholder="시작 번호"
+                                    value={newGbsNumber[0] || ""}
+                                    onChange={e => {
+                                        const arr = [...newGbsNumber];
+                                        arr[0] = e.target.value.replace(/\D/g, "");
+                                        setNewGbsNumber(arr);
+                                    }}
+                                />
+                                <span className="mx-1">~</span>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    placeholder="끝 번호"
+                                    value={newGbsNumber[1] || ""}
+                                    onChange={e => {
+                                        const arr = [...newGbsNumber];
+                                        arr[1] = e.target.value.replace(/\D/g, "");
+                                        setNewGbsNumber(arr);
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <Input
+                                type="number"
+                                min={1}
+                                placeholder="GBS 번호"
+                                value={newGbsNumber[0] || ""}
+                                onChange={e => setNewGbsNumber([e.target.value.replace(/\D/g, "")])}
+                            />
+                        )}
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
@@ -316,13 +522,18 @@ export function GBSLineupManagementTable({
                         </Button>
                         <Button
                             onClick={handleCreateGbsGroup}
-                            disabled={createLoading || !newGbsNumber.trim()}
+                            disabled={
+                                multiCreate
+                                    ? !newGbsNumber[0]?.trim() || !newGbsNumber[1]?.trim()
+                                    : !newGbsNumber[0]?.trim()
+                            }
                         >
-                            {createLoading ? "생성 중..." : "생성"}
+                            생성
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
 
             {/* 2차 모달: 그룹장 선택 */}
             <Dialog open={leaderSelectModalOpen} onOpenChange={setLeaderSelectModalOpen}>
@@ -337,24 +548,17 @@ export function GBSLineupManagementTable({
                             onChange={e => setLeaderSearchTerm(e.target.value)}
                             className="flex-1"
                         />
-                        <select
-                            value={leaderSortOrder}
-                            onChange={e => setLeaderSortOrder(e.target.value as "asc" | "desc")}
-                            className="border rounded p-2"
-                        >
-                            <option value="asc">1부~8부 순</option>
-                            <option value="desc">8부~1부 역순</option>
-                        </select>
                     </div>
                     {/* 테이블을 감싸는 div에 max-height, overflow 추가! */}
                     <div className="overflow-auto max-h-[60vh]">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>이름</TableHead>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>전화번호</TableHead>
                                     <TableHead>부서</TableHead>
+                                    <TableHead>성별</TableHead>
+                                    <TableHead>학년</TableHead>
+                                    <TableHead>이름</TableHead>
+                                    <TableHead>전화번호</TableHead>
                                     <TableHead>상태</TableHead>
                                     <TableHead></TableHead>
                                 </TableRow>
@@ -364,10 +568,11 @@ export function GBSLineupManagementTable({
                                     const selected = newGroupLeaders.some(l => l.id === u.id);
                                     return (
                                         <TableRow key={u.id} className={isAssignedLeader(u.id) && !selected ? "opacity-50" : ""}>
-                                            <TableCell>{u.name}</TableCell>
-                                            <TableCell>{u.id}</TableCell>
-                                            <TableCell>{u.phoneNumber}</TableCell>
-                                            <TableCell>{u.univGroupNumber}부</TableCell>
+                                            <TableCell>{u.univGroupNumber}부</TableCell>          {/* 부서 */}
+                                            <TableCell>{u.gender === "MALE" ? "남" : "여"}</TableCell> {/* 성별 */}
+                                            <TableCell>{u.gradeNumber}학년</TableCell>            {/* 학년 */}
+                                            <TableCell>{u.name}</TableCell>                       {/* 이름 */}
+                                            <TableCell>{u.phoneNumber}</TableCell>                {/* 전화번호 */}
                                             <TableCell>
                                                 {selected ? (
                                                     <span className="text-blue-600 font-bold">선택됨</span>
@@ -406,7 +611,7 @@ export function GBSLineupManagementTable({
                             취소
                         </Button>
                         <Button
-                            onClick={() => setLeaderSelectModalOpen(false)}
+                            onClick={handleAssignGbsLeaders}
                             disabled={newGroupLeaders.length === 0}
                         >
                             완료

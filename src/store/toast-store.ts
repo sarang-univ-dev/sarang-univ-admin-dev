@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type ToastVariant = "default" | "destructive" | "success";
+export type ToastVariant = "default" | "destructive" | "success" | "warning";
 
 export type Toast = {
   id: string;
@@ -24,7 +24,7 @@ export const useToastStore = create<ToastStore>((set, get) => ({
   add: toast => {
     const id = crypto.randomUUID();
     set(state => ({
-      toasts: [{ ...toast, id, open: true }, ...state.toasts].slice(0, 1),
+      toasts: [{ ...toast, id, open: true }, ...state.toasts].slice(0, 3),
     }));
     return id;
   },
