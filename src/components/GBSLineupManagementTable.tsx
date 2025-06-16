@@ -280,8 +280,6 @@ export function GBSLineupManagementTable({
 
     // 메모 편집 시작
     const handleStartEditMemo = (id: string, currentMemo: string) => {
-
-        console.log("메모 편집 시작", id, editingMemo, memoValues, currentMemo);
         setEditingMemo(prev => ({ ...prev, [id]: true }));
         setMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
     };

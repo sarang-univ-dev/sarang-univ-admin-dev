@@ -58,9 +58,6 @@ const transformScheduleChangeHistoryForTable = (
           beforeScheduleIds.includes(scheduleId.toString() as any) ||
           beforeScheduleIds.includes(parseInt(scheduleId.toString()));
         acc[`schedule_${cur.id}`] = isIncluded;
-        console.log(
-          `Before Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`
-        );
         return acc;
       },
       {} as Record<string, boolean>
@@ -92,9 +89,6 @@ const transformScheduleChangeHistoryForTable = (
           afterScheduleIds.includes(scheduleId.toString() as any) ||
           afterScheduleIds.includes(parseInt(scheduleId.toString()));
         acc[`schedule_${cur.id}`] = isIncluded;
-        console.log(
-          `After Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`
-        );
         return acc;
       },
       {} as Record<string, boolean>
@@ -245,10 +239,6 @@ export function RetreatScheduleChangeHistoryTable({
         {/* 스케줄 컬럼들 */}
         {scheduleColumns.map(col => {
           const isChecked = !!row.schedule?.[col.key];
-          console.log(
-            `Row ${row.id}, Col ${col.key}, Checked: ${isChecked}`,
-            row.schedule
-          );
 
           return (
             <TableCell key={`${row.id}-${col.key}`} className="p-2 text-center">

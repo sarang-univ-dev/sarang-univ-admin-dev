@@ -222,26 +222,11 @@ export function GBSLineupTable({
       // 서버 데이터 업데이트 후 최신 데이터로 인원 수 확인
       const updatedData = await mutate(lineupEndpoint);
       
-      console.log("🔍 mutate 결과 전체 구조:", {
-        updatedData,
-        dataType: typeof updatedData,
-        isArray: Array.isArray(updatedData),
-        length: updatedData?.length,
-        sample: updatedData?.[0]
-      });
-      
       // 최신 데이터에서 해당 GBS 번호의 인원 수 확인
       if (updatedData) {
         // 타입 불일치 해결: 문자열을 숫자로 변환
         const targetGbsNumber = parseInt(newGbsNumber);
         const gbsGroup = updatedData.filter((r: any) => r.gbsNumber === targetGbsNumber);
-        
-        console.log("🔍 최신 데이터 기준 GBS 그룹:", { 
-          newGbsNumber,
-          targetGbsNumber,
-          count: gbsGroup.length,
-          members: gbsGroup.map((m: any) => m.name)
-        });
         
         // 7명 이상일 때 warning 토스트 표시
         if (gbsGroup.length >= 7) {
