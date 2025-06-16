@@ -35,6 +35,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/utils/formatDate";
 
+
 export function GBSLineupTable({
   registrations = [],
   schedules = [],
@@ -167,9 +168,14 @@ export function GBSLineupTable({
   };
 
   // 메모 편집 시작
-  const handleStartEditMemo = (id: string, currentMemo: string) => {
+  const handleStartEditMemo = (id: string, currentMemo: string, currentColor?: string) => {
     setEditingMemo(prev => ({ ...prev, [id]: true }));
     setMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
+    // 현재 색상이 있으면 설정, 없으면 빈 문자열(transparent)
+    setMemoBgColors(prev => ({ 
+      ...prev, 
+      [id]: currentColor || "" 
+    }));
   };
 
   // 메모 편집 취소
@@ -206,13 +212,48 @@ export function GBSLineupTable({
         )
       );
 
-      await mutate(lineupEndpoint);
-
+      // 먼저 성공 토스트 표시
       addToast({
         title: "성공",
         description: "GBS가 배정되었습니다.",
         variant: "success",
       });
+
+      // 서버 데이터 업데이트 후 최신 데이터로 인원 수 확인
+      const updatedData = await mutate(lineupEndpoint);
+      
+      console.log("🔍 mutate 결과 전체 구조:", {
+        updatedData,
+        dataType: typeof updatedData,
+        isArray: Array.isArray(updatedData),
+        length: updatedData?.length,
+        sample: updatedData?.[0]
+      });
+      
+      // 최신 데이터에서 해당 GBS 번호의 인원 수 확인
+      if (updatedData) {
+        // 타입 불일치 해결: 문자열을 숫자로 변환
+        const targetGbsNumber = parseInt(newGbsNumber);
+        const gbsGroup = updatedData.filter((r: any) => r.gbsNumber === targetGbsNumber);
+        
+        console.log("🔍 최신 데이터 기준 GBS 그룹:", { 
+          newGbsNumber,
+          targetGbsNumber,
+          count: gbsGroup.length,
+          members: gbsGroup.map((m: any) => m.name)
+        });
+        
+        // 7명 이상일 때 warning 토스트 표시
+        if (gbsGroup.length >= 7) {
+          setTimeout(() => {
+            addToast({
+              title: "⚠️ GBS 인원 초과 알림",
+              description: `배정된 GBS 인원이 ${gbsGroup.length}명입니다! 권장 인원을 초과했습니다.`,
+              variant: "warning",
+            });
+          }, 500);
+        }
+      }
     } catch (error) {
       // 실패 시 에러 표시
       setFilteredData(prev =>
@@ -237,21 +278,22 @@ export function GBSLineupTable({
     const memo = memoValues[id];
     const color = memoBgColors[id];
     const currentRow = filteredData.find(row => row.id === id);
-    const hasExistingMemo =
-      currentRow?.lineupMemo && currentRow.lineupMemo.trim();
     const memoId = currentRow?.lineupMemoId;
 
     setLoading(id, "memo", true);
 
     try {
-      if ((memo && memo.trim()) || (color && color.trim())) {
-        if (hasExistingMemo && memoId) {
-          // 기존 메모가 있는 경우 - PUT 요청으로 수정
+      if ((memo && memo.trim()) || color !== undefined) {
+        // color 처리: 빈 문자열이면 null, 아니면 trim
+        const processedColor = color === "" ? null : (color ? color.trim() : undefined);
+        
+        if (memoId) {
+          // 기존 메모 레코드가 있는 경우 - PUT 요청으로 수정
           await webAxios.put(
             `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`,
             {
               memo: memo.trim(),
-              color: color ? color.trim() : undefined,
+              color: processedColor,
             }
           );
         } else {
@@ -260,7 +302,7 @@ export function GBSLineupTable({
             `/api/v1/retreat/${retreatSlug}/line-up/${id}/lineup-memo`,
             {
               memo: memo.trim(),
-              color: color ? color.trim() : undefined,
+              color: processedColor,
             }
           );
         }
@@ -298,7 +340,7 @@ export function GBSLineupTable({
 
       addToast({
         title: "성공",
-        description: hasExistingMemo
+        description: memoId
           ? "메모가 성공적으로 수정되었습니다."
           : "메모가 성공적으로 저장되었습니다.",
         variant: "success",
@@ -436,7 +478,7 @@ export function GBSLineupTable({
 
   return (
     <Card className="shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b">
+        <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b">
         <div className="whitespace-nowrap">
           <CardTitle>GBS 라인업 현황 조회</CardTitle>
           <CardDescription>대학부 전체 GBS 목록 조회 및 배정</CardDescription>
@@ -606,53 +648,53 @@ export function GBSLineupTable({
                 <Table className="w-full whitespace-nowrap relative">
                   <TableHeader>
                     <TableRow>
-                      <TableHead rowSpan={2} className="text-center">
-                        GBS번호
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
+                        GBS<br/>번호
                       </TableHead>
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         전참/부분참
                       </TableHead>
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         남/여
                       </TableHead>
                       {/* 이하 기존 컬럼 */}
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         부서
                       </TableHead>
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         성별
                       </TableHead>
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         학년
                       </TableHead>
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         이름
                       </TableHead>
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         부서 리더명
                       </TableHead>
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         전화번호
                       </TableHead>
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         라인업 메모
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>타입</span>
                       </TableHead>
                       <TableHead
                         colSpan={scheduleColumns.length}
-                        className="whitespace-nowrap"
+                        className="whitespace-nowrap px-2 py-1"
                       >
                         <div className="text-center">수양회 신청 일정</div>
                       </TableHead>
-                      <TableHead className="text-center">
+                      <TableHead className="text-center px-2 py-1">
                         GBS 배정하기
                       </TableHead>
-                      <TableHead rowSpan={2} className="text-center">
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
                         GBS 메모
                       </TableHead>
                     </TableRow>
@@ -660,12 +702,12 @@ export function GBSLineupTable({
                       {scheduleColumns.map(scheduleCol => (
                         <TableHead
                           key={scheduleCol.key}
-                          className="p-2 text-center whitespace-nowrap"
+                          className="px-2 py-1 text-center whitespace-nowrap"
                         >
                           <span className="text-xs">{scheduleCol.label}</span>
                         </TableHead>
                       ))}
-                      <TableHead>
+                      <TableHead className="px-2 py-1">
                         <div className="flex items-center justify-center gap-2">
                           <span className="text-xs text-gray-600">
                             미배정만 조회
@@ -701,24 +743,23 @@ export function GBSLineupTable({
                                 {/* GBS번호: input, rowSpan */}
                                 <TableCell
                                   rowSpan={withNumber.length}
-                                  className={`align-middle font-bold text-center ${withNumber.length > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""}`}
+                                  className={`align-middle font-bold text-center px-2 py-1 ${withNumber.length > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""}`}
                                 >
                                   {row.gbsNumber}
                                 </TableCell>
                                 {/* 전참/부분참 */}
                                 <TableCell
                                   rowSpan={withNumber.length}
-                                  className="align-middle text-center font-semibold"
+                                  className="align-middle text-center font-semibold px-2 py-1"
                                 >
-                                  전참 {row.fullAttendanceCount} / 부분참{" "}
-                                  {row.partialAttendanceCount}
+                                  전참 {row.fullAttendanceCount}<br/>부분참 {row.partialAttendanceCount}
                                 </TableCell>
                                 {/* 남/여 */}
                                 <TableCell
                                   rowSpan={withNumber.length}
-                                  className="align-middle text-center font-semibold"
+                                  className="align-middle text-center font-semibold px-2 py-1"
                                 >
-                                  남 {row.maleCount} / 여 {row.femaleCount}
+                                  남 {row.maleCount}<br/>여 {row.femaleCount}
                                 </TableCell>
                               </>
                             )}
@@ -726,8 +767,8 @@ export function GBSLineupTable({
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "text-center bg-cyan-200"
-                                  : "text-center"
+                                  ? "text-center bg-cyan-200 px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                             >
                               {row.department}
@@ -735,8 +776,8 @@ export function GBSLineupTable({
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "text-center bg-cyan-200"
-                                  : "text-center"
+                                  ? "text-center bg-cyan-200 px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                             >
                               <GenderBadge gender={row.gender} />
@@ -744,8 +785,8 @@ export function GBSLineupTable({
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "text-center bg-cyan-200"
-                                  : "text-center"
+                                  ? "text-center bg-cyan-200 px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                             >
                               {row.grade}
@@ -753,8 +794,8 @@ export function GBSLineupTable({
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "text-center bg-cyan-200 font-bold text-base"
-                                  : "text-center"
+                                  ? "text-center bg-cyan-200 font-bold text-base px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                             >
                               {row.name}
@@ -762,8 +803,8 @@ export function GBSLineupTable({
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "text-center bg-cyan-200"
-                                  : "text-center"
+                                  ? "text-center bg-cyan-200 px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                             >
                               {row.currentLeader}
@@ -771,8 +812,8 @@ export function GBSLineupTable({
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "text-center bg-cyan-200"
-                                  : "text-center"
+                                  ? "text-center bg-cyan-200 px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                             >
                               {row.phoneNumber}
@@ -781,14 +822,14 @@ export function GBSLineupTable({
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "bg-cyan-200 text-center"
-                                  : "text-center"
+                                  ? "bg-cyan-200 text-center px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                               style={{ backgroundColor: row.lineupMemocolor }}
                             >
                               {editingMemo[row.id] ? (
                                 /* 메모 수정 UI */
-                                <div className="flex flex-col gap-2 p-2">
+                                <div className="flex flex-col gap-2 p-1">
                                   <Textarea
                                     value={memoValues[row.id] || ""}
                                     onChange={e =>
@@ -830,25 +871,35 @@ export function GBSLineupTable({
                                   />
                                   {/* 색상 선택 버튼들 */}
                                   <div className="flex flex-wrap gap-1">
-                                    {MEMO_COLORS.map(color => (
-                                      <button
-                                        key={color}
-                                        style={{
-                                          backgroundColor: color,
-                                          border:
-                                            memoBgColors[row.id] === color
-                                              ? "2px solid black"
-                                              : "1px solid #ccc",
-                                        }}
-                                        className="w-5 h-5 rounded-full"
-                                        onClick={() =>
-                                          setMemoBgColors(prev => ({
-                                            ...prev,
-                                            [row.id]: color,
-                                          }))
-                                        }
-                                      />
-                                    ))}
+                                    {MEMO_COLORS.map(color => {
+                                      const isTransparentSelected = color === "transparent" && (memoBgColors[row.id] === "" || memoBgColors[row.id] === undefined);
+                                      const isColorSelected = color !== "transparent" && memoBgColors[row.id] === color;
+                                      const isSelected = isTransparentSelected || isColorSelected;
+                                      
+                                      return (
+                                        <button
+                                          key={color}
+                                          style={{
+                                            backgroundColor: color === "transparent" ? "white" : color,
+                                            border: isSelected ? "2px solid black" : "1px solid #ccc",
+                                          }}
+                                          className={`w-5 h-5 rounded-full ${color === "transparent" ? "relative" : ""}`}
+                                          onClick={() =>
+                                            setMemoBgColors(prev => ({
+                                              ...prev,
+                                              [row.id]: color === "transparent" ? "" : color,
+                                            }))
+                                          }
+                                        >
+                                          {color === "transparent" && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                              <div className="w-3 h-0.5 bg-red-500 rotate-45 absolute"></div>
+                                              <div className="w-3 h-0.5 bg-red-500 -rotate-45 absolute"></div>
+                                            </div>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
                                   </div>
                                   <div className="flex gap-1 justify-end">
                                     <Button
@@ -878,13 +929,14 @@ export function GBSLineupTable({
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex items-start gap-2 p-2">
+                                <div className="flex items-start gap-2 p-1">
                                   <div
-                                    className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                                    className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-1 rounded min-h-[24px] whitespace-pre-wrap break-words"
                                     onClick={() =>
                                       handleStartEditMemo(
                                         row.id,
-                                        row.lineupMemo
+                                        row.lineupMemo,
+                                        row.lineupMemocolor
                                       )
                                     }
                                   >
@@ -915,14 +967,14 @@ export function GBSLineupTable({
                               )}
                             </TableCell>
                             <TableCell
-                              className={`group-hover:bg-gray-50 text-center whitespace-nowrap ${row.isLeader ? "bg-cyan-200" : ""}`}
+                              className={`group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1 ${row.isLeader ? "bg-cyan-200" : ""}`}
                             >
                               <TypeBadge type={row.type} />
                             </TableCell>
                             {scheduleColumns.map(col => (
                               <TableCell
                                 key={`${row.id}-${col.key}`}
-                                className={`p-2 text-center group-hover:bg-gray-50 whitespace-nowrap ${row.isLeader ? "bg-cyan-200" : ""}`}
+                                className={`px-2 py-1 text-center group-hover:bg-gray-50 whitespace-nowrap ${row.isLeader ? "bg-cyan-200" : ""}`}
                               >
                                 <Checkbox
                                   checked={row.schedule[col.key]}
@@ -936,7 +988,7 @@ export function GBSLineupTable({
                               </TableCell>
                             ))}
                             <TableCell
-                              className={`align-middle text-center py-3 ${row.isLeader ? "bg-cyan-200" : ""}`}
+                              className={`align-middle text-center px-2 py-1 ${row.isLeader ? "bg-cyan-200" : ""}`}
                             >
                               {row.isLeader ? (
                                 <span
@@ -980,7 +1032,7 @@ export function GBSLineupTable({
                             {idx === 0 && (
                               <TableCell
                                 rowSpan={withNumber.length}
-                                className="align-middle"
+                                className="align-middle px-2 py-1"
                               >
                                 {row.gbsMemo}
                               </TableCell>
@@ -990,24 +1042,24 @@ export function GBSLineupTable({
                         ...withoutNumber.map(row => (
                           <TableRow key={row.id}>
                             {/* 앞 3개 빈 칸 */}
-                            <TableCell className="text-center" />
-                            <TableCell className="text-center" />
-                            <TableCell className="text-center" />
+                            <TableCell className="text-center px-2 py-1" />
+                            <TableCell className="text-center px-2 py-1" />
+                            <TableCell className="text-center px-2 py-1" />
                             {/* 이하 나머지 컬럼 */}
-                            <TableCell className="text-center">
+                            <TableCell className="text-center px-2 py-1">
                               {row.department}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center px-2 py-1">
                               <GenderBadge gender={row.gender} />
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center px-2 py-1">
                               {row.grade}
                             </TableCell>
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "font-bold text-blue-600 text-center"
-                                  : "text-center"
+                                  ? "font-bold text-blue-600 text-center px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                             >
                               {row.name}
@@ -1015,27 +1067,27 @@ export function GBSLineupTable({
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "font-bold text-blue-600 text-center"
-                                  : "text-center"
+                                  ? "font-bold text-blue-600 text-center px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                             >
                               {row.currentLeader}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center px-2 py-1">
                               {row.phoneNumber}
                             </TableCell>
                             {/* 라인업 메모(개별 row마다) */}
                             <TableCell
                               className={
                                 row.isLeader
-                                  ? "bg-cyan-200 text-center"
-                                  : "text-center"
+                                  ? "bg-cyan-200 text-center px-2 py-1"
+                                  : "text-center px-2 py-1"
                               }
                               style={{ backgroundColor: row.lineupMemocolor }}
                             >
                               {editingMemo[row.id] ? (
                                 /* 메모 수정 UI */
-                                <div className="flex flex-col gap-2 p-2">
+                                <div className="flex flex-col gap-2 p-1">
                                   <Textarea
                                     value={memoValues[row.id] || ""}
                                     onChange={e =>
@@ -1077,25 +1129,35 @@ export function GBSLineupTable({
                                   />
                                   {/* 색상 선택 버튼들 */}
                                   <div className="flex flex-wrap gap-1">
-                                    {MEMO_COLORS.map(color => (
-                                      <button
-                                        key={color}
-                                        style={{
-                                          backgroundColor: color,
-                                          border:
-                                            memoBgColors[row.id] === color
-                                              ? "2px solid black"
-                                              : "1px solid #ccc",
-                                        }}
-                                        className="w-5 h-5 rounded-full"
-                                        onClick={() =>
-                                          setMemoBgColors(prev => ({
-                                            ...prev,
-                                            [row.id]: color,
-                                          }))
-                                        }
-                                      />
-                                    ))}
+                                    {MEMO_COLORS.map(color => {
+                                      const isTransparentSelected = color === "transparent" && (memoBgColors[row.id] === "" || memoBgColors[row.id] === undefined);
+                                      const isColorSelected = color !== "transparent" && memoBgColors[row.id] === color;
+                                      const isSelected = isTransparentSelected || isColorSelected;
+                                      
+                                      return (
+                                        <button
+                                          key={color}
+                                          style={{
+                                            backgroundColor: color === "transparent" ? "white" : color,
+                                            border: isSelected ? "2px solid black" : "1px solid #ccc",
+                                          }}
+                                          className={`w-5 h-5 rounded-full ${color === "transparent" ? "relative" : ""}`}
+                                          onClick={() =>
+                                            setMemoBgColors(prev => ({
+                                              ...prev,
+                                              [row.id]: color === "transparent" ? "" : color,
+                                            }))
+                                          }
+                                        >
+                                          {color === "transparent" && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                              <div className="w-3 h-0.5 bg-red-500 rotate-45 absolute"></div>
+                                              <div className="w-3 h-0.5 bg-red-500 -rotate-45 absolute"></div>
+                                            </div>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
                                   </div>
                                   <div className="flex gap-1 justify-end">
                                     <Button
@@ -1125,13 +1187,14 @@ export function GBSLineupTable({
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex items-start gap-2 p-2">
+                                <div className="flex items-start gap-2 p-1">
                                   <div
-                                    className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                                    className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-1 rounded min-h-[24px] whitespace-pre-wrap break-words"
                                     onClick={() =>
                                       handleStartEditMemo(
                                         row.id,
-                                        row.lineupMemo
+                                        row.lineupMemo,
+                                        row.lineupMemocolor
                                       )
                                     }
                                   >
@@ -1162,14 +1225,14 @@ export function GBSLineupTable({
                               )}
                             </TableCell>
                             <TableCell
-                              className={`group-hover:bg-gray-50 text-center whitespace-nowrap ${row.isLeader ? "bg-cyan-200" : ""}`}
+                              className={`group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1 ${row.isLeader ? "bg-cyan-200" : ""}`}
                             >
                               <TypeBadge type={row.type} />
                             </TableCell>
                             {scheduleColumns.map(col => (
                               <TableCell
                                 key={`${row.id}-${col.key}`}
-                                className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
+                                className="px-2 py-1 text-center group-hover:bg-gray-50 whitespace-nowrap"
                               >
                                 <Checkbox
                                   checked={row.schedule[col.key]}
@@ -1182,7 +1245,7 @@ export function GBSLineupTable({
                                 />
                               </TableCell>
                             ))}
-                            <TableCell className="align-middle text-center py-3">
+                            <TableCell className="align-middle text-center px-2 py-1">
                               {row.isLeader ? (
                                 <span
                                   className="
@@ -1221,7 +1284,7 @@ export function GBSLineupTable({
                               )}
                             </TableCell>
                             {/* GBS 메모는 없음 */}
-                            <TableCell />
+                            <TableCell className="px-2 py-1" />
                           </TableRow>
                         )),
                       ];
