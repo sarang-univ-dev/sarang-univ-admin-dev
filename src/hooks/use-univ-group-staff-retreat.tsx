@@ -31,6 +31,8 @@ export interface IUnivGroupStaffRetreat {
   univGroupStaffScheduleHistoryResolvedAt?: string | null;
   univGroupStaffScheduleHistoryResolvedUserName?: string | null;
   hadRegisteredShuttleBus: boolean;
+  adminMemo?: string | null;
+  adminMemoId?: number | null;
 }
 
 const fetcher = async (url: string) => {

@@ -108,8 +108,8 @@ const transformStaffRegistrationsForTable = (
     hadRegisteredShuttleBus: reg.hadRegisteredShuttleBus,
     qrUrl: reg.qrUrl,
     memo: reg.univGroupStaffScheduleHistoryMemo,
-    //TODO: edit once api is made
-    staffMemo: "",
+    staffMemo: reg.adminMemo || "",
+    adminMemoId: reg.adminMemoId,
   }));
 };
 
@@ -431,37 +431,30 @@ export function UnivGroupStaffRetreatTable({
     const currentRow = filteredData.find(row => row.id === id);
     const hasExistingMemo =
       currentRow?.staffMemo && currentRow.staffMemo.trim();
-    const memoId = currentRow?.staffMemoId;
+    const memoId = currentRow?.adminMemoId;
 
     setLoading(id, "memo", true);
 
     try {
       if (memo && memo.trim()) {
         if (hasExistingMemo && memoId) {
-          //TODO: edit after api is made
-          //PUT으로 메모 수정
-          // const response = await webAxios.put(
-          //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${memoId}/change-memo`,
-          //   {
-          //     memo: memo.trim(),
-          //   }
-          // );
+          // 기존 메모가 있는 경우 - PUT 요청으로 수정
+          const response = await webAxios.put(
+            `/api/v1/retreat/${retreatSlug}/registration/${memoId}/memo`,
+            {
+              memo: memo.trim(),
+            }
+          );
         } else {
-          //TODO: edit after api is made
-          //POST 요청
-          // const response = await webAxios.post(
-          //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/add-memo`,
-          //   {
-          //     memo: memo.trim(),
-          //   }
-          // );
+          // 새 메모 생성 - POST 요청
+          const response = await webAxios.post(
+            `/api/v1/retreat/${retreatSlug}/registration/${id}/memo`,
+            {
+              memo: memo.trim(),
+            }
+          );
         }
-      //API 대신 임시로 변경
-      setFilteredData(prev => prev.map(
-        row => row.id === id ? {...row, staffMemo: memo} : row
-      ));
       }
-
 
       await mutate(registrationsEndpoint);
 
@@ -496,20 +489,14 @@ export function UnivGroupStaffRetreatTable({
   // 메모 삭제
   const handleDeleteMemo = async (id: string) => {
     const currentRow = filteredData.find(row => row.id === id);
-    const memoId = currentRow?.staffMemoId;
+    const memoId = currentRow?.adminMemoId;
 
     setLoading(id, "delete_memo", true);
 
     try {
-      //TODO: edit after api is made
-      // const response = await webAxios.delete(
-      //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${memoId}`
-      // );
-
-      //API 대신 임시로 변경
-      setFilteredData(prev => prev.map(
-        row => row.id === id ? {...row, staffMemo: ""} : row
-      ));
+      const response = await webAxios.delete(
+        `/api/v1/retreat/${retreatSlug}/registration/${memoId}/memo`
+      );
 
       await mutate(registrationsEndpoint);
 
