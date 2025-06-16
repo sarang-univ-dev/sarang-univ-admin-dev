@@ -24,7 +24,7 @@ export const useToastStore = create<ToastStore>((set, get) => ({
   add: toast => {
     const id = crypto.randomUUID();
     set(state => ({
-      toasts: [{ ...toast, id, open: true }, ...state.toasts].slice(0, 1),
+      toasts: [{ ...toast, id, open: true }, ...state.toasts].slice(0, 3),
     }));
     return id;
   },
