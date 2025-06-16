@@ -330,10 +330,10 @@ export function GBSLineupManagementTable({
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>GBS 번호</TableHead>
-                                <TableHead>리더(여러명)</TableHead>
-                                <TableHead>메모</TableHead>
-                                <TableHead className="text-right">액션</TableHead>
+                                <TableHead className="px-2 py-1">GBS 번호</TableHead>
+                                <TableHead className="px-2 py-1">리더(여러명)</TableHead>
+                                <TableHead className="px-2 py-1">메모</TableHead>
+                                <TableHead className="text-right px-2 py-1">액션</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
