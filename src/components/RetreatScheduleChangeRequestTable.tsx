@@ -591,10 +591,10 @@ export function RetreatScheduleChangeRequestTable({
                             <StatusBadge status={row.status} />
                           </TableCell>
                           <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.confirmedBy || "-"}
+                            {row.issuerName || "-"}
                           </TableCell>
                           <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {formatDate(row.paymentConfirmedAt)}
+                            {formatDate(row.memoCreatedAt)}
                           </TableCell>
                           <TableCell
                             className="group-hover:bg-gray-50 text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
