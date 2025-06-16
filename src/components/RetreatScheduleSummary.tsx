@@ -299,40 +299,25 @@ export function RetreatScheduleSummary({
                 >
                   부서
                 </TableHead>
-                {dayGroups.map((group, index) => (
-                  <TableHead
-                    key={group.dayName}
-                    colSpan={group.schedules.length}
-                    className={`text-center font-semibold text-gray-800 border-b ${getDayColor(
-                      index
-                    )} ${index > 0 ? "border-l border-l-gray-300" : ""}`}
-                  >
-                    {group.dayName}
-                  </TableHead>
-                ))}
                 <TableHead
                   colSpan={3}
                   className="text-center bg-gray-100 font-semibold text-gray-800 border-l border-l-gray-300"
                 >
                   요약
                 </TableHead>
+                {dayGroups.map((group, index) => (
+                  <TableHead
+                    key={group.dayName}
+                    colSpan={group.schedules.length}
+                    className={`text-center font-semibold text-gray-800 border-b ${getDayColor(
+                      index
+                    )} border-l border-l-gray-300`}
+                  >
+                    {group.dayName}
+                  </TableHead>
+                ))}
               </TableRow>
               <TableRow>
-                {dayGroups.map((group, groupIndex) =>
-                  group.schedules.map((schedule, scheduleIndex) => {
-                    const isFirstInGroup = scheduleIndex === 0;
-                    return (
-                      <TableHead
-                        key={schedule.key}
-                        className={`text-center font-medium text-gray-700 ${getDayColor(
-                          groupIndex
-                        )} ${isFirstInGroup && groupIndex > 0 ? "border-l border-l-gray-300" : ""}`}
-                      >
-                        {schedule.label}
-                      </TableHead>
-                    );
-                  })
-                )}
                 <TableHead className="text-center font-medium text-gray-700 bg-gray-100 border-l border-l-gray-300">
                   전참
                 </TableHead>
@@ -342,6 +327,21 @@ export function RetreatScheduleSummary({
                 <TableHead className="text-center font-medium text-gray-700 bg-gray-100">
                   합계
                 </TableHead>
+                {dayGroups.map((group, groupIndex) =>
+                  group.schedules.map((schedule, scheduleIndex) => {
+                    const isFirstInGroup = scheduleIndex === 0;
+                    return (
+                      <TableHead
+                        key={schedule.key}
+                        className={`text-center font-medium text-gray-700 ${getDayColor(
+                          groupIndex
+                        )} ${isFirstInGroup ? "border-l border-l-gray-300" : ""}`}
+                      >
+                        {schedule.label}
+                      </TableHead>
+                    );
+                  })
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -363,23 +363,6 @@ export function RetreatScheduleSummary({
                       {row.label}
                     </span>
                   </TableCell>
-                  {dayGroups.map((group, groupIndex) =>
-                    group.schedules.map((schedule, scheduleIndex) => {
-                      const isFirstInGroup = scheduleIndex === 0;
-                      return (
-                        <TableCell
-                          key={`${row.id}-${schedule.key}`}
-                          className={`text-center ${
-                            isFirstInGroup && groupIndex > 0
-                              ? "border-l border-l-gray-300"
-                              : ""
-                          } ${row.id === "total" ? "bg-gray-50" : ""}`}
-                        >
-                          {row.cells[schedule.key]}
-                        </TableCell>
-                      );
-                    })
-                  )}
                   <TableCell
                     className={`text-center border-l border-l-gray-300 ${
                       row.id === "total" ? "bg-gray-50" : ""
@@ -401,6 +384,23 @@ export function RetreatScheduleSummary({
                   >
                     {row.total}
                   </TableCell>
+                  {dayGroups.map((group, groupIndex) =>
+                    group.schedules.map((schedule, scheduleIndex) => {
+                      const isFirstInGroup = scheduleIndex === 0;
+                      return (
+                        <TableCell
+                          key={`${row.id}-${schedule.key}`}
+                          className={`text-center ${
+                            isFirstInGroup
+                              ? "border-l border-l-gray-300"
+                              : ""
+                          } ${row.id === "total" ? "bg-gray-50" : ""}`}
+                        >
+                          {row.cells[schedule.key]}
+                        </TableCell>
+                      );
+                    })
+                  )}
                 </TableRow>
               ))}
             </TableBody>
