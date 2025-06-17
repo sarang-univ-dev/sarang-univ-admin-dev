@@ -432,85 +432,85 @@ export function AccountStaffTable({
                     <TableRow>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>부서</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>성별</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>학년</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="sticky left-0 bg-gray-50 z-20 text-center whitespace-nowrap px-3 py-2.5"
+                        className="sticky left-0 bg-gray-50 z-20 text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>이름</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>전화번호</span>
                       </TableHead>
                       <TableHead
                         colSpan={scheduleColumns.length}
-                        className="whitespace-nowrap"
+                        className="whitespace-nowrap px-2 py-1"
                       >
                         <div className="text-center">수양회 신청 일정</div>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>타입</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>금액</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>신청 시각</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>입금 현황</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         액션
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>처리자명</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>처리 시각</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>회계 메모</span>
                       </TableHead>
@@ -519,7 +519,7 @@ export function AccountStaffTable({
                       {scheduleColumns.map(scheduleCol => (
                         <TableHead
                           key={scheduleCol.key}
-                          className="p-2 text-center whitespace-nowrap"
+                          className="px-2 py-1 text-center whitespace-nowrap"
                         >
                           <span className="text-xs">{scheduleCol.label}</span>
                         </TableHead>
@@ -532,25 +532,25 @@ export function AccountStaffTable({
                         key={row.id}
                         className="group transition-colors duration-150 hover:bg-gray-50"
                       >
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           {row.department}
                         </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           <GenderBadge gender={row.gender} />
                         </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           {row.grade}
                         </TableCell>
-                        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center whitespace-nowrap px-3 py-2.5">
+                        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center whitespace-nowrap px-2 py-1">
                           {row.name}
                         </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           {row.phoneNumber}
                         </TableCell>
                         {scheduleColumns.map(col => (
                           <TableCell
                             key={`${row.id}-${col.key}`}
-                            className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
+                            className="px-2 py-1 text-center group-hover:bg-gray-50 whitespace-nowrap"
                           >
                             <Checkbox
                               checked={row.schedule[col.key]}
@@ -561,28 +561,28 @@ export function AccountStaffTable({
                             />
                           </TableCell>
                         ))}
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           <TypeBadge type={row.type} />
                         </TableCell>
-                        <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           {row.amount.toLocaleString()}원
                         </TableCell>
-                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           {row.createdAt ? formatDate(row.createdAt) : "-"}
                         </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           <StatusBadge status={row.status} />
                         </TableCell>
-                        <TableCell className="min-w-[180px] group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           {getActionButtons(row)}
                         </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           {row.confirmedBy || "-"}
                         </TableCell>
-                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
+                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1">
                           {formatDate(row.paymentConfirmedAt)}
                         </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-left min-w-[300px] max-w-[400px]">
+                        <TableCell className="group-hover:bg-gray-50 text-left px-2 py-1">
                           {editingMemo[row.id] ? (
                             <div className="flex flex-col gap-2 p-2">
                               <Textarea

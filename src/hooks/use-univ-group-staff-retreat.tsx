@@ -30,6 +30,9 @@ export interface IUnivGroupStaffRetreat {
   univGroupStaffScheduleHistoryMemo?: string | null;
   univGroupStaffScheduleHistoryResolvedAt?: string | null;
   univGroupStaffScheduleHistoryResolvedUserName?: string | null;
+  hadRegisteredShuttleBus: boolean;
+  adminMemo?: string | null;
+  adminMemoId?: number | null;
 }
 
 const fetcher = async (url: string) => {

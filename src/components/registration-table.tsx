@@ -367,25 +367,25 @@ export function RegistrationTable({
                     <TableRow>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>부서</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>성별</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>학년</span>
                       </TableHead>
                       <TableHead
                         rowSpan={2}
-                        className="sticky left-0 bg-gray-50 z-20 text-center whitespace-nowrap px-3 py-2.5"
+                        className="sticky left-0 bg-gray-50 z-20 text-center whitespace-nowrap px-2 py-1"
                       >
                         <span>이름</span>
                       </TableHead>

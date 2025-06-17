@@ -23,11 +23,7 @@ export default function ConfirmPaymentPage() {
   const params = useParams();
   const retreatSlug = params.retreatSlug as string;
 
-  console.log(retreatSlug);
-
   const { data, isLoading, error } = useUnivGroupStaffRetreat(retreatSlug);
-
-  console.log(JSON.stringify(data, null, 2));
 
   useEffect(() => {
     const fetchSchedules = async () => {
