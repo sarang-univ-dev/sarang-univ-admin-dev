@@ -183,20 +183,19 @@ export function RegistrationTable({
     try {
       // TODO once api is  made
       if (messageType === "payment_request") {
-        // const response = await webAxios.post(
-        //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/request-payment`,
-        //   {
-        //     userRetreatShuttleBusRegistrationId: id,
-        //   }
-        // );
+        const response = await webAxios.post(
+          `/api/v1/retreat/${retreatSlug}/shuttle-bus/request-payment`,
+          {
+            userRetreatShuttleBusRegistrationId: parseInt(id),
+          }
+        );
 
         // 성공 토스트 메시지
-        // addToast({
-        //   title: "성공",
-        //   description: "입금 요청 메시지가 성공적으로 전송되었습니다.",
-        //   variant: "default",
-        // });
-        alert("입금 요청 메시지는 구현이 필요합니다.");
+        addToast({
+          title: "성공",
+          description: "입금 요청 메시지가 성공적으로 전송되었습니다.",
+          variant: "default",
+        });
       }
     } catch (error) {
       console.error(`${messageType} 메시지 전송 중 오류 발생:`, error);

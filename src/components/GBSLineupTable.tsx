@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, X, Trash2, Search, Download } from "lucide-react";
+import { Save, X, Trash2, Search, Download, Filter } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -20,6 +20,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { GenderBadge, TypeBadge } from "@/components/Badge";
 import { SearchBar } from "@/components/RegistrationTableSearchBar";
 import { webAxios } from "@/lib/api/axios";
@@ -59,6 +64,8 @@ export function GBSLineupTable({
   const [memoBgColors, setMemoBgColors] = useState<Record<string, string>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const confirmDialog = useConfirmDialogStore();
 
@@ -121,7 +128,18 @@ export function GBSLineupTable({
     }
   }, [registrations, schedules]);
 
-  // 2. 검색 + "미배정만 조회" 필터 동시 적용
+  // 부서 목록 추출 및 정렬
+  const departmentOptions = useMemo(() => {
+    const departments = Array.from(new Set(data.map(row => row.department).filter(Boolean)));
+    return departments.sort((a, b) => {
+      // 숫자 부서 정렬 (1부, 2부, 3부...)
+      const aNum = parseInt(a.replace('부', ''));
+      const bNum = parseInt(b.replace('부', ''));
+      return aNum - bNum;
+    });
+  }, [data]);
+
+  // 2. 검색 + "미배정만 조회" + 부서 필터 동시 적용
   useEffect(() => {
     let temp = data;
 
@@ -130,6 +148,11 @@ export function GBSLineupTable({
       temp = temp.filter(
         row => !row.gbsNumber || row.gbsNumber === "" || row.gbsNumber === null
       );
+    }
+
+    // 부서 필터
+    if (selectedDepartments.length > 0) {
+      temp = temp.filter(row => selectedDepartments.includes(row.department));
     }
 
     // 검색어 필터
@@ -147,7 +170,7 @@ export function GBSLineupTable({
     }
 
     setFilteredData(temp);
-  }, [data, showOnlyUnassigned, searchTerm]);
+  }, [data, showOnlyUnassigned, searchTerm, selectedDepartments]);
 
   // 검색 결과 처리 함수
   const handleSearchResults = (results: any[]) => {
@@ -615,7 +638,7 @@ export function GBSLineupTable({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-1">
+      <CardContent className="px-1 pt-4">
         <div className="space-y-4">
           {/* Search */}
           <div className="relative">
@@ -644,7 +667,67 @@ export function GBSLineupTable({
                       </TableHead>
                       {/* 이하 기존 컬럼 */}
                       <TableHead rowSpan={2} className="text-center px-2 py-1">
-                        부서
+                        <div className="flex items-center justify-center gap-1">
+                          <span>부서</span>
+                          <Popover open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 hover:bg-gray-100"
+                              >
+                                <Filter className={`h-3 w-3 ${selectedDepartments.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-4" align="start">
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-medium text-sm mb-2">부서 필터</h4>
+                                  <p className="text-xs text-gray-600 mb-3">표시할 부서를 선택하세요.</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedDepartments([])}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    전체 해제
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedDepartments([...departmentOptions])}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    전체 선택
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                                  {departmentOptions.map(department => (
+                                    <label key={department} className="flex items-center gap-2 cursor-pointer text-sm">
+                                      <Checkbox
+                                        checked={selectedDepartments.includes(department)}
+                                        onCheckedChange={(checked) => {
+                                          if (checked) {
+                                            setSelectedDepartments(prev => [...prev, department]);
+                                          } else {
+                                            setSelectedDepartments(prev => prev.filter(d => d !== department));
+                                          }
+                                        }}
+                                        className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-700">{department}</span>
+                                    </label>
+                                  ))}
+                                  {departmentOptions.length === 0 && (
+                                    <span className="text-xs text-gray-500 col-span-2">필터할 부서가 없습니다.</span>
+                                  )}
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                       </TableHead>
                       <TableHead rowSpan={2} className="text-center px-2 py-1">
                         성별
@@ -1281,6 +1364,8 @@ export function GBSLineupTable({
           </div>
         </div>
       </CardContent>
+
+
     </Card>
   );
 }
