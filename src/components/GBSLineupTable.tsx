@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, X, Trash2, Search, Download, Filter } from "lucide-react";
+import { Save, X, Trash2, Search, Download, Filter, Plus, User, UserPlus, Shield, GraduationCap } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -39,7 +39,58 @@ import {
 } from "@/lib/constant/lineup.constant";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/utils/formatDate";
+import { UserRetreatRegistrationType } from "@/types";
 
+// GBS line up 페이지에서만 사용하는 TypeBadge (새돌 칩 포함)
+const TypeBadgeWithFreshman = ({ 
+  type, 
+  gradeNumber 
+}: { 
+  type: UserRetreatRegistrationType | null; 
+  gradeNumber: number;
+}) => {
+  // 기존 DB 값이 있으면 우선적으로 표시
+  if (type) {
+    switch (type) {
+      case UserRetreatRegistrationType.NEW_COMER:
+        return (
+          <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-pink-50 border border-pink-200">
+            <UserPlus className="h-3.5 w-3.5 text-pink-500 mr-1.5" />
+            <span className="text-xs font-medium text-pink-700">새가족</span>
+          </div>
+        );
+      case UserRetreatRegistrationType.SOLDIER:
+        return (
+          <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200">
+            <Shield className="h-3.5 w-3.5 text-indigo-500 mr-1.5" />
+            <span className="text-xs font-medium text-indigo-700">군지체</span>
+          </div>
+        );
+      case UserRetreatRegistrationType.STAFF:
+        return (
+          <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
+            <User className="h-3.5 w-3.5 text-gray-500 mr-1.5" />
+            <span className="text-xs font-medium text-gray-700">간사</span>
+          </div>
+        );
+      default:
+        return <span>{type}</span>;
+    }
+  }
+
+  // DB 값이 없고 1학년인 경우 새돌 칩 표시
+  if (gradeNumber === 1) {
+    return (
+      <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200">
+        <GraduationCap className="h-3.5 w-3.5 text-orange-500 mr-1.5" />
+        <span className="text-xs font-medium text-orange-700">새돌</span>
+      </div>
+    );
+  }
+
+  // 모두 해당하지 않으면 빈 값 표시
+  return <span>-</span>;
+};
 
 export function GBSLineupTable({
   registrations = [],
@@ -66,6 +117,10 @@ export function GBSLineupTable({
   const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+  // 일정 변동 메모 편집 상태 (새로 작성할 때만 사용)
+  const [editingScheduleMemo, setEditingScheduleMemo] = useState<Record<string, boolean>>({});
+  const [scheduleMemoValues, setScheduleMemoValues] = useState<Record<string, string>>({});
 
   const confirmDialog = useConfirmDialogStore();
 
@@ -108,6 +163,8 @@ export function GBSLineupTable({
         lineupMemo: registration.lineupMemo,
         lineupMemoId: registration.lineupMemoId,
         lineupMemocolor: registration.lineupMemocolor,
+        unresolvedLineupHistoryMemo: registration.unresolvedLineupHistoryMemo,
+        adminMemo: registration.adminMemo,
       };
     });
   };
@@ -205,6 +262,100 @@ export function GBSLineupTable({
   const handleCancelEditMemo = (id: string) => {
     setEditingMemo(prev => ({ ...prev, [id]: false }));
     setMemoValues(prev => ({ ...prev, [id]: "" }));
+  };
+
+  // 일정 변동 메모 편집 시작 (메모가 없을 때만 가능)
+  const handleStartEditScheduleMemo = (id: string, currentMemo: string) => {
+    // 이미 메모가 있으면 편집 불가
+    if (currentMemo && currentMemo.trim()) {
+      return;
+    }
+    setEditingScheduleMemo(prev => ({ ...prev, [id]: true }));
+    setScheduleMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
+  };
+
+  // 일정 변동 메모 편집 취소
+  const handleCancelEditScheduleMemo = (id: string) => {
+    setEditingScheduleMemo(prev => ({ ...prev, [id]: false }));
+    setScheduleMemoValues(prev => ({ ...prev, [id]: "" }));
+  };
+
+  // 일정 변동 메모 저장
+  const handleSaveScheduleMemo = async (id: string) => {
+    // TODO: 일정 변동 요청 메모 추가는 구현이 필요합니다
+    alert('일정 변동 요청 메모 추가는 구현이 필요합니다');
+    
+    /*
+    const memo = scheduleMemoValues[id];
+
+    if (!memo || !memo.trim()) {
+      addToast({
+        title: "오류",
+        description: "메모 내용을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(id, "schedule_memo", true);
+
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/line-up/${id}/schedule-change-memo`,
+        {
+          memo: memo.trim(),
+        }
+      );
+
+      // 성공 시 데이터 업데이트
+      setFilteredData(prev =>
+        prev.map(row =>
+          row.id === id
+            ? {
+                ...row,
+                unresolvedLineupHistoryMemo: memo.trim(),
+              }
+            : row
+        )
+      );
+      setData(prev =>
+        prev.map(row =>
+          row.id === id
+            ? {
+                ...row,
+                unresolvedLineupHistoryMemo: memo.trim(),
+              }
+            : row
+        )
+      );
+
+      await mutate(lineupEndpoint);
+
+      setEditingScheduleMemo(prev => ({ ...prev, [id]: false }));
+      setScheduleMemoValues(prev => ({ ...prev, [id]: "" }));
+
+      addToast({
+        title: "성공",
+        description: "일정 변동 메모가 성공적으로 저장되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("일정 변동 메모 저장 중 오류 발생:", error);
+
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "일정 변동 메모 저장 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(id, "schedule_memo", false);
+    }
+    */
   };
 
   const handleSaveGbsNumber = async (row: any) => {
@@ -765,6 +916,12 @@ export function GBSLineupTable({
                       <TableHead rowSpan={2} className="text-center px-2 py-1">
                         GBS 메모
                       </TableHead>
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
+                        라인업<br/>일정변동 요청
+                      </TableHead>
+                      <TableHead rowSpan={2} className="text-center px-2 py-1">
+                        행정간사<br/>메모
+                      </TableHead>
                     </TableRow>
                     <TableRow>
                       {scheduleColumns.map(scheduleCol => (
@@ -1037,7 +1194,7 @@ export function GBSLineupTable({
                             <TableCell
                               className={`group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1 ${row.isLeader ? "bg-cyan-200" : ""}`}
                             >
-                              <TypeBadge type={row.type} />
+                              <TypeBadgeWithFreshman type={row.type} gradeNumber={parseInt(row.grade.split('학년')[0])} />
                             </TableCell>
                             {scheduleColumns.map(col => (
                               <TableCell
@@ -1100,11 +1257,107 @@ export function GBSLineupTable({
                             {idx === 0 && (
                               <TableCell
                                 rowSpan={withNumber.length}
-                                className="align-middle px-2 py-1"
+                                className="align-middle text-center px-2 py-1"
                               >
                                 {row.gbsMemo}
                               </TableCell>
                             )}
+                            
+                            {/* 미해결 라인업 히스토리 메모 */}
+                            <TableCell
+                              className={`align-middle px-2 py-1 ${row.unresolvedLineupHistoryMemo ? "bg-yellow-100" : ""}`}
+                            >
+                              {editingScheduleMemo[row.id] ? (
+                                /* 일정 변동 메모 편집 UI */
+                                <div className="flex flex-col gap-2 p-2">
+                                  <Textarea
+                                    value={scheduleMemoValues[row.id] || ""}
+                                    onChange={e =>
+                                      setScheduleMemoValues(prev => ({
+                                        ...prev,
+                                        [row.id]: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="일정 변동 메모를 입력하세요..."
+                                    className="text-sm resize-none overflow-hidden w-full"
+                                    style={{
+                                      height:
+                                        Math.max(
+                                          60,
+                                          Math.min(
+                                            200,
+                                            (scheduleMemoValues[row.id] || "").split("\n").length * 20 + 20
+                                          )
+                                        ) + "px",
+                                    }}
+                                    disabled={isLoading(row.id, "schedule_memo")}
+                                    rows={Math.max(
+                                      3,
+                                      Math.min(
+                                        10,
+                                        (scheduleMemoValues[row.id] || "").split("\n").length + 1
+                                      )
+                                    )}
+                                  />
+                                  <div className="flex gap-1 justify-end">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleSaveScheduleMemo(row.id)}
+                                      disabled={isLoading(row.id, "schedule_memo")}
+                                      className="h-7 px-2"
+                                    >
+                                      {isLoading(row.id, "schedule_memo") ? (
+                                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                      ) : (
+                                        <Save className="h-3 w-3" />
+                                      )}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleCancelEditScheduleMemo(row.id)}
+                                      disabled={isLoading(row.id, "schedule_memo")}
+                                      className="h-7 px-2"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-start gap-2 p-2">
+                                  {row.unresolvedLineupHistoryMemo ? (
+                                    // 메모가 있는 경우 - 읽기 전용 (수정 불가)
+                                    <div className="text-sm text-gray-600 whitespace-pre-wrap break-words">
+                                      {row.unresolvedLineupHistoryMemo}
+                                    </div>
+                                  ) : (
+                                    // 메모가 없는 경우 - 새로 작성 가능
+                                    <div
+                                      className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                                      onClick={() =>
+                                        handleStartEditScheduleMemo(
+                                          row.id,
+                                          row.unresolvedLineupHistoryMemo
+                                        )
+                                      }
+                                    >
+                                      {row.unresolvedLineupHistoryMemo ||
+                                        "일정 변동 메모를 추가하려면 클릭하세요"}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </TableCell>
+                            
+                            {/* 관리자 메모 */}
+                            <TableCell
+                              className={`align-middle text-center px-2 py-1`}
+                            >
+                              <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                                {row.adminMemo || ""}
+                              </div>
+                            </TableCell>
                           </TableRow>
                         )),
                         ...withoutNumber.map(row => (
@@ -1244,9 +1497,7 @@ export function GBSLineupTable({
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() =>
-                                        handleCancelEditMemo(row.id)
-                                      }
+                                      onClick={() => handleCancelEditMemo(row.id)}
                                       disabled={isLoading(row.id, "memo")}
                                       className="h-7 px-2"
                                     >
@@ -1295,7 +1546,7 @@ export function GBSLineupTable({
                             <TableCell
                               className={`group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1 ${row.isLeader ? "bg-cyan-200" : ""}`}
                             >
-                              <TypeBadge type={row.type} />
+                              <TypeBadgeWithFreshman type={row.type} gradeNumber={parseInt(row.grade.split('학년')[0])} />
                             </TableCell>
                             {scheduleColumns.map(col => (
                               <TableCell
@@ -1352,7 +1603,16 @@ export function GBSLineupTable({
                               )}
                             </TableCell>
                             {/* GBS 메모는 없음 */}
-                            <TableCell className="px-2 py-1" />
+                            <TableCell className="text-center px-2 py-1" />
+                            
+                            {/* 관리자 메모 */}
+                            <TableCell
+                              className={`align-middle text-center px-2 py-1`}
+                            >
+                              <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                                {row.adminMemo || ""}
+                              </div>
+                            </TableCell>
                           </TableRow>
                         )),
                       ];
@@ -1364,8 +1624,6 @@ export function GBSLineupTable({
           </div>
         </div>
       </CardContent>
-
-
     </Card>
   );
 }
