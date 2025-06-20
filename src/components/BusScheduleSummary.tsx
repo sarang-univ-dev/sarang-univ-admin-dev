@@ -49,8 +49,6 @@ export function BusScheduleSummary({
     return groupScheduleColumnsByDay(schedules);
   }, [schedules]);
 
-  console.log("Day Groups: " + JSON.stringify(dayGroups));
-
   // 모든 스케줄 컬럼 (평면화)
   const allScheduleColumns = useMemo(() => {
     return dayGroups.flatMap(group => group.schedules);

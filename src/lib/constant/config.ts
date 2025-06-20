@@ -16,10 +16,6 @@ const localConfig: typeof prodConfig = {
   ENV: "local",
 };
 
-console.log('NEXT_PUBLIC_SARANG_ENV', process.env.NEXT_PUBLIC_SARANG_ENV);
-console.log('NODE_ENV', process.env.NODE_ENV);
-
-
 const config = (function () {
   switch (process.env.NEXT_PUBLIC_SARANG_ENV) {
     case "production":

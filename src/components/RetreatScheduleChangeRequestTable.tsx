@@ -235,20 +235,14 @@ export function RetreatScheduleChangeRequestTable({
 
   // 새로운 일정 선택 처리 함수
   const handleScheduleChange = (id: number) => {
-    console.log("체크박스 변경:", id);
     const newSelectedSchedules = selectedSchedules.includes(id)
       ? selectedSchedules.filter(scheduleId => scheduleId !== id)
       : [...selectedSchedules, id];
 
-    console.log("새로운 선택 일정:", newSelectedSchedules);
-
     setSelectedSchedules(newSelectedSchedules);
-
-
 
     // 체크박스 변경 즉시 가격 계산
     if (selectedRow && payments.length > 0) {
-      console.log("가격 계산 호출");
       calculateNewPrice(newSelectedSchedules);
     }
   };
@@ -266,8 +260,6 @@ export function RetreatScheduleChangeRequestTable({
       const schedulesToUse =
         retreatInfo && retreatInfo.schedule ? retreatInfo.schedule : schedules;
 
-      console.log("사용할 스케줄 데이터:", schedulesToUse);
-
       const calculatedNewPrice = calculateRegistrationPrice(
         selectedRow.type,
         schedulesToUse,
@@ -276,15 +268,11 @@ export function RetreatScheduleChangeRequestTable({
         parseInt(selectedRow.grade)
       );
 
-      console.log("계산된 가격:", calculatedNewPrice);
-
       // 새로운 가격은 max(이전 가격, 변경된 일정으로 계산된 가격)
       const calculatedMaxPrice = Math.max(
         selectedRow.amount,
         calculatedNewPrice
       );
-
-      console.log("최종 가격:", calculatedMaxPrice);
       setCalculatedPrice(calculatedMaxPrice);
     } catch (error) {
       console.error("가격 계산 중 오류 발생:", error);
@@ -294,17 +282,11 @@ export function RetreatScheduleChangeRequestTable({
   // 처음 모달이 열릴 때 선택된 일정에 대해 금액 계산하도록 수정
   useEffect(() => {
     if (selectedRow && selectedSchedules.length > 0 && payments.length > 0) {
-      console.log(
-        "useEffect에서 가격 계산 트리거:",
-        selectedRow.id,
-        selectedSchedules
-      );
       calculateNewPrice(selectedSchedules);
     }
   }, [selectedRow, selectedSchedules, payments]);
 
   const handleProcessSchedule = (row: any) => {
-    console.log("모달 열기:", row);
     setSelectedRow(row);
     setMemoText(row.memo || "");
     setSelectedSchedules(row.scheduleIds || []);
@@ -312,14 +294,10 @@ export function RetreatScheduleChangeRequestTable({
 
     // 모달 열릴 때 바로 가격 계산
     if (row.scheduleIds && row.scheduleIds.length > 0) {
-      console.log("모달 열기 시 가격 계산:", row.scheduleIds);
       // 리트릿 정보가 로드되었는지 확인
       if (retreatInfo) {
         calculateNewPrice(row.scheduleIds);
       } else {
-        console.log(
-          "리트릿 정보가 아직 로드되지 않았습니다. 가격 계산을 지연합니다."
-        );
         // 필요한 정보가 없으면 토스트 메시지 표시
         addToast({
           title: "정보 로드 중",
@@ -390,7 +368,6 @@ export function RetreatScheduleChangeRequestTable({
 
   const handleResolveScheduleChange = async (row: any) => {
     if (!row.memoId) {
-      console.error("memoId가 없습니다.");
       addToast({
         title: "오류",
         description: "메모 ID가 없습니다.",
@@ -402,19 +379,12 @@ export function RetreatScheduleChangeRequestTable({
     setLoading(row.id, "resolve", true);
     try {
       // 일정 변경 요청 처리 완료 API 호출
-      console.log(
-        "API 호출 시작",
-        `/api/v1/retreat/${retreatSlug}/account/schedule-history/resolve-memo`
-      );
-
       const response = await webAxios.post(
         `/api/v1/retreat/${retreatSlug}/account/schedule-history/resolve-memo`,
         {
           userRetreatRegistrationHistoryMemoId: row.memoId,
         }
       );
-
-      console.log("API 응답", response.data);
 
       // 데이터 갱신
       await mutate(registrationsEndpoint);
@@ -621,10 +591,10 @@ export function RetreatScheduleChangeRequestTable({
                             <StatusBadge status={row.status} />
                           </TableCell>
                           <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.confirmedBy || "-"}
+                            {row.issuerName || "-"}
                           </TableCell>
                           <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {formatDate(row.paymentConfirmedAt)}
+                            {formatDate(row.memoCreatedAt)}
                           </TableCell>
                           <TableCell
                             className="group-hover:bg-gray-50 text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"

@@ -25,6 +25,8 @@ import {
   XSquare,
   Save,
   Trash2,
+  Check,
+  XIcon,
 } from "lucide-react";
 import {
   Card,
@@ -58,6 +60,25 @@ import { webAxios } from "@/lib/api/axios";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { AxiosError } from "axios";
 
+// 셔틀버스 신청 여부 배지 컴포넌트
+const ShuttleBusStatusBadge = ({ hasRegistered }: { hasRegistered: boolean }) => {
+  if (hasRegistered) {
+    return (
+      <div className="flex items-center gap-1.5 text-green-600">
+        <Check className="h-3.5 w-3.5" />
+        <span className="text-sm font-medium">신청함</span>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex items-center gap-1.5 text-red-600">
+      <XIcon className="h-3.5 w-3.5" />
+      <span className="text-sm font-medium">신청 안함</span>
+    </div>
+  );
+};
+
 const transformStaffRegistrationsForTable = (
   registrations: IUnivGroupStaffRetreat[],
   schedules: TRetreatRegistrationSchedule[]
@@ -69,6 +90,7 @@ const transformStaffRegistrationsForTable = (
     grade: `${reg.gradeNumber}학년`,
     name: reg.name,
     phone: reg.userPhoneNumber,
+    currentLeaderName: reg.currentLeaderName,
     schedule: schedules.reduce((acc, cur) => {
       acc[`schedule_${cur.id}`] = (
         reg.userRetreatRegistrationScheduleIds || []
@@ -83,12 +105,11 @@ const transformStaffRegistrationsForTable = (
     paymentConfirmedAt: reg.paymentConfirmedAt,
     gbs: reg.gbsName,
     accommodation: reg.dormitoryName,
+    hadRegisteredShuttleBus: reg.hadRegisteredShuttleBus,
     qrUrl: reg.qrUrl,
     memo: reg.univGroupStaffScheduleHistoryMemo,
-    memoBy: reg.univGroupStaffScheduleHistoryResolvedUserName,
-    memoAt: reg.univGroupStaffScheduleHistoryResolvedAt,
-    //TODO: edit once api is made
-    staffMemo: "",
+    staffMemo: reg.adminMemo || "",
+    adminMemoId: reg.adminMemoId,
   }));
 };
 
@@ -161,8 +182,10 @@ export function UnivGroupStaffRetreatTable({
           row.grade?.toString(),
           row.type?.toString(),
           row.phone?.toString(),
+          row.currentLeaderName?.toString(),
           row.gbs?.toString(),
           row.accommodation?.toString(),
+          row.hadRegisteredShuttleBus ? "신청함" : "신청 안함",
         ].some(field => field?.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
@@ -408,37 +431,30 @@ export function UnivGroupStaffRetreatTable({
     const currentRow = filteredData.find(row => row.id === id);
     const hasExistingMemo =
       currentRow?.staffMemo && currentRow.staffMemo.trim();
-    const memoId = currentRow?.staffMemoId;
+    const memoId = currentRow?.adminMemoId;
 
     setLoading(id, "memo", true);
 
     try {
       if (memo && memo.trim()) {
         if (hasExistingMemo && memoId) {
-          //TODO: edit after api is made
-          //PUT으로 메모 수정
-          // const response = await webAxios.put(
-          //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${memoId}/change-memo`,
-          //   {
-          //     memo: memo.trim(),
-          //   }
-          // );
+          // 기존 메모가 있는 경우 - PUT 요청으로 수정
+          const response = await webAxios.put(
+            `/api/v1/retreat/${retreatSlug}/registration/${memoId}/memo`,
+            {
+              memo: memo.trim(),
+            }
+          );
         } else {
-          //TODO: edit after api is made
-          //POST 요청
-          // const response = await webAxios.post(
-          //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/add-memo`,
-          //   {
-          //     memo: memo.trim(),
-          //   }
-          // );
+          // 새 메모 생성 - POST 요청
+          const response = await webAxios.post(
+            `/api/v1/retreat/${retreatSlug}/registration/${id}/memo`,
+            {
+              memo: memo.trim(),
+            }
+          );
         }
-      //API 대신 임시로 변경
-      setFilteredData(prev => prev.map(
-        row => row.id === id ? {...row, staffMemo: memo} : row
-      ));
       }
-
 
       await mutate(registrationsEndpoint);
 
@@ -473,20 +489,14 @@ export function UnivGroupStaffRetreatTable({
   // 메모 삭제
   const handleDeleteMemo = async (id: string) => {
     const currentRow = filteredData.find(row => row.id === id);
-    const memoId = currentRow?.staffMemoId;
+    const memoId = currentRow?.adminMemoId;
 
     setLoading(id, "delete_memo", true);
 
     try {
-      //TODO: edit after api is made
-      // const response = await webAxios.delete(
-      //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${memoId}`
-      // );
-
-      //API 대신 임시로 변경
-      setFilteredData(prev => prev.map(
-        row => row.id === id ? {...row, staffMemo: ""} : row
-      ));
+      const response = await webAxios.delete(
+        `/api/v1/retreat/${retreatSlug}/registration/${memoId}/memo`
+      );
 
       await mutate(registrationsEndpoint);
 
@@ -690,12 +700,12 @@ export function UnivGroupStaffRetreatTable({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="px-2 py-1">
         <div className="space-y-4">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="통합 검색 (이름, 부서, 학년, 타입, GBS, 숙소 등)..."
+              placeholder="통합 검색 (이름, 부서, 학년, 타입, 리더명, GBS, 숙소 등)..."
               className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -708,119 +718,114 @@ export function UnivGroupStaffRetreatTable({
                 <Table className="min-w-full whitespace-nowrap relative text-sm">
                   <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
                     <TableRow>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>부서</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>성별</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>학년</span>
                         </div>
                       </TableHead>
                       <TableHead
-                        className="sticky left-0 bg-gray-100 z-20 px-3 py-2.5"
+                        className="sticky left-0 bg-gray-100 z-20 px-2 py-1"
                         rowSpan={2}
                       >
                         <div className="flex items-center space-x-1 justify-center">
                           <span>이름</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>전화번호</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-9 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>리더 명</span>
+                          <span>부서 리더명</span>
                         </div>
                       </TableHead>
                       <TableHead
                         colSpan={scheduleColumns.length}
-                        className="text-center px-3 py-2.5"
+                        className="text-center px-2 py-1"
                       >
                         수양회 신청 일정
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>타입</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>금액</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>신청시각</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>입금 현황</span>
                         </div>
                       </TableHead>
                       <TableHead
-                        className="px-3 py-2.5 text-center"
+                        className="px-2 py-1 text-center"
                         rowSpan={2}
                       >
                         액션
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>처리자명</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>처리시각</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>GBS</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>숙소</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>셔틀버스<br/>신청 여부</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>일정 변동 요청 메모</span>
                         </div>
                       </TableHead>
                       <TableHead
-                        className="px-3 py-2.5 text-center"
+                        className="px-2 py-1 text-center"
                         rowSpan={2}
                       >
                         메모 관리
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>메모 처리자</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>메모 처리시각</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-2 py-1" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>행정간사 메모</span>
                         </div>
                       </TableHead>
                       <TableHead
-                        className="px-3 py-2.5 text-center"
+                        className="px-2 py-1 text-center"
                         rowSpan={2}
                       >
                         QR
@@ -845,7 +850,7 @@ export function UnivGroupStaffRetreatTable({
                     {filteredData.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={18 + scheduleColumns.length}
+                          colSpan={16 + scheduleColumns.length}
                           className="text-center py-10 text-gray-500"
                         >
                           {allData.length > 0
@@ -859,22 +864,22 @@ export function UnivGroupStaffRetreatTable({
                         key={row.id}
                         className="group hover:bg-gray-50 transition-colors duration-150"
                       >
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           {row.department}
                         </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           <GenderBadge gender={row.gender} />
                         </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           {row.grade}
                         </TableCell>
-                        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5">
+                        <TableCell className="sticky left-0 bg-white group-hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-2 py-1">
                           {row.name}
                         </TableCell>
-                        <TableCell className="font-medium text-center px-3 py-2.5">
+                        <TableCell className="font-medium text-center px-2 py-1">
                           {row.phone || "-"}
                         </TableCell>
-                        <TableCell className="font-medium text-center px-3 py-2.5">
+                        <TableCell className="font-medium text-center px-2 py-1">
                           {row.currentLeaderName || "-"}
                         </TableCell>
                         {scheduleColumns.map(col => (
@@ -891,40 +896,43 @@ export function UnivGroupStaffRetreatTable({
                             />
                           </TableCell>
                         ))}
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           <TypeBadge type={row.type} />
                         </TableCell>
-                        <TableCell className="font-medium text-center px-3 py-2.5">
+                        <TableCell className="font-medium text-center px-2 py-1">
                           {row.amount?.toLocaleString()}원
                         </TableCell>
-                        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
+                        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-2 py-1">
                           {formatDate(row.createdAt)}
                         </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           <StatusBadge status={row.status} />
                         </TableCell>
-                        <TableCell className="min-w-[150px] text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           {getActionButtons(row)}
                         </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           {row.confirmedBy || "-"}
                         </TableCell>
-                        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
+                        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-2 py-1">
                           {formatDate(row.paymentConfirmedAt)}
                         </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           {row.gbs || "-"}
                         </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           {row.accommodation || "-"}
                         </TableCell>
+                        <TableCell className="text-center px-2 py-1">
+                          <ShuttleBusStatusBadge hasRegistered={row.hadRegisteredShuttleBus} />
+                        </TableCell>
                         <TableCell
-                          className="text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
+                          className="text-center whitespace-pre-wrap break-words px-2 py-1"
                           title={row.memo}
                         >
                           {row.memo || "-"}
                         </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           {row.memo ? (
                             <span className="text-gray-600 text-sm">-</span>
                           ) : row.status ===
@@ -941,13 +949,7 @@ export function UnivGroupStaffRetreatTable({
                             <span className="text-gray-400 text-sm">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
-                          {row.memoBy || "-"}
-                        </TableCell>
-                        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
-                          {formatDate(row.memoAt)}
-                        </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-left min-w-[300px] max-w-[400px]">
+                        <TableCell className="group-hover:bg-gray-50 text-left px-2 py-1">
                           {editingMemo[row.id] ? (
                             <div className="flex flex-col gap-2 p-2">
                               <Textarea
@@ -1039,7 +1041,7 @@ export function UnivGroupStaffRetreatTable({
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="text-center px-3 py-2.5">
+                        <TableCell className="text-center px-2 py-1">
                           <Button
                             size="sm"
                             variant="outline"

@@ -18,11 +18,9 @@ export function AdminLoginOauth() {
     try {
       // This is a placeholder for the actual OAuth flow
       // In a real application, you would initiate the OAuth process here
-      console.log("Initiating Google Sign In");
       // Simulating an API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       // If successful, you might redirect to the admin dashboard
-      console.log("Successfully signed in with Google");
       // For demo purposes, we'll just log a message
       setError("");
     } catch (err) {

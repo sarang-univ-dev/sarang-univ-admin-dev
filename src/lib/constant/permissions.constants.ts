@@ -13,6 +13,7 @@ export enum PagePath {
   LINEUP_VIEW_CHANGES = "/lineup-view-changes",
   DORM_VIEW_CHANGES = "/dorm-view-changes",
   GBS_LINE_UP = "/gbs-line-up",
+  GBS_LINE_UP_MANAGEMENT = "/gbs-line-up-management",
 }
 
 export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
@@ -20,10 +21,6 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
     PagePath.SCHEDULE_HISTORY,
     PagePath.SCHEDULE_CHANGE,
     PagePath.ACCOUNT_STAFF,
-    /*DELETE*/
-    PagePath.DORM_VIEW_CHANGES,
-    PagePath.LINEUP_VIEW_CHANGES,
-    PagePath.GBS_LINE_UP,
   ],
 
   [UserRole.UNIV_GROUP_ACCOUNT_MEMBER]: [PagePath.COMFIRM_PAYMENT],
@@ -32,11 +29,8 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
     PagePath.UNIV_GROUP_RETREAT,
     PagePath.UNIV_GROUP_BUS,
   ],
-  
-  [UserRole.LINEUP_STAFF]: [
-    PagePath.LINEUP_VIEW_CHANGES,
-    PagePath.GBS_LINE_UP,
-  ],
+
+  [UserRole.LINEUP_STAFF]: [PagePath.GBS_LINE_UP, PagePath.GBS_LINE_UP_MANAGEMENT],
 
   [UserRole.UNIV_GROUP_DORMITORY_MEMBER]: [],
 
