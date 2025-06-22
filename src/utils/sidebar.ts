@@ -18,6 +18,7 @@ const PAGE_LABELS: Record<PagePath, string> = {
   [PagePath.ACCOUNT_STAFF] : '재정 간사 조회',
   [PagePath.GBS_LINE_UP] : '수양회 GBS 라인업',
   [PagePath.GBS_LINE_UP_MANAGEMENT] : '수양회 GBS 리더 관리',
+  [PagePath.DORMITORY_TEAM_MEMBER] : '인원관리 팀원 페이지',
 }
 
 export function getSidebarMenu(
