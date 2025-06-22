@@ -41,15 +41,42 @@ import { Input } from "@/components/ui/input";
 import { formatDate } from "@/utils/formatDate";
 import { UserRetreatRegistrationType } from "@/types";
 
-// GBS line up 페이지에서만 사용하는 TypeBadge (새돌 칩 포함)
+// GBS line up 페이지에서만 사용하는 TypeBadge (새돌, SC, H 칩 포함)
 const TypeBadgeWithFreshman = ({ 
   type, 
-  gradeNumber 
+  gradeNumber,
+  lineupMemo
 }: { 
   type: UserRetreatRegistrationType | null; 
   gradeNumber: number;
+  lineupMemo?: string;
 }) => {
-  // 기존 DB 값이 있으면 우선적으로 표시
+  // 1. 최우선: 라인업 메모에서 SC 또는 H 키워드 확인
+  if (lineupMemo) {
+    const lowerMemo = lineupMemo.toLowerCase();
+    
+    // SC (Special Care) 확인
+    if (lowerMemo.includes('sc')) {
+      return (
+        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200">
+          <User className="h-3.5 w-3.5 text-purple-500 mr-1.5" />
+          <span className="text-xs font-medium text-purple-700">SC</span>
+        </div>
+      );
+    }
+    
+    // H (Helper) 확인
+    if (lowerMemo.includes('h')) {
+      return (
+        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
+          <User className="h-3.5 w-3.5 text-green-500 mr-1.5" />
+          <span className="text-xs font-medium text-green-700">H</span>
+        </div>
+      );
+    }
+  }
+
+  // 2. 두 번째 우선순위: 기존 DB 값
   if (type) {
     switch (type) {
       case UserRetreatRegistrationType.NEW_COMER:
@@ -78,7 +105,7 @@ const TypeBadgeWithFreshman = ({
     }
   }
 
-  // DB 값이 없고 1학년인 경우 새돌 칩 표시
+  // 3. 가장 낮은 우선순위: 1학년인 경우 새돌 칩 표시
   if (gradeNumber === 1) {
     return (
       <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200">
@@ -1194,7 +1221,11 @@ export function GBSLineupTable({
                             <TableCell
                               className={`group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1 ${row.isLeader ? "bg-cyan-200" : ""}`}
                             >
-                              <TypeBadgeWithFreshman type={row.type} gradeNumber={parseInt(row.grade.split('학년')[0])} />
+                              <TypeBadgeWithFreshman 
+                                type={row.type} 
+                                gradeNumber={parseInt(row.grade.split('학년')[0])} 
+                                lineupMemo={row.lineupMemo}
+                              />
                             </TableCell>
                             {scheduleColumns.map(col => (
                               <TableCell
@@ -1546,7 +1577,11 @@ export function GBSLineupTable({
                             <TableCell
                               className={`group-hover:bg-gray-50 text-center whitespace-nowrap px-2 py-1 ${row.isLeader ? "bg-cyan-200" : ""}`}
                             >
-                              <TypeBadgeWithFreshman type={row.type} gradeNumber={parseInt(row.grade.split('학년')[0])} />
+                              <TypeBadgeWithFreshman 
+                                type={row.type} 
+                                gradeNumber={parseInt(row.grade.split('학년')[0])} 
+                                lineupMemo={row.lineupMemo}
+                              />
                             </TableCell>
                             {scheduleColumns.map(col => (
                               <TableCell
