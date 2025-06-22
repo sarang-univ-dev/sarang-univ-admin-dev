@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -119,7 +119,7 @@ const TypeBadgeWithFreshman = ({
   return <span>-</span>;
 };
 
-export function GBSLineupTable({
+export const GBSLineupTable = React.memo(function GBSLineupTable({
   registrations = [],
   schedules = [],
   retreatSlug,
@@ -145,6 +145,10 @@ export function GBSLineupTable({
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
+  // 스케줄 필터 상태 추가
+  const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
+  const [isScheduleFilterModalOpen, setIsScheduleFilterModalOpen] = useState(false);
+
   // 일정 변동 메모 편집 상태 (새로 작성할 때만 사용)
   const [editingScheduleMemo, setEditingScheduleMemo] = useState<Record<string, boolean>>({});
   const [scheduleMemoValues, setScheduleMemoValues] = useState<Record<string, string>>({});
@@ -154,11 +158,10 @@ export function GBSLineupTable({
   // API 엔드포인트
   const lineupEndpoint = `/api/v1/retreat/${retreatSlug}/line-up/user-lineups`;
 
-  // 데이터 변환 함수
-  const transformRegistrationsForLineup = (
-    registrations: any[],
-    schedules: any[]
-  ) => {
+  // 데이터 변환 함수를 useMemo로 최적화
+  const transformedData = useMemo(() => {
+    if (!registrations.length || !schedules.length) return [];
+    
     return registrations.map(registration => {
       // 스케줄 정보 변환
       const scheduleData: Record<string, boolean> = {};
@@ -194,23 +197,15 @@ export function GBSLineupTable({
         adminMemo: registration.adminMemo,
       };
     });
-  };
-
-  // 컴포넌트 마운트 시 데이터 로드
-  useEffect(() => {
-    if (registrations.length > 0 && schedules.length > 0) {
-      try {
-        const transformedData = transformRegistrationsForLineup(
-          registrations,
-          schedules
-        );
-        setData(transformedData);
-        setFilteredData(transformedData);
-      } catch (error) {
-        console.error("데이터 변환 중 오류 발생:", error);
-      }
-    }
   }, [registrations, schedules]);
+
+  // 컴포넌트 마운트 시 데이터 로드 - transformedData 사용
+  useEffect(() => {
+    if (transformedData.length > 0) {
+      setData(transformedData);
+      setFilteredData(transformedData);
+    }
+  }, [transformedData]);
 
   // 부서 목록 추출 및 정렬
   const departmentOptions = useMemo(() => {
@@ -223,8 +218,8 @@ export function GBSLineupTable({
     });
   }, [data]);
 
-  // 2. 검색 + "미배정만 조회" + 부서 필터 동시 적용
-  useEffect(() => {
+  // 2. 검색 + "미배정만 조회" + 부서 필터 동시 적용을 useMemo로 최적화
+  const filteredDataMemo = useMemo(() => {
     let temp = data;
 
     // 미배정만 체크되었으면 gbsNumber 없는 것만
@@ -237,6 +232,14 @@ export function GBSLineupTable({
     // 부서 필터
     if (selectedDepartments.length > 0) {
       temp = temp.filter(row => selectedDepartments.includes(row.department));
+    }
+
+    // 스케줄 필터
+    if (selectedSchedules.length > 0) {
+      temp = temp.filter(row => {
+        // 선택된 모든 스케줄을 신청한 사용자만 표시 (AND 조건)
+        return selectedSchedules.every(scheduleKey => row.schedule[scheduleKey] === true);
+      });
     }
 
     // 검색어 필터
@@ -253,8 +256,45 @@ export function GBSLineupTable({
       );
     }
 
-    setFilteredData(temp);
-  }, [data, showOnlyUnassigned, searchTerm, selectedDepartments]);
+    return temp;
+  }, [data, showOnlyUnassigned, searchTerm, selectedDepartments, selectedSchedules]);
+
+  // filteredData 상태 업데이트
+  useEffect(() => {
+    setFilteredData(filteredDataMemo);
+  }, [filteredDataMemo]);
+
+  // groupByGbsNumber 함수를 useMemo로 최적화
+  const groupedData = useMemo(() => {
+    function groupByGbsNumber(rows: any[]) {
+      const group: Record<string, any[]> = {};
+
+      rows.forEach(row => {
+        const key = row.gbsNumber?.toString() || "null";
+        if (!group[key]) {
+          group[key] = [];
+        }
+        group[key].push(row);
+      });
+
+      // 각 그룹 내에서 정렬
+      Object.keys(group).forEach(gbsNumStr => {
+        group[gbsNumStr].sort((a, b) => {
+          // 1. 리더 우선
+          if (a.isLeader && !b.isLeader) return -1;
+          if (!a.isLeader && b.isLeader) return 1;
+          // 2. 학년 내림차순
+          if (b.grade !== a.grade) return b.grade - a.grade;
+          // 3. 이름 가나다순
+          return a.name.localeCompare(b.name, "ko");
+        });
+      });
+
+      return group;
+    }
+    
+    return groupByGbsNumber(filteredData);
+  }, [filteredData]);
 
   // 검색 결과 처리 함수
   const handleSearchResults = (results: any[]) => {
@@ -635,32 +675,8 @@ export function GBSLineupTable({
     });
   };
 
-  // registrations를 gbsNumber별로 그룹화, 각 그룹 내 isLeader true 먼저 정렬
-  function groupByGbsNumber(rows: any[]) {
-    const group: Record<string, any[]> = {};
-    rows.forEach(row => {
-      if (!group[row.gbsNumber]) group[row.gbsNumber] = [];
-      group[row.gbsNumber].push(row);
-    });
-
-    Object.keys(group).forEach(gbsNumStr => {
-      group[gbsNumStr].sort((a, b) => {
-        // 1. 리더 우선
-        if (a.isLeader && !b.isLeader) return -1;
-        if (!a.isLeader && b.isLeader) return 1;
-        // 2. 학년 내림차순
-        if (b.grade !== a.grade) return b.grade - a.grade;
-        // 3. 이름 가나다순
-        return a.name.localeCompare(b.name, "ko");
-      });
-    });
-
-    return group;
-  }
-
   // 일정 체크박스 컬럼 정의
   const scheduleColumns = generateScheduleColumns(schedules);
-  const grouped = groupByGbsNumber(filteredData);
 
   return (
     <Card className="shadow-sm">
@@ -935,7 +951,67 @@ export function GBSLineupTable({
                         colSpan={scheduleColumns.length}
                         className="whitespace-nowrap px-2 py-1"
                       >
-                        <div className="text-center">수양회 신청 일정</div>
+                        <div className="flex items-center justify-center gap-2">
+                          <span>수양회 신청 일정</span>
+                          <Popover open={isScheduleFilterModalOpen} onOpenChange={setIsScheduleFilterModalOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 hover:bg-gray-100"
+                              >
+                                <Filter className={`h-3 w-3 ${selectedSchedules.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-4" align="start">
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-medium text-sm mb-2">스케줄 필터</h4>
+                                  <p className="text-xs text-gray-600 mb-3">표시할 스케줄을 선택하세요.</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedSchedules([])}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    전체 해제
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedSchedules(scheduleColumns.map(col => col.key))}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    전체 선택
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                                  {scheduleColumns.map(schedule => (
+                                    <label key={schedule.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                                      <Checkbox
+                                        checked={selectedSchedules.includes(schedule.key)}
+                                        onCheckedChange={(checked) => {
+                                          if (checked) {
+                                            setSelectedSchedules(prev => [...prev, schedule.key]);
+                                          } else {
+                                            setSelectedSchedules(prev => prev.filter(s => s !== schedule.key));
+                                          }
+                                        }}
+                                        className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-700">{schedule.label}</span>
+                                    </label>
+                                  ))}
+                                  {scheduleColumns.length === 0 && (
+                                    <span className="text-xs text-gray-500">필터할 스케줄이 없습니다.</span>
+                                  )}
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                       </TableHead>
                       <TableHead className="text-center px-2 py-1">
                         GBS 배정하기
@@ -976,7 +1052,7 @@ export function GBSLineupTable({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Object.entries(grouped).map(([gbsNum, groupRows]) => {
+                    {Object.entries(groupedData).map(([gbsNum, groupRows]) => {
                       // gbsNumber가 null인 row 개수와 아닌 row 개수 구분
                       const withNumber = groupRows.filter(
                         r => r.gbsNumber != null
@@ -1661,4 +1737,4 @@ export function GBSLineupTable({
       </CardContent>
     </Card>
   );
-}
+});
