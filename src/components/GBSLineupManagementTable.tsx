@@ -37,17 +37,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
@@ -476,27 +466,13 @@ export function GBSLineupManagementTable({
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center gap-2 justify-end">
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="outline" size="sm">
-                                                        <Trash2 className="h-4 w-4"/>
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>GBS 삭제</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            GBS {group.number}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>취소</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleConfirmDeleteGbsGroup(group.number)}>
-                                                            삭제
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                onClick={() => handleConfirmDeleteGbsGroup(group.number)}
+                                            >
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
                                         </div>
                                     </TableCell>
                                 </TableRow>
