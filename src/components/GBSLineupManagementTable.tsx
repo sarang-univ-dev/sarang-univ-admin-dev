@@ -37,17 +37,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
@@ -293,6 +283,48 @@ export function GBSLineupManagementTable({
         });
     };
 
+    // GBS 그룹 삭제
+    const handleDeleteGbsGroup = async (gbsNumber: number) => {
+        setCreateLoading(true);
+
+        try {
+            // 실제 API 요청
+            await webAxios.delete(
+                `/api/v1/retreat/${retreatSlug}/line-up/delete-gbs`,
+                {
+                    data: { gbsNumber: gbsNumber }
+                }
+            );
+
+            // 데이터 리프레시
+            await mutate(gbsListEndpoint);
+
+            addToast({
+                title: "성공",
+                description: `GBS ${gbsNumber}이(가) 삭제되었습니다.`,
+                variant: "success",
+            });
+
+        } catch (error) {
+            addToast({
+                title: "오류 발생",
+                description: "GBS 그룹 삭제 중 오류가 발생했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setCreateLoading(false);
+        }
+    };
+
+    // GBS 삭제 확인
+    const handleConfirmDeleteGbsGroup = (gbsNumber: number) => {
+        confirmDialog.show({
+            title: "GBS 삭제",
+            description: `GBS ${gbsNumber}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 배정된 인원도 함께 해제됩니다.`,
+            onConfirm: () => handleDeleteGbsGroup(gbsNumber),
+        });
+    };
+
 
     return (
         <div className="container mx-auto p-6 space-y-6">
@@ -434,28 +466,13 @@ export function GBSLineupManagementTable({
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center gap-2 justify-end">
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="outline" size="sm">
-                                                        <Trash2 className="h-4 w-4"/>
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>GBS 삭제</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            GBS {group.number}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>취소</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => {
-                                                        }}>
-                                                            삭제
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                onClick={() => handleConfirmDeleteGbsGroup(group.number)}
+                                            >
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
                                         </div>
                                     </TableCell>
                                 </TableRow>
