@@ -162,7 +162,7 @@ export function GBSLineupManagementTable({
 
         try {
             // leaderUserIds 배열
-            const leaderUserIds = newGroupLeaders.map(l => l.id);
+            const leaderUserIds = newGroupLeaders.map(l => l.userId);
 
             // 실제 API 요청
             await webAxios.post(
@@ -262,6 +262,36 @@ export function GBSLineupManagementTable({
         }
     };
 
+    const handleDeleteLeaders = async (id: string) => {
+        setCreateLoading(true);
+        // /:gbsId/unassign-gbs-leaders
+
+        try {
+            // 실제 API 요청
+            await webAxios.delete(
+                `/api/v1/retreat/${retreatSlug}/line-up/${id}/unassign-gbs-leaders`,
+            );
+
+            // 데이터 리프레시(혹은 mutate, 직접 set 등)
+            await mutate(gbsListEndpoint); // swr이면 이렇게!
+
+            addToast({
+                title: "성공",
+                description: "GBS 리더 배정이 취소되었습니다.",
+                variant: "success",
+            });
+
+        } catch (error) {
+            addToast({
+                title: "오류 발생",
+                description: "GBS 리더 배정 취소 중 오류가 발생했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setCreateLoading(false);
+        }
+    };
+
     // 메모 편집 취소
     const handleCancelEditMemo = (id: string) => {
         setEditingMemo(prev => ({ ...prev, [id]: false }));
@@ -280,6 +310,14 @@ export function GBSLineupManagementTable({
             title: "메모 삭제",
             description: "정말로 메모를 삭제하시겠습니까?",
             onConfirm: () => handleDeleteMemo(id),
+        });
+    };
+
+    const handleConfirmDeleteLeaders = (id: string) => {
+        confirmDialog.show({
+            title: "리더 삭제",
+            description: "정말로 리더 배정을 삭제하시겠습니까?",
+            onConfirm: () => handleDeleteLeaders(id),
         });
     };
 
@@ -354,7 +392,7 @@ export function GBSLineupManagementTable({
             <Card>
                 <CardHeader>
                     <CardTitle>GBS 목록</CardTitle>
-                    <CardDescription>그룹별 상세 정보, 그룹장, 메모 관리</CardDescription>
+                    <CardDescription>그룹별 상세 정보, 리더, 메모 관리</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -373,22 +411,37 @@ export function GBSLineupManagementTable({
                                     <TableCell className="font-mono">{group.number}</TableCell>
                                     {/* 그룹장 */}
                                     <TableCell>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                                setAssignTargetGbsNumber(group.number);      // ★ 이 GBS 번호 기억
-                                                setLeaderSelectModalOpen(true);              // 모달 open
-                                            }}
-                                            className="h-auto p-1 justify-start"
-                                        >
-                                            {/* leaders 배열이 있으면 이름들을 ,로 구분해서 보여줌 */}
-                                            {
-                                                group.leaders && group.leaders.length > 0
-                                                    ? group.leaders.map((leaderInfo: { id: number; name: string }) => leaderInfo.name).join(", ")
-                                                    : <span className="text-gray-400">그룹장 없음</span>
-                                            }
-                                        </Button>
+                                        <div className="flex items-start gap-2 p-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setAssignTargetGbsNumber(group.number);      // ★ 이 GBS 번호 기억
+                                                    setLeaderSelectModalOpen(true);              // 모달 open
+                                                }}
+                                                className="h-auto p-1 justify-start"
+                                            >
+                                                {/* leaders 배열이 있으면 이름들을 ,로 구분해서 보여줌 */}
+                                                {
+                                                    group.leaders && group.leaders.length > 0
+                                                        ? group.leaders.map((leaderInfo: {
+                                                            id: number;
+                                                            name: string
+                                                        }) => leaderInfo.name).join(", ")
+                                                        : <span className="text-gray-400">그룹장 없음</span>
+                                                }
+                                            </Button>
+                                            {group.leaders && group.leaders.length > 0 && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => handleConfirmDeleteLeaders(group.id)}
+                                                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1"
+                                                >
+                                                    <Trash2 className="h-3 w-3"/>
+                                                </Button>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="max-w-xs">
                                         {editingMemo[group.number] ? (

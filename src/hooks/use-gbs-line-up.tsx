@@ -13,6 +13,7 @@ export interface IUserRetreatGBSLineup {
   fullAttendanceCount: number;
   partialAttendanceCount: number;
   id: number;
+  userId: number;
   univGroupNumber: number;
   gradeNumber: number;
   gender: "MALE" | "FEMALE";
