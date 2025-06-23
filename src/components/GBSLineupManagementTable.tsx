@@ -49,6 +49,9 @@ import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { mutate } from "swr";
 import { AxiosError } from "axios";
 import {Input} from "@/components/ui/input";
+import {IUserRetreatGBSLineup} from "@/hooks/use-gbs-line-up";
+import {IUserRetreatGBSLineupList} from "@/hooks/use-gbs-line-up-management";
+import {TRetreatRegistrationSchedule} from "@/types";
 
 
 export function GBSLineupManagementTable({
@@ -57,9 +60,9 @@ export function GBSLineupManagementTable({
                                    schedules = [],
                                    retreatSlug,
                                }: {
-    registrations: any[];
-    gbsLists: any[];
-    schedules: any[];
+    registrations: IUserRetreatGBSLineup[];
+    gbsLists: IUserRetreatGBSLineupList[];
+    schedules: TRetreatRegistrationSchedule[];
     retreatSlug: string;
 }) {
     // State
@@ -74,7 +77,7 @@ export function GBSLineupManagementTable({
     const [newGbsMemo, setNewGbsMemo] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [leaderSelectModalOpen, setLeaderSelectModalOpen] = useState(false);
-    const [newGroupLeaders, setNewGroupLeaders] = useState<any[]>([]);
+    const [newGroupLeaders, setNewGroupLeaders] = useState<IUserRetreatGBSLineup[]>([]);
     const [leaderSearchTerm, setLeaderSearchTerm] = useState("");
     const [createLoading, setCreateLoading] = useState(false);
     const [assignTargetGbsNumber, setAssignTargetGbsNumber] = useState<number | null>(null);
@@ -82,12 +85,12 @@ export function GBSLineupManagementTable({
 
     const confirmDialog = useConfirmDialogStore();
 
-    const filteredData = useMemo(() => {
+    const filteredGbsListData = useMemo(() => {
         if (!searchTerm.trim()) return gbsLists;
         const term = searchTerm.trim().toLowerCase();
         return gbsLists.filter(row =>
             String(row.number).includes(term) || // gbs번호
-            (row.name?.toLowerCase().includes(term) ?? false) ||
+            row.leaders.some(leader => leader.name.toLowerCase().includes(term)) || // 리더 이름
             (row.memo?.toLowerCase().includes(term) ?? false)
         );
     }, [gbsLists, searchTerm]);
@@ -195,7 +198,7 @@ export function GBSLineupManagementTable({
         }
     };
 
-    const handleGbsMemo = async (id: string) => {
+    const handleGbsMemo = async (id: number) => {
         setCreateLoading(true);
         const memo = memoValues[id];
 
@@ -229,7 +232,7 @@ export function GBSLineupManagementTable({
         }
     };
 
-    const handleDeleteMemo = async (id: string) => {
+    const handleDeleteMemo = async (id: number) => {
         setCreateLoading(true);
         const memo = memoValues[id];
 
@@ -262,7 +265,7 @@ export function GBSLineupManagementTable({
         }
     };
 
-    const handleDeleteLeaders = async (id: string) => {
+    const handleDeleteLeaders = async (id: number) => {
         setCreateLoading(true);
         // /:gbsId/unassign-gbs-leaders
 
@@ -293,19 +296,19 @@ export function GBSLineupManagementTable({
     };
 
     // 메모 편집 취소
-    const handleCancelEditMemo = (id: string) => {
+    const handleCancelEditMemo = (id: number) => {
         setEditingMemo(prev => ({ ...prev, [id]: false }));
         setMemoValues(prev => ({ ...prev, [id]: "" }));
     };
 
     // 메모 편집 시작
-    const handleStartEditMemo = (id: string, currentMemo: string) => {
+    const handleStartEditMemo = (id: number, currentMemo: string | null) => {
         setEditingMemo(prev => ({ ...prev, [id]: true }));
         setMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
     };
 
     // 메모 삭제 확인
-    const handleConfirmDeleteMemo = (id: string) => {
+    const handleConfirmDeleteMemo = (id: number) => {
         confirmDialog.show({
             title: "메모 삭제",
             description: "정말로 메모를 삭제하시겠습니까?",
@@ -313,7 +316,7 @@ export function GBSLineupManagementTable({
         });
     };
 
-    const handleConfirmDeleteLeaders = (id: string) => {
+    const handleConfirmDeleteLeaders = (id: number) => {
         confirmDialog.show({
             title: "리더 삭제",
             description: "정말로 리더 배정을 삭제하시겠습니까?",
@@ -405,7 +408,7 @@ export function GBSLineupManagementTable({
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredData.map(group => (
+                            {filteredGbsListData.map(group => (
                                 <TableRow key={group.number}>
                                     {/* GBS 번호 */}
                                     <TableCell className="font-mono">{group.number}</TableCell>

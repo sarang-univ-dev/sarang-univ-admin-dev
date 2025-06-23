@@ -22,6 +22,7 @@ export interface IUserRetreatGBSLineup {
   isLeader: boolean;
   gbsMemo: string;
   lineupMemo: string;
+  lineupMemoId: string;
   lineupMemocolor: string;
   isFullAttendance: boolean;
   currentLeader: string;
