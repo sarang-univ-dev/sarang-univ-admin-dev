@@ -212,7 +212,7 @@ export const DormitoryTeamMemberTable = React.memo(function DormitoryTeamMemberT
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">기숙사 팀원 관리</CardTitle>
+        <CardTitle className="text-lg font-semibold">인원관리 팀원 관리</CardTitle>
         <CardDescription>
           인원관리 팀원이 기숙사 신청자 목록을 조회하고 일정변동 요청 메모를 작성할 수 있습니다.
         </CardDescription>
@@ -291,10 +291,10 @@ export const DormitoryTeamMemberTable = React.memo(function DormitoryTeamMemberT
                           <TableRow key={row.id}>
                             {idx === 0 && (
                               <>
-                                {/* GBS번호 */}
+                                {/* GBS번호 - 분홍색 배경 제거 */}
                                 <TableCell
                                   rowSpan={withNumber.length}
-                                  className={`align-middle font-bold text-center px-2 py-1 ${withNumber.length > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""}`}
+                                  className="align-middle font-bold text-center px-2 py-1"
                                 >
                                   {row.gbsNumber}
                                 </TableCell>

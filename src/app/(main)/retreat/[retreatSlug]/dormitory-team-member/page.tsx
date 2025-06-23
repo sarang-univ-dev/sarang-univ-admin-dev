@@ -29,7 +29,7 @@ export default function DormitoryPage() {
 
   return (
       <div className="space-y-8">
-        <h1 className="text-2xl font-bold">기숙사 팀원 관리 페이지</h1>
+        <h1 className="text-2xl font-bold">인원관리 팀원 관리 페이지</h1>
         <DormitoryTeamMemberTable
             schedules={schedules}
             retreatSlug={retreatSlug}
