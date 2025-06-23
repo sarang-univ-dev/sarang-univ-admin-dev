@@ -32,7 +32,7 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
     PagePath.UNIV_GROUP_BUS,
   ],
 
-  [UserRole.LINEUP_STAFF]: [PagePath.GBS_LINE_UP, PagePath.GBS_LINE_UP_MANAGEMENT],
+  [UserRole.LINEUP_STAFF]: [PagePath.GBS_LINE_UP, PagePath.GBS_LINE_UP_MANAGEMENT, PagePath.LINEUP_VIEW_CHANGES],
 
   [UserRole.UNIV_GROUP_DORMITORY_MEMBER]: [PagePath.DORMITORY_TEAM_MEMBER],
 
