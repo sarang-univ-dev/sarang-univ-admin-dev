@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUserScheduleChangeHistory } from "@/hooks/user-schedule-change-retreat-history";
+import { useUserScheduleChangeDormitory } from "@/hooks/user-schedule-change-dormitory-request";
 import { RetreatScheduleChangeHistoryTable } from "@/components/DormStaffRetreatScheduleChangeHistoryTable";
 import { useParams } from "next/navigation";
 import {
@@ -18,7 +18,7 @@ export default function ScheduleChangeHistoryForDorm(){
   const params = useParams();
   const retreatSlug = params.retreatSlug as string;
 
-  const { data, isLoading, error } = useUserScheduleChangeHistory(retreatSlug);
+  const { data, isLoading, error, mutate } = useUserScheduleChangeDormitory(retreatSlug);
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -53,6 +53,7 @@ export default function ScheduleChangeHistoryForDorm(){
         scheduleChangeHistories={data || []}
         schedules={schedules}
         retreatSlug={retreatSlug}
+        mutate={mutate}
       />
     </div>
   );

@@ -27,97 +27,89 @@ import { TRetreatRegistrationSchedule } from "@/types";
 import { formatDate } from "@/utils/formatDate";
 import { useToastStore } from "@/store/toast-store";
 import { AxiosError } from "axios";
-import { IUserScheduleChangeHistory } from "@/hooks/user-schedule-change-retreat-history";
+import { IUserScheduleChangeDormitory } from "@/hooks/user-schedule-change-dormitory-request";
 import { webAxios } from "@/lib/api/axios";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 
-const transformScheduleChangeHistoryForTable = (
-  histories: IUserScheduleChangeHistory[],
+const transformScheduleChangeRequestsForTable = (
+  requests: IUserScheduleChangeDormitory[],
   schedules: TRetreatRegistrationSchedule[]
 ) => {
   const transformedData: any[] = [];
 
-  histories.forEach((history, index) => {
-    // 안전한 배열 처리
-    const beforeScheduleIds = Array.isArray(
-      history.beforeUserRetreatRegistrationScheduleIds
-    )
-      ? history.beforeUserRetreatRegistrationScheduleIds
+  requests.forEach((request, index) => {
+    // before/after 일정 처리
+    const beforeScheduleIds = Array.isArray(request.beforeScheduleIds)
+      ? request.beforeScheduleIds
       : [];
-    const afterScheduleIds = Array.isArray(
-      history.afterUserRetreatRegistrationScheduleIds
-    )
-      ? history.afterUserRetreatRegistrationScheduleIds
+    const afterScheduleIds = Array.isArray(request.afterScheduleIds)
+      ? request.afterScheduleIds
       : [];
 
-    // Before row
+    // Before row (변경 전)
     const beforeScheduleMap = schedules.reduce(
       (acc, cur) => {
-        // 타입 안전성을 위해 문자열로도 비교
         const scheduleId = cur.id;
         const isIncluded =
           beforeScheduleIds.includes(scheduleId) ||
           beforeScheduleIds.includes(scheduleId.toString() as any) ||
           beforeScheduleIds.includes(parseInt(scheduleId.toString()));
         acc[`schedule_${cur.id}`] = isIncluded;
-        console.log(
-          `Before Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`
-        );
         return acc;
       },
       {} as Record<string, boolean>
     );
 
     const beforeRow = {
-      id: `${history.userRetreatRegistrationId}_${index}_before`,
-      registrationId: history.userRetreatRegistrationId,
-      department: `${history.univGroupNumber}부`,
-      gender: history.gender,
-      grade: `${history.gradeNumber}학년`,
-      name: history.name,
-      phone: history.phoneNumber,
+      id: `${request.userRetreatRegistrationId}_${index}_before`,
+      registrationId: request.userRetreatRegistrationId,
+      historyMemoId: request.userRetreatRegistrationHistoryMemoId,
+      department: `${request.univGroupNumber}부`,
+      gender: request.gender,
+      grade: `${request.gradeNumber}학년`,
+      name: request.userName,
+      gbsNumber: request.gbsNumber,
+      dormitoryLocation: request.dormitoryLocation,
       schedule: beforeScheduleMap,
-      price: history.beforePrice,
-      userName: history.createdUserName,
-      timestamp: history.createdAt,
-      dormUserName: history.dormResolvedUserName,
-      dormTimestamp: history.dormResolvedAt,
+      memo: request.memo,
+      issuerName: request.issuerName,
+      memoCreatedAt: request.memoCreatedAt,
+      userType: request.userType,
+      dormitoryReviewerName: request.dormitoryReviewerName,
       type: "before",
       rowIndex: index,
     };
 
-    // After row
+    // After row (변경 후)
     const afterScheduleMap = schedules.reduce(
       (acc, cur) => {
-        // 타입 안전성을 위해 문자열로도 비교
         const scheduleId = cur.id;
         const isIncluded =
           afterScheduleIds.includes(scheduleId) ||
           afterScheduleIds.includes(scheduleId.toString() as any) ||
           afterScheduleIds.includes(parseInt(scheduleId.toString()));
         acc[`schedule_${cur.id}`] = isIncluded;
-        console.log(
-          `After Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`
-        );
         return acc;
       },
       {} as Record<string, boolean>
     );
 
     const afterRow = {
-      id: `${history.userRetreatRegistrationId}_${index}_after`,
-      registrationId: history.userRetreatRegistrationId,
-      department: `${history.univGroupNumber}부`,
-      gender: history.gender,
-      grade: `${history.gradeNumber}학년`,
-      name: history.name,
-      phone: history.phoneNumber,
+      id: `${request.userRetreatRegistrationId}_${index}_after`,
+      registrationId: request.userRetreatRegistrationId,
+      historyMemoId: request.userRetreatRegistrationHistoryMemoId,
+      department: `${request.univGroupNumber}부`,
+      gender: request.gender,
+      grade: `${request.gradeNumber}학년`,
+      name: request.userName,
+      gbsNumber: request.gbsNumber,
+      dormitoryLocation: request.dormitoryLocation,
       schedule: afterScheduleMap,
-      price: history.afterPrice,
-      userName: history.resolvedUserName,
-      timestamp: history.resolvedAt,
-      dormUserName: history.dormResolvedUserName,
-      dormTimestamp: history.dormResolvedAt,
+      memo: request.memo,
+      issuerName: request.issuerName,
+      memoCreatedAt: request.memoCreatedAt,
+      userType: request.userType,
+      dormitoryReviewerName: request.dormitoryReviewerName,
       type: "after",
       rowIndex: index,
     };
@@ -132,10 +124,12 @@ export function RetreatScheduleChangeHistoryTable({
   scheduleChangeHistories = [],
   schedules = [],
   retreatSlug,
+  mutate,
 }: {
-  scheduleChangeHistories: IUserScheduleChangeHistory[];
+  scheduleChangeHistories: IUserScheduleChangeDormitory[];
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
+  mutate?: () => Promise<any>;
 }) {
   const addToast = useToastStore(state => state.add);
   const [allData, setAllData] = useState<any[]>([]);
@@ -163,7 +157,7 @@ export function RetreatScheduleChangeHistoryTable({
   useEffect(() => {
     if (scheduleChangeHistories.length > 0 && schedules.length > 0) {
       try {
-        const transformedData = transformScheduleChangeHistoryForTable(
+        const transformedData = transformScheduleChangeRequestsForTable(
           scheduleChangeHistories,
           schedules
         );
@@ -250,13 +244,17 @@ export function RetreatScheduleChangeHistoryTable({
           </TableCell>
         )}
 
-        {/* 전화번호 - rowspan 2 for first row of pair */}
+        {/* GBS 번호 - rowspan 2 for first row of pair */}
         {isBeforeRow && (
-          <TableCell
-            className="font-medium text-center px-3 py-2.5"
-            rowSpan={2}
-          >
-            {row.phone || "-"}
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.gbsNumber || "-"}
+          </TableCell>
+        )}
+
+        {/* 숙소 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.dormitoryLocation || "-"}
           </TableCell>
         )}
 
@@ -268,10 +266,6 @@ export function RetreatScheduleChangeHistoryTable({
         {/* 스케줄 컬럼들 */}
         {scheduleColumns.map(col => {
           const isChecked = !!row.schedule?.[col.key];
-          console.log(
-            `Row ${row.id}, Col ${col.key}, Checked: ${isChecked}`,
-            row.schedule
-          );
 
           return (
             <TableCell key={`${row.id}-${col.key}`} className="p-2 text-center">
@@ -284,41 +278,69 @@ export function RetreatScheduleChangeHistoryTable({
           );
         })}
 
-        {/* 확인 액션버튼 */}
-        { isBeforeRow && (<TableCell className="font-medium text-center px-8 py-2.5" rowSpan={2}>
-          {getActionButtons(row)}
-        </TableCell>)}
+        {/* 변경 요청 메모 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell className="min-w-[200px] max-w-[400px] text-left px-3 py-2.5" rowSpan={2}>
+            <div className="text-sm text-gray-600 whitespace-pre-wrap break-words p-2 bg-gray-50 rounded min-h-[24px]">
+              {row.memo || "-"}
+            </div>
+          </TableCell>
+        )}
 
-        {/* 처리자명 */}
-        {isBeforeRow && (<TableCell className="text-center px-6 py-2.5" rowSpan={2}>
-          {row.dormUserName || "-"}
-        </TableCell>)}
+        {/* 작성자 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.issuerName || "-"}
+          </TableCell>
+        )}
 
-        {/* 처리시각 */}
-        { isBeforeRow && (<TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-6 py-2.5" rowSpan={2}>
-          {formatDate(row.dormTimestamp) || "-"}
-        </TableCell>)}
+        {/* 작성일시 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5" rowSpan={2}>
+            {formatDate(row.memoCreatedAt) || "-"}
+          </TableCell>
+        )}
+
+        {/* 처리자명 또는 액션버튼 */}
+        {isBeforeRow && (
+          <TableCell className="text-center px-6 py-2.5" rowSpan={2}>
+            {row.dormitoryReviewerName ? (
+              <span className="text-green-700 font-medium">
+                {row.dormitoryReviewerName}
+              </span>
+            ) : (
+              getActionButtons(row)
+            )}
+          </TableCell>
+        )}
       </TableRow>
     );
   };
 
   // 액션 처리 함수들
-  const performResolveChange = async (id: string) => {
-    setLoading(id, "confirm", true);
+  const performResolveChange = async (historyMemoId: number) => {
+    setLoading(historyMemoId.toString(), "confirm", true);
     try {
-      //TODO: once api is made
-      // const response = await webAxios.post(
-      //   `/api/v1/retreat/${retreatSlug}/dormitory/${id}/resolve-change`
-      // );
+      const response = await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/dormitory/schedule-history/resolve-memo`,
+        {
+          userRetreatRegistrationHistoryMemoId: historyMemoId
+        }
+      );
 
       // 성공 토스트 메시지
       addToast({
         title: "성공",
-        description: "수양회 일정 변경이 확인 처리되었습니다.",
+        description: "수양회 일정 변경이 읽음 처리되었습니다.",
         variant: "success",
       });
+
+      // 데이터 새로고침
+      if (mutate) {
+        await mutate();
+      }
     } catch (error) {
-      console.error("수양회 일정 변경 확인 중 오류 발생:", error);
+      console.error("수양회 일정 변경 읽음 처리 중 오류 발생:", error);
 
       // 실패 토스트 메시지
       addToast({
@@ -328,45 +350,43 @@ export function RetreatScheduleChangeHistoryTable({
             ? error.response?.data?.message || error.message
             : error instanceof Error
               ? error.message
-              : "수양회 일정 변경 확인 처리 중 오류가 발생했습니다.",
+              : "수양회 일정 변경 읽음 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
-      setLoading(id, "confirm", false);
+      setLoading(historyMemoId.toString(), "confirm", false);
     }
   };
 
-  const handleResolveChange = (id: string) => {
+  const handleResolveChange = (historyMemoId: number) => {
     confirmDialog.show({
-      title: "일정 변경 확인",
+      title: "일정 변경 읽음 처리",
       description:
-        "정말로 수양회 일정 변경 확인 처리를 하시겠습니까?",
-      onConfirm: () => performResolveChange(id),
+        "정말로 수양회 일정 변경을 읽음 처리하시겠습니까?",
+      onConfirm: () => performResolveChange(historyMemoId),
     });
   };
 
   // 액션 버튼 렌더링
   const getActionButtons = (row: any) => {
-    if(!row.dormResolvedUserName){
-      return(
-        <div className="flex flex-col gap-1">
-          <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleResolveChange(row.id)}
-              disabled={isLoading(row.id, "confirm")}
-              className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
-            >
-              {isLoading(row.id, "confirm") ? (
-                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              )}
-              <span>일정 변경 확인</span>
-            </Button>
-        </div>
-      )
-    }
+    return (
+      <div className="flex flex-col gap-1">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => handleResolveChange(row.historyMemoId)}
+          disabled={isLoading(row.historyMemoId.toString(), "confirm")}
+          className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
+        >
+          {isLoading(row.historyMemoId.toString(), "confirm") ? (
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          )}
+          <span>읽음 처리</span>
+        </Button>
+      </div>
+    );
   };
 
   return (
@@ -425,7 +445,12 @@ export function RetreatScheduleChangeHistoryTable({
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>전화번호</span>
+                          <span>GBS 번호</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>숙소</span>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
@@ -439,19 +464,24 @@ export function RetreatScheduleChangeHistoryTable({
                       >
                         수양회 일정
                       </TableHead>
-                      <TableHead className="px-6 py-2.5" rowSpan={2}>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>액션</span>
+                          <span>메모</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>작성자</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>작성일시</span>
                         </div>
                       </TableHead>
                       <TableHead className="px-6 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>처리자명</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-8 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>처리시각</span>
+                          <span>처리자명/액션</span>
                         </div>
                       </TableHead>
                     </TableRow>
@@ -474,7 +504,7 @@ export function RetreatScheduleChangeHistoryTable({
                     {filteredData.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={10 + scheduleColumns.length}
+                          colSpan={12 + scheduleColumns.length}
                           className="text-center py-10 text-gray-500"
                         >
                           {allData.length > 0
