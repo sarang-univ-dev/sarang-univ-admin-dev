@@ -21,6 +21,7 @@ const PAGE_LABELS: Record<PagePath, string> = {
   [PagePath.DORM_VIEW_CHANGES] : '인원관리 간사 일정 변동 조회',
   [PagePath.GBS_LINE_UP_MANAGEMENT] : '수양회 GBS 리더 관리',
   [PagePath.DORMITORY_TEAM_MEMBER] : '인원관리 팀원 페이지',
+  [PagePath.ASSIGN_GBS_LOCATION] : 'GBS 장소 배정',
 }
 
 export function getSidebarMenu(
