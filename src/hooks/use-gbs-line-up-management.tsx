@@ -11,10 +11,12 @@ export interface IUserRetreatGBSLineupList {
   number: number;
   memo: string | null;
   location: string | null;
-  leaderUserIds: string[];
+  leaders: {
+    id: number;
+    name: string;
+  }[];
   createdAt: string;
 }
-
 
 const fetcher = async (url: string) => {
   const accessToken = Cookies.get("accessToken");
