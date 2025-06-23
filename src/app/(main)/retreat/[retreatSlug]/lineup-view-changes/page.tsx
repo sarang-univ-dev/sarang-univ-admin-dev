@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUserScheduleChangeHistory } from "@/hooks/user-schedule-change-retreat-history";
+import { useUserScheduleChangeLineup } from "@/hooks/user-schedule-change-lineup-request";
 import { RetreatScheduleChangeHistoryTable } from "@/components/LineupStaffRetreatScheduleChangeHistoryTable";
 import { useParams } from "next/navigation";
 import {
@@ -18,7 +18,7 @@ export default function ScheduleChangeHistoryForLineup(){
   const params = useParams();
   const retreatSlug = params.retreatSlug as string;
 
-  const { data, isLoading, error } = useUserScheduleChangeHistory(retreatSlug);
+  const { data, isLoading, error, mutate } = useUserScheduleChangeLineup(retreatSlug);
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -53,6 +53,7 @@ export default function ScheduleChangeHistoryForLineup(){
         scheduleChangeHistories={data || []}
         schedules={schedules}
         retreatSlug={retreatSlug}
+        mutate={mutate}
       />
     </div>
   );

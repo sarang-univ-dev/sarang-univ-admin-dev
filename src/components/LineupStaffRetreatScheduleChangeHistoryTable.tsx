@@ -27,97 +27,93 @@ import { TRetreatRegistrationSchedule } from "@/types";
 import { formatDate } from "@/utils/formatDate";
 import { useToastStore } from "@/store/toast-store";
 import { AxiosError } from "axios";
-import { IUserScheduleChangeHistory } from "@/hooks/user-schedule-change-retreat-history";
+import { IUserScheduleChangeLineup } from "@/hooks/user-schedule-change-lineup-request";
 import { webAxios } from "@/lib/api/axios";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 
-const transformScheduleChangeHistoryForTable = (
-  histories: IUserScheduleChangeHistory[],
+const transformScheduleChangeRequestsForTable = (
+  requests: IUserScheduleChangeLineup[],
   schedules: TRetreatRegistrationSchedule[]
 ) => {
   const transformedData: any[] = [];
 
-  histories.forEach((history, index) => {
-    // 안전한 배열 처리
-    const beforeScheduleIds = Array.isArray(
-      history.beforeUserRetreatRegistrationScheduleIds
-    )
-      ? history.beforeUserRetreatRegistrationScheduleIds
+  requests.forEach((request, index) => {
+    // before/after 일정 처리
+    const beforeScheduleIds = Array.isArray(request.beforeScheduleIds)
+      ? request.beforeScheduleIds
       : [];
-    const afterScheduleIds = Array.isArray(
-      history.afterUserRetreatRegistrationScheduleIds
-    )
-      ? history.afterUserRetreatRegistrationScheduleIds
+    const afterScheduleIds = Array.isArray(request.afterScheduleIds)
+      ? request.afterScheduleIds
       : [];
 
-    // Before row
+    // Before row (변경 전)
     const beforeScheduleMap = schedules.reduce(
       (acc, cur) => {
-        // 타입 안전성을 위해 문자열로도 비교
         const scheduleId = cur.id;
         const isIncluded =
           beforeScheduleIds.includes(scheduleId) ||
           beforeScheduleIds.includes(scheduleId.toString() as any) ||
           beforeScheduleIds.includes(parseInt(scheduleId.toString()));
         acc[`schedule_${cur.id}`] = isIncluded;
-        console.log(
-          `Before Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`
-        );
         return acc;
       },
       {} as Record<string, boolean>
     );
 
     const beforeRow = {
-      id: `${history.userRetreatRegistrationId}_${index}_before`,
-      registrationId: history.userRetreatRegistrationId,
-      department: `${history.univGroupNumber}부`,
-      gender: history.gender,
-      grade: `${history.gradeNumber}학년`,
-      name: history.name,
-      phone: history.phoneNumber,
+      id: `${request.userRetreatRegistrationId}_${index}_before`,
+      registrationId: request.userRetreatRegistrationId,
+      historyMemoId: request.userRetreatRegistrationHistoryMemoId,
+      department: `${request.univGroupNumber}부`,
+      gender: request.gender,
+      grade: `${request.gradeNumber}학년`,
+      name: request.userName,
+      currentLeader: request.currentLeaderName,
+      gbsNumber: request.gbsNumber,
+      gbsLeaderNames: request.gbsLeaderNames,
       schedule: beforeScheduleMap,
-      price: history.beforePrice,
-      userName: history.createdUserName,
-      timestamp: history.createdAt,
-      lineupUserName: history.lineupResolvedUserName,
-      lineupTimestamp: history.lineupResolvedAt,
+      memo: request.memo,
+      issuerName: request.issuerName,
+      memoCreatedAt: request.memoCreatedAt,
+      userType: request.userType,
+      createdAt: request.createdAt,
+      lineupReviewerName: request.lineupReviewerName,
       type: "before",
       rowIndex: index,
     };
 
-    // After row
+    // After row (변경 후)
     const afterScheduleMap = schedules.reduce(
       (acc, cur) => {
-        // 타입 안전성을 위해 문자열로도 비교
         const scheduleId = cur.id;
         const isIncluded =
           afterScheduleIds.includes(scheduleId) ||
           afterScheduleIds.includes(scheduleId.toString() as any) ||
           afterScheduleIds.includes(parseInt(scheduleId.toString()));
         acc[`schedule_${cur.id}`] = isIncluded;
-        console.log(
-          `After Schedule ${cur.id} (type: ${typeof cur.id}): ${isIncluded}`
-        );
         return acc;
       },
       {} as Record<string, boolean>
     );
 
     const afterRow = {
-      id: `${history.userRetreatRegistrationId}_${index}_after`,
-      registrationId: history.userRetreatRegistrationId,
-      department: `${history.univGroupNumber}부`,
-      gender: history.gender,
-      grade: `${history.gradeNumber}학년`,
-      name: history.name,
-      phone: history.phoneNumber,
+      id: `${request.userRetreatRegistrationId}_${index}_after`,
+      registrationId: request.userRetreatRegistrationId,
+      historyMemoId: request.userRetreatRegistrationHistoryMemoId,
+      department: `${request.univGroupNumber}부`,
+      gender: request.gender,
+      grade: `${request.gradeNumber}학년`,
+      name: request.userName,
+      currentLeader: request.currentLeaderName,
+      gbsNumber: request.gbsNumber,
+      gbsLeaderNames: request.gbsLeaderNames,
       schedule: afterScheduleMap,
-      price: history.afterPrice,
-      userName: history.resolvedUserName,
-      timestamp: history.resolvedAt,
-      lineupUserName: history.lineupResolvedUserName,
-      lineupTimestamp: history.lineupResolvedAt,
+      memo: request.memo,
+      issuerName: request.issuerName,
+      memoCreatedAt: request.memoCreatedAt,
+      userType: request.userType,
+      createdAt: request.createdAt,
+      lineupReviewerName: request.lineupReviewerName,
       type: "after",
       rowIndex: index,
     };
@@ -132,10 +128,12 @@ export function RetreatScheduleChangeHistoryTable({
   scheduleChangeHistories = [],
   schedules = [],
   retreatSlug,
+  mutate,
 }: {
-  scheduleChangeHistories: IUserScheduleChangeHistory[];
+  scheduleChangeHistories: IUserScheduleChangeLineup[];
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
+  mutate?: () => Promise<any>;
 }) {
   const addToast = useToastStore(state => state.add);
   const [allData, setAllData] = useState<any[]>([]);
@@ -163,7 +161,7 @@ export function RetreatScheduleChangeHistoryTable({
   useEffect(() => {
     if (scheduleChangeHistories.length > 0 && schedules.length > 0) {
       try {
-        const transformedData = transformScheduleChangeHistoryForTable(
+        const transformedData = transformScheduleChangeRequestsForTable(
           scheduleChangeHistories,
           schedules
         );
@@ -195,8 +193,10 @@ export function RetreatScheduleChangeHistoryTable({
           row.name,
           row.department,
           row.grade?.toString(),
-          row.phone?.toString(),
-          row.userName?.toString(),
+          row.currentLeader?.toString(),
+          row.gbsNumber?.toString(),
+          row.memo?.toString(),
+          row.issuerName?.toString(),
         ].some(field => field?.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
@@ -211,8 +211,6 @@ export function RetreatScheduleChangeHistoryTable({
 
   const renderTableRow = (row: any, index: number) => {
     const isBeforeRow = row.type === "before";
-    const nextRow = filteredData[index + 1];
-    const isLastRowOfPair = !nextRow || nextRow.rowIndex !== row.rowIndex;
 
     return (
       <TableRow
@@ -250,28 +248,31 @@ export function RetreatScheduleChangeHistoryTable({
           </TableCell>
         )}
 
-        {/* 전화번호 - rowspan 2 for first row of pair */}
+        {/* 현재 리더 - rowspan 2 for first row of pair */}
         {isBeforeRow && (
           <TableCell
             className="font-medium text-center px-3 py-2.5"
             rowSpan={2}
           >
-            {row.phone || "-"}
+            {row.currentLeader || "-"}
+          </TableCell>
+        )}
+
+        {/* GBS - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.gbsNumber ? `${row.gbsNumber}` : "-"}
           </TableCell>
         )}
 
         {/* 구분 */}
         <TableCell className="text-center px-7 py-2.5 font-medium">
-          {isBeforeRow ? "변경 전" : "변경 후"}
+          {row.type === "before" ? "변경 전" : "변경 후"}
         </TableCell>
 
-        {/* 스케줄 컬럼들 */}
+        {/* 일정 */}
         {scheduleColumns.map(col => {
           const isChecked = !!row.schedule?.[col.key];
-          console.log(
-            `Row ${row.id}, Col ${col.key}, Checked: ${isChecked}`,
-            row.schedule
-          );
 
           return (
             <TableCell key={`${row.id}-${col.key}`} className="p-2 text-center">
@@ -284,41 +285,63 @@ export function RetreatScheduleChangeHistoryTable({
           );
         })}
 
-        {/* 확인 액션버튼 */}
-        { isBeforeRow && (<TableCell className="font-medium text-center px-8 py-2.5" rowSpan={2}>
-          {getActionButtons(row)}
-        </TableCell>)}
+        {/* 변경 요청 메모 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell className="min-w-[200px] max-w-[400px] text-left px-3 py-2.5" rowSpan={2}>
+            <div className="text-sm text-gray-600 whitespace-pre-wrap break-words p-2 bg-gray-50 rounded min-h-[24px]">
+              {row.memo || "-"}
+            </div>
+          </TableCell>
+        )}
 
-        {/* 처리자명 */}
-        {isBeforeRow && (<TableCell className="text-center px-6 py-2.5" rowSpan={2}>
-          {row.lineupUserName || "-"}
-        </TableCell>)}
+        {/* 작성자 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.issuerName || "-"}
+          </TableCell>
+        )}
 
-        {/* 처리시각 */}
-        { isBeforeRow && (<TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-6 py-2.5" rowSpan={2}>
-          {formatDate(row.lineupTimestamp) || "-"}
-        </TableCell>)}
+        {/* 작성일시 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5" rowSpan={2}>
+            {formatDate(row.memoCreatedAt) || "-"}
+          </TableCell>
+        )}
+
+        {/* 라인업 처리자 - rowspan 2 for first row of pair */}
+        {isBeforeRow && (
+          <TableCell className="font-medium text-center px-3 py-2.5" rowSpan={2}>
+            {getActionButtons(row)}
+          </TableCell>
+        )}
       </TableRow>
     );
   };
 
   // 액션 처리 함수들
-  const performResolveChange = async (id: string) => {
-    setLoading(id, "confirm", true);
+  const performResolveChange = async (historyMemoId: number) => {
+    setLoading(historyMemoId.toString(), "confirm", true);
     try {
-      //TODO: once api is made
-      // const response = await webAxios.post(
-      //   `/api/v1/retreat/${retreatSlug}/dormitory/${id}/resolve-change`
-      // );
+      const response = await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/line-up/schedule-history/resolve-memo`,
+        {
+          userRetreatRegistrationHistoryMemoId: historyMemoId
+        }
+      );
 
       // 성공 토스트 메시지
       addToast({
         title: "성공",
-        description: "수양회 일정 변경이 확인 처리되었습니다.",
+        description: "일정 변경 요청이 읽음 처리되었습니다.",
         variant: "success",
       });
+
+      // 데이터 새로고침
+      if (mutate) {
+        await mutate();
+      }
     } catch (error) {
-      console.error("수양회 일정 변경 확인 중 오류 발생:", error);
+      console.error("일정 변경 요청 읽음 처리 중 오류 발생:", error);
 
       // 실패 토스트 메시지
       addToast({
@@ -328,54 +351,63 @@ export function RetreatScheduleChangeHistoryTable({
             ? error.response?.data?.message || error.message
             : error instanceof Error
               ? error.message
-              : "수양회 일정 변경 확인 처리 중 오류가 발생했습니다.",
+              : "일정 변경 요청 읽음 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
-      setLoading(id, "confirm", false);
+      setLoading(historyMemoId.toString(), "confirm", false);
     }
   };
 
-  const handleResolveChange = (id: string) => {
+  const handleResolveChange = (historyMemoId: number) => {
     confirmDialog.show({
-      title: "일정 변경 확인",
+      title: "일정 변경 요청 읽음 처리",
       description:
-        "정말로 수양회 일정 변경 확인 처리를 하시겠습니까?",
-      onConfirm: () => performResolveChange(id),
+        "정말로 이 일정 변경 요청을 읽음 처리하시겠습니까?",
+      onConfirm: () => performResolveChange(historyMemoId),
     });
   };
 
-  // 액션 버튼 렌더링
+  // 라인업 처리자 정보 렌더링
   const getActionButtons = (row: any) => {
-    if(!row.lineupResolvedUserName){
-      return(
-        <div className="flex flex-col gap-1">
-          <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleResolveChange(row.id)}
-              disabled={isLoading(row.id, "confirm")}
-              className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
-            >
-              {isLoading(row.id, "confirm") ? (
-                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              )}
-              <span>일정 변경 확인</span>
-            </Button>
+    // 라인업 처리자가 있으면 이름 표시, 없으면 읽음 처리 버튼 표시
+    if (row.lineupReviewerName) {
+      return (
+        <div className="text-center px-3 py-2.5">
+          <span className="text-sm font-medium text-green-600">
+            {row.lineupReviewerName}
+          </span>
         </div>
-      )
+      );
     }
+
+    return(
+      <div className="flex flex-col gap-1">
+        <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleResolveChange(row.historyMemoId)}
+            disabled={isLoading(row.historyMemoId?.toString(), "confirm")}
+            className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
+          >
+            {isLoading(row.historyMemoId?.toString(), "confirm") ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            )}
+            <span>읽음 처리</span>
+          </Button>
+      </div>
+    )
   };
 
   return (
     <Card className="shadow-sm">
       <CardHeader className="bg-gray-50 border-b px-4 py-3">
         <div>
-          <CardTitle className="text-lg">일정 변경 이력 조회</CardTitle>
+          <CardTitle className="text-lg">일정 변경 요청 조회</CardTitle>
           <CardDescription className="text-sm">
-            일정 변경 이력 목록
+            처리 대기 중인 일정 변경 요청 목록
           </CardDescription>
         </div>
       </CardHeader>
@@ -384,7 +416,7 @@ export function RetreatScheduleChangeHistoryTable({
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="통합 검색 (이름, 부서, 학년, 전화번호, 처리자 등)..."
+              placeholder="통합 검색 (이름, 부서, 학년, 현재 리더, GBS, 메모, 작성자 등)..."
               className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -425,7 +457,12 @@ export function RetreatScheduleChangeHistoryTable({
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>전화번호</span>
+                          <span>부서 리더</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>GBS</span>
                         </div>
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
@@ -437,21 +474,26 @@ export function RetreatScheduleChangeHistoryTable({
                         colSpan={scheduleColumns.length}
                         className="text-center px-3 py-2.5"
                       >
-                        수양회 일정
+                        일정
                       </TableHead>
                       <TableHead className="px-6 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>액션</span>
+                          <span>변경 요청 메모</span>
                         </div>
                       </TableHead>
                       <TableHead className="px-6 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>처리자명</span>
+                          <span>작성자</span>
                         </div>
                       </TableHead>
                       <TableHead className="px-8 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>처리시각</span>
+                          <span>작성일시</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-6 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>라인업 처리자</span>
                         </div>
                       </TableHead>
                     </TableRow>
@@ -474,7 +516,7 @@ export function RetreatScheduleChangeHistoryTable({
                     {filteredData.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={10 + scheduleColumns.length}
+                          colSpan={12 + scheduleColumns.length}
                           className="text-center py-10 text-gray-500"
                         >
                           {allData.length > 0
