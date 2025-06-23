@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, X, Trash2, Search, Download, Filter, Plus, User, UserPlus, Shield, GraduationCap } from "lucide-react";
+import { debounce } from "lodash";
 import {
   Card,
   CardContent,
@@ -40,6 +41,65 @@ import {
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/utils/formatDate";
 import { UserRetreatRegistrationType } from "@/types";
+
+// 성능 최적화된 Textarea 컴포넌트
+const OptimizedTextarea = React.memo(({ 
+  rowId, 
+  value, 
+  onValueChange, 
+  placeholder, 
+  className, 
+  disabled 
+}: {
+  rowId: string;
+  value: string;
+  onValueChange: (id: string, value: string) => void;
+  placeholder: string;
+  className: string;
+  disabled: boolean;
+}) => {
+  const [localValue, setLocalValue] = useState(value);
+
+  // value prop이 변경되면 로컬 상태도 업데이트
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue); // 즉시 UI 업데이트
+    onValueChange(rowId, newValue); // debounced 상태 업데이트
+  }, [rowId, onValueChange]);
+
+  const textareaStyle = useMemo(() => ({
+    height: Math.max(
+      60,
+      Math.min(
+        200,
+        localValue.split("\n").length * 20 + 20
+      )
+    ) + "px",
+  }), [localValue]);
+
+  const rows = useMemo(() => Math.max(
+    3,
+    Math.min(10, localValue.split("\n").length + 1)
+  ), [localValue]);
+
+  return (
+    <Textarea
+      value={localValue}
+      onChange={handleChange}
+      placeholder={placeholder}
+      className={className}
+      style={textareaStyle}
+      disabled={disabled}
+      rows={rows}
+    />
+  );
+});
+
+OptimizedTextarea.displayName = 'OptimizedTextarea';
 
 // GBS line up 페이지에서만 사용하는 TypeBadge (새돌, SC, H 칩 포함)
 const TypeBadgeWithFreshman = ({ 
@@ -314,8 +374,19 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
     return loadingStates[`${id}_${action}`];
   };
 
+  // 메모 입력 최적화를 위한 debounced 업데이트 함수
+  const debouncedUpdateMemo = useCallback(
+    debounce((id: string, value: string) => {
+      setMemoValues(prev => ({
+        ...prev,
+        [id]: value,
+      }));
+    }, 100),
+    []
+  );
+
   // 메모 편집 시작
-  const handleStartEditMemo = (id: string, currentMemo: string, currentColor?: string) => {
+  const handleStartEditMemo = useCallback((id: string, currentMemo: string, currentColor?: string) => {
     setEditingMemo(prev => ({ ...prev, [id]: true }));
     setMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
     // 현재 색상이 있으면 설정, 없으면 빈 문자열(transparent)
@@ -323,13 +394,13 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
       ...prev, 
       [id]: currentColor || "" 
     }));
-  };
+  }, []);
 
   // 메모 편집 취소
-  const handleCancelEditMemo = (id: string) => {
+  const handleCancelEditMemo = useCallback((id: string) => {
     setEditingMemo(prev => ({ ...prev, [id]: false }));
     setMemoValues(prev => ({ ...prev, [id]: "" }));
-  };
+  }, []);
 
   // 일정 변동 메모 편집 시작 (메모가 없을 때만 가능)
   const handleStartEditScheduleMemo = (id: string, currentMemo: string) => {
@@ -559,7 +630,8 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
         )
       );
 
-      await mutate(lineupEndpoint);
+      // mutate를 바로 호출하지 않고 필요할 때만 호출
+      // await mutate(lineupEndpoint);
 
       setEditingMemo(prev => ({ ...prev, [id]: false }));
       setMemoValues(prev => ({ ...prev, [id]: "" }));
@@ -634,7 +706,8 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
         )
       );
 
-      await mutate(lineupEndpoint);
+      // mutate를 바로 호출하지 않고 필요할 때만 호출
+      // await mutate(lineupEndpoint);
 
       addToast({
         title: "성공",
@@ -1158,14 +1231,10 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
                               {editingMemo[row.id] ? (
                                 /* 메모 수정 UI */
                                 <div className="flex flex-col gap-2 p-1">
-                                  <Textarea
+                                  <OptimizedTextarea
+                                    rowId={row.id}
                                     value={memoValues[row.id] || ""}
-                                    onChange={e =>
-                                      setMemoValues(prev => ({
-                                        ...prev,
-                                        [row.id]: e.target.value,
-                                      }))
-                                    }
+                                    onValueChange={debouncedUpdateMemo}
                                     placeholder="메모를 입력하세요..."
                                     className={
                                       "text-sm resize-none overflow-hidden w-full" +
@@ -1173,29 +1242,7 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
                                         ? " border border-red-400"
                                         : " border border-gray-200")
                                     }
-                                    style={{
-                                      height:
-                                        Math.max(
-                                          60,
-                                          Math.min(
-                                            200,
-                                            (memoValues[row.id] || "").split(
-                                              "\n"
-                                            ).length *
-                                              20 +
-                                              20
-                                          )
-                                        ) + "px",
-                                    }}
                                     disabled={isLoading(row.id, "memo")}
-                                    rows={Math.max(
-                                      3,
-                                      Math.min(
-                                        10,
-                                        (memoValues[row.id] || "").split("\n")
-                                          .length + 1
-                                      )
-                                    )}
                                   />
                                   {/* 색상 선택 버튼들 */}
                                   <div className="flex flex-wrap gap-1">
