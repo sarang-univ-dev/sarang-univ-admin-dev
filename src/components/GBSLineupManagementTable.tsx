@@ -49,6 +49,9 @@ import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { mutate } from "swr";
 import { AxiosError } from "axios";
 import {Input} from "@/components/ui/input";
+import {IUserRetreatGBSLineup} from "@/hooks/use-gbs-line-up";
+import {IUserRetreatGBSLineupList} from "@/hooks/use-gbs-line-up-management";
+import {TRetreatRegistrationSchedule} from "@/types";
 
 
 export function GBSLineupManagementTable({
@@ -57,9 +60,9 @@ export function GBSLineupManagementTable({
                                    schedules = [],
                                    retreatSlug,
                                }: {
-    registrations: any[];
-    gbsLists: any[];
-    schedules: any[];
+    registrations: IUserRetreatGBSLineup[];
+    gbsLists: IUserRetreatGBSLineupList[];
+    schedules: TRetreatRegistrationSchedule[];
     retreatSlug: string;
 }) {
     // State
@@ -74,7 +77,7 @@ export function GBSLineupManagementTable({
     const [newGbsMemo, setNewGbsMemo] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [leaderSelectModalOpen, setLeaderSelectModalOpen] = useState(false);
-    const [newGroupLeaders, setNewGroupLeaders] = useState<any[]>([]);
+    const [newGroupLeaders, setNewGroupLeaders] = useState<IUserRetreatGBSLineup[]>([]);
     const [leaderSearchTerm, setLeaderSearchTerm] = useState("");
     const [createLoading, setCreateLoading] = useState(false);
     const [assignTargetGbsNumber, setAssignTargetGbsNumber] = useState<number | null>(null);
@@ -82,12 +85,12 @@ export function GBSLineupManagementTable({
 
     const confirmDialog = useConfirmDialogStore();
 
-    const filteredData = useMemo(() => {
+    const filteredGbsListData = useMemo(() => {
         if (!searchTerm.trim()) return gbsLists;
         const term = searchTerm.trim().toLowerCase();
         return gbsLists.filter(row =>
             String(row.number).includes(term) || // gbs번호
-            (row.name?.toLowerCase().includes(term) ?? false) ||
+            row.leaders.some(leader => leader.name.toLowerCase().includes(term)) || // 리더 이름
             (row.memo?.toLowerCase().includes(term) ?? false)
         );
     }, [gbsLists, searchTerm]);
@@ -162,7 +165,7 @@ export function GBSLineupManagementTable({
 
         try {
             // leaderUserIds 배열
-            const leaderUserIds = newGroupLeaders.map(l => l.id);
+            const leaderUserIds = newGroupLeaders.map(l => l.userId);
 
             // 실제 API 요청
             await webAxios.post(
@@ -195,7 +198,7 @@ export function GBSLineupManagementTable({
         }
     };
 
-    const handleGbsMemo = async (id: string) => {
+    const handleGbsMemo = async (id: number) => {
         setCreateLoading(true);
         const memo = memoValues[id];
 
@@ -229,7 +232,7 @@ export function GBSLineupManagementTable({
         }
     };
 
-    const handleDeleteMemo = async (id: string) => {
+    const handleDeleteMemo = async (id: number) => {
         setCreateLoading(true);
         const memo = memoValues[id];
 
@@ -262,24 +265,62 @@ export function GBSLineupManagementTable({
         }
     };
 
+    const handleDeleteLeaders = async (id: number) => {
+        setCreateLoading(true);
+        // /:gbsId/unassign-gbs-leaders
+
+        try {
+            // 실제 API 요청
+            await webAxios.delete(
+                `/api/v1/retreat/${retreatSlug}/line-up/${id}/unassign-gbs-leaders`,
+            );
+
+            // 데이터 리프레시(혹은 mutate, 직접 set 등)
+            await mutate(gbsListEndpoint); // swr이면 이렇게!
+
+            addToast({
+                title: "성공",
+                description: "GBS 리더 배정이 취소되었습니다.",
+                variant: "success",
+            });
+
+        } catch (error) {
+            addToast({
+                title: "오류 발생",
+                description: "GBS 리더 배정 취소 중 오류가 발생했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setCreateLoading(false);
+        }
+    };
+
     // 메모 편집 취소
-    const handleCancelEditMemo = (id: string) => {
+    const handleCancelEditMemo = (id: number) => {
         setEditingMemo(prev => ({ ...prev, [id]: false }));
         setMemoValues(prev => ({ ...prev, [id]: "" }));
     };
 
     // 메모 편집 시작
-    const handleStartEditMemo = (id: string, currentMemo: string) => {
+    const handleStartEditMemo = (id: number, currentMemo: string | null) => {
         setEditingMemo(prev => ({ ...prev, [id]: true }));
         setMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
     };
 
     // 메모 삭제 확인
-    const handleConfirmDeleteMemo = (id: string) => {
+    const handleConfirmDeleteMemo = (id: number) => {
         confirmDialog.show({
             title: "메모 삭제",
             description: "정말로 메모를 삭제하시겠습니까?",
             onConfirm: () => handleDeleteMemo(id),
+        });
+    };
+
+    const handleConfirmDeleteLeaders = (id: number) => {
+        confirmDialog.show({
+            title: "리더 삭제",
+            description: "정말로 리더 배정을 삭제하시겠습니까?",
+            onConfirm: () => handleDeleteLeaders(id),
         });
     };
 
@@ -354,7 +395,7 @@ export function GBSLineupManagementTable({
             <Card>
                 <CardHeader>
                     <CardTitle>GBS 목록</CardTitle>
-                    <CardDescription>그룹별 상세 정보, 그룹장, 메모 관리</CardDescription>
+                    <CardDescription>그룹별 상세 정보, 리더, 메모 관리</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -367,28 +408,43 @@ export function GBSLineupManagementTable({
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredData.map(group => (
+                            {filteredGbsListData.map(group => (
                                 <TableRow key={group.number}>
                                     {/* GBS 번호 */}
                                     <TableCell className="font-mono">{group.number}</TableCell>
                                     {/* 그룹장 */}
                                     <TableCell>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                                setAssignTargetGbsNumber(group.number);      // ★ 이 GBS 번호 기억
-                                                setLeaderSelectModalOpen(true);              // 모달 open
-                                            }}
-                                            className="h-auto p-1 justify-start"
-                                        >
-                                            {/* leaders 배열이 있으면 이름들을 ,로 구분해서 보여줌 */}
-                                            {
-                                                group.leaders && group.leaders.length > 0
-                                                    ? group.leaders.map((leaderInfo: { id: number; name: string }) => leaderInfo.name).join(", ")
-                                                    : <span className="text-gray-400">그룹장 없음</span>
-                                            }
-                                        </Button>
+                                        <div className="flex items-start gap-2 p-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setAssignTargetGbsNumber(group.number);      // ★ 이 GBS 번호 기억
+                                                    setLeaderSelectModalOpen(true);              // 모달 open
+                                                }}
+                                                className="h-auto p-1 justify-start"
+                                            >
+                                                {/* leaders 배열이 있으면 이름들을 ,로 구분해서 보여줌 */}
+                                                {
+                                                    group.leaders && group.leaders.length > 0
+                                                        ? group.leaders.map((leaderInfo: {
+                                                            id: number;
+                                                            name: string
+                                                        }) => leaderInfo.name).join(", ")
+                                                        : <span className="text-gray-400">그룹장 없음</span>
+                                                }
+                                            </Button>
+                                            {group.leaders && group.leaders.length > 0 && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => handleConfirmDeleteLeaders(group.id)}
+                                                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1"
+                                                >
+                                                    <Trash2 className="h-3 w-3"/>
+                                                </Button>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="max-w-xs">
                                         {editingMemo[group.number] ? (

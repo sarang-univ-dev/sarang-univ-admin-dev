@@ -13,6 +13,7 @@ export interface IUserRetreatGBSLineup {
   fullAttendanceCount: number;
   partialAttendanceCount: number;
   id: number;
+  userId: number;
   univGroupNumber: number;
   gradeNumber: number;
   gender: "MALE" | "FEMALE";
@@ -21,6 +22,7 @@ export interface IUserRetreatGBSLineup {
   isLeader: boolean;
   gbsMemo: string;
   lineupMemo: string;
+  lineupMemoId: string;
   lineupMemocolor: string;
   isFullAttendance: boolean;
   currentLeader: string;
