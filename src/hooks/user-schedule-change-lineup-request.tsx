@@ -23,8 +23,6 @@ export interface IUserScheduleChangeLineup {
   currentLeaderName: string;
   gbsNumber?: number;
   gbsLeaderNames?: string[];
-  beforeScheduleIds?: number[];
-  afterScheduleIds?: number[];
   lineupReviewerName?: string;
 }
 

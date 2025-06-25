@@ -38,30 +38,27 @@ const transformScheduleChangeRequestsForTable = (
   const transformedData: any[] = [];
 
   requests.forEach((request, index) => {
-    // before/after 일정 처리
-    const beforeScheduleIds = Array.isArray(request.beforeScheduleIds)
-      ? request.beforeScheduleIds
-      : [];
-    const afterScheduleIds = Array.isArray(request.afterScheduleIds)
-      ? request.afterScheduleIds
+    // 현재 등록된 일정 처리
+    const currentScheduleIds = Array.isArray(request.userRetreatRegistrationScheduleIds)
+      ? request.userRetreatRegistrationScheduleIds
       : [];
 
-    // Before row (변경 전)
-    const beforeScheduleMap = schedules.reduce(
+    // 현재 일정 스케줄 맵 생성
+    const currentScheduleMap = schedules.reduce(
       (acc, cur) => {
         const scheduleId = cur.id;
         const isIncluded =
-          beforeScheduleIds.includes(scheduleId) ||
-          beforeScheduleIds.includes(scheduleId.toString() as any) ||
-          beforeScheduleIds.includes(parseInt(scheduleId.toString()));
+          currentScheduleIds.includes(scheduleId) ||
+          currentScheduleIds.includes(scheduleId.toString() as any) ||
+          currentScheduleIds.includes(parseInt(scheduleId.toString()));
         acc[`schedule_${cur.id}`] = isIncluded;
         return acc;
       },
       {} as Record<string, boolean>
     );
 
-    const beforeRow = {
-      id: `${request.userRetreatRegistrationId}_${index}_before`,
+    const row = {
+      id: `${request.userRetreatRegistrationId}_${index}`,
       registrationId: request.userRetreatRegistrationId,
       historyMemoId: request.userRetreatRegistrationHistoryMemoId,
       department: `${request.univGroupNumber}부`,
@@ -70,51 +67,16 @@ const transformScheduleChangeRequestsForTable = (
       name: request.userName,
       gbsNumber: request.gbsNumber,
       dormitoryLocation: request.dormitoryLocation,
-      schedule: beforeScheduleMap,
+      schedule: currentScheduleMap,
       memo: request.memo,
       issuerName: request.issuerName,
       memoCreatedAt: request.memoCreatedAt,
       userType: request.userType,
       dormitoryReviewerName: request.dormitoryReviewerName,
-      type: "before",
       rowIndex: index,
     };
 
-    // After row (변경 후)
-    const afterScheduleMap = schedules.reduce(
-      (acc, cur) => {
-        const scheduleId = cur.id;
-        const isIncluded =
-          afterScheduleIds.includes(scheduleId) ||
-          afterScheduleIds.includes(scheduleId.toString() as any) ||
-          afterScheduleIds.includes(parseInt(scheduleId.toString()));
-        acc[`schedule_${cur.id}`] = isIncluded;
-        return acc;
-      },
-      {} as Record<string, boolean>
-    );
-
-    const afterRow = {
-      id: `${request.userRetreatRegistrationId}_${index}_after`,
-      registrationId: request.userRetreatRegistrationId,
-      historyMemoId: request.userRetreatRegistrationHistoryMemoId,
-      department: `${request.univGroupNumber}부`,
-      gender: request.gender,
-      grade: `${request.gradeNumber}학년`,
-      name: request.userName,
-      gbsNumber: request.gbsNumber,
-      dormitoryLocation: request.dormitoryLocation,
-      schedule: afterScheduleMap,
-      memo: request.memo,
-      issuerName: request.issuerName,
-      memoCreatedAt: request.memoCreatedAt,
-      userType: request.userType,
-      dormitoryReviewerName: request.dormitoryReviewerName,
-      type: "after",
-      rowIndex: index,
-    };
-
-    transformedData.push(beforeRow, afterRow);
+    transformedData.push(row);
   });
 
   return transformedData;
@@ -204,63 +166,41 @@ export function RetreatScheduleChangeHistoryTable({
   );
 
   const renderTableRow = (row: any, index: number) => {
-    const isBeforeRow = row.type === "before";
-    const nextRow = filteredData[index + 1];
-    const isLastRowOfPair = !nextRow || nextRow.rowIndex !== row.rowIndex;
-
     return (
       <TableRow
         key={row.id}
         className="group hover:bg-gray-50 transition-colors duration-150"
       >
-        {/* 부서 - rowspan 2 for first row of pair */}
-        {isBeforeRow && (
-          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
-            {row.department}
-          </TableCell>
-        )}
+        {/* 부서 */}
+        <TableCell className="text-center px-3 py-2.5">
+          {row.department}
+        </TableCell>
 
-        {/* 성별 - rowspan 2 for first row of pair */}
-        {isBeforeRow && (
-          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
-            <GenderBadge gender={row.gender} />
-          </TableCell>
-        )}
+        {/* 성별 */}
+        <TableCell className="text-center px-3 py-2.5">
+          <GenderBadge gender={row.gender} />
+        </TableCell>
 
-        {/* 학년 - rowspan 2 for first row of pair */}
-        {isBeforeRow && (
-          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
-            {row.grade}
-          </TableCell>
-        )}
+        {/* 학년 */}
+        <TableCell className="text-center px-3 py-2.5">
+          {row.grade}
+        </TableCell>
 
-        {/* 이름 - rowspan 2 for first row of pair */}
-        {isBeforeRow && (
-          <TableCell
-            className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5"
-            rowSpan={2}
-          >
-            {row.name}
-          </TableCell>
-        )}
+        {/* 이름 */}
+        <TableCell
+          className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5"
+        >
+          {row.name}
+        </TableCell>
 
-        {/* GBS 번호 - rowspan 2 for first row of pair */}
-        {isBeforeRow && (
-          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
-            {row.gbsNumber || "-"}
-          </TableCell>
-        )}
+        {/* GBS 번호 */}
+        <TableCell className="text-center px-3 py-2.5">
+          {row.gbsNumber || "-"}
+        </TableCell>
 
-        {/* 숙소 - rowspan 2 for first row of pair */}
-        {isBeforeRow && (
-          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
-            {row.dormitoryLocation || "-"}
-          </TableCell>
-        )}
-
-        {/* 구분 */}
-        <TableCell className="text-center px-7 py-2.5 font-medium">
-          {isBeforeRow ? "변경 전" : "변경 후"}
+        {/* 숙소 */}
+        <TableCell className="text-center px-3 py-2.5">
+          {row.dormitoryLocation || "-"}
         </TableCell>
 
         {/* 스케줄 컬럼들 */}
@@ -278,41 +218,33 @@ export function RetreatScheduleChangeHistoryTable({
           );
         })}
 
-        {/* 변경 요청 메모 - rowspan 2 for first row of pair */}
-        {isBeforeRow && (
-          <TableCell className="min-w-[200px] max-w-[400px] text-left px-3 py-2.5" rowSpan={2}>
-            <div className="text-sm text-gray-600 whitespace-pre-wrap break-words p-2 bg-gray-50 rounded min-h-[24px]">
-              {row.memo || "-"}
-            </div>
-          </TableCell>
-        )}
+        {/* 변경 요청 메모 */}
+        <TableCell className="min-w-[200px] max-w-[400px] text-left px-3 py-2.5">
+          <div className="text-sm text-gray-600 whitespace-pre-wrap break-words p-2 bg-gray-50 rounded min-h-[24px]">
+            {row.memo || "-"}
+          </div>
+        </TableCell>
 
-        {/* 작성자 - rowspan 2 for first row of pair */}
-        {isBeforeRow && (
-          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
-            {row.issuerName || "-"}
-          </TableCell>
-        )}
+        {/* 작성자 */}
+        <TableCell className="text-center px-3 py-2.5">
+          {row.issuerName || "-"}
+        </TableCell>
 
-        {/* 작성일시 - rowspan 2 for first row of pair */}
-        {isBeforeRow && (
-          <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5" rowSpan={2}>
-            {formatDate(row.memoCreatedAt) || "-"}
-          </TableCell>
-        )}
+        {/* 작성일시 */}
+        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
+          {formatDate(row.memoCreatedAt) || "-"}
+        </TableCell>
 
         {/* 처리자명 또는 액션버튼 */}
-        {isBeforeRow && (
-          <TableCell className="text-center px-6 py-2.5" rowSpan={2}>
-            {row.dormitoryReviewerName ? (
-              <span className="text-green-700 font-medium">
-                {row.dormitoryReviewerName}
-              </span>
-            ) : (
-              getActionButtons(row)
-            )}
-          </TableCell>
-        )}
+        <TableCell className="text-center px-6 py-2.5">
+          {row.dormitoryReviewerName ? (
+            <span className="text-green-700 font-medium">
+              {row.dormitoryReviewerName}
+            </span>
+          ) : (
+            getActionButtons(row)
+          )}
+        </TableCell>
       </TableRow>
     );
   };
@@ -453,11 +385,6 @@ export function RetreatScheduleChangeHistoryTable({
                           <span>숙소</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>구분</span>
-                        </div>
-                      </TableHead>
                       <TableHead
                         colSpan={scheduleColumns.length}
                         className="text-center px-3 py-2.5"
@@ -504,7 +431,7 @@ export function RetreatScheduleChangeHistoryTable({
                     {filteredData.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={12 + scheduleColumns.length}
+                          colSpan={11 + scheduleColumns.length}
                           className="text-center py-10 text-gray-500"
                         >
                           {allData.length > 0

@@ -11,6 +11,7 @@ export interface IUserScheduleChangeDormitory {
   userType: UserRetreatRegistrationType | null;
   userName: string;
   gender: Gender;
+  userRetreatRegistrationScheduleIds: number[];
   memo: string;
   issuerName: string;
   memoCreatedAt: string;
@@ -20,8 +21,6 @@ export interface IUserScheduleChangeDormitory {
   gradeNumber: number;
   gbsNumber?: number;
   dormitoryLocation?: string;
-  beforeScheduleIds?: number[];
-  afterScheduleIds?: number[];
   dormitoryReviewerName?: string;
 }
 
