@@ -18,20 +18,20 @@ interface TableHeaderProps {
   
   // 필터 상태
   selectedDepartments: string[];
-  setSelectedDepartments: (departments: string[]) => void;
+  setSelectedDepartments: React.Dispatch<React.SetStateAction<string[]>>;
   departmentOptions: string[];
   isFilterModalOpen: boolean;
-  setIsFilterModalOpen: (open: boolean) => void;
+  setIsFilterModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   
   includedSchedules: string[];
-  setIncludedSchedules: (schedules: string[]) => void;
+  setIncludedSchedules: React.Dispatch<React.SetStateAction<string[]>>;
   excludedSchedules: string[];
-  setExcludedSchedules: (schedules: string[]) => void;
+  setExcludedSchedules: React.Dispatch<React.SetStateAction<string[]>>;
   isScheduleFilterModalOpen: boolean;
-  setIsScheduleFilterModalOpen: (open: boolean) => void;
+  setIsScheduleFilterModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   
   showOnlyUnassigned: boolean;
-  setShowOnlyUnassigned: (show: boolean) => void;
+  setShowOnlyUnassigned: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const GBSLineupTableHeader = memo<TableHeaderProps>(({
