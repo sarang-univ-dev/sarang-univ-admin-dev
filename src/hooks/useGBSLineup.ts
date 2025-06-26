@@ -4,6 +4,7 @@ import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import { mutate } from "swr";
 import { AxiosError } from "axios";
+import { Gender } from "@/types";
 
 export interface GBSLineupRow {
   id: string;
@@ -12,7 +13,7 @@ export interface GBSLineupRow {
   fullAttendanceCount: number;
   partialAttendanceCount: number;
   department: string;
-  gender: string;
+  gender: Gender;
   grade: string;
   name: string;
   phoneNumber: string;
