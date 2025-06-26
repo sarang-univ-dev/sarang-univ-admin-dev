@@ -205,8 +205,9 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
-  // 스케줄 필터 상태 추가
-  const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
+  // 스케줄 필터 상태 추가 - 포함/제외로 분리
+  const [includedSchedules, setIncludedSchedules] = useState<string[]>([]);
+  const [excludedSchedules, setExcludedSchedules] = useState<string[]>([]);
   const [isScheduleFilterModalOpen, setIsScheduleFilterModalOpen] = useState(false);
 
   // 일정 변동 메모 편집 상태 (새로 작성할 때만 사용)
@@ -294,11 +295,18 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
       temp = temp.filter(row => selectedDepartments.includes(row.department));
     }
 
-    // 스케줄 필터
-    if (selectedSchedules.length > 0) {
+    // 스케줄 필터 - 포함/제외 로직으로 분리
+    if (includedSchedules.length > 0 || excludedSchedules.length > 0) {
       temp = temp.filter(row => {
-        // 선택된 모든 스케줄을 신청한 사용자만 표시 (AND 조건)
-        return selectedSchedules.every(scheduleKey => row.schedule[scheduleKey] === true);
+        // 포함할 스케줄: 선택된 모든 스케줄을 신청해야 함
+        const hasAllIncludedSchedules = includedSchedules.length === 0 || 
+          includedSchedules.every(scheduleKey => row.schedule[scheduleKey] === true);
+        
+        // 제외할 스케줄: 선택된 스케줄을 신청하면 안 됨
+        const hasNoExcludedSchedules = excludedSchedules.length === 0 || 
+          excludedSchedules.every(scheduleKey => row.schedule[scheduleKey] === false);
+        
+        return hasAllIncludedSchedules && hasNoExcludedSchedules;
       });
     }
 
@@ -317,7 +325,7 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
     }
 
     return temp;
-  }, [data, showOnlyUnassigned, searchTerm, selectedDepartments, selectedSchedules]);
+  }, [data, showOnlyUnassigned, searchTerm, selectedDepartments, includedSchedules, excludedSchedules]);
 
   // filteredData 상태 업데이트
   useEffect(() => {
@@ -1033,53 +1041,121 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
                                 size="sm"
                                 className="h-6 w-6 p-0 hover:bg-gray-100"
                               >
-                                <Filter className={`h-3 w-3 ${selectedSchedules.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+                                <Filter className={`h-3 w-3 ${includedSchedules.length > 0 || excludedSchedules.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-80 p-4" align="start">
-                              <div className="space-y-4">
+                            <PopoverContent className="w-96 p-4" align="start">
+                              <div className="space-y-6">
                                 <div>
                                   <h4 className="font-medium text-sm mb-2">스케줄 필터</h4>
-                                  <p className="text-xs text-gray-600 mb-3">표시할 스케줄을 선택하세요.</p>
+                                  <p className="text-xs text-gray-600 mb-3">포함할 스케줄과 제외할 스케줄을 선택하세요.</p>
                                 </div>
+                                
+                                {/* 전체 초기화 버튼 */}
                                 <div className="flex items-center gap-3">
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => setSelectedSchedules([])}
+                                    onClick={() => {
+                                      setIncludedSchedules([]);
+                                      setExcludedSchedules([]);
+                                    }}
                                     className="h-7 px-2 text-xs"
                                   >
-                                    전체 해제
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setSelectedSchedules(scheduleColumns.map(col => col.key))}
-                                    className="h-7 px-2 text-xs"
-                                  >
-                                    전체 선택
+                                    전체 초기화
                                   </Button>
                                 </div>
-                                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
-                                  {scheduleColumns.map(schedule => (
-                                    <label key={schedule.key} className="flex items-center gap-2 cursor-pointer text-sm">
-                                      <Checkbox
-                                        checked={selectedSchedules.includes(schedule.key)}
-                                        onCheckedChange={(checked) => {
-                                          if (checked) {
-                                            setSelectedSchedules(prev => [...prev, schedule.key]);
-                                          } else {
-                                            setSelectedSchedules(prev => prev.filter(s => s !== schedule.key));
-                                          }
-                                        }}
-                                        className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-                                      />
-                                      <span className="text-xs text-gray-700">{schedule.label}</span>
-                                    </label>
-                                  ))}
-                                  {scheduleColumns.length === 0 && (
-                                    <span className="text-xs text-gray-500">필터할 스케줄이 없습니다.</span>
-                                  )}
+
+                                {/* 포함할 스케줄 */}
+                                <div>
+                                  <h5 className="font-medium text-sm mb-2 text-green-700">포함할 스케줄 (반드시 신청해야 함)</h5>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setIncludedSchedules([])}
+                                      className="h-6 px-2 text-xs"
+                                    >
+                                      해제
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        const allScheduleKeys = scheduleColumns.map(col => col.key);
+                                        setIncludedSchedules(allScheduleKeys);
+                                        setExcludedSchedules(prev => prev.filter(key => !allScheduleKeys.includes(key)));
+                                      }}
+                                      className="h-6 px-2 text-xs"
+                                    >
+                                      전체
+                                    </Button>
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto border rounded p-2">
+                                    {scheduleColumns.map(schedule => (
+                                      <label key={schedule.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                                        <Checkbox
+                                          checked={includedSchedules.includes(schedule.key)}
+                                          onCheckedChange={(checked) => {
+                                            if (checked) {
+                                              setIncludedSchedules(prev => [...prev, schedule.key]);
+                                              setExcludedSchedules(prev => prev.filter(s => s !== schedule.key));
+                                            } else {
+                                              setIncludedSchedules(prev => prev.filter(s => s !== schedule.key));
+                                            }
+                                          }}
+                                          className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                                        />
+                                        <span className="text-xs text-gray-700">{schedule.label}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* 제외할 스케줄 */}
+                                <div>
+                                  <h5 className="font-medium text-sm mb-2 text-red-700">제외할 스케줄 (신청하면 안 됨)</h5>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setExcludedSchedules([])}
+                                      className="h-6 px-2 text-xs"
+                                    >
+                                      해제
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        const allScheduleKeys = scheduleColumns.map(col => col.key);
+                                        setExcludedSchedules(allScheduleKeys);
+                                        setIncludedSchedules(prev => prev.filter(key => !allScheduleKeys.includes(key)));
+                                      }}
+                                      className="h-6 px-2 text-xs"
+                                    >
+                                      전체
+                                    </Button>
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto border rounded p-2">
+                                    {scheduleColumns.map(schedule => (
+                                      <label key={schedule.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                                        <Checkbox
+                                          checked={excludedSchedules.includes(schedule.key)}
+                                          onCheckedChange={(checked) => {
+                                            if (checked) {
+                                              setExcludedSchedules(prev => [...prev, schedule.key]);
+                                              setIncludedSchedules(prev => prev.filter(s => s !== schedule.key));
+                                            } else {
+                                              setExcludedSchedules(prev => prev.filter(s => s !== schedule.key));
+                                            }
+                                          }}
+                                          className="data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                                        />
+                                        <span className="text-xs text-gray-700">{schedule.label}</span>
+                                      </label>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
                             </PopoverContent>
