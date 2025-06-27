@@ -184,56 +184,98 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     return loadingStates[`${id}_${action}`];
   }, [loadingStates]);
 
-  // Debounced 메모 업데이트
+  // Debounced 메모 업데이트 - 성능 최적화
   const debouncedUpdateMemo = useCallback(
     debounce((id: string, value: string) => {
       setMemoValues(prev => ({ ...prev, [id]: value }));
-    }, 100),
+    }, 300), // 300ms로 증가하여 불필요한 업데이트 방지
     []
   );
 
-  // GBS 번호 저장
-  const handleSaveGbsNumber = useCallback(async (row: GBSLineupRow) => {
-    const newGbsNumber = gbsNumberInputs[row.id] ?? String(row.gbsNumber);
+  // Debounced GBS 번호 입력 업데이트
+  const debouncedUpdateGbsNumber = useCallback(
+    debounce((id: string, value: string) => {
+      setGbsNumberInputs(prev => ({ ...prev, [id]: value }));
+    }, 200),
+    []
+  );
+
+  // GBS 번호 저장 - 성능 최적화 버전 (디바운싱 지연 문제 해결)
+  const handleSaveGbsNumber = useCallback(async (row: GBSLineupRow & { inputValue?: string; enterKeyTime?: number }) => {
+    const functionStartTime = performance.now();
+    const enterTime = row.enterKeyTime || functionStartTime;
+    
+    // 실시간 입력값을 우선 사용하고, 없으면 기존 로직 사용
+    const newGbsNumber = row.inputValue ?? gbsNumberInputs[row.id] ?? String(row.gbsNumber);
+    
+    // 입력값 검증
+    if (!newGbsNumber || newGbsNumber.trim() === '') {
+      addToast({
+        title: "입력 오류",
+        description: "GBS 번호를 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const validationEndTime = performance.now();
     setLoading(row.id, "gbsNumber", true);
+    const apiStartTime = performance.now();
 
     try {
+      // API 호출
       await webAxios.post(`/api/v1/retreat/${retreatSlug}/line-up/assign-gbs`, {
         userRetreatRegistrationId: row.id,
         gbsNumber: newGbsNumber,
       });
+      
+      const apiEndTime = performance.now();
 
+      // 로컬 상태 즉시 업데이트 (낙관적 업데이트)
+      const uiUpdateStartTime = performance.now();
+      const parsedGbsNumber = parseInt(newGbsNumber);
+      
       setData(prev =>
         prev.map(r =>
           r.id === row.id
-            ? { ...r, gbsNumber: parseInt(newGbsNumber), gbsNumberError: false }
+            ? { ...r, gbsNumber: parsedGbsNumber, gbsNumberError: false }
             : r
         )
       );
 
+      // 입력값 초기화
+      setGbsNumberInputs(prev => ({ ...prev, [row.id]: "" }));
+      
+      const uiUpdateEndTime = performance.now();
+
+      // 성공 토스트
       addToast({
         title: "성공",
         description: "GBS가 배정되었습니다.",
         variant: "success",
       });
-
-      const updatedData = await mutate(lineupEndpoint);
       
-      if (updatedData) {
-        const targetGbsNumber = parseInt(newGbsNumber);
-        const gbsGroup = updatedData.filter((r: any) => r.gbsNumber === targetGbsNumber);
-        
-        if (gbsGroup.length >= 7) {
-          setTimeout(() => {
-            addToast({
-              title: "⚠️ GBS 인원 초과 알림",
-              description: `배정된 GBS 인원이 ${gbsGroup.length}명입니다! 권장 인원을 초과했습니다.`,
-              variant: "warning",
-            });
-          }, 500);
-        }
+      const toastEndTime = performance.now();
+
+      // GBS 인원 체크 - 로컬 데이터 기준으로 체크 (서버 재요청 제거)
+      const currentGroupSize = data.filter(r => r.gbsNumber === parsedGbsNumber).length + 1;
+      
+      if (currentGroupSize >= 7) {
+        setTimeout(() => {
+          addToast({
+            title: "⚠️ GBS 인원 초과 알림",
+            description: `배정된 GBS 인원이 ${currentGroupSize}명입니다! 권장 인원을 초과했습니다.`,
+            variant: "warning",
+          });
+        }, 500);
       }
+
+      // 즉시 데이터 동기화 - revalidate 강제 실행
+      await mutate(lineupEndpoint, undefined, { revalidate: true });
+
     } catch (error) {
+      const errorTime = performance.now();
+
       setData(prev =>
         prev.map(r => (r.id === row.id ? { ...r, gbsNumberError: true } : r))
       );
@@ -244,11 +286,12 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
         variant: "destructive",
       });
     } finally {
+      const finalTime = performance.now();
       setLoading(row.id, "gbsNumber", false);
     }
-  }, [gbsNumberInputs, retreatSlug, lineupEndpoint, setLoading, addToast]);
+  }, [gbsNumberInputs, retreatSlug, lineupEndpoint, setLoading, addToast, data, setGbsNumberInputs, mutate]);
 
-  // 메모 저장
+  // 메모 저장 - 성능 최적화 버전
   const handleSaveMemo = useCallback(async (id: string) => {
     const memo = memoValues[id];
     const color = memoBgColors[id];
@@ -258,38 +301,52 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     setLoading(id, "memo", true);
 
     try {
+      let response = null;
+      
       if ((memo && memo.trim()) || color !== undefined) {
         const processedColor = color === "" ? null : (color ? color.trim() : undefined);
         
         if (memoId) {
-          await webAxios.put(
+          response = await webAxios.put(
             `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`,
             { memo: memo.trim(), color: processedColor }
           );
         } else {
-          await webAxios.post(
+          response = await webAxios.post(
             `/api/v1/retreat/${retreatSlug}/line-up/${id}/lineup-memo`,
             { memo: memo.trim(), color: processedColor }
           );
         }
       }
 
+      // 낙관적 업데이트로 즉시 UI 반영
       setData(prev =>
         prev.map(row =>
           row.id === id
-            ? { ...row, lineupMemo: memo, lineupMemoId: memoId ?? row.lineupMemoId, memoError: false }
+            ? { 
+                ...row, 
+                lineupMemo: memo, 
+                lineupMemoId: response?.data?.id || memoId || row.lineupMemoId, 
+                lineupMemocolor: color || row.lineupMemocolor,
+                memoError: false 
+              }
             : row
         )
       );
 
+      // 편집 상태 즉시 해제
       setEditingMemo(prev => ({ ...prev, [id]: false }));
       setMemoValues(prev => ({ ...prev, [id]: "" }));
+      setMemoBgColors(prev => ({ ...prev, [id]: "" }));
 
       addToast({
         title: "성공",
         description: memoId ? "메모가 성공적으로 수정되었습니다." : "메모가 성공적으로 저장되었습니다.",
         variant: "success",
       });
+
+      // 즉시 데이터 동기화 - 다른 사용자가 편집한 내용도 반영
+      await mutate(lineupEndpoint, undefined, { revalidate: true });
     } catch (error) {
       setData(prev =>
         prev.map(row => (row.id === id ? { ...row, memoError: true } : row))
@@ -305,7 +362,7 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     } finally {
       setLoading(id, "memo", false);
     }
-  }, [memoValues, memoBgColors, data, retreatSlug, setLoading, addToast]);
+  }, [memoValues, memoBgColors, data, retreatSlug, lineupEndpoint, setLoading, addToast, setEditingMemo, setMemoValues, setMemoBgColors, mutate]);
 
   // 메모 삭제
   const handleDeleteMemo = useCallback(async (id: string) => {
@@ -330,6 +387,9 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
         description: "메모가 성공적으로 삭제되었습니다.",
         variant: "success",
       });
+
+      // 즉시 데이터 동기화
+      await mutate(lineupEndpoint, undefined, { revalidate: true });
     } catch (error) {
       setData(prev =>
         prev.map(row => (row.id === id ? { ...row, memoError: true } : row))
@@ -343,7 +403,7 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     } finally {
       setLoading(id, "delete_memo", false);
     }
-  }, [data, retreatSlug, setLoading, addToast]);
+  }, [data, retreatSlug, lineupEndpoint, setLoading, addToast, mutate]);
 
   return {
     // 데이터
@@ -382,6 +442,7 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     isLoading,
     setLoading,
     debouncedUpdateMemo,
+    debouncedUpdateGbsNumber,
     handleSaveGbsNumber,
     handleSaveMemo,
     handleDeleteMemo,
