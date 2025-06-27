@@ -177,12 +177,57 @@ export function AccountStaffTable({
     }
   };
 
+  // 입금 확인 완료 처리 함수
+  const performConfirmPayment = async (id: string) => {
+    setLoading(id, "confirm", true);
+    try {
+      const response = await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/account/confirm-payment`,
+        {
+          userRetreatRegistrationId: id,
+        }
+      );
+
+      await mutate(registrationsEndpoint);
+
+      addToast({
+        title: "성공",
+        description: "입금 확인이 성공적으로 처리되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("입금 확인 중 오류 발생:", error);
+
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "입금 확인 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(id, "confirm", false);
+    }
+  };
+
   // 간사 배정 처리 함수
   const handleAssignStaff = (id: string) => {
     confirmDialog.show({
       title: "간사 배정",
       description: "정말로 간사 배정 처리를 하시겠습니까?",
       onConfirm: () => performAssignStaff(id),
+    });
+  };
+
+  // 입금 확인 완료 처리 함수
+  const handleConfirmPayment = (id: string) => {
+    confirmDialog.show({
+      title: "입금 확인 완료",
+      description: "정말로 입금 확인 완료 처리를 하시겠습니까?",
+      onConfirm: () => performConfirmPayment(id),
     });
   };
 
@@ -316,6 +361,20 @@ export function AccountStaffTable({
       case UserRetreatRegistrationPaymentStatus.PENDING:
         return (
           <div className="flex flex-col gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleConfirmPayment(row.id)}
+              disabled={isLoading(row.id, "confirm")}
+              className="flex items-center gap-1.5 hover:bg-green-600 hover:text-white transition-colors"
+            >
+              {isLoading(row.id, "confirm") ? (
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              )}
+              <span>입금 확인 완료</span>
+            </Button>
             <Button
               size="sm"
               variant="outline"
