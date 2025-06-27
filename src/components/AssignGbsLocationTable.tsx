@@ -72,8 +72,8 @@ export const AssignGbsLocationTable = React.memo(function AssignGbsLocationTable
 
   // 편집 시작
   const handleStartEdit = async (gbsId: number, currentLocation?: string) => {
-    // 편집 시작할 때 최신 available locations 조회 - 강제 리밸리데이션
-    await mutateAvailable(undefined, { revalidate: true });
+    // 편집 시작할 때 최신 available locations 조회
+    await mutateAvailable();
     
     setEditingLocations(prev => ({ ...prev, [gbsId]: true }));
     setLocationValues(prev => ({ ...prev, [gbsId]: currentLocation || "" }));
@@ -103,10 +103,10 @@ export const AssignGbsLocationTable = React.memo(function AssignGbsLocationTable
     try {
       await assignLocation(gbsId, location.trim());
       
-      // 데이터 새로고침 - 강제 리밸리데이션
+      // 데이터 새로고침
       await Promise.all([
-        mutateGbs(undefined, { revalidate: true }),
-        mutateAvailable(undefined, { revalidate: true }),
+        mutateGbs(),
+        mutateAvailable(),
       ]);
 
       setEditingLocations(prev => ({ ...prev, [gbsId]: false }));
@@ -214,8 +214,8 @@ export const AssignGbsLocationTable = React.memo(function AssignGbsLocationTable
                                 onValueChange={value => handleLocationSelect(item.id, value)}
                                 onOpenChange={async (open) => {
                                   if (open) {
-                                    // 드롭다운을 열 때마다 최신 available locations 조회 - 강제 리밸리데이션
-                                    await mutateAvailable(undefined, { revalidate: true });
+                                    // 드롭다운을 열 때마다 최신 available locations 조회
+                                    await mutateAvailable();
                                   }
                                 }}
                               >

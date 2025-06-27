@@ -1,62 +1,62 @@
-import React, { memo, useCallback, useRef, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Textarea } from "@/components/ui/textarea";
 
 interface OptimizedTextareaProps {
   rowId: string;
   value: string;
   onValueChange: (id: string, value: string) => void;
-  placeholder?: string;
-  className?: string;
-  disabled?: boolean;
+  placeholder: string;
+  className: string;
+  disabled: boolean;
 }
 
-const OptimizedTextarea = memo<OptimizedTextareaProps>(({
-  rowId,
-  value,
-  onValueChange,
-  placeholder = "",
-  className = "",
-  disabled = false,
+export const OptimizedTextarea = memo<OptimizedTextareaProps>(({ 
+  rowId, 
+  value, 
+  onValueChange, 
+  placeholder, 
+  className, 
+  disabled 
 }) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
+  const [localValue, setLocalValue] = useState(value);
+
+  // value prop이 변경되면 로컬 상태도 업데이트
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
-    onValueChange(rowId, newValue);
-    
-    // 자동 높이 조절
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
-    }
+    setLocalValue(newValue); // 즉시 UI 업데이트
+    onValueChange(rowId, newValue); // debounced 상태 업데이트
   }, [rowId, onValueChange]);
 
-  // 초기 높이 설정
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
-    }
-  }, [value]);
+  const textareaStyle = useMemo(() => ({
+    height: Math.max(
+      60,
+      Math.min(
+        200,
+        localValue.split("\n").length * 20 + 20
+      )
+    ) + "px",
+  }), [localValue]);
+
+  const rows = useMemo(() => Math.max(
+    3,
+    Math.min(10, localValue.split("\n").length + 1)
+  ), [localValue]);
 
   return (
     <Textarea
-      ref={textareaRef}
-      value={value}
+      value={localValue}
       onChange={handleChange}
       placeholder={placeholder}
       className={className}
+      style={textareaStyle}
       disabled={disabled}
-      style={{
-        minHeight: "60px",
-        maxHeight: "200px",
-        resize: "none",
-        overflow: "hidden",
-      }}
+      rows={rows}
     />
   );
 });
 
-OptimizedTextarea.displayName = 'OptimizedTextarea';
-
-export { OptimizedTextarea }; 
+OptimizedTextarea.displayName = 'OptimizedTextarea'; 
