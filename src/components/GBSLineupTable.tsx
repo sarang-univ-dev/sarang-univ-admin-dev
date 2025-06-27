@@ -134,6 +134,178 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
     setScheduleMemoValues(prev => ({ ...prev, [id]: value }));
   }, [setScheduleMemoValues]);
 
+  // 꼬리표 다운로드 함수들
+  const handleDownloadUnivGbsLabel = async () => {
+    setLoadingStates(prev => ({ ...prev, exportDepartmentGbsTags: true }));
+    try {
+      const response = await webAxios.get(
+        `/api/v1/retreat/${retreatSlug}/line-up/univ-gbs-label`,
+        { responseType: 'blob' }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `부서_GBS_꼬리표_${formatDate(new Date().toISOString())}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      addToast({
+        title: "성공",
+        description: "부서 GBS 꼬리표 파일이 다운로드되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("부서 GBS 꼬리표 다운로드 중 오류 발생:", error);
+      let errorMessage = "부서 GBS 꼬리표 다운로드 중 오류가 발생했습니다.";
+      
+      if (error instanceof AxiosError) {
+        if (error.response?.data) {
+          // Blob 응답인 경우 텍스트로 변환
+          if (error.response.data instanceof Blob) {
+            try {
+              const text = await error.response.data.text();
+              const errorData = JSON.parse(text);
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch {
+              errorMessage = `서버 오류: ${error.response.status} ${error.response.statusText}`;
+            }
+          } else if (typeof error.response.data === 'object') {
+            errorMessage = error.response.data.message || error.response.data.error || errorMessage;
+          } else {
+            errorMessage = error.response.data || errorMessage;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+
+      addToast({
+        title: "오류 발생",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingStates(prev => ({ ...prev, exportDepartmentGbsTags: false }));
+    }
+  };
+
+  const handleDownloadRetreatGbsLabel = async () => {
+    setLoadingStates(prev => ({ ...prev, exportRetreatGbsTags: true }));
+    try {
+      const response = await webAxios.get(
+        `/api/v1/retreat/${retreatSlug}/line-up/retreat-gbs-label`,
+        { responseType: 'blob' }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `수양회_GBS_꼬리표_${formatDate(new Date().toISOString())}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      addToast({
+        title: "성공",
+        description: "수양회 GBS 꼬리표 파일이 다운로드되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("수양회 GBS 꼬리표 다운로드 중 오류 발생:", error);
+      let errorMessage = "수양회 GBS 꼬리표 다운로드 중 오류가 발생했습니다.";
+      
+      if (error instanceof AxiosError) {
+        if (error.response?.data) {
+          // Blob 응답인 경우 텍스트로 변환
+          if (error.response.data instanceof Blob) {
+            try {
+              const text = await error.response.data.text();
+              const errorData = JSON.parse(text);
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch {
+              errorMessage = `서버 오류: ${error.response.status} ${error.response.statusText}`;
+            }
+          } else if (typeof error.response.data === 'object') {
+            errorMessage = error.response.data.message || error.response.data.error || errorMessage;
+          } else {
+            errorMessage = error.response.data || errorMessage;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+
+      addToast({
+        title: "오류 발생",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingStates(prev => ({ ...prev, exportRetreatGbsTags: false }));
+    }
+  };
+
+  const handleDownloadFullLineupExcel = async () => {
+    setLoadingStates(prev => ({ ...prev, exportExcel: true }));
+    try {
+      const response = await webAxios.get(
+        `/api/v1/retreat/${retreatSlug}/line-up/full-lineup-excel`,
+        { responseType: 'blob' }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `전체_라인업_${formatDate(new Date().toISOString())}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      addToast({
+        title: "성공",
+        description: "전체 라인업 엑셀 파일이 다운로드되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("전체 라인업 엑셀 다운로드 중 오류 발생:", error);
+      let errorMessage = "전체 라인업 엑셀 다운로드 중 오류가 발생했습니다.";
+      
+      if (error instanceof AxiosError) {
+        if (error.response?.data) {
+          // Blob 응답인 경우 텍스트로 변환
+          if (error.response.data instanceof Blob) {
+            try {
+              const text = await error.response.data.text();
+              const errorData = JSON.parse(text);
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch {
+              errorMessage = `서버 오류: ${error.response.status} ${error.response.statusText}`;
+            }
+          } else if (typeof error.response.data === 'object') {
+            errorMessage = error.response.data.message || error.response.data.error || errorMessage;
+          } else {
+            errorMessage = error.response.data || errorMessage;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+
+      addToast({
+        title: "오류 발생",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingStates(prev => ({ ...prev, exportExcel: false }));
+    }
+  };
+
   // 일정 체크박스 컬럼 정의
   const scheduleColumns = generateScheduleColumns(schedules);
 
@@ -195,9 +367,7 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={async () => {
-              alert("부서 GBS 꼬리표 다운로드 기능은 구현이 필요합니다.");
-            }}
+            onClick={handleDownloadUnivGbsLabel}
             disabled={loadingStates.exportDepartmentGbsTags}
             className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
           >
@@ -211,9 +381,7 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={async () => {
-              alert("수양회 GBS 꼬리표 다운로드 기능은 구현이 필요합니다.");
-            }}
+            onClick={handleDownloadRetreatGbsLabel}
             disabled={loadingStates.exportRetreatGbsTags}
             className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
           >
