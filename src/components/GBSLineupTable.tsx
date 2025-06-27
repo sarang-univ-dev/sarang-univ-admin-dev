@@ -19,6 +19,7 @@ import { formatDate } from "@/utils/formatDate";
 import { useGBSLineup } from "@/hooks/useGBSLineup";
 import { GBSLineupTableHeader } from "@/components/GBSLineup/TableHeader";
 import { GBSLineupTableRow } from "@/components/GBSLineup/GBSLineupTableRow";
+import { webAxios } from "@/lib/api/axios";
 
 export const GBSLineupTable = React.memo(function GBSLineupTable({
   registrations = [],
@@ -137,6 +138,8 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
   // 일정 체크박스 컬럼 정의
   const scheduleColumns = generateScheduleColumns(schedules);
 
+
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b">
@@ -149,7 +152,36 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
             variant="outline"
             size="sm"
             onClick={async () => {
-              alert("엑셀 다운로드 기능은 구현이 필요합니다.");
+              setLoadingStates(prev => ({ ...prev, exportExcel: true }));
+              try {
+                const response = await webAxios.get(
+                  `/api/v1/retreat/${retreatSlug}/line-up/full-lineup-excel`,
+                  { responseType: 'blob' }
+                );
+                
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `수양회 GBS 라인업_${formatDate(new Date().toISOString()).replace(/[: ]/g, '_').replace(/\(/g, '').replace(/\)/g, '')}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                
+                addToast({
+                  title: "성공",
+                  description: "엑셀 파일이 다운로드되었습니다.",
+                  variant: "success",
+                });
+              } catch (error) {
+                console.error("엑셀 다운로드 중 오류 발생:", error);
+                addToast({
+                  title: "오류 발생",
+                  description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+                  variant: "destructive",
+                });
+              } finally {
+                setLoadingStates(prev => ({ ...prev, exportExcel: false }));
+              }
             }}
             disabled={loadingStates.exportExcel}
             className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors whitespace-nowrap"
