@@ -20,6 +20,7 @@ import { useGBSLineup } from "@/hooks/useGBSLineup";
 import { GBSLineupTableHeader } from "@/components/GBSLineup/TableHeader";
 import { GBSLineupTableRow } from "@/components/GBSLineup/GBSLineupTableRow";
 import { webAxios } from "@/lib/api/axios";
+import { AxiosError } from "axios";
 
 export const GBSLineupTable = React.memo(function GBSLineupTable({
   registrations = [],
