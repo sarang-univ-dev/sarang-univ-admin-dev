@@ -63,6 +63,7 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
     setScheduleMemoValues,
     isLoading,
     debouncedUpdateMemo,
+    debouncedUpdateGbsNumber,
     handleSaveGbsNumber,
     handleSaveMemo,
     handleDeleteMemo,
@@ -123,10 +124,10 @@ export const GBSLineupTable = React.memo(function GBSLineupTable({
     setMemoBgColors(prev => ({ ...prev, [id]: color }));
   }, [setMemoBgColors]);
 
-  // GBS 번호 입력 변경
+  // GBS 번호 입력 변경 - 디바운싱 적용
   const handleGbsNumberInputChange = useCallback((id: string, value: string) => {
-    setGbsNumberInputs(prev => ({ ...prev, [id]: value }));
-  }, [setGbsNumberInputs]);
+    debouncedUpdateGbsNumber(id, value);
+  }, [debouncedUpdateGbsNumber]);
 
   // 스케줄 메모 값 변경
   const handleScheduleMemoValueChange = useCallback((id: string, value: string) => {

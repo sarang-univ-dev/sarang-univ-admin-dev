@@ -137,8 +137,8 @@ export function GBSLineupManagementTable({
                 }
             );
 
-            // 데이터 리프레시(혹은 mutate, 직접 set 등)
-            await mutate(gbsListEndpoint); // swr이면 이렇게!
+            // 데이터 리프레시 - 강제 리밸리데이션
+            await mutate(gbsListEndpoint, undefined, { revalidate: true });
 
             addToast({
                 title: "성공",
@@ -176,8 +176,8 @@ export function GBSLineupManagementTable({
                 }
             );
 
-            // 데이터 리프레시(혹은 mutate, 직접 set 등)
-            await mutate(gbsListEndpoint); // swr이면 이렇게!
+            // 데이터 리프레시 - 강제 리밸리데이션
+            await mutate(gbsListEndpoint, undefined, { revalidate: true });
 
             addToast({
                 title: "성공",
@@ -212,8 +212,8 @@ export function GBSLineupManagementTable({
                 }
             );
 
-            // 데이터 리프레시(혹은 mutate, 직접 set 등)
-            await mutate(gbsListEndpoint); // swr이면 이렇게!
+            // 데이터 리프레시 - 강제 리밸리데이션
+            await mutate(gbsListEndpoint, undefined, { revalidate: true });
 
             addToast({
                 title: "성공",
@@ -245,8 +245,8 @@ export function GBSLineupManagementTable({
                 }
             );
 
-            // 데이터 리프레시(혹은 mutate, 직접 set 등)
-            await mutate(gbsListEndpoint); // swr이면 이렇게!
+            // 데이터 리프레시 - 강제 리밸리데이션
+            await mutate(gbsListEndpoint, undefined, { revalidate: true });
 
             addToast({
                 title: "성공",
@@ -275,8 +275,8 @@ export function GBSLineupManagementTable({
                 `/api/v1/retreat/${retreatSlug}/line-up/${id}/unassign-gbs-leaders`,
             );
 
-            // 데이터 리프레시(혹은 mutate, 직접 set 등)
-            await mutate(gbsListEndpoint); // swr이면 이렇게!
+            // 데이터 리프레시 - 강제 리밸리데이션
+            await mutate(gbsListEndpoint, undefined, { revalidate: true });
 
             addToast({
                 title: "성공",
@@ -337,8 +337,8 @@ export function GBSLineupManagementTable({
                 }
             );
 
-            // 데이터 리프레시
-            await mutate(gbsListEndpoint);
+            // 데이터 리프레시 - 강제 리밸리데이션
+            await mutate(gbsListEndpoint, undefined, { revalidate: true });
 
             addToast({
                 title: "성공",

@@ -39,7 +39,7 @@ interface GBSLineupTableRowProps {
   onMemoValueChange: (id: string, value: string) => void;
   onMemoBgColorChange: (id: string, color: string) => void;
   onGbsNumberInputChange: (id: string, value: string) => void;
-  onSaveGbsNumber: (row: GBSLineupRow) => void;
+  onSaveGbsNumber: (row: GBSLineupRow & { inputValue?: string; enterKeyTime?: number }) => void;
   onStartEditScheduleMemo: (id: string, currentMemo: string) => void;
   onCancelEditScheduleMemo: (id: string) => void;
   onSaveScheduleMemo: (id: string) => void;
@@ -145,9 +145,21 @@ export const GBSLineupTableRow = memo<GBSLineupTableRowProps>(({
   onSaveScheduleMemo,
   onScheduleMemoValueChange,
 }) => {
-  const handleGbsNumberKeyDown = useCallback((e: React.KeyboardEvent) => {
+  const handleGbsNumberKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      onSaveGbsNumber(row);
+      // 실시간 input 값을 직접 전달하여 디바운싱 지연 문제 해결
+      const inputValue = e.currentTarget.value;
+      const enterKeyTime = performance.now();
+      
+      console.log('⌨️ 엔터키 입력:', {
+        rowId: row.id,
+        inputValue,
+        timestamp: new Date().toISOString(),
+        performanceTime: enterKeyTime
+      });
+      
+      // 성능 측정을 위한 시작 시간을 함께 전달
+      onSaveGbsNumber({ ...row, inputValue, enterKeyTime });
     }
   }, [onSaveGbsNumber, row]);
 
