@@ -5,7 +5,6 @@ import Cookies from "js-cookie";
 export const webAxios = Axios.create({
   baseURL: config.API_HOST,
   withCredentials: true,
-  timeout: 1000 * 10,
   headers: {
     Accept: "application/json",
   },
