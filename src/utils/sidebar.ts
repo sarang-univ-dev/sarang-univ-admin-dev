@@ -23,6 +23,8 @@ const PAGE_LABELS: Record<PagePath, string> = {
   [PagePath.DORMITORY_TEAM_MEMBER] : '인원관리 팀원 페이지',
   [PagePath.ASSIGN_GBS_LOCATION] : 'GBS 장소 배정',
   [PagePath.MEAL_CHECK] : '식사 체크',
+  [PagePath.DORMITORY_ASSIGNMENT] : '숙소 배정',
+  [PagePath.SHUTTLE_CHECK] : '셔틀버스 체크',
 }
 
 export function getSidebarMenu(
