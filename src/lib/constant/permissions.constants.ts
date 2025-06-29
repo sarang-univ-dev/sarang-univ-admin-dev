@@ -17,6 +17,8 @@ export enum PagePath {
   DORMITORY_TEAM_MEMBER = "/dormitory-team-member",
   ASSIGN_GBS_LOCATION = "/assign-gbs-location",
   MEAL_CHECK = "/meal-check",
+  DORMITORY_ASSIGNMENT = "/dormitory-assignment",
+  SHUTTLE_CHECK = "/shuttle-check",
 }
 
 export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
@@ -33,11 +35,25 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
     PagePath.UNIV_GROUP_BUS,
   ],
 
-  [UserRole.LINEUP_STAFF]: [PagePath.GBS_LINE_UP, PagePath.GBS_LINE_UP_MANAGEMENT, PagePath.LINEUP_VIEW_CHANGES],
+  [UserRole.LINEUP_STAFF]: [
+    PagePath.GBS_LINE_UP, 
+    PagePath.GBS_LINE_UP_MANAGEMENT, 
+    PagePath.LINEUP_VIEW_CHANGES
+  ],
 
-  [UserRole.UNIV_GROUP_DORMITORY_MEMBER]: [PagePath.DORMITORY_TEAM_MEMBER, PagePath.MEAL_CHECK],
+  [UserRole.UNIV_GROUP_DORMITORY_MEMBER]: [
+    PagePath.DORMITORY_TEAM_MEMBER, 
+    PagePath.MEAL_CHECK,
+    PagePath.SHUTTLE_CHECK
+    
+  ],
 
-  [UserRole.DORMITORY_STAFF]: [PagePath.ASSIGN_GBS_LOCATION, PagePath.DORM_VIEW_CHANGES, PagePath.MEAL_CHECK],
+  [UserRole.DORMITORY_STAFF]: [
+    PagePath.ASSIGN_GBS_LOCATION, 
+    PagePath.DORM_VIEW_CHANGES, 
+    PagePath.MEAL_CHECK,
+    PagePath.DORMITORY_ASSIGNMENT
+  ],
 
   [UserRole.SHUTTLE_BUS_BOARDING_STAFF]: [],
 
