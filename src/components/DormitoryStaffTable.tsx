@@ -48,23 +48,281 @@ interface DormitoryStaffTableProps {
 }
 
 interface GroupedDormitoryData {
-  [gbsNumber: string]: Array<{
-    id: number;
-    gbsNumber: number | null;
-    department: string;
-    gender: Gender;
-    grade: string;
-    name: string;
-    phoneNumber: string;
-    isLeader: boolean;
-    dormitoryLocation?: string;
-    univGroupNumber: number;
-    gradeNumber: number;
-    schedule: Record<string, boolean>;
-    dormitoryStaffMemo?: string;
-    dormitoryStaffMemoId?: string;
-  }>;
+  [gbsNumber: string]: Array<DormitoryTableRowData>;
 }
+
+interface DormitoryTableRowData {
+  id: number;
+  gbsNumber: number | null;
+  department: string;
+  gender: Gender;
+  grade: string;
+  name: string;
+  phoneNumber: string;
+  isLeader: boolean;
+  dormitoryLocation?: string;
+  univGroupNumber: number;
+  gradeNumber: number;
+  schedule: Record<string, boolean>;
+  dormitoryStaffMemo?: string;
+  dormitoryStaffMemoId?: string;
+}
+
+interface DormitoryTableRowProps {
+  row: DormitoryTableRowData;
+  isFirstInGroup: boolean;
+  groupSize: number;
+  scheduleColumns: { key: string; label: string; bgColorClass: string }[];
+  editingMemo: Record<number, boolean>;
+  memoValues: Record<number, string>;
+  isMemoLoading: (id: number, action: string) => boolean;
+  getDormitoryOptionsForUser: (dormitoryLocation?: string) => {
+    options: any[];
+    currentDormitoryId: number | null;
+  };
+  assignDormitory: any; // from useMutation
+  handleAssignDormitory: (
+    userRetreatRegistrationId: number,
+    dormitoryId: number | null
+  ) => Promise<void>;
+  handleStartEditMemo: (id: number, currentMemo?: string) => void;
+  setMemoValues: React.Dispatch<React.SetStateAction<Record<number, string>>>;
+  handleSaveMemo: (id: number) => Promise<void>;
+  handleCancelEditMemo: (id: number) => void;
+  handleConfirmDeleteMemo: (id: number, memoId?: string) => void;
+}
+
+const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
+  ({
+    row,
+    isFirstInGroup,
+    groupSize,
+    scheduleColumns,
+    editingMemo,
+    memoValues,
+    isMemoLoading,
+    getDormitoryOptionsForUser,
+    assignDormitory,
+    handleAssignDormitory,
+    handleStartEditMemo,
+    setMemoValues,
+    handleSaveMemo,
+    handleCancelEditMemo,
+    handleConfirmDeleteMemo,
+  }) => {
+    const cellClassName = row.isLeader ? "bg-cyan-200" : "";
+    return (
+      <TableRow key={row.id}>
+        {/* GBS 번호, 전참/부분참, 남/여 - rowSpan 처리 */}
+        {isFirstInGroup && row.gbsNumber && (
+          <>
+            <TableCell
+              rowSpan={groupSize}
+              className={`align-middle font-bold text-center px-2 py-1 ${
+                groupSize > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""
+              }`}
+            >
+              {row.gbsNumber}
+            </TableCell>
+          </>
+        )}
+
+        {/* GBS 번호가 없는 경우 빈 셀 3개 */}
+        {!row.gbsNumber && (
+          <>
+            <TableCell className="text-center px-2 py-1">
+              <Badge variant="destructive">미배정</Badge>
+            </TableCell>
+          </>
+        )}
+
+        {/* 부서 */}
+        <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
+          {row.department}
+        </TableCell>
+
+        {/* 성별 */}
+        <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
+          <GenderBadge gender={row.gender} />
+        </TableCell>
+
+        {/* 학년 */}
+        <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
+          {row.grade}
+        </TableCell>
+
+        {/* 이름 */}
+        <TableCell
+          className={`text-center px-2 py-1 ${cellClassName} ${
+            row.isLeader ? "font-bold text-base" : ""
+          }`}
+        >
+          {row.name}
+        </TableCell>
+
+        {/* 전화번호 */}
+        <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
+          {row.phoneNumber}
+        </TableCell>
+
+        {/* 스케줄 체크박스들 */}
+        {scheduleColumns.map((col) => (
+          <TableCell
+            key={`${row.id}-${col.key}`}
+            className={`px-2 py-1 text-center group-hover:bg-gray-50 whitespace-nowrap ${cellClassName}`}
+          >
+            <Checkbox
+              checked={row.schedule[col.key]}
+              disabled
+              className={row.schedule[col.key] ? col.bgColorClass : ""}
+            />
+          </TableCell>
+        ))}
+
+        {/* 현재 숙소 */}
+        <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
+          {row.dormitoryLocation ? (
+            <Badge variant="secondary">{row.dormitoryLocation}</Badge>
+          ) : (
+            <Badge variant="outline">미배정</Badge>
+          )}
+        </TableCell>
+
+        {/* 숙소 배정 */}
+        <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
+          {(() => {
+            const { options, currentDormitoryId } = getDormitoryOptionsForUser(
+              row.dormitoryLocation
+            );
+
+            return (
+              <Select
+                disabled={assignDormitory.isPending}
+                value={
+                  currentDormitoryId ? currentDormitoryId.toString() : "null"
+                }
+                onValueChange={(value) => {
+                  if (value === "null") {
+                    handleAssignDormitory(row.id, null); // null을 보내서 미배정 처리
+                  } else {
+                    handleAssignDormitory(row.id, parseInt(value));
+                  }
+                }}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="숙소 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="null">
+                    <span className="text-gray-500">배정 취소</span>
+                  </SelectItem>
+                  {options.map((dormitory) => (
+                    <SelectItem
+                      key={dormitory.id}
+                      value={dormitory.id.toString()}
+                    >
+                      {dormitory.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
+        </TableCell>
+
+        {/* 인원관리 간사 메모 */}
+        <TableCell
+          className={`group-hover:bg-gray-50 text-left px-2 py-1 ${cellClassName}`}
+        >
+          {editingMemo[row.id] ? (
+            <div className="flex flex-col gap-2 p-2">
+              <Textarea
+                value={memoValues[row.id] || ""}
+                onChange={(e) =>
+                  setMemoValues((prev) => ({
+                    ...prev,
+                    [row.id]: e.target.value,
+                  }))
+                }
+                placeholder="인원관리 간사 메모를 입력하세요..."
+                className="text-sm resize-none overflow-hidden w-full"
+                style={{
+                  height:
+                    Math.max(
+                      60,
+                      Math.min(
+                        200,
+                        ((memoValues[row.id] || "").split("\n").length || 1) * 20 + 20
+                      )
+                    ) + "px",
+                }}
+                disabled={isMemoLoading(row.id, "memo")}
+                rows={Math.max(
+                  3,
+                  Math.min(10, (memoValues[row.id] || "").split("\n").length + 1)
+                )}
+              />
+              <div className="flex gap-1 justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleSaveMemo(row.id)}
+                  disabled={isMemoLoading(row.id, "memo")}
+                  className="h-7 px-2"
+                >
+                  {isMemoLoading(row.id, "memo") ? (
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Save className="h-3 w-3" />
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleCancelEditMemo(row.id)}
+                  disabled={isMemoLoading(row.id, "memo")}
+                  className="h-7 px-2"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 p-2">
+              <div
+                className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                onClick={() =>
+                  handleStartEditMemo(row.id, row.dormitoryStaffMemo)
+                }
+              >
+                {row.dormitoryStaffMemo ||
+                  "인원관리 간사 메모를 추가하려면 클릭하세요"}
+              </div>
+              {row.dormitoryStaffMemo && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    handleConfirmDeleteMemo(row.id, row.dormitoryStaffMemoId)
+                  }
+                  disabled={isMemoLoading(row.id, "delete_memo")}
+                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1"
+                >
+                  {isMemoLoading(row.id, "delete_memo") ? (
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Trash2 className="h-3 w-3" />
+                  )}
+                </Button>
+              )}
+            </div>
+          )}
+        </TableCell>
+      </TableRow>
+    );
+  }
+);
+DormitoryTableRow.displayName = "DormitoryTableRow";
 
 interface DormitoryTableContentProps {
   gender: Gender;
@@ -272,7 +530,7 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
       dormitoryId: number | null
     ) => {
       try {
-        await assignDormitory.mutateAsync({
+        const result = await assignDormitory.mutateAsync({
           userRetreatRegistrationId,
           dormitoryId,
         });
@@ -280,11 +538,19 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
         // 숙소 배정 후 dormitory staff 데이터도 다시 불러오기
         mutate();
         
-        addToast({
-          title: "성공",
-          description: dormitoryId === null ? "숙소 배정이 취소되었습니다." : "숙소가 성공적으로 배정되었습니다.",
-          variant: "success",
-        });
+        if (result && result.message) {
+          addToast({
+            title: "정보",
+            description: result.message,
+            variant: "default",
+          });
+        } else {
+          addToast({
+            title: "성공",
+            description: dormitoryId === null ? "숙소 배정이 취소되었습니다." : "숙소가 성공적으로 배정되었습니다.",
+            variant: "success",
+          });
+        }
       } catch (error) {
         addToast({
           title: "오류",
@@ -373,217 +639,26 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
                     return groupRows.map((row, idx) => {
                       const isFirstInGroup = idx === 0;
                       const groupSize = groupRows.length;
-                      const cellClassName = row.isLeader ? "bg-cyan-200" : "";
 
                       return (
-                        <TableRow key={row.id}>
-                          {/* GBS 번호, 전참/부분참, 남/여 - rowSpan 처리 */}
-                          {isFirstInGroup && row.gbsNumber && (
-                            <>
-                              <TableCell
-                                rowSpan={groupSize}
-                                className={`align-middle font-bold text-center px-2 py-1 ${
-                                  groupSize > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""
-                                }`}
-                              >
-                                {row.gbsNumber}
-                              </TableCell>
-                            </>
-                          )}
-
-                          {/* GBS 번호가 없는 경우 빈 셀 3개 */}
-                          {!row.gbsNumber && (
-                            <>
-                              <TableCell className="text-center px-2 py-1">
-                                <Badge variant="destructive">미배정</Badge>
-                              </TableCell>
-                            </>
-                          )}
-
-                          {/* 부서 */}
-                          <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
-                            {row.department}
-                          </TableCell>
-
-                          {/* 성별 */}
-                          <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
-                            <GenderBadge gender={row.gender} />
-                          </TableCell>
-
-                          {/* 학년 */}
-                          <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
-                            {row.grade}
-                          </TableCell>
-
-                          {/* 이름 */}
-                          <TableCell className={`text-center px-2 py-1 ${cellClassName} ${row.isLeader ? "font-bold text-base" : ""}`}>
-                            {row.name}
-                          </TableCell>
-
-                          {/* 전화번호 */}
-                          <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
-                            {row.phoneNumber}
-                          </TableCell>
-
-                          {/* 스케줄 체크박스들 */}
-                          {scheduleColumns.map(col => (
-                            <TableCell
-                              key={`${row.id}-${col.key}`}
-                              className={`px-2 py-1 text-center group-hover:bg-gray-50 whitespace-nowrap ${cellClassName}`}
-                            >
-                              <Checkbox
-                                checked={row.schedule[col.key]}
-                                disabled
-                                className={row.schedule[col.key] ? col.bgColorClass : ""}
-                              />
-                            </TableCell>
-                          ))}
-
-                          {/* 현재 숙소 */}
-                          <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
-                            {row.dormitoryLocation ? (
-                              <Badge variant="secondary">{row.dormitoryLocation}</Badge>
-                            ) : (
-                              <Badge variant="outline">미배정</Badge>
-                            )}
-                          </TableCell>
-
-                          {/* 숙소 배정 */}
-                          <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
-                            {(() => {
-                              const { options, currentDormitoryId } = getDormitoryOptionsForUser(row.dormitoryLocation);
-
-                              // 데이터가 아직 로딩 중이면 로딩 표시
-                              if (!allDormitories || !availableDormitories) {
-                                return (
-                                  <div className="w-48 h-10 bg-gray-100 animate-pulse rounded"></div>
-                                );
-                              }
-                              
-                              return (
-                                <Select
-                                  disabled={assignDormitory.isPending}
-                                  value={currentDormitoryId ? currentDormitoryId.toString() : "null"}
-                                  onValueChange={(value) => {
-                                    if (value === "null") {
-                                      handleAssignDormitory(row.id, null); // null을 보내서 미배정 처리
-                                    } else {
-                                      handleAssignDormitory(row.id, parseInt(value));
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger className="w-48">
-                                    <SelectValue placeholder="숙소 선택" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="null">
-                                      <span className="text-gray-500">배정 취소</span>
-                                    </SelectItem>
-                                    {options.map((dormitory) => (
-                                      <SelectItem key={dormitory.id} value={dormitory.id.toString()}>
-                                        {dormitory.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              );
-                            })()}
-                          </TableCell>
-
-                          {/* 인원관리 간사 메모 */}
-                          <TableCell className={`group-hover:bg-gray-50 text-left px-2 py-1 ${cellClassName}`}>
-                            {editingMemo[row.id] ? (
-                              <div className="flex flex-col gap-2 p-2">
-                                <Textarea
-                                  value={memoValues[row.id] || ""}
-                                  onChange={e =>
-                                    setMemoValues(prev => ({
-                                      ...prev,
-                                      [row.id]: e.target.value,
-                                    }))
-                                  }
-                                  placeholder="인원관리 간사 메모를 입력하세요..."
-                                  className="text-sm resize-none overflow-hidden w-full"
-                                  style={{
-                                    height:
-                                      Math.max(
-                                        60,
-                                        Math.min(
-                                          200,
-                                          (memoValues[row.id] || "").split("\n")
-                                            .length *
-                                            20 +
-                                            20
-                                        )
-                                      ) + "px",
-                                  }}
-                                  disabled={isMemoLoading(row.id, "memo")}
-                                  rows={Math.max(
-                                    3,
-                                    Math.min(
-                                      10,
-                                      (memoValues[row.id] || "").split("\n")
-                                        .length + 1
-                                    )
-                                  )}
-                                />
-                                <div className="flex gap-1 justify-end">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleSaveMemo(row.id)}
-                                    disabled={isMemoLoading(row.id, "memo")}
-                                    className="h-7 px-2"
-                                  >
-                                    {isMemoLoading(row.id, "memo") ? (
-                                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                    ) : (
-                                      <Save className="h-3 w-3" />
-                                    )}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleCancelEditMemo(row.id)}
-                                    disabled={isMemoLoading(row.id, "memo")}
-                                    className="h-7 px-2"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-start gap-2 p-2">
-                                <div
-                                  className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
-                                  onClick={() =>
-                                    handleStartEditMemo(row.id, row.dormitoryStaffMemo)
-                                  }
-                                >
-                                  {row.dormitoryStaffMemo ||
-                                    "인원관리 간사 메모를 추가하려면 클릭하세요"}
-                                </div>
-                                {row.dormitoryStaffMemo && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() =>
-                                      handleConfirmDeleteMemo(row.id, row.dormitoryStaffMemoId)
-                                    }
-                                    disabled={isMemoLoading(row.id, "delete_memo")}
-                                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1"
-                                  >
-                                    {isMemoLoading(row.id, "delete_memo") ? (
-                                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                    ) : (
-                                      <Trash2 className="h-3 w-3" />
-                                    )}
-                                  </Button>
-                                )}
-                              </div>
-                            )}
-                          </TableCell>
-                        </TableRow>
+                        <DormitoryTableRow
+                          key={row.id}
+                          row={row}
+                          isFirstInGroup={isFirstInGroup}
+                          groupSize={groupSize}
+                          scheduleColumns={scheduleColumns}
+                          editingMemo={editingMemo}
+                          memoValues={memoValues}
+                          isMemoLoading={isMemoLoading}
+                          getDormitoryOptionsForUser={getDormitoryOptionsForUser}
+                          assignDormitory={assignDormitory}
+                          handleAssignDormitory={handleAssignDormitory}
+                          handleStartEditMemo={handleStartEditMemo}
+                          setMemoValues={setMemoValues}
+                          handleSaveMemo={handleSaveMemo}
+                          handleCancelEditMemo={handleCancelEditMemo}
+                          handleConfirmDeleteMemo={handleConfirmDeleteMemo}
+                        />
                       );
                     });
                   })}
