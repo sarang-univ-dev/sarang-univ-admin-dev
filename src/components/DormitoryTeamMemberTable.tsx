@@ -278,8 +278,12 @@ export const DormitoryTeamMemberTable = React.memo(
       [schedules]
     );
 
-    // 테이블 너비를 100%로 설정하고 내용에 맞게 자동 조정
-    const totalTableWidth = "100%";
+    // 테이블의 고정 너비 계산
+    const totalTableWidth = useMemo(() => {
+      const baseWidth = 80 + 60 + 60 + 60 + 100 + 120 + 250; // 기본 컬럼들의 너비 합계
+      const scheduleWidth = scheduleColumns.length * 50; // 스케줄 컬럼들의 너비
+      return baseWidth + scheduleWidth;
+    }, [scheduleColumns]);
 
     // 데이터 변환 및 필터링
     const flatRows = useMemo(() => {
@@ -440,10 +444,14 @@ export const DormitoryTeamMemberTable = React.memo(
             </div>
 
             {/* Table with virtualized body */}
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               {/* Header */}
               <Table
-                style={{ width: totalTableWidth, tableLayout: "fixed" }}
+                style={{
+                  width: totalTableWidth,
+                  tableLayout: "fixed",
+                  minWidth: totalTableWidth,
+                }}
                 className="w-full"
               >
                 <TableHeader>
@@ -508,7 +516,11 @@ export const DormitoryTeamMemberTable = React.memo(
                     <div style={style}>
                       <Table
                         className="w-full"
-                        style={{ tableLayout: "fixed" }}
+                        style={{
+                          tableLayout: "fixed",
+                          width: totalTableWidth,
+                          minWidth: totalTableWidth,
+                        }}
                       >
                         <TableBody>
                           <DormitoryTableRow

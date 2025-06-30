@@ -526,7 +526,12 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
       return [];
     }, [scheduleColumns]);
 
-    const totalTableWidth = "100%";
+    // 테이블의 고정 너비 계산
+    const totalTableWidth = useMemo(() => {
+      const baseWidth = 80 + 60 + 60 + 60 + 100 + 120 + 100 + 200 + 250; // 기본 컬럼들의 너비 합계
+      const scheduleWidth = scheduleColumns.length * 50; // 스케줄 컬럼들의 너비
+      return baseWidth + scheduleWidth;
+    }, [scheduleColumns]);
 
     // flatten + group + filter
     const flatRows = useMemo(() => {
@@ -617,10 +622,14 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
         </div>
 
         {/* Table with virtualized body */}
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           {/* header */}
           <Table
-            style={{ width: totalTableWidth, tableLayout: "fixed" }}
+            style={{
+              width: totalTableWidth,
+              tableLayout: "fixed",
+              minWidth: totalTableWidth,
+            }}
             className="w-full"
           >
             <TableHeader>
@@ -687,7 +696,14 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
               const { row, isFirstInGroup, groupSize } = data[index];
               return (
                 <div style={style}>
-                  <Table className="w-full" style={{ tableLayout: "fixed" }}>
+                  <Table
+                    className="w-full"
+                    style={{
+                      tableLayout: "fixed",
+                      width: totalTableWidth,
+                      minWidth: totalTableWidth,
+                    }}
+                  >
                     <TableBody>
                       <DormitoryTableRow
                         row={row}
