@@ -31,7 +31,7 @@ const fetcher = async (url: string) => {
       Authorization: `Bearer ${accessToken}`,
     },
   });
-  
+
   // 새로운 dormitory 엔드포인트 응답 구조 사용
   return response.data.dormitoryStaffRegistrations;
 };
@@ -41,9 +41,5 @@ export function useDormitoryStaff(retreatSlug?: string) {
     ? `/api/v1/retreat/${retreatSlug}/dormitory/staff-registrations`
     : null;
 
-  return useSWR<IDormitoryStaffRegistration[], Error>(endpoint, fetcher, {
-    // 데이터가 자주 변경될 수 있으므로 적절한 리패치 설정
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-  });
-} 
+  return useSWR<IDormitoryStaffRegistration[], Error>(endpoint, fetcher, {});
+}
