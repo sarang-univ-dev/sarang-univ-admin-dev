@@ -513,7 +513,13 @@ export const DormitoryTeamMemberTable = React.memo(
                 }) => {
                   const { row, isFirstInGroup, groupSize } = data[index];
                   return (
-                    <div style={style}>
+                    <div
+                      style={{
+                        ...style,
+                        width: totalTableWidth,
+                        overflow: "hidden",
+                      }}
+                    >
                       <Table
                         className="w-full"
                         style={{
