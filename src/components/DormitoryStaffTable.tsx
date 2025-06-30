@@ -129,7 +129,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
       <TableRow>
         {/* GBS 번호 cell (no rowspan) */}
         <TableCell
-          className={`text-center px-2 py-1 whitespace-nowrap w-[80px] ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[80px] ${cellClassName}`}
         >
           {row.gbsNumber != null ? (
             row.gbsNumber
@@ -140,14 +140,14 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Department */}
         <TableCell
-          className={`text-center px-2 py-1 whitespace-nowrap w-[60px] ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[60px] ${cellClassName}`}
         >
           {row.department}
         </TableCell>
 
         {/* Gender */}
         <TableCell
-          className={`text-center px-2 py-1 whitespace-nowrap w-[60px] ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[60px] ${cellClassName}`}
         >
           <Badge variant={row.gender === Gender.MALE ? "default" : "secondary"}>
             {row.gender === Gender.MALE ? "형제" : "자매"}
@@ -156,14 +156,14 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Grade */}
         <TableCell
-          className={`text-center px-2 py-1 whitespace-nowrap w-[60px] ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[60px] ${cellClassName}`}
         >
           {row.grade}
         </TableCell>
 
         {/* Name */}
         <TableCell
-          className={`text-center px-2 py-1 whitespace-nowrap w-[100px] ${cellClassName} ${
+          className={`text-center px-3 py-2 whitespace-nowrap w-[100px] ${cellClassName} ${
             row.isLeader ? "font-bold text-base" : ""
           }`}
         >
@@ -172,7 +172,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Phone */}
         <TableCell
-          className={`text-center px-2 py-1 whitespace-nowrap w-[120px] ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[120px] ${cellClassName}`}
         >
           {row.phoneNumber}
         </TableCell>
@@ -181,7 +181,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
         {scheduleColumns.map((col, i) => (
           <TableCell
             key={`${row.id}-${col.key}`}
-            className={`px-2 py-1 text-center whitespace-nowrap w-[50px] ${cellClassName}`}
+            className={`px-3 py-2 text-center whitespace-nowrap w-[50px] ${cellClassName}`}
           >
             <Checkbox
               checked={row.schedule[col.key]}
@@ -193,7 +193,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Current dorm */}
         <TableCell
-          className={`text-center px-2 py-1 whitespace-nowrap w-[100px] ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[100px] ${cellClassName}`}
         >
           {row.dormitoryLocation ? (
             <Badge variant="secondary">{row.dormitoryLocation}</Badge>
@@ -204,7 +204,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Assign dorm */}
         <TableCell
-          className={`text-center px-2 py-1 w-[200px] ${cellClassName}`}
+          className={`text-center px-3 py-2 w-[200px] ${cellClassName}`}
         >
           <Select
             disabled={assignDormitory.isPending}
@@ -238,7 +238,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
         </TableCell>
 
         {/* Memo */}
-        <TableCell className={`text-left px-2 py-1 w-[250px] ${cellClassName}`}>
+        <TableCell className={`text-left px-3 py-2 w-[250px] ${cellClassName}`}>
           {editingMemo[row.id] ? (
             <div className="flex flex-col gap-2 p-2">
               <Textarea
@@ -334,7 +334,7 @@ interface DormitoryTableContentProps {
   schedules: any[];
 }
 
-const ROW_HEIGHT = 56; // adjust to match your row padding
+const ROW_HEIGHT = 64; // adjust to match your row padding
 
 const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
   function DormitoryTableContent({
@@ -634,39 +634,39 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
           >
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center px-2 py-1 whitespace-nowrap w-[80px]">
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[80px]">
                   GBS번호
                 </TableHead>
-                <TableHead className="text-center px-2 py-1 whitespace-nowrap w-[60px]">
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[60px]">
                   부서
                 </TableHead>
-                <TableHead className="text-center px-2 py-1 whitespace-nowrap w-[60px]">
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[60px]">
                   성별
                 </TableHead>
-                <TableHead className="text-center px-2 py-1 whitespace-nowrap w-[60px]">
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[60px]">
                   학년
                 </TableHead>
-                <TableHead className="text-center px-2 py-1 whitespace-nowrap w-[100px]">
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[100px]">
                   이름
                 </TableHead>
-                <TableHead className="text-center px-2 py-1 whitespace-nowrap w-[120px]">
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[120px]">
                   전화번호
                 </TableHead>
                 {scheduleColumns.map((col, i) => (
                   <TableHead
                     key={col.key}
-                    className="px-2 py-1 text-center whitespace-nowrap w-[50px]"
+                    className="px-3 py-2 text-center whitespace-nowrap w-[50px]"
                   >
                     <span className="text-xs">{col.label}</span>
                   </TableHead>
                 ))}
-                <TableHead className="text-center px-2 py-1 whitespace-nowrap w-[100px]">
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[100px]">
                   현재 숙소
                 </TableHead>
-                <TableHead className="text-center px-2 py-1 w-[200px]">
+                <TableHead className="text-center px-3 py-2 w-[200px]">
                   숙소 배정
                 </TableHead>
-                <TableHead className="text-center px-2 py-1 w-[250px]">
+                <TableHead className="text-center px-3 py-2 w-[250px]">
                   담당자 메모
                 </TableHead>
               </TableRow>
