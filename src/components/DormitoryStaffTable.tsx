@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  CSSProperties,
+} from "react";
+import { FixedSizeList as List } from "react-window";
 import {
   Table,
   TableBody,
@@ -29,26 +36,33 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+
 import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
-import { useAvailableDormitories, useAssignDormitory, useAllDormitories } from "@/hooks/use-available-dormitories";
+import {
+  useAvailableDormitories,
+  useAssignDormitory,
+  useAllDormitories,
+} from "@/hooks/use-available-dormitories";
 import { useToastStore } from "@/store/toast-store";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import { GenderBadge } from "@/components/Badge";
+
 import { COMPLETE_GROUP_ROW_COUNT } from "@/lib/constant/lineup.constant";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
-import { Checkbox } from "@/components/ui/checkbox";
 import { webAxios } from "@/lib/api/axios";
 import { AxiosError } from "axios";
-import { UserRetreatRegistrationMemoType, Gender } from "@/types";
 import Cookies from "js-cookie";
 
-interface DormitoryStaffTableProps {
-  retreatSlug: string;
-  schedules: any[];
-}
+import { UserRetreatRegistrationMemoType, Gender } from "@/types";
 
-interface GroupedDormitoryData {
-  [gbsNumber: string]: Array<DormitoryTableRowData>;
+// Simple debounce hook
+function useDebounce<T>(value: T, delay = 300): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debounced;
 }
 
 interface DormitoryTableRowData {
@@ -80,7 +94,7 @@ interface DormitoryTableRowProps {
     options: any[];
     currentDormitoryId: number | null;
   };
-  assignDormitory: any; // from useMutation
+  assignDormitory: any;
   handleAssignDormitory: (
     userRetreatRegistrationId: number,
     dormitoryId: number | null
@@ -111,47 +125,45 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
     handleConfirmDeleteMemo,
   }) => {
     const cellClassName = row.isLeader ? "bg-cyan-200" : "";
+
+    // Compute dorm options once per render
+    const { options, currentDormitoryId } = getDormitoryOptionsForUser(
+      row.dormitoryLocation
+    );
+
     return (
-      <TableRow key={row.id}>
-        {/* GBS 번호, 전참/부분참, 남/여 - rowSpan 처리 */}
-        {isFirstInGroup && row.gbsNumber && (
-          <>
-            <TableCell
-              rowSpan={groupSize}
-              className={`align-middle font-bold text-center px-2 py-1 ${
-                groupSize > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""
-              }`}
-            >
-              {row.gbsNumber}
-            </TableCell>
-          </>
-        )}
+      <TableRow>
+        {/* GBS 번호 cell (no rowspan) */}
+        <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
+          {row.gbsNumber != null ? (
+            isFirstInGroup ? (
+              row.gbsNumber
+            ) : (
+              ""
+            )
+          ) : (
+            <Badge variant="destructive">미배정</Badge>
+          )}
+        </TableCell>
 
-        {/* GBS 번호가 없는 경우 빈 셀 3개 */}
-        {!row.gbsNumber && (
-          <>
-            <TableCell className="text-center px-2 py-1">
-              <Badge variant="destructive">미배정</Badge>
-            </TableCell>
-          </>
-        )}
-
-        {/* 부서 */}
+        {/* Department */}
         <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
           {row.department}
         </TableCell>
 
-        {/* 성별 */}
+        {/* Gender */}
         <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
-          <GenderBadge gender={row.gender} />
+          <Badge variant={row.gender === Gender.MALE ? "default" : "secondary"}>
+            {row.gender === Gender.MALE ? "형제" : "자매"}
+          </Badge>
         </TableCell>
 
-        {/* 학년 */}
+        {/* Grade */}
         <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
           {row.grade}
         </TableCell>
 
-        {/* 이름 */}
+        {/* Name */}
         <TableCell
           className={`text-center px-2 py-1 ${cellClassName} ${
             row.isLeader ? "font-bold text-base" : ""
@@ -160,16 +172,16 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
           {row.name}
         </TableCell>
 
-        {/* 전화번호 */}
+        {/* Phone */}
         <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
           {row.phoneNumber}
         </TableCell>
 
-        {/* 스케줄 체크박스들 */}
-        {scheduleColumns.map((col) => (
+        {/* Schedule checkboxes */}
+        {scheduleColumns.map(col => (
           <TableCell
             key={`${row.id}-${col.key}`}
-            className={`px-2 py-1 text-center group-hover:bg-gray-50 whitespace-nowrap ${cellClassName}`}
+            className={`px-2 py-1 text-center whitespace-nowrap ${cellClassName}`}
           >
             <Checkbox
               checked={row.schedule[col.key]}
@@ -179,7 +191,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
           </TableCell>
         ))}
 
-        {/* 현재 숙소 */}
+        {/* Current dorm */}
         <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
           {row.dormitoryLocation ? (
             <Badge variant="secondary">{row.dormitoryLocation}</Badge>
@@ -188,79 +200,66 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
           )}
         </TableCell>
 
-        {/* 숙소 배정 */}
+        {/* Assign dorm */}
         <TableCell className={`text-center px-2 py-1 ${cellClassName}`}>
-          {(() => {
-            const { options, currentDormitoryId } = getDormitoryOptionsForUser(
-              row.dormitoryLocation
-            );
-
-            return (
-              <Select
-                disabled={assignDormitory.isPending}
-                value={
-                  currentDormitoryId ? currentDormitoryId.toString() : "null"
-                }
-                onValueChange={(value) => {
-                  if (value === "null") {
-                    handleAssignDormitory(row.id, null); // null을 보내서 미배정 처리
-                  } else {
-                    handleAssignDormitory(row.id, parseInt(value));
-                  }
-                }}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="숙소 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="null">
-                    <span className="text-gray-500">배정 취소</span>
-                  </SelectItem>
-                  {options.map((dormitory) => (
-                    <SelectItem
-                      key={dormitory.id}
-                      value={dormitory.id.toString()}
-                    >
-                      {dormitory.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            );
-          })()}
+          <Select
+            disabled={assignDormitory.isPending}
+            value={
+              currentDormitoryId != null
+                ? currentDormitoryId.toString()
+                : "null"
+            }
+            onValueChange={value => {
+              if (value === "null") {
+                handleAssignDormitory(row.id, null);
+              } else {
+                handleAssignDormitory(row.id, parseInt(value));
+              }
+            }}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="숙소 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="null">
+                <span className="text-gray-500">배정 취소</span>
+              </SelectItem>
+              {options.map(d => (
+                <SelectItem key={d.id} value={d.id.toString()}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </TableCell>
 
-        {/* 인원관리 간사 메모 */}
-        <TableCell
-          className={`group-hover:bg-gray-50 text-left px-2 py-1 ${cellClassName}`}
-        >
+        {/* Memo */}
+        <TableCell className={`text-left px-2 py-1 ${cellClassName}`}>
           {editingMemo[row.id] ? (
             <div className="flex flex-col gap-2 p-2">
               <Textarea
                 value={memoValues[row.id] || ""}
-                onChange={(e) =>
-                  setMemoValues((prev) => ({
-                    ...prev,
+                onChange={e =>
+                  setMemoValues(p => ({
+                    ...p,
                     [row.id]: e.target.value,
                   }))
                 }
-                placeholder="인원관리 간사 메모를 입력하세요..."
-                className="text-sm resize-none overflow-hidden w-full"
+                placeholder="메모를 입력하세요..."
+                className="resize-none w-full"
                 style={{
                   height:
                     Math.max(
                       60,
                       Math.min(
                         200,
-                        ((memoValues[row.id] || "").split("\n").length || 1) * 20 + 20
+                        ((memoValues[row.id] || "").split("\n").length || 1) *
+                          20 +
+                          20
                       )
                     ) + "px",
                 }}
                 disabled={isMemoLoading(row.id, "memo")}
-                rows={Math.max(
-                  3,
-                  Math.min(10, (memoValues[row.id] || "").split("\n").length + 1)
-                )}
               />
               <div className="flex gap-1 justify-end">
                 <Button
@@ -271,7 +270,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
                   className="h-7 px-2"
                 >
                   {isMemoLoading(row.id, "memo") ? (
-                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <div className="animate-spin h-3 w-3 rounded-full border-2 border-current border-t-transparent" />
                   ) : (
                     <Save className="h-3 w-3" />
                   )}
@@ -290,13 +289,12 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
           ) : (
             <div className="flex items-start gap-2 p-2">
               <div
-                className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded min-h-[24px] whitespace-pre-wrap break-words"
+                className="flex-1 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 p-2 rounded break-words"
                 onClick={() =>
                   handleStartEditMemo(row.id, row.dormitoryStaffMemo)
                 }
               >
-                {row.dormitoryStaffMemo ||
-                  "인원관리 간사 메모를 추가하려면 클릭하세요"}
+                {row.dormitoryStaffMemo || "클릭하여 메모 추가"}
               </div>
               {row.dormitoryStaffMemo && (
                 <Button
@@ -306,10 +304,10 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
                     handleConfirmDeleteMemo(row.id, row.dormitoryStaffMemoId)
                   }
                   disabled={isMemoLoading(row.id, "delete_memo")}
-                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1"
+                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 mt-1"
                 >
                   {isMemoLoading(row.id, "delete_memo") ? (
-                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <div className="animate-spin h-3 w-3 rounded-full border-2 border-current border-t-transparent" />
                   ) : (
                     <Trash2 className="h-3 w-3" />
                   )}
@@ -328,152 +326,214 @@ interface DormitoryTableContentProps {
   gender: Gender;
   retreatSlug: string;
   searchTerm: string;
-  setSearchTerm: (value: string) => void;
+  setSearchTerm: (v: string) => void;
   schedules: any[];
 }
 
+const ROW_HEIGHT = 56; // adjust to match your row padding
+
 const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
-  function DormitoryTableContent({ gender, retreatSlug, searchTerm, setSearchTerm, schedules }) {
-    const addToast = useToastStore(state => state.add);
+  function DormitoryTableContent({
+    gender,
+    retreatSlug,
+    searchTerm,
+    setSearchTerm,
+    schedules,
+  }) {
+    const addToast = useToastStore(s => s.add);
     const confirmDialog = useConfirmDialogStore();
 
-    const { data: dormitoryStaffData, isLoading: isLoadingUsers, mutate } = useDormitoryStaff(retreatSlug);
-    const { data: availableDormitories } = useAvailableDormitories(retreatSlug, gender);
+    const {
+      data: dormitoryStaffData,
+      isLoading: isLoadingUsers,
+      mutate,
+    } = useDormitoryStaff(retreatSlug);
+    const { data: availableDormitories } = useAvailableDormitories(
+      retreatSlug,
+      gender
+    );
     const { data: allDormitories } = useAllDormitories(retreatSlug, gender);
     const assignDormitory = useAssignDormitory(retreatSlug);
 
-    // 메모 관련 상태
     const [editingMemo, setEditingMemo] = useState<Record<number, boolean>>({});
     const [memoValues, setMemoValues] = useState<Record<number, string>>({});
-    const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+    const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
+      {}
+    );
 
-    // 스케줄 컬럼 생성
-    const scheduleColumns = useMemo(() => generateScheduleColumns(schedules), [schedules]);
+    const setLoading = useCallback(
+      (id: number, action: string, l: boolean) =>
+        setLoadingStates(p => ({ ...p, [`${id}_${action}`]: l })),
+      []
+    );
+    const isMemoLoading = useCallback(
+      (id: number, action: string) => loadingStates[`${id}_${action}`] || false,
+      [loadingStates]
+    );
 
-    // 메모 관련 함수들
-    const setLoading = useCallback((id: number, action: string, isLoading: boolean) => {
-      setLoadingStates(prev => ({
-        ...prev,
-        [`${id}_${action}`]: isLoading
-      }));
+    const handleStartEditMemo = useCallback((id: number, current = "") => {
+      setEditingMemo(p => ({ ...p, [id]: true }));
+      setMemoValues(p => ({ ...p, [id]: current }));
     }, []);
-
-    const isMemoLoading = useCallback((id: number, action: string) => {
-      return loadingStates[`${id}_${action}`] || false;
-    }, [loadingStates]);
-
-    const handleStartEditMemo = useCallback((id: number, currentMemo: string = "") => {
-      setEditingMemo(prev => ({ ...prev, [id]: true }));
-      setMemoValues(prev => ({ ...prev, [id]: currentMemo }));
-    }, []);
-
     const handleCancelEditMemo = useCallback((id: number) => {
-      setEditingMemo(prev => ({ ...prev, [id]: false }));
-      setMemoValues(prev => ({ ...prev, [id]: "" }));
+      setEditingMemo(p => ({ ...p, [id]: false }));
+      setMemoValues(p => ({ ...p, [id]: "" }));
     }, []);
 
-    const handleSaveMemo = useCallback(async (id: number) => {
-      const memo = memoValues[id];
-      if (!memo?.trim()) return;
-
-      setLoading(id, "memo", true);
-      
-      try {
-        await webAxios.post(
-          `/api/v1/retreat/${retreatSlug}/dormitory/${id}/dormitory-memo`,
-          { memo: memo.trim() },
-          {
-            headers: {
-              Authorization: `Bearer ${Cookies.get("accessToken")}`,
-            },
-          }
-        );
-
-        addToast({
-          title: "성공",
-          description: "메모가 성공적으로 저장되었습니다.",
-          variant: "success",
-        });
-
-        setEditingMemo(prev => ({ ...prev, [id]: false }));
-        setMemoValues(prev => ({ ...prev, [id]: "" }));
-        
-        // 데이터 다시 불러오기
-        mutate();
-      } catch (error) {
-        addToast({
-          title: "오류",
-          description: "메모 저장에 실패했습니다.",
-          variant: "destructive",
-        });
-        console.error("메모 저장 오류:", error);
-      } finally {
-        setLoading(id, "memo", false);
-      }
-    }, [memoValues, retreatSlug, addToast, mutate]);
-
-    const handleDeleteMemo = useCallback(async (id: number, memoId: string) => {
-      setLoading(id, "delete_memo", true);
-      
-      try {
-        await webAxios.delete(
-          `/api/v1/retreat/${retreatSlug}/dormitory/${memoId}/dormitory-memo`,
-          {
-            headers: {
-              Authorization: `Bearer ${Cookies.get("accessToken")}`,
-            },
-          }
-        );
-
-        addToast({
-          title: "성공",
-          description: "메모가 성공적으로 삭제되었습니다.",
-          variant: "success",
-        });
-        
-        // 데이터 다시 불러오기
-        mutate();
-      } catch (error) {
-        addToast({
-          title: "오류",
-          description: "메모 삭제에 실패했습니다.",
-          variant: "destructive",
-        });
-        console.error("메모 삭제 오류:", error);
-      } finally {
-        setLoading(id, "delete_memo", false);
-      }
-    }, [retreatSlug, addToast, mutate]);
-
-    const handleConfirmDeleteMemo = useCallback((id: number, memoId?: string) => {
-      if (!memoId) return;
-
-      confirmDialog.show({
-        title: "메모 삭제 확인",
-        description: "정말로 이 메모를 삭제하시겠습니까?",
-        onConfirm: () => handleDeleteMemo(id, memoId),
-      });
-    }, [confirmDialog, handleDeleteMemo]);
-
-    // 데이터 변환 및 그룹화
-    const groupedData = useMemo(() => {
-      if (!dormitoryStaffData?.length || !schedules?.length) return {};
-
-      const transformedData = dormitoryStaffData
-        .filter(user => user.gender === gender) // 성별 필터링
-        .map(user => {
-          // 스케줄 정보 변환
-          const scheduleData: Record<string, boolean> = {};
-          schedules.forEach(schedule => {
-            scheduleData[`schedule_${schedule.id}`] =
-              user.userRetreatRegistrationScheduleIds?.includes(schedule.id) || false;
+    const handleSaveMemo = useCallback(
+      async (id: number) => {
+        const memo = memoValues[id]?.trim();
+        if (!memo) return;
+        setLoading(id, "memo", true);
+        try {
+          await webAxios.post(
+            `/api/v1/retreat/${retreatSlug}/dormitory/${id}/dormitory-memo`,
+            { memo },
+            {
+              headers: {
+                Authorization: `Bearer ${Cookies.get("accessToken")}`,
+              },
+            }
+          );
+          addToast({
+            title: "성공",
+            description: "메모가 저장되었습니다.",
+            variant: "success",
           });
+          setEditingMemo(p => ({ ...p, [id]: false }));
+          setMemoValues(p => ({ ...p, [id]: "" }));
+          mutate();
+        } catch (e) {
+          addToast({
+            title: "오류",
+            description: "메모 저장에 실패했습니다.",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(id, "memo", false);
+        }
+      },
+      [memoValues, retreatSlug, addToast, mutate, setLoading]
+    );
 
+    const handleDeleteMemo = useCallback(
+      async (id: number, memoId: string) => {
+        setLoading(id, "delete_memo", true);
+        try {
+          await webAxios.delete(
+            `/api/v1/retreat/${retreatSlug}/dormitory/${memoId}/dormitory-memo`,
+            {
+              headers: {
+                Authorization: `Bearer ${Cookies.get("accessToken")}`,
+              },
+            }
+          );
+          addToast({
+            title: "성공",
+            description: "메모가 삭제되었습니다.",
+            variant: "success",
+          });
+          mutate();
+        } catch {
+          addToast({
+            title: "오류",
+            description: "메모 삭제에 실패했습니다.",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(id, "delete_memo", false);
+        }
+      },
+      [retreatSlug, addToast, mutate, setLoading]
+    );
+
+    const handleConfirmDeleteMemo = useCallback(
+      (id: number, memoId?: string) => {
+        if (!memoId) return;
+        confirmDialog.show({
+          title: "메모 삭제 확인",
+          description: "정말 삭제하시겠습니까?",
+          onConfirm: () => handleDeleteMemo(id, memoId),
+        });
+      },
+      [confirmDialog, handleDeleteMemo]
+    );
+
+    const handleAssignDormitory = useCallback(
+      async (userId: number, dormId: number | null) => {
+        try {
+          const res = await assignDormitory.mutateAsync({
+            userRetreatRegistrationId: userId,
+            dormitoryId: dormId,
+          });
+          mutate();
+          addToast({
+            title: dormId == null ? "취소됨" : "성공",
+            description:
+              res?.message ||
+              (dormId == null
+                ? "배정이 취소되었습니다."
+                : "배정이 완료되었습니다."),
+            variant: "default",
+          });
+        } catch {
+          addToast({
+            title: "오류",
+            description: "배정에 실패했습니다.",
+            variant: "destructive",
+          });
+        }
+      },
+      [assignDormitory, addToast, mutate]
+    );
+
+    const getDormitoryOptionsForUser = useCallback(
+      (loc?: string) => {
+        if (!availableDormitories || !allDormitories) {
+          return { options: [], currentDormitoryId: null };
+        }
+        const currentId = loc
+          ? (allDormitories.find(d => d.name === loc)?.id ?? null)
+          : null;
+        const inAvail =
+          currentId != null &&
+          availableDormitories.some(d => d.id === currentId);
+        let opts = [...availableDormitories];
+        if (currentId != null && !inAvail && loc) {
+          const cur = allDormitories.find(d => d.id === currentId);
+          if (cur) opts = [cur, ...opts];
+        }
+        return { options: opts, currentDormitoryId: currentId };
+      },
+      [availableDormitories, allDormitories]
+    );
+
+    // debounce the search term
+    const debouncedSearch = useDebounce(searchTerm, 300);
+
+    // generate scheduleCols once
+    const scheduleColumns = useMemo(
+      () => generateScheduleColumns(schedules),
+      [schedules]
+    );
+
+    // flatten + group + filter
+    const flatRows = useMemo(() => {
+      if (!dormitoryStaffData?.length) return [];
+      // transform
+      const transformed: DormitoryTableRowData[] = dormitoryStaffData
+        .filter(u => u.gender === gender)
+        .map(user => {
+          const sched: Record<string, boolean> = {};
+          schedules.forEach(s => {
+            sched[`schedule_${s.id}`] =
+              user.userRetreatRegistrationScheduleIds?.includes(s.id) ?? false;
+          });
           return {
             id: user.id,
-            gbsNumber: user.gbsNumber || null,
+            gbsNumber: user.gbsNumber ?? null,
             department: `${user.univGroupNumber}부`,
-            gender: user.gender as Gender,
+            gender: user.gender,
             grade: `${user.gradeNumber}학년`,
             name: user.name,
             phoneNumber: user.phoneNumber,
@@ -481,113 +541,50 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
             dormitoryLocation: user.dormitoryLocation,
             univGroupNumber: user.univGroupNumber,
             gradeNumber: user.gradeNumber,
-            schedule: scheduleData,
+            schedule: sched,
             dormitoryStaffMemo: user.dormitoryStaffMemo,
             dormitoryStaffMemoId: user.dormitoryStaffMemoId,
           };
         });
 
-      // 검색 필터링
-      const filteredData = transformedData.filter(user => {
-        const matchesSearch = searchTerm.trim() === "" || 
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.department.includes(searchTerm) ||
-          user.grade.includes(searchTerm) ||
-          (user.gbsNumber && String(user.gbsNumber).includes(searchTerm));
+      // filter
+      const q = debouncedSearch.trim().toLowerCase();
+      const filtered = q
+        ? transformed.filter(u => {
+            return (
+              u.name.toLowerCase().includes(q) ||
+              u.department.includes(q) ||
+              u.grade.includes(q) ||
+              (u.gbsNumber != null && String(u.gbsNumber).includes(q))
+            );
+          })
+        : transformed;
 
-        return matchesSearch;
+      // group
+      const groups: Record<string, DormitoryTableRowData[]> = {};
+      filtered.forEach(u => {
+        const key = u.gbsNumber != null ? String(u.gbsNumber) : "unassigned";
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(u);
       });
 
-      // GBS 번호별 그룹화
-      const grouped: GroupedDormitoryData = {};
-      
-      filteredData.forEach(user => {
-        const key = user.gbsNumber ? String(user.gbsNumber) : "unassigned";
-        if (!grouped[key]) {
-          grouped[key] = [];
-        }
-        grouped[key].push(user);
-      });
-
-      // GBS 번호 순으로 정렬 (미배정자는 마지막에)
-      const sortedGrouped: GroupedDormitoryData = {};
-      const sortedKeys = Object.keys(grouped).sort((a, b) => {
+      // sort keys
+      const keys = Object.keys(groups).sort((a, b) => {
         if (a === "unassigned") return 1;
         if (b === "unassigned") return -1;
-        return parseInt(a) - parseInt(b);
+        return +a - +b;
       });
 
-      sortedKeys.forEach(key => {
-        sortedGrouped[key] = grouped[key];
+      // flatten
+      return keys.flatMap(key => {
+        const grp = groups[key];
+        return grp.map((row, idx) => ({
+          row,
+          isFirstInGroup: idx === 0,
+          groupSize: grp.length,
+        }));
       });
-
-      return sortedGrouped;
-    }, [dormitoryStaffData, searchTerm, gender, schedules]);
-
-    // 숙소 배정 처리
-    const handleAssignDormitory = useCallback(async (
-      userRetreatRegistrationId: number, 
-      dormitoryId: number | null
-    ) => {
-      try {
-        const result = await assignDormitory.mutateAsync({
-          userRetreatRegistrationId,
-          dormitoryId,
-        });
-        
-        // 숙소 배정 후 dormitory staff 데이터도 다시 불러오기
-        mutate();
-        
-        if (result && result.message) {
-          addToast({
-            title: "정보",
-            description: result.message,
-            variant: "default",
-          });
-        } else {
-          addToast({
-            title: "성공",
-            description: dormitoryId === null ? "숙소 배정이 취소되었습니다." : "숙소가 성공적으로 배정되었습니다.",
-            variant: "success",
-          });
-        }
-      } catch (error) {
-        addToast({
-          title: "오류",
-          description: "숙소 배정에 실패했습니다.",
-          variant: "destructive",
-        });
-        console.error(error);
-      }
-    }, [assignDormitory, addToast, mutate]);
-
-    // 현재 사용자의 숙소 ID 찾기 및 사용 가능한 숙소 목록 생성
-    const getDormitoryOptionsForUser = useCallback((dormitoryLocation?: string) => {
-      if (!availableDormitories || !allDormitories) {
-        return { options: [], currentDormitoryId: null };
-      }
-
-      // 현재 배정된 숙소의 ID를 전체 숙소 목록에서 찾기
-      const currentDormitoryId = dormitoryLocation 
-        ? allDormitories.find(d => d.name === dormitoryLocation)?.id || null
-        : null;
-
-      // 현재 배정된 숙소가 available 목록에 있는지 확인
-      const currentDormitoryInAvailableList = currentDormitoryId 
-        ? availableDormitories.some(d => d.id === currentDormitoryId)
-        : false;
-
-      // 옵션 목록 생성 (현재 숙소가 available 목록에 없다면 추가)
-      let options = [...availableDormitories];
-      if (currentDormitoryId && !currentDormitoryInAvailableList && dormitoryLocation) {
-        const currentDormitory = allDormitories.find(d => d.id === currentDormitoryId);
-        if (currentDormitory) {
-          options = [currentDormitory, ...options];
-        }
-      }
-
-      return { options, currentDormitoryId };
-    }, [availableDormitories, allDormitories]);
+    }, [dormitoryStaffData, debouncedSearch, gender, schedules]);
 
     if (isLoadingUsers) {
       return <div className="p-4">데이터를 불러오는 중...</div>;
@@ -595,7 +592,7 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
 
     return (
       <div className="space-y-4">
-        {/* 검색 */}
+        {/* Search */}
         <div className="flex gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
@@ -608,67 +605,83 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
           </div>
         </div>
 
-        {/* 테이블 */}
-        <div className="rounded-md border overflow-x-auto">
-          <div className="min-w-max">
-            <div className="max-h-[80vh] overflow-y-auto">
-              <Table className="w-full whitespace-nowrap relative">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-center px-2 py-1">GBS<br/>번호</TableHead>
-                    <TableHead className="text-center px-2 py-1">부서</TableHead>
-                    <TableHead className="text-center px-2 py-1">성별</TableHead>
-                    <TableHead className="text-center px-2 py-1">학년</TableHead>
-                    <TableHead className="text-center px-2 py-1">이름</TableHead>
-                    <TableHead className="text-center px-2 py-1">전화번호</TableHead>
-                    {scheduleColumns.map(scheduleCol => (
-                      <TableHead
-                        key={scheduleCol.key}
-                        className="px-2 py-1 text-center whitespace-nowrap"
-                      >
-                        <span className="text-xs">{scheduleCol.label}</span>
-                      </TableHead>
-                    ))}
-                    <TableHead className="text-center px-2 py-1">현재 숙소</TableHead>
-                    <TableHead className="text-center px-2 py-1">숙소 배정</TableHead>
-                    <TableHead className="text-center px-2 py-1">인원관리 간사<br/>메모</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Object.entries(groupedData).map(([gbsNum, groupRows]) => {
-                    return groupRows.map((row, idx) => {
-                      const isFirstInGroup = idx === 0;
-                      const groupSize = groupRows.length;
+        {/* Table with virtualized body */}
+        <div className="rounded-md border">
+          {/* header */}
+          <Table className="w-full table-fixed">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-center px-2 py-1">GBS번호</TableHead>
+                <TableHead className="text-center px-2 py-1">부서</TableHead>
+                <TableHead className="text-center px-2 py-1">성별</TableHead>
+                <TableHead className="text-center px-2 py-1">학년</TableHead>
+                <TableHead className="text-center px-2 py-1">이름</TableHead>
+                <TableHead className="text-center px-2 py-1">
+                  전화번호
+                </TableHead>
+                {scheduleColumns.map(col => (
+                  <TableHead
+                    key={col.key}
+                    className="px-2 py-1 text-center whitespace-nowrap"
+                  >
+                    <span className="text-xs">{col.label}</span>
+                  </TableHead>
+                ))}
+                <TableHead className="text-center px-2 py-1">
+                  현재 숙소
+                </TableHead>
+                <TableHead className="text-center px-2 py-1">
+                  숙소 배정
+                </TableHead>
+                <TableHead className="text-center px-2 py-1">
+                  담당자 메모
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+          </Table>
 
-                      return (
-                        <DormitoryTableRow
-                          key={row.id}
-                          row={row}
-                          isFirstInGroup={isFirstInGroup}
-                          groupSize={groupSize}
-                          scheduleColumns={scheduleColumns}
-                          editingMemo={editingMemo}
-                          memoValues={memoValues}
-                          isMemoLoading={isMemoLoading}
-                          getDormitoryOptionsForUser={getDormitoryOptionsForUser}
-                          assignDormitory={assignDormitory}
-                          handleAssignDormitory={handleAssignDormitory}
-                          handleStartEditMemo={handleStartEditMemo}
-                          setMemoValues={setMemoValues}
-                          handleSaveMemo={handleSaveMemo}
-                          handleCancelEditMemo={handleCancelEditMemo}
-                          handleConfirmDeleteMemo={handleConfirmDeleteMemo}
-                        />
-                      );
-                    });
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          {/* virtualized rows */}
+          <List
+            height={Math.min(
+              flatRows.length * ROW_HEIGHT,
+              window.innerHeight * 0.6
+            )}
+            itemCount={flatRows.length}
+            itemSize={ROW_HEIGHT}
+            width="100%"
+          >
+            {({ index, style }: { index: number; style: CSSProperties }) => {
+              const { row, isFirstInGroup, groupSize } = flatRows[index];
+              return (
+                <div style={style}>
+                  <Table className="w-full table-fixed">
+                    <TableBody>
+                      <DormitoryTableRow
+                        row={row}
+                        isFirstInGroup={isFirstInGroup}
+                        groupSize={groupSize}
+                        scheduleColumns={scheduleColumns}
+                        editingMemo={editingMemo}
+                        memoValues={memoValues}
+                        isMemoLoading={isMemoLoading}
+                        getDormitoryOptionsForUser={getDormitoryOptionsForUser}
+                        assignDormitory={assignDormitory}
+                        handleAssignDormitory={handleAssignDormitory}
+                        handleStartEditMemo={handleStartEditMemo}
+                        setMemoValues={setMemoValues}
+                        handleSaveMemo={handleSaveMemo}
+                        handleCancelEditMemo={handleCancelEditMemo}
+                        handleConfirmDeleteMemo={handleConfirmDeleteMemo}
+                      />
+                    </TableBody>
+                  </Table>
+                </div>
+              );
+            }}
+          </List>
         </div>
 
-        {Object.keys(groupedData).length === 0 && (
+        {flatRows.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             조건에 맞는 데이터가 없습니다.
           </div>
@@ -678,47 +691,52 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
   }
 );
 
-export const DormitoryStaffTable = React.memo<DormitoryStaffTableProps>(
-  function DormitoryStaffTable({ retreatSlug, schedules }) {
-    const [searchTerm, setSearchTerm] = useState("");
+export const DormitoryStaffTable = React.memo<{
+  retreatSlug: string;
+  schedules: any[];
+}>(function DormitoryStaffTable({ retreatSlug, schedules }) {
+  const [searchTerm, setSearchTerm] = useState("");
 
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>인원관리 간사 숙소 배정</CardTitle>
-          <CardDescription>
-            GBS 순서대로 조회하여 숙소를 배정할 수 있습니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-1 pt-4">
-          <Tabs defaultValue="male" className="w-full">
-            <TabsList className="grid grid-cols-2 w-fit">
-              <TabsTrigger value="male" className="px-8">형제</TabsTrigger>
-              <TabsTrigger value="female" className="px-8">자매</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="male" className="mt-6">
-              <DormitoryTableContent 
-                gender={Gender.MALE} 
-                retreatSlug={retreatSlug} 
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                schedules={schedules}
-              />
-            </TabsContent>
-            
-            <TabsContent value="female" className="mt-6">
-              <DormitoryTableContent 
-                gender={Gender.FEMALE} 
-                retreatSlug={retreatSlug} 
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                schedules={schedules}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    );
-  }
-); 
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>인원관리 간사 숙소 배정</CardTitle>
+        <CardDescription>
+          GBS 순서대로 조회하여 숙소를 배정할 수 있습니다.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-1 pt-4">
+        <Tabs defaultValue="male" className="w-full">
+          <TabsList className="grid grid-cols-2 w-fit">
+            <TabsTrigger value="male" className="px-8">
+              형제
+            </TabsTrigger>
+            <TabsTrigger value="female" className="px-8">
+              자매
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="male" className="mt-6">
+            <DormitoryTableContent
+              gender={Gender.MALE}
+              retreatSlug={retreatSlug}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              schedules={schedules}
+            />
+          </TabsContent>
+
+          <TabsContent value="female" className="mt-6">
+            <DormitoryTableContent
+              gender={Gender.FEMALE}
+              retreatSlug={retreatSlug}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              schedules={schedules}
+            />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+});
