@@ -11,9 +11,10 @@ export interface IDormitoryTeamMemberRegistration {
   gender: Gender;
   name: string;
   userRetreatRegistrationScheduleIds: number[];
-  gbsNumber?: number;
+  gbsNumber?: number | null;
   dormitoryLocation?: string;
   dormitoryTeamMemberMemo?: string;
+  isLeader: boolean;
 }
 
 const fetcher = async (url: string) => {
@@ -21,14 +22,19 @@ const fetcher = async (url: string) => {
     const response = await webAxios.get(url);
     return response.data.userRetreatRegistrations;
   } catch (error) {
-    console.error("Failed to fetch dormitory team member registrations:", error);
+    console.error(
+      "Failed to fetch dormitory team member registrations:",
+      error
+    );
     throw error;
   }
 };
 
 export function useDormitoryTeamMemberRegistrations(retreatSlug?: string) {
   const { data, error, isLoading, mutate } = useSWR(
-    retreatSlug ? `/api/v1/retreat/${retreatSlug}/dormitory/user-retreat-dormitory-team-member` : null,
+    retreatSlug
+      ? `/api/v1/retreat/${retreatSlug}/dormitory/user-retreat-dormitory-team-member`
+      : null,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -67,7 +73,9 @@ export function useScheduleChangeRequestMemo(retreatSlug?: string) {
       });
     } catch (error: any) {
       console.error("Failed to submit schedule change request memo:", error);
-      const errorMessage = error.response?.data?.message || "일정변동 요청 메모 제출에 실패했습니다.";
+      const errorMessage =
+        error.response?.data?.message ||
+        "일정변동 요청 메모 제출에 실패했습니다.";
       addToast({
         title: "오류",
         description: errorMessage,
@@ -83,4 +91,4 @@ export function useScheduleChangeRequestMemo(retreatSlug?: string) {
     submitScheduleChangeRequestMemo,
     isSubmitting,
   };
-} 
+}

@@ -135,11 +135,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
           className={`text-center px-2 py-1 ${cellClassName}`}
         >
           {row.gbsNumber != null ? (
-            isFirstInGroup ? (
-              row.gbsNumber
-            ) : (
-              ""
-            )
+            row.gbsNumber
           ) : (
             <Badge variant="destructive">미배정</Badge>
           )}
@@ -557,6 +553,11 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
       return [...base, ...scheduleW, ...trail];
     }, [scheduleColumns]);
 
+    const totalTableWidth = useMemo(
+      () => columnWidths.reduce((sum, w) => sum + parseInt(w, 10), 0),
+      [columnWidths]
+    );
+
     // flatten + group + filter
     const flatRows = useMemo(() => {
       if (!dormitoryStaffData?.length) return [];
@@ -646,9 +647,9 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
         </div>
 
         {/* Table with virtualized body */}
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-md border">
           {/* header */}
-          <Table className="w-full table-fixed">
+          <Table style={{ width: totalTableWidth }} className="table-fixed">
             <TableHeader>
               <TableRow>
                 <TableHead
@@ -730,7 +731,7 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
             )}
             itemCount={flatRows.length}
             itemSize={ROW_HEIGHT}
-            width="100%"
+            width={totalTableWidth}
             itemData={flatRows}
           >
             {({
