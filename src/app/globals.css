@@ -10,6 +10,11 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Custom z-index for sidebar */
+  .z-60 {
+    z-index: 60;
+  }
 }
 
 @layer base {

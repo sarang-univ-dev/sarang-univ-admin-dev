@@ -98,7 +98,6 @@ interface DormitoryTableRowProps {
   handleSaveMemo: (id: number) => Promise<void>;
   handleCancelEditMemo: (id: number) => void;
   handleConfirmDeleteMemo: (id: number, memoId?: string) => void;
-  columnWidths: string[];
 }
 
 const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
@@ -118,7 +117,6 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
     handleSaveMemo,
     handleCancelEditMemo,
     handleConfirmDeleteMemo,
-    columnWidths,
   }) => {
     const cellClassName = row.isLeader ? "bg-cyan-200" : "";
 
@@ -131,15 +129,10 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
       <TableRow>
         {/* GBS 번호 cell (no rowspan) */}
         <TableCell
-          style={{ width: columnWidths[0] }}
-          className={`text-center px-2 py-1 ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[80px] ${cellClassName}`}
         >
           {row.gbsNumber != null ? (
-            isFirstInGroup ? (
-              row.gbsNumber
-            ) : (
-              ""
-            )
+            row.gbsNumber
           ) : (
             <Badge variant="destructive">미배정</Badge>
           )}
@@ -147,16 +140,14 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Department */}
         <TableCell
-          style={{ width: columnWidths[1] }}
-          className={`text-center px-2 py-1 ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[60px] ${cellClassName}`}
         >
           {row.department}
         </TableCell>
 
         {/* Gender */}
         <TableCell
-          style={{ width: columnWidths[2] }}
-          className={`text-center px-2 py-1 ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[60px] ${cellClassName}`}
         >
           <Badge variant={row.gender === Gender.MALE ? "default" : "secondary"}>
             {row.gender === Gender.MALE ? "형제" : "자매"}
@@ -165,16 +156,14 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Grade */}
         <TableCell
-          style={{ width: columnWidths[3] }}
-          className={`text-center px-2 py-1 ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[60px] ${cellClassName}`}
         >
           {row.grade}
         </TableCell>
 
         {/* Name */}
         <TableCell
-          style={{ width: columnWidths[4] }}
-          className={`text-center px-2 py-1 ${cellClassName} ${
+          className={`text-center px-3 py-2 whitespace-nowrap w-[100px] ${cellClassName} ${
             row.isLeader ? "font-bold text-base" : ""
           }`}
         >
@@ -183,8 +172,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Phone */}
         <TableCell
-          style={{ width: columnWidths[5] }}
-          className={`text-center px-2 py-1 ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[120px] ${cellClassName}`}
         >
           {row.phoneNumber}
         </TableCell>
@@ -193,8 +181,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
         {scheduleColumns.map((col, i) => (
           <TableCell
             key={`${row.id}-${col.key}`}
-            style={{ width: columnWidths[6 + i] }}
-            className={`px-2 py-1 text-center whitespace-nowrap ${cellClassName}`}
+            className={`px-3 py-2 text-center whitespace-nowrap w-[50px] ${cellClassName}`}
           >
             <Checkbox
               checked={row.schedule[col.key]}
@@ -206,8 +193,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Current dorm */}
         <TableCell
-          style={{ width: columnWidths[6 + scheduleColumns.length] }}
-          className={`text-center px-2 py-1 ${cellClassName}`}
+          className={`text-center px-3 py-2 whitespace-nowrap w-[100px] ${cellClassName}`}
         >
           {row.dormitoryLocation ? (
             <Badge variant="secondary">{row.dormitoryLocation}</Badge>
@@ -218,8 +204,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
 
         {/* Assign dorm */}
         <TableCell
-          style={{ width: columnWidths[6 + scheduleColumns.length + 1] }}
-          className={`text-center px-2 py-1 ${cellClassName}`}
+          className={`text-center px-3 py-2 w-[200px] ${cellClassName}`}
         >
           <Select
             disabled={assignDormitory.isPending}
@@ -253,10 +238,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
         </TableCell>
 
         {/* Memo */}
-        <TableCell
-          style={{ width: columnWidths[6 + scheduleColumns.length + 2] }}
-          className={`text-left px-2 py-1 ${cellClassName}`}
-        >
+        <TableCell className={`text-left px-3 py-2 w-[250px] ${cellClassName}`}>
           {editingMemo[row.id] ? (
             <div className="flex flex-col gap-2 p-2">
               <Textarea
@@ -352,7 +334,7 @@ interface DormitoryTableContentProps {
   schedules: any[];
 }
 
-const ROW_HEIGHT = 56; // adjust to match your row padding
+const ROW_HEIGHT = 64; // adjust to match your row padding
 
 const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
   function DormitoryTableContent({
@@ -540,21 +522,15 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
     );
 
     const columnWidths = useMemo(() => {
-      const base = [
-        "70px", // GBS
-        "70px", // 부서
-        "60px", // 성별
-        "60px", // 학년
-        "100px", // 이름
-        "120px", // 전화번호
-      ];
-      const scheduleW = scheduleColumns.map(() => "45px");
-      const trail = [
-        "100px", // 현재 숙소
-        "180px", // 숙소 배정
-        "300px", // 담당자 메모
-      ];
-      return [...base, ...scheduleW, ...trail];
+      // 내용에 맞춰지는 자동 너비 설정 제거 - CSS로 처리
+      return [];
+    }, [scheduleColumns]);
+
+    // 테이블의 고정 너비 계산
+    const totalTableWidth = useMemo(() => {
+      const baseWidth = 80 + 60 + 60 + 60 + 100 + 120 + 100 + 200 + 250; // 기본 컬럼들의 너비 합계
+      const scheduleWidth = scheduleColumns.length * 50; // 스케줄 컬럼들의 너비
+      return baseWidth + scheduleWidth;
     }, [scheduleColumns]);
 
     // flatten + group + filter
@@ -648,74 +624,49 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
         {/* Table with virtualized body */}
         <div className="rounded-md border overflow-x-auto">
           {/* header */}
-          <Table className="w-full table-fixed">
+          <Table
+            style={{
+              width: totalTableWidth,
+              tableLayout: "fixed",
+              minWidth: totalTableWidth,
+            }}
+            className="w-full"
+          >
             <TableHeader>
               <TableRow>
-                <TableHead
-                  className="text-center px-2 py-1"
-                  style={{ width: columnWidths[0] }}
-                >
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[80px]">
                   GBS번호
                 </TableHead>
-                <TableHead
-                  className="text-center px-2 py-1"
-                  style={{ width: columnWidths[1] }}
-                >
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[60px]">
                   부서
                 </TableHead>
-                <TableHead
-                  className="text-center px-2 py-1"
-                  style={{ width: columnWidths[2] }}
-                >
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[60px]">
                   성별
                 </TableHead>
-                <TableHead
-                  className="text-center px-2 py-1"
-                  style={{ width: columnWidths[3] }}
-                >
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[60px]">
                   학년
                 </TableHead>
-                <TableHead
-                  className="text-center px-2 py-1"
-                  style={{ width: columnWidths[4] }}
-                >
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[100px]">
                   이름
                 </TableHead>
-                <TableHead
-                  className="text-center px-2 py-1"
-                  style={{ width: columnWidths[5] }}
-                >
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[120px]">
                   전화번호
                 </TableHead>
                 {scheduleColumns.map((col, i) => (
                   <TableHead
                     key={col.key}
-                    className="px-2 py-1 text-center whitespace-nowrap"
-                    style={{ width: columnWidths[6 + i] }}
+                    className="px-3 py-2 text-center whitespace-nowrap w-[50px]"
                   >
                     <span className="text-xs">{col.label}</span>
                   </TableHead>
                 ))}
-                <TableHead
-                  className="text-center px-2 py-1"
-                  style={{ width: columnWidths[6 + scheduleColumns.length] }}
-                >
+                <TableHead className="text-center px-3 py-2 whitespace-nowrap w-[100px]">
                   현재 숙소
                 </TableHead>
-                <TableHead
-                  className="text-center px-2 py-1"
-                  style={{
-                    width: columnWidths[6 + scheduleColumns.length + 1],
-                  }}
-                >
+                <TableHead className="text-center px-3 py-2 w-[200px]">
                   숙소 배정
                 </TableHead>
-                <TableHead
-                  className="text-center px-2 py-1"
-                  style={{
-                    width: columnWidths[6 + scheduleColumns.length + 2],
-                  }}
-                >
+                <TableHead className="text-center px-3 py-2 w-[250px]">
                   담당자 메모
                 </TableHead>
               </TableRow>
@@ -730,7 +681,7 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
             )}
             itemCount={flatRows.length}
             itemSize={ROW_HEIGHT}
-            width="100%"
+            width={totalTableWidth}
             itemData={flatRows}
           >
             {({
@@ -744,8 +695,21 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
             }) => {
               const { row, isFirstInGroup, groupSize } = data[index];
               return (
-                <div style={style}>
-                  <Table className="w-full table-fixed">
+                <div
+                  style={{
+                    ...style,
+                    width: totalTableWidth,
+                    overflow: "hidden",
+                  }}
+                >
+                  <Table
+                    className="w-full"
+                    style={{
+                      tableLayout: "fixed",
+                      width: totalTableWidth,
+                      minWidth: totalTableWidth,
+                    }}
+                  >
                     <TableBody>
                       <DormitoryTableRow
                         row={row}
@@ -763,7 +727,6 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
                         handleSaveMemo={handleSaveMemo}
                         handleCancelEditMemo={handleCancelEditMemo}
                         handleConfirmDeleteMemo={handleConfirmDeleteMemo}
-                        columnWidths={columnWidths}
                       />
                     </TableBody>
                   </Table>
