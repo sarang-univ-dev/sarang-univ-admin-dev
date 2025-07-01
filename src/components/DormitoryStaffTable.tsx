@@ -126,7 +126,7 @@ const DormitoryTableRow = React.memo<DormitoryTableRowProps>(
     );
 
     return (
-      <TableRow>
+      <TableRow className={row.isLeader ? "bg-cyan-100" : ""}>
         {/* GBS 번호 cell (no rowspan) */}
         <TableCell
           className={`text-center px-3 py-2 whitespace-nowrap w-[80px] ${cellClassName}`}
