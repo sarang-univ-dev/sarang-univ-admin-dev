@@ -19,7 +19,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
+import { GenderBadge } from "@/components/Badge";
+import { StatusBadge, TypeBadge } from "@/components/common/retreat";
 import { SearchBar } from "@/components/RegistrationTableSearchBar";
 
 import {
