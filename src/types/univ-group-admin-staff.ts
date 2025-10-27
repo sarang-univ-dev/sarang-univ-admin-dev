@@ -23,8 +23,6 @@ export interface IUnivGroupAdminStaffRetreat {
   paymentConfirmUserName?: string | null;
   currentLeaderName?: string | null;
   qrUrl?: string | null;
-  gbsName: string | null;
-  dormitoryName: string | null;
   univGroupStaffScheduleHistoryMemo?: string | null;
   univGroupStaffScheduleHistoryResolvedAt?: string | null;
   univGroupStaffScheduleHistoryResolvedUserName?: string | null;
@@ -51,8 +49,6 @@ export interface UnivGroupAdminStaffData {
   status: UserRetreatRegistrationPaymentStatus;
   confirmedBy: string | null;
   paymentConfirmedAt: string | null;
-  gbs: string | null;
-  accommodation: string | null;
   hadRegisteredShuttleBus: boolean;
   qrUrl: string | null;
   memo: string | null; // 일정 변동 요청 메모

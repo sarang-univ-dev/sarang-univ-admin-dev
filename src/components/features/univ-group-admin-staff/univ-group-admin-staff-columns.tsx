@@ -218,24 +218,6 @@ export function createUnivGroupAdminStaffColumns(
       size: 140,
     }),
 
-    columnHelper.accessor("gbs", {
-      id: "gbs",
-      header: () => <div className="text-center text-sm">GBS</div>,
-      cell: (info) => (
-        <div className="text-center text-sm">{info.getValue() || "-"}</div>
-      ),
-      size: 120,
-    }),
-
-    columnHelper.accessor("accommodation", {
-      id: "accommodation",
-      header: () => <div className="text-center text-sm">숙소</div>,
-      cell: (info) => (
-        <div className="text-center text-sm">{info.getValue() || "-"}</div>
-      ),
-      size: 120,
-    }),
-
     columnHelper.accessor("hadRegisteredShuttleBus", {
       id: "shuttleBus",
       header: () => (

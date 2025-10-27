@@ -150,8 +150,6 @@ export function UnivGroupAdminStaffTable({
         row.original.type?.toString(),
         row.original.phone,
         row.original.currentLeaderName,
-        row.original.gbs,
-        row.original.accommodation,
         row.original.hadRegisteredShuttleBus ? "신청함" : "신청 안함",
       ];
 

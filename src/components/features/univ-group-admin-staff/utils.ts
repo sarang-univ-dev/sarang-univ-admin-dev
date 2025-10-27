@@ -34,8 +34,6 @@ export function transformUnivGroupAdminStaffData(
     status: reg.paymentStatus,
     confirmedBy: reg.paymentConfirmUserName || null,
     paymentConfirmedAt: reg.paymentConfirmedAt || null,
-    gbs: reg.gbsName || null,
-    accommodation: reg.dormitoryName || null,
     hadRegisteredShuttleBus: reg.hadRegisteredShuttleBus,
     qrUrl: reg.qrUrl || null,
     memo: reg.univGroupStaffScheduleHistoryMemo || null,
