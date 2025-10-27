@@ -21,7 +21,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -51,7 +50,8 @@ interface UnivGroupAdminStaffTableProps {
  * - 고정 컬럼의 마지막/첫번째에 box-shadow 추가 (시각적 구분)
  */
 function getCommonPinningStyles<T>(
-  column: Column<T>
+  column: Column<T>,
+  isHeader: boolean = false
 ): CSSProperties {
   const isPinned = column.getIsPinned();
   const isLastLeftPinnedColumn =
@@ -67,11 +67,10 @@ function getCommonPinningStyles<T>(
         : undefined,
     left: isPinned === "left" ? `${column.getStart("left")}px` : undefined,
     right: isPinned === "right" ? `${column.getAfter("right")}px` : undefined,
-    opacity: isPinned ? 0.95 : 1,
     position: isPinned ? "sticky" : "relative",
-    width: column.getSize(),
-    zIndex: isPinned ? 1 : 0,
-    backgroundColor: isPinned ? "rgb(243 244 246)" : "white", // gray-100 for pinned
+    zIndex: isPinned ? (isHeader ? 20 : 10) : 0,
+    backgroundColor: isPinned ? "rgb(243 244 246)" : isHeader ? "rgb(243 244 246)" : "white",
+    whiteSpace: "nowrap" as const,
   };
 }
 
@@ -141,6 +140,8 @@ export function UnivGroupAdminStaffTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    columnResizeMode: "onChange",
+    enableColumnResizing: false,
     // 전역 필터 함수 (통합 검색)
     globalFilterFn: (row, columnId, filterValue) => {
       const searchableFields = [
@@ -178,24 +179,22 @@ export function UnivGroupAdminStaffTable({
           />
 
           {/* 테이블 */}
-          <div className="rounded-md border overflow-x-auto">
-            <div className="max-h-[80vh] overflow-y-auto">
-              <Table className="relative">
-                <TableHeader className="bg-gray-100 sticky top-0 z-10">
+          <div className="rounded-md border">
+            <div className="max-h-[80vh] overflow-auto">
+              <table className="relative w-full caption-bottom text-sm" style={{ tableLayout: "auto", borderCollapse: "collapse" }}>
+                <TableHeader className="sticky top-0 z-30">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map((header) => {
                         const pinningStyles = getCommonPinningStyles(
-                          header.column
+                          header.column,
+                          true
                         );
                         return (
                           <TableHead
                             key={header.id}
-                            className="px-2 py-2 text-center"
-                            style={{
-                              ...pinningStyles,
-                              width: header.column.columnDef.size,
-                            }}
+                            className="px-2 py-2 text-center bg-gray-100"
+                            style={pinningStyles}
                           >
                             {header.isPlaceholder
                               ? null
@@ -219,16 +218,15 @@ export function UnivGroupAdminStaffTable({
                       >
                         {row.getVisibleCells().map((cell) => {
                           const pinningStyles = getCommonPinningStyles(
-                            cell.column
+                            cell.column,
+                            false
                           );
+                          const isPinned = cell.column.getIsPinned();
                           return (
                             <TableCell
                               key={cell.id}
-                              className="px-2 py-2"
-                              style={{
-                                ...pinningStyles,
-                                width: cell.column.columnDef.size,
-                              }}
+                              className={`px-2 py-2 ${isPinned ? "!bg-gray-100" : ""}`}
+                              style={pinningStyles}
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
@@ -252,7 +250,7 @@ export function UnivGroupAdminStaffTable({
                     </TableRow>
                   )}
                 </TableBody>
-              </Table>
+              </table>
             </div>
           </div>
         </CardContent>

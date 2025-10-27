@@ -200,21 +200,25 @@ export function generateScheduleColumns(
   const colors = [
     {
       color: "rose",
+      simpleColorClass: "bg-rose-500",
       bgClass:
         "data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500",
     },
     {
       color: "amber",
+      simpleColorClass: "bg-amber-500",
       bgClass:
         "data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500",
     },
     {
       color: "teal",
+      simpleColorClass: "bg-teal-500",
       bgClass:
         "data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500",
     },
     {
       color: "indigo",
+      simpleColorClass: "bg-indigo-500",
       bgClass:
         "data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500",
     },
@@ -238,6 +242,7 @@ export function generateScheduleColumns(
       id: schedule.id,
       label,
       color: colors[colorIndex].color,
+      simpleColorClass: colors[colorIndex].simpleColorClass,
       bgColorClass: colors[colorIndex].bgClass,
       time: schedule.time,
       type: schedule.type,

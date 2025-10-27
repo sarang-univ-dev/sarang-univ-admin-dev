@@ -2,14 +2,14 @@ import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { TRetreatRegistrationSchedule, RetreatRegistrationScheduleType } from "@/types";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@/components/ui/custom-checkbox";
 import { Button } from "@/components/ui/button";
 import { QrCode, ArrowUpDown } from "lucide-react";
 import { UnivGroupAdminStaffTableActions } from "./UnivGroupAdminStaffTableActions";
 import { UnivGroupAdminStaffMemoEditor } from "./UnivGroupAdminStaffMemoEditor";
 import { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
 import { formatDate } from "@/utils/formatDate";
-import { getScheduleLabel } from "@/utils/retreat-utils";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 const columnHelper = createColumnHelper<UnivGroupAdminStaffData>();
 
@@ -107,25 +107,27 @@ export function createUnivGroupAdminStaffColumns(
     }),
   ];
 
-  // 2. 동적 스케줄 컬럼
-  const scheduleColumns = schedules.map((schedule) => {
-      const label = getScheduleLabel(
-        new Date(schedule.time),
-        schedule.type as RetreatRegistrationScheduleType
-      );
+  // 2. 동적 스케줄 컬럼 (날짜별 색상 적용)
+  const scheduleColumnsInfo = generateScheduleColumns(schedules);
 
+  const scheduleColumns = scheduleColumnsInfo.map((scheduleInfo) => {
       return columnHelper.accessor(
-        (row) => row.schedules[`schedule_${schedule.id}`],
+        (row) => row.schedules[`schedule_${scheduleInfo.id}`],
         {
-          id: `schedule_${schedule.id}`,
+          id: `schedule_${scheduleInfo.id}`,
           header: () => (
             <div className="text-center text-xs whitespace-normal px-1">
-              {label}
+              {scheduleInfo.label}
             </div>
           ),
           cell: (info) => (
             <div className="flex justify-center">
-              <Checkbox checked={info.getValue()} disabled />
+              <Checkbox
+                checked={info.getValue()}
+                disabled
+                checkedColor={scheduleInfo.simpleColorClass}
+                uncheckedColor="bg-gray-300"
+              />
             </div>
           ),
           enableSorting: false,
