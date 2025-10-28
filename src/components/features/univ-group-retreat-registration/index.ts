@@ -10,7 +10,6 @@ export { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
 
 // 유틸리티
 export { transformUnivGroupAdminStaffData } from "./utils";
-export { createUnivGroupRetreatRegistrationColumns } from "./univ-group-retreat-registration-columns";
 
 // 기존 컴포넌트 재사용 (루트에서)
 export { PaymentSummary } from "@/components/PaymentSummary";
