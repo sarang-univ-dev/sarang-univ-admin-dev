@@ -25,8 +25,8 @@ export const StatusBadge = ({
     case UserRetreatRegistrationPaymentStatus.PENDING:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-yellow-50 border border-yellow-200">
-          <Clock className="h-3.5 w-3.5 text-yellow-500 mr-1.5" />
-          <span className="text-xs font-medium text-yellow-700">
+          <Clock className="h-3.5 w-3.5 text-yellow-500 mr-1.5 flex-shrink-0" />
+          <span className="text-xs font-medium text-yellow-700 whitespace-nowrap">
             입금 확인 대기
           </span>
         </div>
@@ -34,8 +34,8 @@ export const StatusBadge = ({
     case UserRetreatRegistrationPaymentStatus.PAID:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
-          <CheckCheck className="h-3.5 w-3.5 text-green-500 mr-1.5" />
-          <span className="text-xs font-medium text-green-700">
+          <CheckCheck className="h-3.5 w-3.5 text-green-500 mr-1.5 flex-shrink-0" />
+          <span className="text-xs font-medium text-green-700 whitespace-nowrap">
             입금 확인 완료
           </span>
         </div>
@@ -43,8 +43,8 @@ export const StatusBadge = ({
     case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200">
-          <RefreshCcw className="h-3.5 w-3.5 text-blue-500 mr-1.5" />
-          <span className="text-xs font-medium text-blue-700">
+          <RefreshCcw className="h-3.5 w-3.5 text-blue-500 mr-1.5 flex-shrink-0" />
+          <span className="text-xs font-medium text-blue-700 whitespace-nowrap">
             환불 처리 대기
           </span>
         </div>
@@ -52,8 +52,8 @@ export const StatusBadge = ({
     case UserRetreatRegistrationPaymentStatus.REFUNDED:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200">
-          <RotateCcw className="h-3.5 w-3.5 text-purple-500 mr-1.5" />
-          <span className="text-xs font-medium text-purple-700">
+          <RotateCcw className="h-3.5 w-3.5 text-purple-500 mr-1.5 flex-shrink-0" />
+          <span className="text-xs font-medium text-purple-700 whitespace-nowrap">
             환불 처리 완료
           </span>
         </div>
@@ -61,8 +61,8 @@ export const StatusBadge = ({
     case UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-pink-50 border border-pink-200">
-          <UserPlus className="h-3.5 w-3.5 text-pink-500 mr-1.5" />
-          <span className="text-xs font-medium text-pink-700">
+          <UserPlus className="h-3.5 w-3.5 text-pink-500 mr-1.5 flex-shrink-0" />
+          <span className="text-xs font-medium text-pink-700 whitespace-nowrap">
             새가족 신청 요청
           </span>
         </div>
@@ -70,8 +70,8 @@ export const StatusBadge = ({
     case UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200">
-          <Shield className="h-3.5 w-3.5 text-indigo-500 mr-1.5" />
-          <span className="text-xs font-medium text-indigo-700">
+          <Shield className="h-3.5 w-3.5 text-indigo-500 mr-1.5 flex-shrink-0" />
+          <span className="text-xs font-medium text-indigo-700 whitespace-nowrap">
             군지체 신청 요청
           </span>
         </div>

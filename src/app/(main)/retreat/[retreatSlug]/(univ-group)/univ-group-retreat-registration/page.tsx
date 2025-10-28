@@ -36,10 +36,6 @@ export default async function UnivGroupRetreatRegistrationPage({ params }: PageP
 
   return (
     <div className="space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">부서 정보 조회</h1>
-      </div>
-
       {/* ✅ Server Component (정적 집계) */}
       <PaymentSummary registrations={registrations} />
 

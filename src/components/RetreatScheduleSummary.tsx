@@ -20,6 +20,7 @@ import {
   TRetreatRegistrationSchedule,
   UserRetreatRegistrationPaymentStatus,
 } from "@/types";
+import { StatusBadge } from "@/components/Badge";
 
 interface RetreatScheduleSummaryProps {
   registrations: any[];
@@ -265,9 +266,13 @@ export function RetreatScheduleSummary({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">식사 숙박 인원 집계 표</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            수양회 식사 및 숙박 인원 현황 (입금완료 기준)
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm text-muted-foreground">
+              수양회 식사 및 숙박 인원 현황
+            </p>
+            <StatusBadge status={UserRetreatRegistrationPaymentStatus.PAID} />
+            <p className="text-sm text-muted-foreground">기준 집계</p>
+          </div>
         </div>
         <Button
           variant="outline"

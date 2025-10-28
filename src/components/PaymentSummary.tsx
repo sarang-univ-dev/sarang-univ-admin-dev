@@ -184,7 +184,7 @@ export function PaymentSummary({
 
   return (
     <SummaryTable
-      title="입금완료 집계 표"
+      title="입금현황 집계 표"
       description="부서별 입금 및 환불 현황"
       columns={columns}
       rows={formattedRows}
