@@ -59,26 +59,3 @@ export async function fetchRetreatSchedules(retreatSlug: string) {
   return data.retreatInfo.schedule;
 }
 
-/**
- * 수양회 부서 정보 가져오기 (서버 사이드)
- */
-export async function fetchRetreatUnivGroups(retreatSlug: string) {
-  const token = await getServerToken();
-
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/univ-group-info`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      next: { revalidate: 300 }, // 5분 캐싱
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch retreat univ groups");
-  }
-
-  const data = await response.json();
-  return data.retreatUnivGroup;
-}
