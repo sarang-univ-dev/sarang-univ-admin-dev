@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { useUnivGroupRetreatRegistrationColumns } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration-columns";
 import { UnivGroupRetreatRegistrationTableToolbar } from "./UnivGroupRetreatRegistrationTableToolbar";
-import { UnivGroupRetreatRegistrationMemoDialog } from "./UnivGroupRetreatRegistrationMemoDialog";
+import { MemoDialog } from "@/components/common/table/MemoDialog";
 import { transformUnivGroupAdminStaffData } from "./utils";
 import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
 import {
@@ -53,7 +53,7 @@ export function UnivGroupRetreatRegistrationTable({
   retreatSlug,
 }: UnivGroupRetreatRegistrationTableProps) {
   // ✅ SWR로 실시간 데이터 동기화 (initialData를 fallback으로)
-  const { registrations } = useUnivGroupRetreatRegistration(retreatSlug, {
+  const { registrations, saveScheduleMemo, isMutating } = useUnivGroupRetreatRegistration(retreatSlug, {
     fallbackData: initialData,
   });
 
@@ -187,7 +187,15 @@ export function UnivGroupRetreatRegistrationTable({
       </div>
 
       {/* 일정 변경 요청 메모 다이얼로그 */}
-      <UnivGroupRetreatRegistrationMemoDialog retreatSlug={retreatSlug} />
+      <MemoDialog
+        eventName="open-memo-dialog"
+        title="일정 변경 요청 메모 작성"
+        placeholder="메모를 입력하세요... ex) 전참 → 금숙 ~ 토점"
+        onSave={async (id, memo) => {
+          await saveScheduleMemo(id, memo);
+        }}
+        loading={isMutating}
+      />
     </>
   );
 }

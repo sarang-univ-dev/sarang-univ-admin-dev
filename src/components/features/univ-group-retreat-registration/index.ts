@@ -4,8 +4,6 @@ export { UnivGroupRetreatRegistrationTable } from "./UnivGroupRetreatRegistratio
 // 서브 컴포넌트
 export { UnivGroupRetreatRegistrationTableToolbar } from "./UnivGroupRetreatRegistrationTableToolbar";
 export { UnivGroupRetreatRegistrationTableActions } from "./UnivGroupRetreatRegistrationTableActions";
-export { UnivGroupRetreatRegistrationMemoEditor } from "./UnivGroupRetreatRegistrationMemoEditor";
-export { UnivGroupRetreatRegistrationMemoDialog } from "./UnivGroupRetreatRegistrationMemoDialog";
 export { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
 
 // 유틸리티

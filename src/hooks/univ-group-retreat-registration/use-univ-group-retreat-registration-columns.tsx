@@ -6,10 +6,11 @@ import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { Button } from "@/components/ui/button";
 import { QrCode, ArrowUpDown } from "lucide-react";
 import { UnivGroupRetreatRegistrationTableActions } from "@/components/features/univ-group-retreat-registration/UnivGroupRetreatRegistrationTableActions";
-import { UnivGroupRetreatRegistrationMemoEditor } from "@/components/features/univ-group-retreat-registration/UnivGroupRetreatRegistrationMemoEditor";
+import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { ShuttleBusStatusBadge } from "@/components/features/univ-group-retreat-registration/ShuttleBusStatusBadge";
 import { formatDate } from "@/utils/formatDate";
 import { createRetreatScheduleColumns } from "@/hooks/retreat/use-retreat-schedule-columns";
+import { useUnivGroupRetreatRegistration } from "./use-univ-group-retreat-registration";
 
 const columnHelper = createColumnHelper<UnivGroupAdminStaffData>();
 
@@ -29,6 +30,10 @@ export function useUnivGroupRetreatRegistrationColumns(
   schedules: TRetreatRegistrationSchedule[],
   retreatSlug: string
 ) {
+  // 통합 훅에서 메모 관련 액션 가져오기
+  const { saveAdminMemo, updateAdminMemo, deleteAdminMemo, isMutating } =
+    useUnivGroupRetreatRegistration(retreatSlug);
+
   const columns = useMemo(() => {
     // 1. 왼쪽 정적 컬럼
     const leftColumns = [
@@ -286,12 +291,30 @@ export function useUnivGroupRetreatRegistrationColumns(
             메모
           </div>
         ),
-        cell: props => (
-          <UnivGroupRetreatRegistrationMemoEditor
-            row={props.row.original}
-            retreatSlug={retreatSlug}
-          />
-        ),
+        cell: props => {
+          const row = props.row.original;
+          return (
+            <MemoEditor
+              row={row}
+              memoValue={row.staffMemo}
+              onSave={async (id, memo) => {
+                await saveAdminMemo(id, memo);
+              }}
+              onUpdate={async (id, memo) => {
+                if (row.adminMemoId) {
+                  await updateAdminMemo(row.adminMemoId, memo);
+                }
+              }}
+              onDelete={async () => {
+                if (row.adminMemoId) {
+                  await deleteAdminMemo(row.adminMemoId);
+                }
+              }}
+              loading={isMutating}
+              hasExistingMemo={(r) => !!r.staffMemo && !!r.adminMemoId}
+            />
+          );
+        },
         size: 250,
       }),
 
@@ -320,7 +343,7 @@ export function useUnivGroupRetreatRegistrationColumns(
     ];
 
     return [...leftColumns, ...scheduleColumns, ...rightColumns];
-  }, [schedules, retreatSlug]);
+  }, [schedules, retreatSlug, saveAdminMemo, updateAdminMemo, deleteAdminMemo, isMutating]);
 
   return columns;
 }
