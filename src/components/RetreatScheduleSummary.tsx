@@ -9,13 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import html2canvas from "html2canvas";
@@ -255,28 +248,26 @@ export function RetreatScheduleSummary({
 
   if (schedules.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>식사 숙박 인원 집계 표</CardTitle>
-          <CardDescription>수양회 식사 및 숙박 인원 현황</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            스케줄 데이터가 없습니다.
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">식사 숙박 인원 집계 표</h2>
+          <p className="text-sm text-muted-foreground mt-1">수양회 식사 및 숙박 인원 현황</p>
+        </div>
+        <div className="p-8 text-center text-gray-500">
+          스케줄 데이터가 없습니다.
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <div>
-          <CardTitle>식사 숙박 인원 집계 표</CardTitle>
-          <CardDescription>
+          <h2 className="text-xl font-semibold tracking-tight">식사 숙박 인원 집계 표</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             수양회 식사 및 숙박 인원 현황 (입금완료 기준)
-          </CardDescription>
+          </p>
         </div>
         <Button
           variant="outline"
@@ -287,8 +278,8 @@ export function RetreatScheduleSummary({
           <Download className="h-4 w-4 mr-2" />
           이미지 저장
         </Button>
-      </CardHeader>
-      <CardContent ref={tableRef}>
+      </div>
+      <div ref={tableRef}>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -406,7 +397,7 @@ export function RetreatScheduleSummary({
             </TableBody>
           </Table>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

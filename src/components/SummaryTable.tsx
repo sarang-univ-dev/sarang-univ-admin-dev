@@ -11,13 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import html2canvas from "html2canvas";
@@ -94,11 +87,13 @@ export function SummaryTable({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <div>
-          <CardTitle>{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
+          <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+          {description && (
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
+          )}
         </div>
         {downloadable && (
           <Button
@@ -111,8 +106,8 @@ export function SummaryTable({
             이미지 저장
           </Button>
         )}
-      </CardHeader>
-      <CardContent ref={tableRef}>
+      </div>
+      <div ref={tableRef}>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -146,7 +141,7 @@ export function SummaryTable({
             </TableBody>
           </Table>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

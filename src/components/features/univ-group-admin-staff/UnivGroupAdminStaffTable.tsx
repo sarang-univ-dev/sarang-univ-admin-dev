@@ -14,13 +14,6 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   TableBody,
   TableCell,
   TableHead,
@@ -162,25 +155,25 @@ export function UnivGroupAdminStaffTable({
 
   return (
     <>
-      <Card className="shadow-sm">
-        <CardHeader className="bg-gray-50 border-b px-4 py-3">
-          <CardTitle className="text-lg">부서 현황 및 입금 조회</CardTitle>
-          <CardDescription className="text-sm">
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">부서 현황 및 입금 조회</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             부서 신청자 목록
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-4 py-4">
-          {/* 툴바 */}
-          <UnivGroupAdminStaffTableToolbar
-            table={table}
-            globalFilter={globalFilter}
-            setGlobalFilter={setGlobalFilter}
-            retreatSlug={retreatSlug}
-          />
+          </p>
+        </div>
 
-          {/* 테이블 */}
-          <div className="rounded-md border">
-            <div className="max-h-[80vh] overflow-auto">
+        {/* 툴바 */}
+        <UnivGroupAdminStaffTableToolbar
+          table={table}
+          globalFilter={globalFilter}
+          setGlobalFilter={setGlobalFilter}
+          retreatSlug={retreatSlug}
+        />
+
+        {/* 테이블 */}
+        <div>
+          <div className="max-h-[80vh] overflow-auto">
               <table className="relative w-full caption-bottom text-sm" style={{ tableLayout: "auto", borderCollapse: "collapse" }}>
                 <TableHeader className="sticky top-0 z-30">
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -253,8 +246,7 @@ export function UnivGroupAdminStaffTable({
               </table>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
       {/* 일정 변경 요청 메모 다이얼로그 */}
       <UnivGroupAdminStaffMemoDialog retreatSlug={retreatSlug} />
