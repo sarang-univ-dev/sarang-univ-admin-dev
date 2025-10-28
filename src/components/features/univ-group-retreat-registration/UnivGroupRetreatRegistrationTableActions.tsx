@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { CheckSquare, XSquare, RotateCcw } from "lucide-react";
-import { useUnivGroupAdminStaffActions } from "@/hooks/univ-group-admin-staff/use-univ-group-admin-staff-actions";
+import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
 
-interface UnivGroupAdminStaffTableActionsProps {
+interface UnivGroupRetreatRegistrationTableActionsProps {
   row: UnivGroupAdminStaffData;
   retreatSlug: string;
 }
@@ -17,16 +17,16 @@ interface UnivGroupAdminStaffTableActionsProps {
  * - 새가족 신청 승인/거절
  * - 군지체 신청 승인/거절
  */
-export function UnivGroupAdminStaffTableActions({
+export function UnivGroupRetreatRegistrationTableActions({
   row,
   retreatSlug,
-}: UnivGroupAdminStaffTableActionsProps) {
+}: UnivGroupRetreatRegistrationTableActionsProps) {
   const {
-    loading,
-    handleRefund,
+    isMutating,
+    refundComplete,
     handleNewFamilyRequest,
     handleMilitaryRequest,
-  } = useUnivGroupAdminStaffActions(retreatSlug);
+  } = useUnivGroupRetreatRegistration(retreatSlug);
 
   // 상태에 따른 액션 버튼 렌더링
   switch (row.status) {
@@ -39,11 +39,11 @@ export function UnivGroupAdminStaffTableActions({
           <Button
             size="sm"
             variant="outline"
-            onClick={() => handleRefund(row.id)}
-            disabled={loading}
+            onClick={() => refundComplete(row.id)}
+            disabled={isMutating}
             className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors text-xs h-7"
           >
-            {loading ? (
+            {isMutating ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <RotateCcw className="h-3.5 w-3.5" />
@@ -60,10 +60,10 @@ export function UnivGroupAdminStaffTableActions({
             size="sm"
             variant="outline"
             onClick={() => handleNewFamilyRequest(row.id, true)}
-            disabled={loading}
+            disabled={isMutating}
             className="flex items-center gap-1.5 hover:bg-green-600 hover:text-white transition-colors text-xs h-7"
           >
-            {loading ? (
+            {isMutating ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <CheckSquare className="h-3.5 w-3.5" />
@@ -74,10 +74,10 @@ export function UnivGroupAdminStaffTableActions({
             size="sm"
             variant="outline"
             onClick={() => handleNewFamilyRequest(row.id, false)}
-            disabled={loading}
+            disabled={isMutating}
             className="flex items-center gap-1.5 hover:bg-red-600 hover:text-white transition-colors text-xs h-7"
           >
-            {loading ? (
+            {isMutating ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <XSquare className="h-3.5 w-3.5" />
@@ -94,10 +94,10 @@ export function UnivGroupAdminStaffTableActions({
             size="sm"
             variant="outline"
             onClick={() => handleMilitaryRequest(row.id, true)}
-            disabled={loading}
+            disabled={isMutating}
             className="flex items-center gap-1.5 hover:bg-green-600 hover:text-white transition-colors text-xs h-7"
           >
-            {loading ? (
+            {isMutating ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <CheckSquare className="h-3.5 w-3.5" />
@@ -108,10 +108,10 @@ export function UnivGroupAdminStaffTableActions({
             size="sm"
             variant="outline"
             onClick={() => handleMilitaryRequest(row.id, false)}
-            disabled={loading}
+            disabled={isMutating}
             className="flex items-center gap-1.5 hover:bg-red-600 hover:text-white transition-colors text-xs h-7"
           >
-            {loading ? (
+            {isMutating ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <XSquare className="h-3.5 w-3.5" />

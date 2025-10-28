@@ -16,7 +16,7 @@ import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import { formatDate } from "@/utils/formatDate";
 
-interface UnivGroupAdminStaffTableToolbarProps {
+interface UnivGroupRetreatRegistrationTableToolbarProps {
   table: Table<any>;
   globalFilter: string;
   setGlobalFilter: (value: string) => void;
@@ -29,12 +29,12 @@ interface UnivGroupAdminStaffTableToolbarProps {
  * - 열 가시성 토글
  * - 엑셀 다운로드
  */
-export function UnivGroupAdminStaffTableToolbar({
+export function UnivGroupRetreatRegistrationTableToolbar({
   table,
   globalFilter,
   setGlobalFilter,
   retreatSlug,
-}: UnivGroupAdminStaffTableToolbarProps) {
+}: UnivGroupRetreatRegistrationTableToolbarProps) {
   const addToast = useToastStore((state) => state.add);
   const [isDownloading, setIsDownloading] = useState(false);
 

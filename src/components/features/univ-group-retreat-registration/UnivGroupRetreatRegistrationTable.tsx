@@ -20,18 +20,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { createUnivGroupAdminStaffColumns } from "./univ-group-admin-staff-columns";
-import { UnivGroupAdminStaffTableToolbar } from "./UnivGroupAdminStaffTableToolbar";
-import { UnivGroupAdminStaffMemoDialog } from "./UnivGroupAdminStaffMemoDialog";
+import { createUnivGroupRetreatRegistrationColumns } from "./univ-group-retreat-registration-columns";
+import { UnivGroupRetreatRegistrationTableToolbar } from "./UnivGroupRetreatRegistrationTableToolbar";
+import { UnivGroupRetreatRegistrationMemoDialog } from "./UnivGroupRetreatRegistrationMemoDialog";
 import { transformUnivGroupAdminStaffData } from "./utils";
-import { useUnivGroupAdminStaffData } from "@/hooks/univ-group-admin-staff/use-univ-group-admin-staff-data";
+import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
 import {
   IUnivGroupAdminStaffRetreat,
   UnivGroupAdminStaffData,
 } from "@/types/univ-group-admin-staff";
 import { TRetreatRegistrationSchedule } from "@/types";
 
-interface UnivGroupAdminStaffTableProps {
+interface UnivGroupRetreatRegistrationTableProps {
   initialData: IUnivGroupAdminStaffRetreat[];
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
@@ -68,7 +68,7 @@ function getCommonPinningStyles<T>(
 }
 
 /**
- * 부서 행정 간사 - 수양회 신청 테이블 (TanStack Table)
+ * 부서 수양회 신청 테이블 (TanStack Table)
  *
  * Features:
  * - 동적 스케줄 컬럼
@@ -80,13 +80,13 @@ function getCommonPinningStyles<T>(
  * - 엑셀 다운로드
  * - 왼쪽 컬럼 고정 (부서, 성별, 학년, 이름)
  */
-export function UnivGroupAdminStaffTable({
+export function UnivGroupRetreatRegistrationTable({
   initialData,
   schedules,
   retreatSlug,
-}: UnivGroupAdminStaffTableProps) {
+}: UnivGroupRetreatRegistrationTableProps) {
   // ✅ SWR로 실시간 데이터 동기화 (initialData를 fallback으로)
-  const { data: registrations } = useUnivGroupAdminStaffData(retreatSlug, {
+  const { registrations } = useUnivGroupRetreatRegistration(retreatSlug, {
     fallbackData: initialData,
   });
 
@@ -104,13 +104,13 @@ export function UnivGroupAdminStaffTable({
 
   // ✅ useMemo로 columns 메모이제이션 (Best Practice)
   const columns = useMemo(
-    () => createUnivGroupAdminStaffColumns(schedules, retreatSlug),
+    () => createUnivGroupRetreatRegistrationColumns(schedules, retreatSlug),
     [schedules, retreatSlug]
   );
 
   // ✅ useMemo로 data 메모이제이션
   const data = useMemo(
-    () => transformUnivGroupAdminStaffData(registrations || [], schedules),
+    () => transformUnivGroupAdminStaffData(registrations, schedules),
     [registrations, schedules]
   );
 
@@ -164,7 +164,7 @@ export function UnivGroupAdminStaffTable({
         </div>
 
         {/* 툴바 */}
-        <UnivGroupAdminStaffTableToolbar
+        <UnivGroupRetreatRegistrationTableToolbar
           table={table}
           globalFilter={globalFilter}
           setGlobalFilter={setGlobalFilter}
@@ -249,7 +249,7 @@ export function UnivGroupAdminStaffTable({
         </div>
 
       {/* 일정 변경 요청 메모 다이얼로그 */}
-      <UnivGroupAdminStaffMemoDialog retreatSlug={retreatSlug} />
+      <UnivGroupRetreatRegistrationMemoDialog retreatSlug={retreatSlug} />
     </>
   );
 }

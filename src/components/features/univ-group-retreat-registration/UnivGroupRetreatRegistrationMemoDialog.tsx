@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { useUnivGroupAdminStaffActions } from "@/hooks/univ-group-admin-staff/use-univ-group-admin-staff-actions";
+import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
 
-interface UnivGroupAdminStaffMemoDialogProps {
+interface UnivGroupRetreatRegistrationMemoDialogProps {
   retreatSlug: string;
 }
 
@@ -14,15 +14,15 @@ interface UnivGroupAdminStaffMemoDialogProps {
  * - CustomEvent로 열기/닫기
  * - 메모 작성 및 저장
  */
-export function UnivGroupAdminStaffMemoDialog({
+export function UnivGroupRetreatRegistrationMemoDialog({
   retreatSlug,
-}: UnivGroupAdminStaffMemoDialogProps) {
+}: UnivGroupRetreatRegistrationMemoDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentRowId, setCurrentRowId] = useState<string | null>(null);
   const [memoText, setMemoText] = useState("");
 
-  const { loading, handleSaveScheduleMemo } =
-    useUnivGroupAdminStaffActions(retreatSlug);
+  const { isMutating, saveScheduleMemo } =
+    useUnivGroupRetreatRegistration(retreatSlug);
 
   useEffect(() => {
     const handleOpenDialog = (event: Event) => {
@@ -48,7 +48,7 @@ export function UnivGroupAdminStaffMemoDialog({
   const handleSubmit = async () => {
     if (!currentRowId || !memoText.trim()) return;
 
-    await handleSaveScheduleMemo(currentRowId, memoText.trim());
+    await saveScheduleMemo(currentRowId, memoText.trim());
     handleClose();
   };
 
@@ -73,18 +73,18 @@ export function UnivGroupAdminStaffMemoDialog({
           placeholder="메모를 입력하세요... ex) 전참 → 금숙 ~ 토점"
           value={memoText}
           onChange={(e) => setMemoText(e.target.value)}
-          disabled={loading}
+          disabled={isMutating}
         />
         <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
+          <Button variant="outline" onClick={handleClose} disabled={isMutating}>
             취소
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!memoText.trim() || loading}
+            disabled={!memoText.trim() || isMutating}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {loading ? (
+            {isMutating ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
             ) : null}
             저장

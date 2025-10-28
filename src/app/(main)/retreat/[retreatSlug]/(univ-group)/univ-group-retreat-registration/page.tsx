@@ -4,10 +4,10 @@ import {
   fetchRetreatSchedules,
 } from "@/lib/api/server-actions";
 import {
-  UnivGroupAdminStaffTable,
+  UnivGroupRetreatRegistrationTable,
   PaymentSummary,
   RetreatScheduleSummary,
-} from "@/components/features/univ-group-admin-staff";
+} from "@/components/features/univ-group-retreat-registration";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageProps {
@@ -17,7 +17,7 @@ interface PageProps {
 }
 
 /**
- * 부서 행정 간사 - 수양회 신청 조회 페이지 (Server Component)
+ * 부서 수양회 신청 조회 페이지 (Server Component)
  *
  * Features:
  * - Server Component로 초기 데이터 페칭
@@ -25,7 +25,7 @@ interface PageProps {
  * - TanStack Table 기반 테이블
  * - SWR로 실시간 데이터 동기화
  */
-export default async function UnivGroupAdminStaffPage({ params }: PageProps) {
+export default async function UnivGroupRetreatRegistrationPage({ params }: PageProps) {
   const { retreatSlug } = await params;
 
   // ✅ 서버에서 병렬 데이터 페칭 (Promise.all)
@@ -50,7 +50,7 @@ export default async function UnivGroupAdminStaffPage({ params }: PageProps) {
 
       {/* ✅ Client Component (인터랙션 필요 - TanStack Table) */}
       <Suspense fallback={<TableSkeleton />}>
-        <UnivGroupAdminStaffTable
+        <UnivGroupRetreatRegistrationTable
           initialData={registrations}
           schedules={schedules}
           retreatSlug={retreatSlug}

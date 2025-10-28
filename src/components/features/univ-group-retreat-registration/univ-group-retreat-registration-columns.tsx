@@ -5,8 +5,8 @@ import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { Checkbox } from "@/components/ui/custom-checkbox";
 import { Button } from "@/components/ui/button";
 import { QrCode, ArrowUpDown } from "lucide-react";
-import { UnivGroupAdminStaffTableActions } from "./UnivGroupAdminStaffTableActions";
-import { UnivGroupAdminStaffMemoEditor } from "./UnivGroupAdminStaffMemoEditor";
+import { UnivGroupRetreatRegistrationTableActions } from "./UnivGroupRetreatRegistrationTableActions";
+import { UnivGroupRetreatRegistrationMemoEditor } from "./UnivGroupRetreatRegistrationMemoEditor";
 import { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
 import { formatDate } from "@/utils/formatDate";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
@@ -18,7 +18,7 @@ const columnHelper = createColumnHelper<UnivGroupAdminStaffData>();
  * - 정적 컬럼 + 동적 스케줄 컬럼 + 나머지 정적 컬럼
  * - TypeScript 타입 추론을 활용하여 any 타입 제거
  */
-export function createUnivGroupAdminStaffColumns(
+export function createUnivGroupRetreatRegistrationColumns(
   schedules: TRetreatRegistrationSchedule[],
   retreatSlug: string
 ) {
@@ -192,7 +192,7 @@ export function createUnivGroupAdminStaffColumns(
       id: "actions",
       header: () => <div className="text-center text-sm">액션</div>,
       cell: (props) => (
-        <UnivGroupAdminStaffTableActions
+        <UnivGroupRetreatRegistrationTableActions
           row={props.row.original}
           retreatSlug={retreatSlug}
         />
@@ -298,7 +298,7 @@ export function createUnivGroupAdminStaffColumns(
         </div>
       ),
       cell: (props) => (
-        <UnivGroupAdminStaffMemoEditor
+        <UnivGroupRetreatRegistrationMemoEditor
           row={props.row.original}
           retreatSlug={retreatSlug}
         />

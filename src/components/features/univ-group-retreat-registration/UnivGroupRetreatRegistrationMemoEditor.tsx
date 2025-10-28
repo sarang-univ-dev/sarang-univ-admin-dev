@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, X, Trash2 } from "lucide-react";
-import { useUnivGroupAdminStaffActions } from "@/hooks/univ-group-admin-staff/use-univ-group-admin-staff-actions";
+import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 
-interface UnivGroupAdminStaffMemoEditorProps {
+interface UnivGroupRetreatRegistrationMemoEditorProps {
   row: UnivGroupAdminStaffData;
   retreatSlug: string;
 }
@@ -17,19 +17,19 @@ interface UnivGroupAdminStaffMemoEditorProps {
  * - 메모 추가/수정/삭제
  * - 인라인 편집 UI
  */
-export function UnivGroupAdminStaffMemoEditor({
+export function UnivGroupRetreatRegistrationMemoEditor({
   row,
   retreatSlug,
-}: UnivGroupAdminStaffMemoEditorProps) {
+}: UnivGroupRetreatRegistrationMemoEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [memoValue, setMemoValue] = useState(row.staffMemo || "");
 
   const {
-    loading,
-    handleSaveAdminMemo,
-    handleUpdateAdminMemo,
-    handleDeleteAdminMemo,
-  } = useUnivGroupAdminStaffActions(retreatSlug);
+    isMutating,
+    saveAdminMemo,
+    updateAdminMemo,
+    deleteAdminMemo,
+  } = useUnivGroupRetreatRegistration(retreatSlug);
 
   const handleSave = async () => {
     if (!memoValue.trim()) {
@@ -41,10 +41,10 @@ export function UnivGroupAdminStaffMemoEditor({
 
     if (hasExistingMemo && memoId) {
       // 수정
-      await handleUpdateAdminMemo(memoId, memoValue.trim());
+      await updateAdminMemo(memoId, memoValue.trim());
     } else {
       // 신규
-      await handleSaveAdminMemo(row.id, memoValue.trim());
+      await saveAdminMemo(row.id, memoValue.trim());
     }
 
     setIsEditing(false);
@@ -57,7 +57,7 @@ export function UnivGroupAdminStaffMemoEditor({
 
   const handleDelete = () => {
     if (row.adminMemoId) {
-      handleDeleteAdminMemo(row.adminMemoId);
+      deleteAdminMemo(row.adminMemoId);
     }
   };
 
@@ -74,7 +74,7 @@ export function UnivGroupAdminStaffMemoEditor({
               Math.max(60, Math.min(200, memoValue.split("\n").length * 20 + 20)) +
               "px",
           }}
-          disabled={loading}
+          disabled={isMutating}
           rows={Math.max(3, Math.min(10, memoValue.split("\n").length + 1))}
         />
         <div className="flex gap-1 justify-end">
@@ -82,10 +82,10 @@ export function UnivGroupAdminStaffMemoEditor({
             size="sm"
             variant="outline"
             onClick={handleSave}
-            disabled={loading || !memoValue.trim()}
+            disabled={isMutating || !memoValue.trim()}
             className="h-7 px-2"
           >
-            {loading ? (
+            {isMutating ? (
               <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <Save className="h-3 w-3" />
@@ -95,7 +95,7 @@ export function UnivGroupAdminStaffMemoEditor({
             size="sm"
             variant="ghost"
             onClick={handleCancel}
-            disabled={loading}
+            disabled={isMutating}
             className="h-7 px-2"
           >
             <X className="h-3 w-3" />
@@ -121,10 +121,10 @@ export function UnivGroupAdminStaffMemoEditor({
           size="sm"
           variant="ghost"
           onClick={handleDelete}
-          disabled={loading}
+          disabled={isMutating}
           className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 mt-1"
         >
-          {loading ? (
+          {isMutating ? (
             <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
             <Trash2 className="h-3 w-3" />

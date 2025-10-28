@@ -2,14 +2,14 @@ import { webAxios } from "@/lib/api/axios";
 import { IUnivGroupAdminStaffRetreat } from "@/types/univ-group-admin-staff";
 
 /**
- * 부서 행정 간사 API 클라이언트
+ * 부서 수양회 신청 API 클라이언트
  *
  * @description
  * - 재사용 가능한 독립적인 API 함수들
  * - Object namespace로 API 함수 그룹화
  * - 타입 안전성 보장 (모든 함수가 Promise<T> 반환)
  */
-export const UnivGroupAdminStaffAPI = {
+export const UnivGroupRetreatRegistrationAPI = {
   /**
    * 부서 행정 간사 수양회 신청 목록 조회
    *
