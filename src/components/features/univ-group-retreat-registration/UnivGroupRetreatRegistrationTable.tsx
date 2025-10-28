@@ -28,6 +28,8 @@ import {
   UnivGroupAdminStaffData,
 } from "@/types/univ-group-admin-staff";
 import { TRetreatRegistrationSchedule } from "@/types";
+import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
+import { UnivGroupRetreatRegistrationDetailContent } from "./UnivGroupRetreatRegistrationDetailContent";
 
 interface UnivGroupRetreatRegistrationTableProps {
   initialData: IUnivGroupAdminStaffRetreat[];
@@ -57,6 +59,9 @@ export function UnivGroupRetreatRegistrationTable({
     fallbackData: initialData,
   });
 
+  // ✅ 사이드바 상태 관리
+  const sidebar = useDetailSidebar<UnivGroupAdminStaffData>();
+
   // ✅ TanStack Table State
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -64,7 +69,11 @@ export function UnivGroupRetreatRegistrationTable({
   const [globalFilter, setGlobalFilter] = useState("");
 
   // ✅ 컬럼 훅으로 컬럼 정의 가져오기
-  const columns = useUnivGroupRetreatRegistrationColumns(schedules, retreatSlug);
+  const columns = useUnivGroupRetreatRegistrationColumns(
+    schedules,
+    retreatSlug,
+    sidebar.open
+  );
 
   // ✅ useMemo로 data 메모이제이션
   const data = useMemo(
@@ -196,6 +205,17 @@ export function UnivGroupRetreatRegistrationTable({
         }}
         loading={isMutating}
       />
+
+      {/* 상세 정보 사이드바 */}
+      <DetailSidebar
+        open={sidebar.isOpen}
+        onOpenChange={sidebar.setIsOpen}
+        data={sidebar.selectedItem}
+        title="신청자 상세 정보"
+        description={(data) => `${data.name} (${data.department}) 신청 내역`}
+      >
+        {(data) => <UnivGroupRetreatRegistrationDetailContent data={data} />}
+      </DetailSidebar>
     </>
   );
 }

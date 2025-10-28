@@ -5,6 +5,7 @@ export { UnivGroupRetreatRegistrationTable } from "./UnivGroupRetreatRegistratio
 export { UnivGroupRetreatRegistrationTableToolbar } from "./UnivGroupRetreatRegistrationTableToolbar";
 export { UnivGroupRetreatRegistrationTableActions } from "./UnivGroupRetreatRegistrationTableActions";
 export { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
+export { UnivGroupRetreatRegistrationDetailContent } from "./UnivGroupRetreatRegistrationDetailContent";
 
 // 유틸리티
 export { transformUnivGroupAdminStaffData } from "./utils";

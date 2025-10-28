@@ -4,7 +4,7 @@ import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { Button } from "@/components/ui/button";
-import { QrCode, ArrowUpDown } from "lucide-react";
+import { QrCode, ArrowUpDown, Info } from "lucide-react";
 import { UnivGroupRetreatRegistrationTableActions } from "@/components/features/univ-group-retreat-registration/UnivGroupRetreatRegistrationTableActions";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { ShuttleBusStatusBadge } from "@/components/features/univ-group-retreat-registration/ShuttleBusStatusBadge";
@@ -24,11 +24,13 @@ const columnHelper = createColumnHelper<UnivGroupAdminStaffData>();
  *
  * @param schedules - 수양회 스케줄 목록 (동적 컬럼 생성에 사용)
  * @param retreatSlug - 수양회 슬러그 (액션에 필요)
+ * @param onRowClick - 행 클릭 시 실행할 콜백 함수 (상세 정보 사이드바 열기)
  * @returns TanStack Table columns
  */
 export function useUnivGroupRetreatRegistrationColumns(
   schedules: TRetreatRegistrationSchedule[],
-  retreatSlug: string
+  retreatSlug: string,
+  onRowClick?: (row: UnivGroupAdminStaffData) => void
 ) {
   // 통합 훅에서 메모 관련 액션 가져오기
   const { saveAdminMemo, updateAdminMemo, deleteAdminMemo, isMutating } =
@@ -159,17 +161,6 @@ export function useUnivGroupRetreatRegistrationColumns(
         size: 100,
       }),
 
-      columnHelper.accessor("createdAt", {
-        id: "createdAt",
-        header: () => <div className="text-center text-sm">신청시각</div>,
-        cell: info => (
-          <div className="text-center text-xs text-gray-600 whitespace-nowrap">
-            {formatDate(info.getValue())}
-          </div>
-        ),
-        size: 140,
-      }),
-
       columnHelper.accessor("status", {
         id: "status",
         header: () => <div className="text-center text-sm">입금 현황</div>,
@@ -183,6 +174,25 @@ export function useUnivGroupRetreatRegistrationColumns(
       }),
 
       columnHelper.display({
+        id: "detailInfo",
+        header: () => <div className="text-center text-sm">상세</div>,
+        cell: props => (
+          <div className="flex justify-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onRowClick?.(props.row.original)}
+              className="h-7 text-xs"
+            >
+              <Info className="h-3 w-3 mr-1" />
+              보기
+            </Button>
+          </div>
+        ),
+        size: 80,
+      }),
+
+      columnHelper.display({
         id: "actions",
         header: () => <div className="text-center text-sm">액션</div>,
         cell: props => (
@@ -192,26 +202,6 @@ export function useUnivGroupRetreatRegistrationColumns(
           />
         ),
         size: 150,
-      }),
-
-      columnHelper.accessor("confirmedBy", {
-        id: "confirmedBy",
-        header: () => <div className="text-center text-sm">처리자명</div>,
-        cell: info => (
-          <div className="text-center text-sm">{info.getValue() || "-"}</div>
-        ),
-        size: 100,
-      }),
-
-      columnHelper.accessor("paymentConfirmedAt", {
-        id: "paymentConfirmedAt",
-        header: () => <div className="text-center text-sm">처리시각</div>,
-        cell: info => (
-          <div className="text-center text-xs text-gray-600 whitespace-nowrap">
-            {formatDate(info.getValue())}
-          </div>
-        ),
-        size: 140,
       }),
 
       columnHelper.accessor("hadRegisteredShuttleBus", {
@@ -343,7 +333,7 @@ export function useUnivGroupRetreatRegistrationColumns(
     ];
 
     return [...leftColumns, ...scheduleColumns, ...rightColumns];
-  }, [schedules, retreatSlug, saveAdminMemo, updateAdminMemo, deleteAdminMemo, isMutating]);
+  }, [schedules, retreatSlug, onRowClick, saveAdminMemo, updateAdminMemo, deleteAdminMemo, isMutating]);
 
   return columns;
 }
