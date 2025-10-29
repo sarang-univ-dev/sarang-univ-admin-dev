@@ -1,60 +1,46 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import UserAPI from "@/lib/api/user";
+import config from "@/lib/constant/config";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import LoadingIndicator from "@/components/common/LoadingIndicator";
 
 export default function Redirect() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState(false);
 
   const handleLogin = async () => {
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const googleToken = urlParams.get("code");
-      if (!googleToken) {
+      const code = searchParams.get("code");
+      const env = process.env.NEXT_PUBLIC_SARANG_ENV || "local";
+
+      if (!code) {
         throw new Error("인증 코드가 없습니다.");
       }
 
-      const loginRes = await fetch("/api/auth/login/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ googleToken }),
-      });
-      if (!loginRes.ok) {
-        const body = await loginRes.json();
-        throw new Error(body.error || "구글 로그인 실패");
+      // ✅ Express 서버로 직접 요청
+      const response = await fetch(
+        `${config.API_HOST}/api/v1/auth/google/callback?code=${encodeURIComponent(code)}&env=${env}`,
+        {
+          method: "GET",
+          credentials: "include", // ✅ 쿠키 수신
+        }
+      );
+
+      if (!response.ok) {
+        const body = await response.json();
+        throw new Error(body.message || "구글 로그인 실패");
       }
 
-      await new Promise(r => setTimeout(r, 0));
+      const data = await response.json();
 
-      const retreatSlug = await UserAPI.getUserRetreatSlug();
-      if (!retreatSlug) {
-        throw new Error("retreatSlug 조회 실패");
-      }
+      // ✅ 쿠키는 자동으로 설정됨 (httpOnly)
+      console.log("로그인 성공:", data.user);
 
-      const userRole = await UserAPI.getUserRole(retreatSlug);
-      if (!Array.isArray(userRole) || userRole.length === 0) {
-        throw new Error("권한 정보가 없습니다.");
-      }
-
-      const registerRes = await fetch("/api/userrole", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          roles: userRole.map(r => r.role),
-        }),
-      });
-      if (!registerRes.ok) {
-        const body = await registerRes.json();
-        throw new Error(body.error || "권한 등록 실패");
-      }
-
+      // 대시보드로 리디렉션
       router.replace("/");
       router.refresh();
     } catch (e: any) {
@@ -65,10 +51,10 @@ export default function Redirect() {
 
   useEffect(() => {
     handleLogin();
-  }, []);
+  }, [searchParams]);
 
   if (error) {
-    return <ErrorMessage message="러그인 중 오류가 발생했습니다." />;
+    return <ErrorMessage message="로그인 중 오류가 발생했습니다." />;
   }
   return <LoadingIndicator />;
 }

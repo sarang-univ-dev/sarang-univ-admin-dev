@@ -14,6 +14,7 @@ const devConfig: typeof prodConfig = {
 const localConfig: typeof prodConfig = {
   ...devConfig,
   ENV: "local",
+  API_HOST: "http://localhost:4000", // 로컬 서버
 };
 
 const config = (function () {
