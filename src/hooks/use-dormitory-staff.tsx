@@ -1,6 +1,5 @@
 import useSWR from "swr";
 import { webAxios } from "@/lib/api/axios";
-import Cookies from "js-cookie";
 import { Gender } from "@/types";
 
 // 인원관리 간사 전용 인터페이스 - 필요한 필드만 정의
@@ -25,12 +24,7 @@ export interface IDormitoryStaffRegistration {
 }
 
 const fetcher = async (url: string) => {
-  const accessToken = Cookies.get("accessToken");
-  const response = await webAxios.get(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await webAxios.get(url);
 
   // 새로운 dormitory 엔드포인트 응답 구조 사용
   return response.data.dormitoryStaffRegistrations;

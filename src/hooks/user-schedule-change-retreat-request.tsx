@@ -4,7 +4,6 @@ import {
   UserRetreatRegistrationType,
   UserRetreatRegistrationPaymentStatus,
 } from "@/types";
-import Cookies from "js-cookie";
 
 export interface IUserScheduleChangeRetreat {
   userType: UserRetreatRegistrationType | null;
@@ -24,12 +23,7 @@ export interface IUserScheduleChangeRetreat {
 }
 
 const fetcher = async (url: string) => {
-  const accessToken = Cookies.get("accessToken");
-  const response = await webAxios.get(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await webAxios.get(url);
   return response.data.scheduleChangeRequests;
 };
 

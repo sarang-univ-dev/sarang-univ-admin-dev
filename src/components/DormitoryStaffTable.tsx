@@ -45,7 +45,6 @@ import { COMPLETE_GROUP_ROW_COUNT } from "@/lib/constant/lineup.constant";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import { webAxios } from "@/lib/api/axios";
 import { AxiosError } from "axios";
-import Cookies from "js-cookie";
 
 import { UserRetreatRegistrationMemoType, Gender } from "@/types";
 
@@ -392,12 +391,7 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
         try {
           await webAxios.post(
             `/api/v1/retreat/${retreatSlug}/dormitory/${id}/dormitory-memo`,
-            { memo },
-            {
-              headers: {
-                Authorization: `Bearer ${Cookies.get("accessToken")}`,
-              },
-            }
+            { memo }
           );
           addToast({
             title: "성공",
@@ -425,12 +419,7 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
         setLoading(id, "delete_memo", true);
         try {
           await webAxios.delete(
-            `/api/v1/retreat/${retreatSlug}/dormitory/${memoId}/dormitory-memo`,
-            {
-              headers: {
-                Authorization: `Bearer ${Cookies.get("accessToken")}`,
-              },
-            }
+            `/api/v1/retreat/${retreatSlug}/dormitory/${memoId}/dormitory-memo`
           );
           addToast({
             title: "성공",

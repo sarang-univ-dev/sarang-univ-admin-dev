@@ -3,7 +3,6 @@ import { webAxios } from "@/lib/api/axios";
 import { Gender } from "@/types";
 import { UserRetreatRegistrationType } from "@/types";
 import { UserRetreatShuttleBusPaymentStatus } from "@/types";
-import Cookies from "js-cookie";
 
 export interface IUserBusRegistration {
   id: number;
@@ -21,12 +20,7 @@ export interface IUserBusRegistration {
 }
 
 const fetcher = async (url: string) => {
-  const accessToken = Cookies.get("accessToken");
-  const response = await webAxios.get(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await webAxios.get(url);
 
   return response.data.retreatShuttleBusRegistrations;
 };

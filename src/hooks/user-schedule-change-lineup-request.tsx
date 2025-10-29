@@ -4,7 +4,6 @@ import {
   UserRetreatRegistrationType,
   Gender,
 } from "@/types";
-import Cookies from "js-cookie";
 
 export interface IUserScheduleChangeLineup {
   id: number;
@@ -27,12 +26,7 @@ export interface IUserScheduleChangeLineup {
 }
 
 const fetcher = async (url: string) => {
-  const accessToken = Cookies.get("accessToken");
-  const response = await webAxios.get(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await webAxios.get(url);
   return response.data.scheduleChangeRequests;
 };
 

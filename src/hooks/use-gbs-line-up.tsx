@@ -3,7 +3,6 @@ import { webAxios } from "@/lib/api/axios";
 import { Gender } from "@/types";
 import { UserRetreatRegistrationType } from "@/types";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
-import Cookies from "js-cookie";
 
 export interface IUserRetreatGBSLineup {
   gbsNumber: number;
@@ -34,12 +33,7 @@ export interface IUserRetreatGBSLineup {
 
 
 const fetcher = async (url: string) => {
-  const accessToken = Cookies.get("accessToken");
-  const response = await webAxios.get(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await webAxios.get(url);
   // API 응답 구조 변경 반영
   return response.data.userRetreatGbsLineups;
 };
