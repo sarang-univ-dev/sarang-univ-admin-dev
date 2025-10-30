@@ -15,7 +15,6 @@ export default function Redirect() {
   const handleLogin = async () => {
     try {
       const code = searchParams.get("code");
-      const env = process.env.NEXT_PUBLIC_SARANG_ENV || "local";
 
       if (!code) {
         throw new Error("인증 코드가 없습니다.");
@@ -23,7 +22,7 @@ export default function Redirect() {
 
       // ✅ Express 서버로 직접 요청
       const response = await fetch(
-        `${config.API_HOST}/api/v1/auth/google/callback?code=${encodeURIComponent(code)}&env=${env}`,
+        `${config.API_HOST}/api/v1/auth/google/callback?code=${encodeURIComponent(code)}`,
         {
           method: "GET",
           credentials: "include", // ✅ 쿠키 수신
