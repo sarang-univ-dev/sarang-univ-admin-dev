@@ -18,7 +18,7 @@ export interface IUnivGroupAdminStaffRetreat {
   createdAt: string;
   updatedAt: string;
   paymentStatus: UserRetreatRegistrationPaymentStatus;
-  paymentConfirmedUserId?: number | null;
+  paymentConfirmedAdminUserId?: number | null;
   paymentConfirmedAt?: string | null;
   paymentConfirmUserName?: string | null;
   currentLeaderName?: string | null;
