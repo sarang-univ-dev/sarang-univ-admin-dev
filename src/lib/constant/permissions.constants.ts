@@ -1,7 +1,7 @@
 import { UserRole } from "@/types";
 
 export enum PagePath {
-  UNIV_GROUP_RETREAT = "/univ-group-staff-retreat",
+  UNIV_GROUP_RETREAT = "/univ-group-retreat-registration",
   SCHEDULE_HISTORY = "/schedule-change-history",
   COMFIRM_PAYMENT = "/confirm-retreat-payment",
   SCHEDULE_CHANGE = "/schedule-change-request",
