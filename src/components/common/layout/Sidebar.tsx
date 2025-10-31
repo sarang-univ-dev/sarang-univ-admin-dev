@@ -1,4 +1,6 @@
 // components/common/layout/Sidebar.tsx
+// TODO: 삭제 예정 - 새로운 AppSidebar로 대체됨 (src/components/sidebar/AppSidebar.tsx)
+// 새 사이드바는 shadcn UI 기반이며, 여러 retreat 지원 및 서버에서 권한 계산을 수행합니다.
 "use client";
 
 import React from "react";

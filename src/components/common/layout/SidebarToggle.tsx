@@ -1,3 +1,5 @@
+// TODO: 삭제 예정 - shadcn SidebarTrigger로 대체됨
+// 새 시스템에서는 @/components/ui/sidebar의 SidebarTrigger를 사용합니다.
 "use client";
 
 import { useSidebarStore } from "@/store/sidebar-store";

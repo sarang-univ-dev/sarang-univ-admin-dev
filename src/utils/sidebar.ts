@@ -1,3 +1,6 @@
+// TODO: 삭제 예정 - 권한 계산은 서버에서 수행 (GET /api/admin/retreats)
+// 새로운 시스템에서는 서버가 사용자의 역할에 따라 메뉴를 계산하여 반환합니다.
+// 클라이언트는 서버에서 받은 메뉴를 그대로 표시만 합니다.
 import { PagePath, USER_ROLE_PAGES } from '@/lib/constant/permissions.constants'
 import { UserRetreatMapping } from '@/lib/types/common'
 
