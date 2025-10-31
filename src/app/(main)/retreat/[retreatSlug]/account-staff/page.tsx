@@ -1,76 +1,80 @@
-"use client";
+import { Suspense } from "react";
+import {
+  fetchAccountStaffRegistrations,
+  fetchRetreatSchedules,
+} from "@/lib/api/server-actions";
+import {
+  AccountStaffRegistrationTable,
+  PaymentSummary,
+  RetreatScheduleSummary,
+  AccountStatus,
+} from "@/components/features/account-staff";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { useEffect, useState } from "react";
-import { useUserRetreatRegistration } from "@/hooks/use-account-staff";
-import { AccountStaffTable } from "@/components/AccountStaffTable";
-import { useParams } from "next/navigation";
-import { TRetreatRegistrationSchedule, TRetreatUnivGroup } from "@/types";
-import { webAxios } from "@/lib/api/axios";
-import { PaymentSummary } from "@/components/PaymentSummary";
-import { RetreatScheduleSummary } from "@/components/RetreatScheduleSummary";
-import { AccountStatus } from "@/components/account-status";
+interface PageProps {
+  params: Promise<{
+    retreatSlug: string;
+  }>;
+}
 
-export default function AccountStaffPage() {
-  const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(
-    []
-  );
+/**
+ * 재정 간사 페이지 (Server Component)
+ *
+ * Features:
+ * - Server Component로 초기 데이터 페칭
+ * - 병렬 데이터 로딩 (Promise.all)
+ * - TanStack Table 기반 테이블
+ * - SWR로 실시간 데이터 동기화
+ */
+export default async function AccountStaffPage({ params }: PageProps) {
+  const { retreatSlug } = await params;
 
-  const [retreatUnivGroup, setRetreatUnivGroup] = useState<TRetreatUnivGroup[]>(
-    []
-  );
-
-  const params = useParams();
-  const retreatSlug = params.retreatSlug as string;
-
-  const { data, isLoading, error } = useUserRetreatRegistration(retreatSlug);
-
-  useEffect(() => {
-    const fetchSchedules = async () => {
-      const response = await webAxios.get(
-        `/api/v1/retreat/${retreatSlug}/info`
-      );
-
-      setSchedules(response.data.retreatInfo.schedule);
-    };
-
-    const fetchRetreatUnivGroup = async () => {
-      const response = await webAxios.get(
-        `/api/v1/retreat/${retreatSlug}/univ-group-info`
-      );
-
-      setRetreatUnivGroup(response.data.retreatUnivGroup);
-    };
-
-    fetchSchedules();
-    fetchRetreatUnivGroup();
-  }, [retreatSlug]);
-
-  if (error) {
-    return <div>에러가 발생했습니다: {error.message}</div>;
-  }
-
-  if (isLoading) {
-    return <div>데이터를 불러오는 중...</div>;
-  }
+  // ✅ 서버에서 병렬 데이터 페칭 (Promise.all)
+  const [registrations, schedules] = await Promise.all([
+    fetchAccountStaffRegistrations(retreatSlug),
+    fetchRetreatSchedules(retreatSlug),
+  ]);
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold">재정 간사 페이지</h1>
-
-      <PaymentSummary registrations={data || []} />
+    <div className="space-y-8 p-6">
+      {/* ✅ Server Component (정적 집계) */}
+      <PaymentSummary registrations={registrations} />
 
       <RetreatScheduleSummary
-        registrations={data || []}
+        registrations={registrations}
         schedules={schedules}
       />
 
-      <AccountStatus registrations={data || []} />
+      <AccountStatus registrations={registrations} />
 
-      <AccountStaffTable
-        registrations={data || []}
-        schedules={schedules}
-        retreatSlug={retreatSlug}
-      />
+      {/* ✅ Client Component (인터랙션 필요 - TanStack Table) */}
+      <Suspense fallback={<TableSkeleton />}>
+        <AccountStaffRegistrationTable
+          initialData={registrations}
+          schedules={schedules}
+          retreatSlug={retreatSlug}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+/**
+ * 테이블 로딩 스켈레톤
+ */
+function TableSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-10 w-[300px]" />
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-[100px]" />
+          <Skeleton className="h-10 w-[120px]" />
+        </div>
+      </div>
+      <div className="rounded-md border">
+        <Skeleton className="h-[600px] w-full" />
+      </div>
     </div>
   );
 }

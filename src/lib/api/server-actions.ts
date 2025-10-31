@@ -59,3 +59,27 @@ export async function fetchRetreatSchedules(retreatSlug: string) {
   return data.retreatInfo.schedule;
 }
 
+/**
+ * 재정 간사 수양회 신청 데이터 가져오기 (서버 사이드)
+ */
+export async function fetchAccountStaffRegistrations(retreatSlug: string) {
+  const token = await getServerToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/account/retreat-registrations`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      next: { revalidate: 60 }, // 60초 캐싱
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch account staff registrations");
+  }
+
+  const data = await response.json();
+  return data.retreatRegistrations;
+}
+

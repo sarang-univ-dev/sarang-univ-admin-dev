@@ -14,17 +14,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreditCard } from "lucide-react";
 import {
-  TUserRetreatRegistration,
   UserRetreatRegistrationPaymentStatus,
 } from "@/types";
-import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
+import { IRetreatRegistration } from "@/types/account-staff";
 import { useMemo } from "react";
-import { StatusBadge } from "./Badge";
+import { StatusBadge } from "@/components/Badge";
 
 interface AccountStatusProps {
-  registrations?: IUserRetreatRegistration[];
+  registrations?: IRetreatRegistration[];
 }
 
 export function AccountStatus({ registrations = [] }: AccountStatusProps) {
@@ -32,19 +30,19 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
   const departmentStats = useMemo(() => {
     // 부서 ID를 모아서 유니크 배열로 만들기
     const departments = [
-      ...new Set(registrations.map(reg => reg.univGroupNumber)),
+      ...new Set(registrations.map((reg) => reg.univGroupNumber)),
     ].sort((a, b) => a - b); // 부서 번호 순으로 정렬
 
     // 각 부서별 통계 계산
-    const stats = departments.map(deptId => {
+    const stats = departments.map((deptId) => {
       const deptRegistrations = registrations.filter(
-        reg => reg.univGroupNumber === deptId
+        (reg) => reg.univGroupNumber === deptId
       );
 
       // 예상 입금 금액: 입금 대기중(PENDING)인 항목의 금액 합계
       const expectedIncome = deptRegistrations
         .filter(
-          reg =>
+          (reg) =>
             reg.paymentStatus === UserRetreatRegistrationPaymentStatus.PENDING
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
@@ -52,14 +50,14 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       // 실제 입금 금액: 입금 완료(PAID)인 항목의 금액 합계
       const actualIncome = deptRegistrations
         .filter(
-          reg => reg.paymentStatus === UserRetreatRegistrationPaymentStatus.PAID
+          (reg) => reg.paymentStatus === UserRetreatRegistrationPaymentStatus.PAID
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
       // 예상 출금 금액: 환불 요청(REFUND_REQUEST)인 항목의 금액 합계
       const expectedRefund = deptRegistrations
         .filter(
-          reg =>
+          (reg) =>
             reg.paymentStatus ===
             UserRetreatRegistrationPaymentStatus.REFUND_REQUEST
         )
@@ -68,7 +66,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       // 실제 출금 금액: 환불 완료(REFUNDED)인 항목의 금액 합계
       const actualRefund = deptRegistrations
         .filter(
-          reg =>
+          (reg) =>
             reg.paymentStatus === UserRetreatRegistrationPaymentStatus.REFUNDED
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
@@ -153,17 +151,6 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
           <CardDescription>입출금 요약 표</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* TODO: 부서별 계좌 정보 동적으로 부여주기 */}
-          {/* <div className="flex items-center gap-4 mb-6">
-            <CreditCard className="h-6 w-6" />
-            <div>
-              <div className="text-lg font-bold">
-                7777-77-1357924 기업은행
-              </div>
-              <div className="text-sm text-muted-foreground">박서연</div>
-            </div>
-          </div> */}
-
           <Table>
             <TableHeader>
               <TableRow>
@@ -250,26 +237,15 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
               gridTemplateColumns: `repeat(${departmentStats.length}, 1fr)`,
             }}
           >
-            {departmentStats.map(dept => (
+            {departmentStats.map((dept) => (
               <TabsTrigger key={dept.id} value={dept.id.toString()}>
                 {dept.name}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          {departmentStats.map(dept => (
+          {departmentStats.map((dept) => (
             <TabsContent key={dept.id} value={dept.id.toString()}>
-              {/* TODO: 부서별 계좌 정보 동적으로 부여주기 */}
-              {/* <div className="flex items-center gap-4 mb-6">
-                <CreditCard className="h-6 w-6" />
-                <div>
-                  <div className="text-lg font-bold">
-                    7777-77-1357924 기업은행
-                  </div>
-                  <div className="text-sm text-muted-foreground">박서연</div>
-                </div>
-              </div> */}
-
               <Table>
                 <TableHeader>
                   <TableRow>
