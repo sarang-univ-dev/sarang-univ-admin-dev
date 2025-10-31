@@ -83,3 +83,51 @@ export async function fetchAccountStaffRegistrations(retreatSlug: string) {
   return data.retreatRegistrations;
 }
 
+/**
+ * 일정 변경 요청 데이터 가져오기 (서버 사이드)
+ */
+export async function fetchScheduleChangeRequests(retreatSlug: string) {
+  const token = await getServerToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/account/schedule-change-request`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      next: { revalidate: 60 }, // 60초 캐싱
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch schedule change requests");
+  }
+
+  const data = await response.json();
+  return data.scheduleChangeRequests;
+}
+
+/**
+ * 수양회 결제 스케줄 데이터 가져오기 (서버 사이드)
+ */
+export async function fetchRetreatPayments(retreatSlug: string) {
+  const token = await getServerToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/info`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      next: { revalidate: 300 }, // 5분 캐싱 (결제 스케줄은 자주 변경되지 않음)
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch retreat payments");
+  }
+
+  const data = await response.json();
+  return data.retreatInfo.payment;
+}
+

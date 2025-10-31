@@ -1,10 +1,11 @@
-import useSWR from "swr";
-import { webAxios } from "@/lib/api/axios";
 import {
   UserRetreatRegistrationType,
   UserRetreatRegistrationPaymentStatus,
-} from "@/types";
+} from "./index";
 
+/**
+ * 일정 변경 요청 데이터 (서버 응답)
+ */
 export interface IUserScheduleChangeRetreat {
   userType: UserRetreatRegistrationType | null;
   price: number;
@@ -20,17 +21,4 @@ export interface IUserScheduleChangeRetreat {
   memo: string;
   issuerName: string;
   memoCreatedAt: string;
-}
-
-const fetcher = async (url: string) => {
-  const response = await webAxios.get(url);
-  return response.data.scheduleChangeRequests;
-};
-
-export function useUserScheduleChangeRetreat(retreatSlug?: string) {
-  const endpoint = retreatSlug
-    ? `/api/v1/retreat/${retreatSlug}/account/schedule-change-request`
-    : null;
-
-  return useSWR<IUserScheduleChangeRetreat[], Error>(endpoint, fetcher);
 }
