@@ -318,7 +318,7 @@ export function RegistrationTable({
         <div className="space-y-4">
           <SearchBar onSearch={handleSearchResults} data={data} />
 
-          <div className="rounded-md border overflow-x-auto">
+          <div className="rounded-md border">
             <div className="min-w-max">
               <div className="max-h-[80vh] overflow-y-auto">
                 <Table className="w-full whitespace-nowrap relative">
