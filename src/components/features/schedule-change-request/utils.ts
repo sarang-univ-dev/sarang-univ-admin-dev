@@ -17,7 +17,7 @@ export function transformScheduleChangeRequestForTable(
     department: `${req.univGroupNumber}부`,
     grade: `${req.gradeNumber}학년`,
     name: req.userName,
-    schedule: schedules.reduce((acc, cur) => {
+    schedules: schedules.reduce((acc, cur) => {
       acc[`schedule_${cur.id}`] = (
         req.userRetreatRegistrationScheduleIds || []
       ).includes(cur.id);

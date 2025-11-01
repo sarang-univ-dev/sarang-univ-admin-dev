@@ -30,7 +30,7 @@ export function transformRegistrationsForTable(
       grade: `${registration.gradeNumber}학년`,
       name: registration.name,
       phoneNumber: registration.phoneNumber,
-      schedule: scheduleData,
+      schedules: scheduleData,
       type: registration.userType,
       amount: registration.price,
       createdAt: registration.createdAt,

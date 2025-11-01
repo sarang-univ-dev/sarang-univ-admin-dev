@@ -27,7 +27,7 @@ export async function getRetreatsWithMenusServer(): Promise<RetreatWithMenus[]> 
   }
 
   try {
-    const response = await fetch(`${config.API_HOST}/api/admin/retreats`, {
+    const response = await fetch(`${config.API_HOST}/api/v1/admin/retreats`, {
       headers: {
         Cookie: `accessToken=${accessToken}`,
         Accept: "application/json",

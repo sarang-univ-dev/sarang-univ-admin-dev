@@ -1,6 +1,6 @@
 /**
  * Admin API 클라이언트
- * 서버의 /api/admin/* 엔드포인트와 통신
+ * 서버의 /api/v1/admin/* 엔드포인트와 통신
  */
 
 import { webAxios } from './axios'
@@ -16,7 +16,7 @@ import type { RetreatWithMenus, RetreatsResponse } from '@/types/sidebar'
  * // [{ id: 1, slug: '2025-winter', name: '2025 겨울수양회', menuItems: [...] }]
  */
 export async function getRetreatsWithMenus(): Promise<RetreatWithMenus[]> {
-  const response = await webAxios.get<RetreatsResponse>('/api/admin/retreats')
+  const response = await webAxios.get<RetreatsResponse>('/api/v1/admin/retreats')
   return response.data.retreats
 }
 
@@ -36,7 +36,7 @@ export async function checkPageAccess(
   pagePath: string
 ): Promise<boolean> {
   const response = await webAxios.get<{ canAccess: boolean }>(
-    `/api/admin/retreats/${retreatId}/permissions`,
+    `/api/v1/admin/retreats/${retreatId}/permissions`,
     { params: { pagePath } }
   )
   return response.data.canAccess

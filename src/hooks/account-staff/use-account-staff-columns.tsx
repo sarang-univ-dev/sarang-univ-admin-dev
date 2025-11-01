@@ -19,7 +19,7 @@ export interface AccountStaffTableData {
   grade: string;
   name: string;
   phoneNumber: string;
-  schedule: Record<string, boolean>;
+  schedules: Record<string, boolean>;
   type: string | null;
   amount: number;
   createdAt: string;

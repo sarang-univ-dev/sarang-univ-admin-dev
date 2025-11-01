@@ -13,7 +13,7 @@ export interface ScheduleChangeRequestTableData {
   department: string;
   grade: string;
   name: string;
-  schedule: Record<string, boolean>;
+  schedules: Record<string, boolean>;
   type: string | null;
   amount: number;
   createdAt: string;

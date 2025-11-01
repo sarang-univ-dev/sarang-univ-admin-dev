@@ -141,7 +141,7 @@ export function useUnivGroupRetreatRegistrationColumns(
           const type = info.getValue();
           if (!type) return <div className="text-center text-sm">-</div>;
           return (
-            <div className="flex justify-center">
+            <div className="flex justify-center shrink-0">
               <TypeBadge type={type} />
             </div>
           );
@@ -165,7 +165,7 @@ export function useUnivGroupRetreatRegistrationColumns(
         id: "status",
         header: () => <div className="text-center text-sm">입금 현황</div>,
         cell: info => (
-          <div className="flex justify-center">
+          <div className="flex justify-center shrink-0">
             <StatusBadge status={info.getValue()} />
           </div>
         ),
