@@ -454,7 +454,7 @@ export function ShuttleCheckTable({ retreatSlug }: ShuttleCheckTableProps) {
   return (
     <div className="space-y-6">
       {/* 스캔 상태 표시 */}
-      <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
+      <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
           <div
             className={`text-center p-3 rounded-lg font-medium ${

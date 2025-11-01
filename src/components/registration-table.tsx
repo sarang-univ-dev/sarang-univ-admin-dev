@@ -500,7 +500,7 @@ export function RegistrationTable({
           <SearchBar onSearch={handleSearchResults} data={data} />
 
           <div className="rounded-md border overflow-hidden">
-            <div className="overflow-auto max-h-[80vh]">
+            <div className="overflow-y-auto max-h-[80vh]">
               <table
                 className="w-auto relative text-sm caption-bottom"
                 style={{ borderCollapse: 'separate', borderSpacing: 0 }}
