@@ -28,7 +28,7 @@ export function AppSidebar({ retreats }: AppSidebarProps) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-4 py-4">
+      <SidebarHeader className="border-b px-4 py-2">
         <h2 className="text-lg font-semibold">수양회 관리</h2>
       </SidebarHeader>
 
