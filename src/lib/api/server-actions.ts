@@ -17,18 +17,29 @@ async function getServerToken() {
 export async function fetchUnivGroupAdminStaffData(retreatSlug: string) {
   const token = await getServerToken();
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/registration/univ-group-registrations`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      next: { revalidate: 60 }, // 60초 캐싱
-    }
-  );
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/registration/univ-group-registrations`;
+
+  console.log('[fetchUnivGroupAdminStaffData] Fetching:', url);
+  console.log('[fetchUnivGroupAdminStaffData] Token:', token ? 'exists' : 'missing');
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store", // 캐싱 비활성화 (실시간 데이터)
+  });
 
   if (!response.ok) {
-    throw new Error("Failed to fetch univ group admin staff data");
+    const errorText = await response.text();
+    console.error('[fetchUnivGroupAdminStaffData] Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorText,
+      url,
+    });
+    throw new Error(
+      `Failed to fetch univ group admin staff data: ${response.status} ${response.statusText} - ${errorText}`
+    );
   }
 
   const data = await response.json();
@@ -45,9 +56,9 @@ export async function fetchRetreatSchedules(retreatSlug: string) {
     `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/info`,
     {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Cookie: `accessToken=${token}`,
       },
-      next: { revalidate: 300 }, // 5분 캐싱 (스케줄은 자주 변경되지 않음)
+      cache: "no-store",
     }
   );
 
@@ -69,9 +80,9 @@ export async function fetchAccountStaffRegistrations(retreatSlug: string) {
     `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/account/retreat-registrations`,
     {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Cookie: `accessToken=${token}`,
       },
-      next: { revalidate: 60 }, // 60초 캐싱
+      cache: "no-store",
     }
   );
 
@@ -93,9 +104,9 @@ export async function fetchScheduleChangeRequests(retreatSlug: string) {
     `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/account/schedule-change-request`,
     {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Cookie: `accessToken=${token}`,
       },
-      next: { revalidate: 60 }, // 60초 캐싱
+      cache: "no-store",
     }
   );
 
@@ -117,9 +128,9 @@ export async function fetchRetreatPayments(retreatSlug: string) {
     `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/info`,
     {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Cookie: `accessToken=${token}`,
       },
-      next: { revalidate: 300 }, // 5분 캐싱 (결제 스케줄은 자주 변경되지 않음)
+      cache: "no-store",
     }
   );
 
@@ -129,5 +140,37 @@ export async function fetchRetreatPayments(retreatSlug: string) {
 
   const data = await response.json();
   return data.retreatInfo.payment;
+}
+
+/**
+ * GBS Line-Up 데이터 조회 (Server Action)
+ *
+ * @description
+ * 수양회 GBS 라인업 데이터를 서버에서 가져옵니다.
+ * - 실시간 협업을 위한 데이터 제공
+ * - Client Component의 SWR fallbackData로 사용
+ *
+ * @param retreatSlug - 수양회 슬러그
+ * @returns GBS 라인업 데이터 배열
+ */
+export async function fetchGbsLineUpData(retreatSlug: string) {
+  const token = await getServerToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/line-up/user-lineups`,
+    {
+      headers: {
+        Cookie: `accessToken=${token}`,
+      },
+      cache: "no-store", // 실시간 데이터를 위해 캐싱 비활성화
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch GBS line-up data");
+  }
+
+  const data = await response.json();
+  return data.userRetreatGbsLineups;
 }
 
