@@ -2,9 +2,8 @@
   "name": "sarang-univ-admin",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "sudo node server.js",
+    "dev": "sudo node server.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
