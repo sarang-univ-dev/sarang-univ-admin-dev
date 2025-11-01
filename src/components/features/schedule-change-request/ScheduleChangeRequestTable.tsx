@@ -170,11 +170,10 @@ export function ScheduleChangeRequestTable({
             />
 
             {/* 테이블 */}
-            <div className="rounded-md border flex flex-col h-[calc(100vh-300px)]">
-              <div className="overflow-y-auto flex-grow">
-                <div className="overflow-x-auto">
-                  <table className="relative w-full caption-bottom text-sm whitespace-nowrap">
-                    <TableHeader className="bg-gray-50 sticky top-0 z-10">
+            <div className="rounded-md border">
+              <div className="max-h-[calc(100vh-300px)] overflow-auto">
+                <table className="relative w-full caption-bottom text-sm whitespace-nowrap">
+                  <TableHeader className="bg-gray-50 sticky top-0 z-10">
                       {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
                           {headerGroup.headers.map((header) => (
@@ -224,7 +223,6 @@ export function ScheduleChangeRequestTable({
                       )}
                     </TableBody>
                   </table>
-                </div>
               </div>
             </div>
           </div>

@@ -133,8 +133,8 @@ export function AccountStaffRegistrationTable({
         />
 
         {/* 테이블 */}
-        <div>
-          <div className="max-h-[80vh] overflow-auto rounded-md border">
+        <div className="border rounded-lg">
+          <div className="max-h-[80vh] overflow-auto">
             <table className="relative w-full caption-bottom text-sm">
               <TableHeader className="sticky top-0 z-10 bg-gray-100">
                 {table.getHeaderGroups().map((headerGroup) => (

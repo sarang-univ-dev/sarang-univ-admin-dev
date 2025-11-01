@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import { RegistrationTable } from "@/components/registration-table";
 import { PaymentSummary } from "@/components/PaymentSummary";
-import { AccountStatus } from "@/components/account-status";
+import { AccountStatus } from "@/components/features/account-staff/AccountStatus";
 import { useParams } from "next/navigation";
 import { TRetreatRegistrationSchedule, TRetreatUnivGroup } from "@/types";
 import { webAxios } from "@/lib/api/axios";
