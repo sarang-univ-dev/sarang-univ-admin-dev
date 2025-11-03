@@ -30,7 +30,13 @@ export function DetailSidebar<T>({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side={side}
-        className={cn("w-[500px] sm:w-[600px] overflow-y-auto", className)}
+        className={cn(
+          "overflow-y-auto",
+          side === "bottom"
+            ? "h-[90vh]"
+            : "w-[500px] sm:w-[600px]",
+          className
+        )}
       >
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>

@@ -35,7 +35,7 @@ export default async function UnivGroupRetreatRegistrationPage({ params }: PageP
   ]);
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-4 md:space-y-8">
       {/* ✅ Server Component (정적 집계) */}
       <PaymentSummary registrations={registrations} />
 

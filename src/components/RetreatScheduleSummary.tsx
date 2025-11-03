@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import html2canvas from "html2canvas";
 import {
   generateScheduleStats,
@@ -21,6 +21,8 @@ import {
   UserRetreatRegistrationPaymentStatus,
 } from "@/types";
 import { StatusBadge } from "@/components/Badge";
+import { useIsMobile } from "@/hooks/use-media-query";
+import { RetreatScheduleSummaryMobileAccordion } from "./RetreatScheduleSummaryMobileAccordion";
 
 interface RetreatScheduleSummaryProps {
   registrations: any[];
@@ -33,6 +35,8 @@ export function RetreatScheduleSummary({
 }: RetreatScheduleSummaryProps) {
   const tableRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const isMobile = useIsMobile();
 
   // 부서 수 계산
   const uniqueDepartments = useMemo(() => {
@@ -205,6 +209,10 @@ export function RetreatScheduleSummary({
             )}
           </div>
         ),
+        // 실제 숫자 값 추가 (모바일용)
+        fullParticipationCount: fullParticipation,
+        partialParticipationCount: partialParticipation,
+        totalCount: totalParticipants,
       };
     });
   }, [
@@ -249,12 +257,16 @@ export function RetreatScheduleSummary({
 
   if (schedules.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">식사 숙박 인원 집계 표</h2>
-          <p className="text-sm text-muted-foreground mt-1">수양회 식사 및 숙박 인원 현황</p>
+          <h2 className="text-base md:text-xl font-semibold tracking-tight">
+            식사 숙박 인원 집계 표
+          </h2>
+          <p className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1">
+            수양회 식사 및 숙박 인원 현황
+          </p>
         </div>
-        <div className="p-8 text-center text-gray-500">
+        <div className="p-6 md:p-8 text-center text-gray-500 text-sm">
           스케줄 데이터가 없습니다.
         </div>
       </div>
@@ -262,147 +274,179 @@ export function RetreatScheduleSummary({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">식사 숙박 인원 집계 표</h2>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-sm text-muted-foreground">
-              수양회 식사 및 숙박 인원 현황
-            </p>
+    <div className="space-y-3 md:space-y-4">
+      {/* Unified Header for both Mobile and Desktop */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-semibold tracking-tight">
+            식사 숙박 인원 집계 표
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground flex flex-wrap items-center gap-1">
+            수양회 식사 및 숙박 인원 현황 (
             <StatusBadge status={UserRetreatRegistrationPaymentStatus.PAID} />
-            <p className="text-sm text-muted-foreground">기준 집계</p>
-          </div>
+            기준 집계)
+          </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDownloadImage}
-          disabled={isDownloading}
-        >
-          <Download className="h-4 w-4 mr-2" />
-          이미지 저장
-        </Button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {!isMobile && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadImage}
+              disabled={isDownloading}
+              className="text-xs md:text-sm"
+            >
+              <Download className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">이미지 저장</span>
+            </Button>
+          )}
+          {isMobile && (
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+              aria-label={isOpen ? "접기" : "펼치기"}
+            >
+              <ChevronDown
+                className={`h-5 w-5 text-gray-600 transition-transform duration-200 ${
+                  isOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+          )}
+        </div>
       </div>
-      <div ref={tableRef}>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-b-0">
-                <TableHead
-                  rowSpan={2}
-                  className="sticky left-0 bg-gray-100 z-10 border-r font-semibold"
-                >
-                  부서
-                </TableHead>
-                <TableHead
-                  colSpan={3}
-                  className="text-center bg-gray-100 font-semibold text-gray-800 border-l border-l-gray-300"
-                >
-                  요약
-                </TableHead>
-                {dayGroups.map((group, index) => (
+
+      {/* Content Area */}
+      {isMobile ? (
+        /* Mobile: Collapsible Content */
+        isOpen && (
+          <div className="mt-3">
+            <RetreatScheduleSummaryMobileAccordion
+              formattedRows={formattedRows}
+              dayGroups={dayGroups}
+            />
+          </div>
+        )
+      ) : (
+        /* Desktop: Table Layout */
+        <div ref={tableRef}>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b-0">
                   <TableHead
-                    key={group.dayName}
-                    colSpan={group.schedules.length}
-                    className={`text-center font-semibold text-gray-800 border-b ${getDayColor(
-                      index
-                    )} border-l border-l-gray-300`}
+                    rowSpan={2}
+                    className="sticky left-0 bg-gray-100 z-10 border-r font-semibold text-xs md:text-sm px-2 md:px-4"
                   >
-                    {group.dayName}
+                    부서
                   </TableHead>
-                ))}
-              </TableRow>
-              <TableRow>
-                <TableHead className="text-center font-medium text-gray-700 bg-gray-100 border-l border-l-gray-300">
-                  전참
-                </TableHead>
-                <TableHead className="text-center font-medium text-gray-700 bg-gray-100">
-                  부분참
-                </TableHead>
-                <TableHead className="text-center font-medium text-gray-700 bg-gray-100">
-                  합계
-                </TableHead>
-                {dayGroups.map((group, groupIndex) =>
-                  group.schedules.map((schedule, scheduleIndex) => {
-                    const isFirstInGroup = scheduleIndex === 0;
-                    return (
-                      <TableHead
-                        key={schedule.key}
-                        className={`text-center font-medium text-gray-700 ${getDayColor(
-                          groupIndex
-                        )} ${isFirstInGroup ? "border-l border-l-gray-300" : ""}`}
-                      >
-                        {schedule.label}
-                      </TableHead>
-                    );
-                  })
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {formattedRows.map(row => (
-                <TableRow
-                  key={row.id}
-                  className={
-                    row.id === "total" ? "bg-gray-50 font-semibold" : ""
-                  }
-                >
-                  <TableCell className="font-medium sticky left-0 bg-gray-50 z-10 border-r">
-                    <span
-                      className={`inline-flex px-2.5 py-1 rounded-md font-medium ${
-                        row.id === "total"
-                          ? "bg-gray-200 text-gray-800"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
+                  <TableHead
+                    colSpan={3}
+                    className="text-center bg-gray-100 font-semibold text-gray-800 border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4"
+                  >
+                    요약
+                  </TableHead>
+                  {dayGroups.map((group, index) => (
+                    <TableHead
+                      key={group.dayName}
+                      colSpan={group.schedules.length}
+                      className={`text-center font-semibold text-gray-800 border-b ${getDayColor(
+                        index
+                      )} border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4`}
                     >
-                      {row.label}
-                    </span>
-                  </TableCell>
-                  <TableCell
-                    className={`text-center border-l border-l-gray-300 ${
-                      row.id === "total" ? "bg-gray-50" : ""
-                    }`}
-                  >
-                    {row.fullParticipation}
-                  </TableCell>
-                  <TableCell
-                    className={`text-center ${
-                      row.id === "total" ? "bg-gray-50" : ""
-                    }`}
-                  >
-                    {row.partialParticipation}
-                  </TableCell>
-                  <TableCell
-                    className={`text-center ${
-                      row.id === "total" ? "bg-gray-50" : ""
-                    }`}
-                  >
-                    {row.total}
-                  </TableCell>
+                      {group.dayName}
+                    </TableHead>
+                  ))}
+                </TableRow>
+                <TableRow>
+                  <TableHead className="text-center font-medium text-gray-700 bg-gray-100 border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4">
+                    전참
+                  </TableHead>
+                  <TableHead className="text-center font-medium text-gray-700 bg-gray-100 text-xs md:text-sm px-2 md:px-4">
+                    부분참
+                  </TableHead>
+                  <TableHead className="text-center font-medium text-gray-700 bg-gray-100 text-xs md:text-sm px-2 md:px-4">
+                    합계
+                  </TableHead>
                   {dayGroups.map((group, groupIndex) =>
                     group.schedules.map((schedule, scheduleIndex) => {
                       const isFirstInGroup = scheduleIndex === 0;
                       return (
-                        <TableCell
-                          key={`${row.id}-${schedule.key}`}
-                          className={`text-center ${
-                            isFirstInGroup
-                              ? "border-l border-l-gray-300"
-                              : ""
-                          } ${row.id === "total" ? "bg-gray-50" : ""}`}
+                        <TableHead
+                          key={schedule.key}
+                          className={`text-center font-medium text-gray-700 ${getDayColor(
+                            groupIndex
+                          )} ${isFirstInGroup ? "border-l border-l-gray-300" : ""} text-xs md:text-sm px-2 md:px-4`}
                         >
-                          {row.cells[schedule.key]}
-                        </TableCell>
+                          {schedule.label}
+                        </TableHead>
                       );
                     })
                   )}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {formattedRows.map(row => (
+                  <TableRow
+                    key={row.id}
+                    className={
+                      row.id === "total" ? "bg-gray-50 font-semibold" : ""
+                    }
+                  >
+                    <TableCell className="font-medium sticky left-0 bg-gray-50 z-10 border-r px-2 md:px-4 py-2 md:py-3">
+                      <span
+                        className={`inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md font-medium text-xs md:text-sm ${
+                          row.id === "total"
+                            ? "bg-gray-200 text-gray-800"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {row.label}
+                      </span>
+                    </TableCell>
+                    <TableCell
+                      className={`text-center border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 ${
+                        row.id === "total" ? "bg-gray-50" : ""
+                      }`}
+                    >
+                      {row.fullParticipation}
+                    </TableCell>
+                    <TableCell
+                      className={`text-center text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 ${
+                        row.id === "total" ? "bg-gray-50" : ""
+                      }`}
+                    >
+                      {row.partialParticipation}
+                    </TableCell>
+                    <TableCell
+                      className={`text-center text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 ${
+                        row.id === "total" ? "bg-gray-50" : ""
+                      }`}
+                    >
+                      {row.total}
+                    </TableCell>
+                    {dayGroups.map((group, groupIndex) =>
+                      group.schedules.map((schedule, scheduleIndex) => {
+                        const isFirstInGroup = scheduleIndex === 0;
+                        return (
+                          <TableCell
+                            key={`${row.id}-${schedule.key}`}
+                            className={`text-center text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 ${
+                              isFirstInGroup ? "border-l border-l-gray-300" : ""
+                            } ${row.id === "total" ? "bg-gray-50" : ""}`}
+                          >
+                            {row.cells[schedule.key]}
+                          </TableCell>
+                        );
+                      })
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

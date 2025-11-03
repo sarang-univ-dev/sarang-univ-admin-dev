@@ -20,7 +20,9 @@ import {
 } from "@/components/ui/table";
 import { useUnivGroupRetreatRegistrationColumns } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration-columns";
 import { UnivGroupRetreatRegistrationTableToolbar } from "./UnivGroupRetreatRegistrationTableToolbar";
+import { UnivGroupRetreatRegistrationMobileTable } from "./UnivGroupRetreatRegistrationMobileTable";
 import { MemoDialog } from "@/components/common/table/MemoDialog";
+import { useIsMobile } from "@/hooks/use-media-query";
 import { transformUnivGroupAdminStaffData } from "./utils";
 import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
 import {
@@ -61,6 +63,9 @@ export function UnivGroupRetreatRegistrationTable({
 
   // ✅ 사이드바 상태 관리
   const sidebar = useDetailSidebar<UnivGroupAdminStaffData>();
+
+  // ✅ 모바일 감지
+  const isMobile = useIsMobile();
 
   // ✅ TanStack Table State
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -118,13 +123,16 @@ export function UnivGroupRetreatRegistrationTable({
     },
   });
 
+  // ✅ 필터링된 데이터 (모바일 테이블과 공유)
+  const filteredData = table.getRowModel().rows.map((row) => row.original);
+
   return (
     <>
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">부서 현황 및 입금 조회</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            부서 신청자 목록
+            부서 신청자 목록 ({filteredData.length}명)
           </p>
         </div>
 
@@ -136,8 +144,16 @@ export function UnivGroupRetreatRegistrationTable({
           retreatSlug={retreatSlug}
         />
 
-        {/* 테이블 */}
-        <div className="border rounded-lg">
+        {/* ✅ 모바일: 컴팩트 테이블 */}
+        <div className="md:hidden">
+          <UnivGroupRetreatRegistrationMobileTable
+            data={filteredData}
+            onRowClick={sidebar.open}
+          />
+        </div>
+
+        {/* ✅ 데스크톱: 전체 테이블 */}
+        <div className="hidden md:block border rounded-lg">
           <div className="max-h-[80vh] overflow-auto">
             <table className="relative w-full caption-bottom text-sm">
               <TableHeader className="sticky top-0 z-10 bg-gray-100">
@@ -206,15 +222,22 @@ export function UnivGroupRetreatRegistrationTable({
         loading={isMutating}
       />
 
-      {/* 상세 정보 사이드바 */}
+      {/* ✅ 상세 정보 사이드바 (반응형) */}
       <DetailSidebar
         open={sidebar.isOpen}
         onOpenChange={sidebar.setIsOpen}
         data={sidebar.selectedItem}
         title="신청자 상세 정보"
         description={(data) => `${data.name} (${data.department}) 신청 내역`}
+        side={isMobile ? "bottom" : "right"}
       >
-        {(data) => <UnivGroupRetreatRegistrationDetailContent data={data} />}
+        {(data) => (
+          <UnivGroupRetreatRegistrationDetailContent
+            data={data}
+            retreatSlug={retreatSlug}
+            schedules={schedules}
+          />
+        )}
       </DetailSidebar>
     </>
   );
