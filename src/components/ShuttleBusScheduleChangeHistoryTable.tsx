@@ -386,7 +386,6 @@ export function ShuttleBusScheduleChangeHistoryTable({
               </div>
             </div>
           </div>
-        </div>
       </CardContent>
     </Card>
   );

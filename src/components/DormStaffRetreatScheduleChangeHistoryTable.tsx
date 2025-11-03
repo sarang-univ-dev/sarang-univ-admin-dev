@@ -447,7 +447,6 @@ export function RetreatScheduleChangeHistoryTable({
               </div>
             </div>
           </div>
-        </div>
       </CardContent>
     </Card>
   );

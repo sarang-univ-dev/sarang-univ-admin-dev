@@ -494,7 +494,6 @@ export function ShuttleBusScheduleChangeRequestTable({
               </div>
             </div>
           </div>
-        </div>
       </CardContent>
 
       {isModalOpen && selectedRow && (
