@@ -4,7 +4,7 @@ import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { Button } from "@/components/ui/button";
-import { QrCode, ArrowUpDown, Info } from "lucide-react";
+import { ArrowUpDown, Info } from "lucide-react";
 import { UnivGroupRetreatRegistrationTableActions } from "@/components/features/univ-group-retreat-registration/UnivGroupRetreatRegistrationTableActions";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { ShuttleBusStatusBadge } from "@/components/features/univ-group-retreat-registration/ShuttleBusStatusBadge";
@@ -165,24 +165,6 @@ export function useUnivGroupRetreatRegistrationColumns(
       }),
 
       columnHelper.display({
-        id: "detailInfo",
-        header: () => <div className="text-center text-sm whitespace-nowrap">상세</div>,
-        cell: props => (
-          <div className="flex justify-center shrink-0 px-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onRowClick?.(props.row.original)}
-              className="h-7 text-xs whitespace-nowrap"
-            >
-              <Info className="h-3 w-3 mr-1" />
-              보기
-            </Button>
-          </div>
-        ),
-      }),
-
-      columnHelper.display({
         id: "actions",
         header: () => <div className="text-center text-sm whitespace-nowrap">액션</div>,
         cell: props => (
@@ -302,22 +284,18 @@ export function useUnivGroupRetreatRegistrationColumns(
       }),
 
       columnHelper.display({
-        id: "qr",
-        header: () => <div className="text-center text-sm whitespace-nowrap">QR</div>,
+        id: "detailInfo",
+        header: () => <div className="text-center text-sm whitespace-nowrap">상세</div>,
         cell: props => (
           <div className="flex justify-center shrink-0 px-2">
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                if (props.row.original.qrUrl) {
-                  window.open(props.row.original.qrUrl, "_blank");
-                }
-              }}
-              disabled={!props.row.original.qrUrl}
-              className="h-7 text-xs"
+              onClick={() => onRowClick?.(props.row.original)}
+              className="h-8 px-3 whitespace-nowrap"
             >
-              <QrCode className="h-3 w-3" />
+              <Info className="h-4 w-4 mr-1" />
+              보기
             </Button>
           </div>
         ),

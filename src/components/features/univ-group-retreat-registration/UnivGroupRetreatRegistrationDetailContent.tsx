@@ -6,6 +6,9 @@ import { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
 import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
 import { formatDate } from "@/utils/formatDate";
 import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { webAxios } from "@/lib/api/axios";
 
 interface UnivGroupRetreatRegistrationDetailContentProps {
   data: UnivGroupAdminStaffData;
@@ -24,6 +27,34 @@ export function UnivGroupRetreatRegistrationDetailContent({
       .filter((schedule) => data.schedules[`schedule_${schedule.id}`])
       .map((schedule) => schedule.id);
   }, [schedules, data.schedules]);
+
+  // QR 다운로드 핸들러
+  const handleDownloadQR = async () => {
+    try {
+      const response = await webAxios.get(
+        `/api/v1/retreat/${retreatSlug}/qr/${data.id}/download`,
+        { responseType: 'blob' }
+      );
+
+      // Blob에서 파일명 추출 (Content-Disposition 헤더에서)
+      const contentDisposition = response.headers['content-disposition'];
+      const fileName = contentDisposition
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : `QR_${data.name}.png`;
+
+      // Blob을 다운로드
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('QR 다운로드 실패:', error);
+    }
+  };
 
   return (
     <>
@@ -88,6 +119,23 @@ export function UnivGroupRetreatRegistrationDetailContent({
           label="셔틀버스"
           value={<ShuttleBusStatusBadge hasRegistered={data.hadRegisteredShuttleBus} />}
         />
+        <InfoItem
+          label="QR 코드"
+          value={
+            data.qrUrl ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadQR}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                QR 다운로드
+              </Button>
+            ) : (
+              <span className="text-sm text-gray-500">미생성</span>
+            )
+          }
+        />
       </InfoSection>
 
       {/* 처리 정보 */}
@@ -119,19 +167,6 @@ export function UnivGroupRetreatRegistrationDetailContent({
         <InfoSection title="✏️ 행정간사 메모">
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-sm whitespace-pre-wrap">{data.staffMemo}</p>
-          </div>
-        </InfoSection>
-      )}
-
-      {/* QR 코드 */}
-      {data.qrUrl && (
-        <InfoSection title="QR 코드">
-          <div className="flex justify-center p-4">
-            <img
-              src={data.qrUrl}
-              alt="QR Code"
-              className="w-64 h-64 border rounded-lg"
-            />
           </div>
         </InfoSection>
       )}
