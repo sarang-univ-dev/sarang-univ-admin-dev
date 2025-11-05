@@ -37,6 +37,7 @@ export function transformUnivGroupAdminStaffData(
     hadRegisteredShuttleBus: reg.hadRegisteredShuttleBus,
     qrUrl: reg.qrUrl || null,
     memo: reg.univGroupStaffScheduleHistoryMemo || null,
+    historyMemoId: reg.retreatRegistrationHistoryMemoId || null,
     staffMemo: reg.adminMemo || "",
     adminMemoId: reg.adminMemoId || null,
   }));

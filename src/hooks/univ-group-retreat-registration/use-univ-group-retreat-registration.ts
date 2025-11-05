@@ -216,6 +216,48 @@ export function useUnivGroupRetreatRegistration(
   };
 
   /**
+   * 일정 변경 메모 수정
+   *
+   * @param historyMemoId - history 메모 ID
+   * @param memo - 수정할 메모 내용
+   */
+  const updateScheduleMemo = async (historyMemoId: number, memo: string) => {
+    await updateCache(
+      () =>
+        UnivGroupRetreatRegistrationAPI.updateScheduleMemo(
+          retreatSlug,
+          historyMemoId,
+          memo
+        ),
+      undefined,
+      "메모가 성공적으로 수정되었습니다."
+    );
+  };
+
+  /**
+   * 일정 변경 메모 삭제
+   *
+   * @param historyMemoId - history 메모 ID
+   */
+  const deleteScheduleMemo = async (historyMemoId: number) => {
+    confirmDialog.show({
+      title: "메모 삭제",
+      description: "정말로 메모를 삭제하시겠습니까?",
+      onConfirm: async () => {
+        await updateCache(
+          () =>
+            UnivGroupRetreatRegistrationAPI.deleteScheduleMemo(
+              retreatSlug,
+              historyMemoId
+            ),
+          undefined,
+          "메모가 성공적으로 삭제되었습니다."
+        );
+      },
+    });
+  };
+
+  /**
    * 행정간사 메모 저장
    *
    * @param registrationId - 신청 ID
@@ -279,6 +321,8 @@ export function useUnivGroupRetreatRegistration(
     handleMilitaryRequest,
     sendPaymentRequest,
     saveScheduleMemo,
+    updateScheduleMemo,
+    deleteScheduleMemo,
     saveAdminMemo,
     updateAdminMemo,
     deleteAdminMemo,

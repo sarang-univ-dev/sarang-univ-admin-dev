@@ -9,17 +9,26 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { webAxios } from "@/lib/api/axios";
+import { MemoEditor } from "@/components/common/table/MemoEditor";
 
 interface UnivGroupRetreatRegistrationDetailContentProps {
   data: UnivGroupAdminStaffData;
   retreatSlug: string;
   schedules: TRetreatRegistrationSchedule[];
+  onSaveScheduleMemo: (id: string, memo: string) => Promise<void>;
+  onUpdateScheduleMemo: (historyMemoId: number, memo: string) => Promise<void>;
+  onDeleteScheduleMemo: (historyMemoId: number) => Promise<void>;
+  isMutating: boolean;
 }
 
 export function UnivGroupRetreatRegistrationDetailContent({
   data,
   retreatSlug,
   schedules,
+  onSaveScheduleMemo,
+  onUpdateScheduleMemo,
+  onDeleteScheduleMemo,
+  isMutating,
 }: UnivGroupRetreatRegistrationDetailContentProps) {
   // 선택된 스케줄 ID 추출
   const selectedScheduleIds = useMemo(() => {
@@ -138,6 +147,34 @@ export function UnivGroupRetreatRegistrationDetailContent({
         />
       </InfoSection>
 
+      {/* 일정 변동 요청 메모 */}
+      <InfoSection title="📝 일정 변동 요청 메모">
+        <div className="space-y-2">
+          <p className="text-xs text-gray-500">
+            * 재정 간사가 처리하면 메모가 사라집니다
+          </p>
+          <MemoEditor
+            row={data}
+            memoValue={data.memo}
+            onSave={async (id, memo) => {
+              await onSaveScheduleMemo(id, memo);
+            }}
+            onUpdate={async (id, memo) => {
+              if (data.historyMemoId) {
+                await onUpdateScheduleMemo(data.historyMemoId, memo);
+              }
+            }}
+            onDelete={async () => {
+              if (data.historyMemoId) {
+                await onDeleteScheduleMemo(data.historyMemoId);
+              }
+            }}
+            loading={isMutating}
+            hasExistingMemo={(r) => !!r.memo && !!r.historyMemoId}
+          />
+        </div>
+      </InfoSection>
+
       {/* 처리 정보 */}
       {(data.confirmedBy || data.paymentConfirmedAt) && (
         <InfoSection title="ℹ️ 처리 정보">
@@ -150,15 +187,6 @@ export function UnivGroupRetreatRegistrationDetailContent({
               value={formatDate(data.paymentConfirmedAt)}
             />
           )}
-        </InfoSection>
-      )}
-
-      {/* 일정 변동 요청 메모 */}
-      {data.memo && (
-        <InfoSection title="📝 일정 변동 요청 메모">
-          <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-            <p className="text-sm whitespace-pre-wrap">{data.memo}</p>
-          </div>
         </InfoSection>
       )}
 

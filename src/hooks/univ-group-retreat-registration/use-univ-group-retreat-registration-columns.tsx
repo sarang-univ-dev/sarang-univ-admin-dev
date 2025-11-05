@@ -33,8 +33,12 @@ export function useUnivGroupRetreatRegistrationColumns(
   onRowClick?: (row: UnivGroupAdminStaffData) => void
 ) {
   // 통합 훅에서 메모 관련 액션 가져오기
-  const { saveAdminMemo, updateAdminMemo, deleteAdminMemo, isMutating } =
-    useUnivGroupRetreatRegistration(retreatSlug);
+  const {
+    saveAdminMemo,
+    updateAdminMemo,
+    deleteAdminMemo,
+    isMutating,
+  } = useUnivGroupRetreatRegistration(retreatSlug);
 
   const columns = useMemo(() => {
     // 1. 왼쪽 정적 컬럼
@@ -193,59 +197,6 @@ export function useUnivGroupRetreatRegistrationColumns(
         ),
       }),
 
-      columnHelper.accessor("memo", {
-        id: "scheduleMemo",
-        header: () => (
-          <div className="text-center text-sm whitespace-normal">
-            일정 변동
-            <br />
-            요청 메모
-          </div>
-        ),
-        cell: info => (
-          <div
-            className="text-center text-sm max-w-[200px] truncate px-2 shrink-0"
-            title={info.getValue() || ""}
-          >
-            {info.getValue() || "-"}
-          </div>
-        ),
-      }),
-
-      columnHelper.display({
-        id: "memoActions",
-        header: () => <div className="text-center text-sm whitespace-nowrap">메모 관리</div>,
-        cell: props => {
-          const row = props.row.original;
-          // 메모가 있으면 관리 불필요, 없으면서 입금 완료 상태면 작성 가능
-          if (row.memo) {
-            return <div className="text-center text-sm text-gray-600 whitespace-nowrap shrink-0 px-2">-</div>;
-          }
-          // 입금 완료 상태일 때만 작성 버튼 표시
-          if (row.status === "PAID") {
-            return (
-              <div className="flex justify-center shrink-0 px-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    // 메모 다이얼로그 열기 (이벤트를 통해 처리)
-                    const event = new CustomEvent("open-memo-dialog", {
-                      detail: { id: row.id },
-                    });
-                    window.dispatchEvent(event);
-                  }}
-                  className="h-7 text-xs whitespace-nowrap"
-                >
-                  작성
-                </Button>
-              </div>
-            );
-          }
-          return <div className="text-center text-sm text-gray-400 whitespace-nowrap shrink-0 px-2">-</div>;
-        },
-      }),
-
       columnHelper.display({
         id: "adminMemo",
         header: () => (
@@ -303,7 +254,15 @@ export function useUnivGroupRetreatRegistrationColumns(
     ];
 
     return [...leftColumns, ...scheduleColumns, ...rightColumns];
-  }, [schedules, retreatSlug, onRowClick, saveAdminMemo, updateAdminMemo, deleteAdminMemo, isMutating]);
+  }, [
+    schedules,
+    retreatSlug,
+    onRowClick,
+    saveAdminMemo,
+    updateAdminMemo,
+    deleteAdminMemo,
+    isMutating,
+  ]);
 
   return columns;
 }

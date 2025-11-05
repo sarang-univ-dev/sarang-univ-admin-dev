@@ -94,6 +94,39 @@ export const UnivGroupRetreatRegistrationAPI = {
   },
 
   /**
+   * 일정 변경 요청 메모 수정
+   *
+   * @param retreatSlug - 수양회 슬러그
+   * @param historyMemoId - history 메모 ID
+   * @param memo - 수정할 메모 내용
+   */
+  updateScheduleMemo: async (
+    retreatSlug: string,
+    historyMemoId: number,
+    memo: string
+  ): Promise<void> => {
+    await webAxios.put(
+      `/api/v1/retreat/${retreatSlug}/registration/schedule-change-request-memo/${historyMemoId}`,
+      { memo }
+    );
+  },
+
+  /**
+   * 일정 변경 요청 메모 삭제
+   *
+   * @param retreatSlug - 수양회 슬러그
+   * @param historyMemoId - history 메모 ID
+   */
+  deleteScheduleMemo: async (
+    retreatSlug: string,
+    historyMemoId: number
+  ): Promise<void> => {
+    await webAxios.delete(
+      `/api/v1/retreat/${retreatSlug}/registration/schedule-change-request-memo/${historyMemoId}`
+    );
+  },
+
+  /**
    * 행정간사 메모 저장
    *
    * @param retreatSlug - 수양회 슬러그

@@ -21,7 +21,6 @@ import {
 import { useUnivGroupRetreatRegistrationColumns } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration-columns";
 import { UnivGroupRetreatRegistrationTableToolbar } from "./UnivGroupRetreatRegistrationTableToolbar";
 import { UnivGroupRetreatRegistrationMobileTable } from "./UnivGroupRetreatRegistrationMobileTable";
-import { MemoDialog } from "@/components/common/table/MemoDialog";
 import { useIsMobile } from "@/hooks/use-media-query";
 import { transformUnivGroupAdminStaffData } from "./utils";
 import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
@@ -57,7 +56,13 @@ export function UnivGroupRetreatRegistrationTable({
   retreatSlug,
 }: UnivGroupRetreatRegistrationTableProps) {
   // ✅ SWR로 실시간 데이터 동기화 (initialData를 fallback으로)
-  const { registrations, saveScheduleMemo, isMutating } = useUnivGroupRetreatRegistration(retreatSlug, {
+  const {
+    registrations,
+    saveScheduleMemo,
+    updateScheduleMemo,
+    deleteScheduleMemo,
+    isMutating
+  } = useUnivGroupRetreatRegistration(retreatSlug, {
     fallbackData: initialData,
   });
 
@@ -211,17 +216,6 @@ export function UnivGroupRetreatRegistrationTable({
         </div>
       </div>
 
-      {/* 일정 변경 요청 메모 다이얼로그 */}
-      <MemoDialog
-        eventName="open-memo-dialog"
-        title="일정 변경 요청 메모 작성"
-        placeholder="메모를 입력하세요... ex) 전참 → 금숙 ~ 토점"
-        onSave={async (id, memo) => {
-          await saveScheduleMemo(id, memo);
-        }}
-        loading={isMutating}
-      />
-
       {/* ✅ 상세 정보 사이드바 (반응형) */}
       <DetailSidebar
         open={sidebar.isOpen}
@@ -236,6 +230,10 @@ export function UnivGroupRetreatRegistrationTable({
             data={data}
             retreatSlug={retreatSlug}
             schedules={schedules}
+            onSaveScheduleMemo={saveScheduleMemo}
+            onUpdateScheduleMemo={updateScheduleMemo}
+            onDeleteScheduleMemo={deleteScheduleMemo}
+            isMutating={isMutating}
           />
         )}
       </DetailSidebar>

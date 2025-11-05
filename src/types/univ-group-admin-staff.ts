@@ -24,6 +24,7 @@ export interface IUnivGroupAdminStaffRetreat {
   currentLeaderName?: string | null;
   qrUrl?: string | null;
   univGroupStaffScheduleHistoryMemo?: string | null;
+  retreatRegistrationHistoryMemoId?: number | null;
   univGroupStaffScheduleHistoryResolvedAt?: string | null;
   univGroupStaffScheduleHistoryResolvedUserName?: string | null;
   hadRegisteredShuttleBus: boolean;
@@ -52,6 +53,7 @@ export interface UnivGroupAdminStaffData {
   hadRegisteredShuttleBus: boolean;
   qrUrl: string | null;
   memo: string | null; // 일정 변동 요청 메모
+  historyMemoId: number | null; // 일정 변동 요청 메모 ID
   staffMemo: string; // 행정간사 메모
   adminMemoId: number | null;
 }
