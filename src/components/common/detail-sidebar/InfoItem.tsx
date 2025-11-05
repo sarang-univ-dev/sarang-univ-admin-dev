@@ -14,7 +14,7 @@ export function InfoItem({
   valueClassName,
 }: InfoItemProps) {
   return (
-    <div className="flex items-start py-2">
+    <div className="flex items-center py-2">
       <dt className={cn(
         "text-sm font-medium text-gray-500 w-32 flex-shrink-0",
         labelClassName

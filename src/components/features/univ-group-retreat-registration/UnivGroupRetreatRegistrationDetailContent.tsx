@@ -99,11 +99,7 @@ export function UnivGroupRetreatRegistrationDetailContent({
         />
         <InfoItem
           label="금액"
-          value={
-            <span className="font-bold text-lg">
-              {data.amount?.toLocaleString()}원
-            </span>
-          }
+          value={`${data.amount?.toLocaleString()}원`}
         />
         <InfoItem
           label="입금 현황"
