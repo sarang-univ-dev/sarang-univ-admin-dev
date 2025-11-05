@@ -1,20 +1,25 @@
-"use client";
-
 import { SummaryTable } from "./SummaryTable";
 import { generateDepartmentStats } from "../utils/retreat-utils";
 import { StatusBadge } from "./Badge";
-import { UserRetreatRegistrationPaymentStatus } from "@/types";
-import { useMemo } from "react";
+import { UserRetreatRegistrationPaymentStatus, IUnivGroupAdminStaffRetreat } from "@/types";
 
+interface PaymentSummaryProps {
+  registrations: IUnivGroupAdminStaffRetreat[];
+}
+
+/**
+ * 입금현황 집계 표 (Server Component)
+ *
+ * @description
+ * - Server Component로 서버에서 렌더링
+ * - 정적 계산만 수행 (인터랙션 없음)
+ * - JavaScript 번들 크기 감소
+ */
 export function PaymentSummary({
   registrations = [],
-}: {
-  registrations: any[];
-}) {
-  // 부서 수 계산
-  const uniqueDepartments = useMemo(() => {
-    return new Set(registrations.map(reg => reg.univGroupNumber)).size;
-  }, [registrations]);
+}: PaymentSummaryProps) {
+  // 부서 수 계산 (서버에서 한 번만 실행)
+  const uniqueDepartments = new Set(registrations.map(reg => reg.univGroupNumber)).size;
 
   // StatusBadge 컴포넌트를 활용한 동적 컬럼 생성
   const columns = [
@@ -88,12 +93,9 @@ export function PaymentSummary({
   const allRows = generateDepartmentStats(registrations);
 
   // 부서가 1개인 경우 전체 행 제외
-  const rows = useMemo(() => {
-    if (uniqueDepartments <= 1) {
-      return allRows.filter(row => row.id !== "total");
-    }
-    return allRows;
-  }, [allRows, uniqueDepartments]);
+  const rows = uniqueDepartments <= 1
+    ? allRows.filter(row => row.id !== "total")
+    : allRows;
 
   // 각 행을 변환하여 셀 생성
   const formattedRows = rows.map(row => {
