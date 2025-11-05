@@ -96,7 +96,7 @@ export function useRetreatScheduleColumns(
  */
 export function createScheduleCheckboxCell(scheduleInfo: ScheduleColumnInfo) {
   return (info: { getValue: () => unknown }) => (
-    <div className="flex justify-center">
+    <div className="flex justify-center shrink-0">
       <Checkbox
         checked={Boolean(info.getValue())}
         disabled
@@ -115,7 +115,7 @@ export function createScheduleCheckboxCell(scheduleInfo: ScheduleColumnInfo) {
  */
 export function createScheduleHeaderCell(scheduleInfo: ScheduleColumnInfo) {
   return () => (
-    <div className="text-center text-xs whitespace-normal px-1">
+    <div className="text-center text-xs whitespace-normal px-1 shrink-0">
       {scheduleInfo.label}
     </div>
   );
@@ -157,7 +157,6 @@ export function createRetreatScheduleColumns<T extends ScheduleRow>(
         header: createScheduleHeaderCell(scheduleInfo),
         cell: createScheduleCheckboxCell(scheduleInfo),
         enableSorting: false,
-        size: 80,
       }
     );
   });

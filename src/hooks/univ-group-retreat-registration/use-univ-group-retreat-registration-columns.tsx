@@ -42,7 +42,7 @@ export function useUnivGroupRetreatRegistrationColumns(
       columnHelper.accessor("department", {
         id: "department",
         header: ({ column }) => (
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center whitespace-nowrap">
             <Button
               variant="ghost"
               onClick={() =>
@@ -57,36 +57,33 @@ export function useUnivGroupRetreatRegistrationColumns(
           </div>
         ),
         cell: info => (
-          <div className="text-center text-sm">{info.getValue()}</div>
+          <div className="text-center text-sm whitespace-nowrap shrink-0 px-2">{info.getValue()}</div>
         ),
         enableHiding: false,
-        size: 80,
       }),
 
       columnHelper.accessor("gender", {
         id: "gender",
-        header: () => <div className="text-center text-sm">성별</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">성별</div>,
         cell: info => (
-          <div className="flex justify-center">
+          <div className="flex justify-center shrink-0 px-2">
             <GenderBadge gender={info.getValue()} />
           </div>
         ),
-        size: 70,
       }),
 
       columnHelper.accessor("grade", {
         id: "grade",
-        header: () => <div className="text-center text-sm">학년</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">학년</div>,
         cell: info => (
-          <div className="text-center text-sm">{info.getValue()}</div>
+          <div className="text-center text-sm whitespace-nowrap shrink-0 px-2">{info.getValue()}</div>
         ),
-        size: 70,
       }),
 
       columnHelper.accessor("name", {
         id: "name",
         header: ({ column }) => (
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center whitespace-nowrap">
             <Button
               variant="ghost"
               onClick={() =>
@@ -101,30 +98,27 @@ export function useUnivGroupRetreatRegistrationColumns(
           </div>
         ),
         cell: info => (
-          <div className="font-medium text-center text-sm">
+          <div className="font-medium text-center text-sm whitespace-nowrap shrink-0 px-2">
             {info.getValue()}
           </div>
         ),
         enableHiding: false,
-        size: 100,
       }),
 
       columnHelper.accessor("phone", {
         id: "phone",
-        header: () => <div className="text-center text-sm">전화번호</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">전화번호</div>,
         cell: info => (
-          <div className="text-center text-sm">{info.getValue() || "-"}</div>
+          <div className="text-center text-sm whitespace-nowrap shrink-0 px-2">{info.getValue() || "-"}</div>
         ),
-        size: 120,
       }),
 
       columnHelper.accessor("currentLeaderName", {
         id: "currentLeaderName",
-        header: () => <div className="text-center text-sm">부서 리더명</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">부서 리더명</div>,
         cell: info => (
-          <div className="text-center text-sm">{info.getValue() || "-"}</div>
+          <div className="text-center text-sm whitespace-nowrap shrink-0 px-2">{info.getValue() || "-"}</div>
         ),
-        size: 100,
       }),
     ];
 
@@ -136,72 +130,69 @@ export function useUnivGroupRetreatRegistrationColumns(
     const rightColumns = [
       columnHelper.accessor("type", {
         id: "type",
-        header: () => <div className="text-center text-sm">타입</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">타입</div>,
         cell: info => {
           const type = info.getValue();
-          if (!type) return <div className="text-center text-sm">-</div>;
+          if (!type) return <div className="text-center text-sm whitespace-nowrap shrink-0 px-2">-</div>;
           return (
-            <div className="flex justify-center shrink-0">
+            <div className="flex justify-center shrink-0 px-2">
               <TypeBadge type={type} />
             </div>
           );
         },
         filterFn: "equals",
-        size: 100,
       }),
 
       columnHelper.accessor("amount", {
         id: "amount",
-        header: () => <div className="text-center text-sm">금액</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">금액</div>,
         cell: info => (
-          <div className="text-center text-sm font-medium">
+          <div className="text-center text-sm font-medium whitespace-nowrap shrink-0 px-2">
             {info.getValue()?.toLocaleString()}원
           </div>
         ),
-        size: 100,
       }),
 
       columnHelper.accessor("status", {
         id: "status",
-        header: () => <div className="text-center text-sm">입금 현황</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">입금 현황</div>,
         cell: info => (
-          <div className="flex justify-center shrink-0">
+          <div className="flex justify-center shrink-0 px-2">
             <StatusBadge status={info.getValue()} />
           </div>
         ),
         filterFn: "equals",
-        size: 120,
       }),
 
       columnHelper.display({
         id: "detailInfo",
-        header: () => <div className="text-center text-sm">상세</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">상세</div>,
         cell: props => (
-          <div className="flex justify-center">
+          <div className="flex justify-center shrink-0 px-2">
             <Button
               size="sm"
               variant="outline"
               onClick={() => onRowClick?.(props.row.original)}
-              className="h-7 text-xs"
+              className="h-7 text-xs whitespace-nowrap"
             >
               <Info className="h-3 w-3 mr-1" />
               보기
             </Button>
           </div>
         ),
-        size: 80,
       }),
 
       columnHelper.display({
         id: "actions",
-        header: () => <div className="text-center text-sm">액션</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">액션</div>,
         cell: props => (
-          <UnivGroupRetreatRegistrationTableActions
-            row={props.row.original}
-            retreatSlug={retreatSlug}
-          />
+          <div className="shrink-0 px-2">
+            <UnivGroupRetreatRegistrationTableActions
+              row={props.row.original}
+              retreatSlug={retreatSlug}
+            />
+          </div>
         ),
-        size: 150,
       }),
 
       columnHelper.accessor("hadRegisteredShuttleBus", {
@@ -213,8 +204,11 @@ export function useUnivGroupRetreatRegistrationColumns(
             신청 여부
           </div>
         ),
-        cell: info => <ShuttleBusStatusBadge hasRegistered={info.getValue()} />,
-        size: 110,
+        cell: info => (
+          <div className="flex justify-center shrink-0 px-2">
+            <ShuttleBusStatusBadge hasRegistered={info.getValue()} />
+          </div>
+        ),
       }),
 
       columnHelper.accessor("memo", {
@@ -228,28 +222,27 @@ export function useUnivGroupRetreatRegistrationColumns(
         ),
         cell: info => (
           <div
-            className="text-center text-sm max-w-[200px] truncate px-2"
+            className="text-center text-sm max-w-[200px] truncate px-2 shrink-0"
             title={info.getValue() || ""}
           >
             {info.getValue() || "-"}
           </div>
         ),
-        size: 150,
       }),
 
       columnHelper.display({
         id: "memoActions",
-        header: () => <div className="text-center text-sm">메모 관리</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">메모 관리</div>,
         cell: props => {
           const row = props.row.original;
           // 메모가 있으면 관리 불필요, 없으면서 입금 완료 상태면 작성 가능
           if (row.memo) {
-            return <div className="text-center text-sm text-gray-600">-</div>;
+            return <div className="text-center text-sm text-gray-600 whitespace-nowrap shrink-0 px-2">-</div>;
           }
           // 입금 완료 상태일 때만 작성 버튼 표시
           if (row.status === "PAID") {
             return (
-              <div className="flex justify-center">
+              <div className="flex justify-center shrink-0 px-2">
                 <Button
                   size="sm"
                   variant="outline"
@@ -260,16 +253,15 @@ export function useUnivGroupRetreatRegistrationColumns(
                     });
                     window.dispatchEvent(event);
                   }}
-                  className="h-7 text-xs"
+                  className="h-7 text-xs whitespace-nowrap"
                 >
                   작성
                 </Button>
               </div>
             );
           }
-          return <div className="text-center text-sm text-gray-400">-</div>;
+          return <div className="text-center text-sm text-gray-400 whitespace-nowrap shrink-0 px-2">-</div>;
         },
-        size: 100,
       }),
 
       columnHelper.display({
@@ -284,35 +276,36 @@ export function useUnivGroupRetreatRegistrationColumns(
         cell: props => {
           const row = props.row.original;
           return (
-            <MemoEditor
-              row={row}
-              memoValue={row.staffMemo}
-              onSave={async (id, memo) => {
-                await saveAdminMemo(id, memo);
-              }}
-              onUpdate={async (id, memo) => {
-                if (row.adminMemoId) {
-                  await updateAdminMemo(row.adminMemoId, memo);
-                }
-              }}
-              onDelete={async () => {
-                if (row.adminMemoId) {
-                  await deleteAdminMemo(row.adminMemoId);
-                }
-              }}
-              loading={isMutating}
-              hasExistingMemo={(r) => !!r.staffMemo && !!r.adminMemoId}
-            />
+            <div className="shrink-0">
+              <MemoEditor
+                row={row}
+                memoValue={row.staffMemo}
+                onSave={async (id, memo) => {
+                  await saveAdminMemo(id, memo);
+                }}
+                onUpdate={async (id, memo) => {
+                  if (row.adminMemoId) {
+                    await updateAdminMemo(row.adminMemoId, memo);
+                  }
+                }}
+                onDelete={async () => {
+                  if (row.adminMemoId) {
+                    await deleteAdminMemo(row.adminMemoId);
+                  }
+                }}
+                loading={isMutating}
+                hasExistingMemo={(r) => !!r.staffMemo && !!r.adminMemoId}
+              />
+            </div>
           );
         },
-        size: 250,
       }),
 
       columnHelper.display({
         id: "qr",
-        header: () => <div className="text-center text-sm">QR</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">QR</div>,
         cell: props => (
-          <div className="flex justify-center">
+          <div className="flex justify-center shrink-0 px-2">
             <Button
               size="sm"
               variant="outline"
@@ -328,7 +321,6 @@ export function useUnivGroupRetreatRegistrationColumns(
             </Button>
           </div>
         ),
-        size: 80,
       }),
     ];
 
