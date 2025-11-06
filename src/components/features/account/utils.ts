@@ -1,6 +1,6 @@
-import { IRetreatRegistration } from "@/types/account-staff";
+import { IRetreatRegistration } from "@/types/account";
 import { TRetreatRegistrationSchedule } from "@/types";
-import { AccountStaffTableData } from "@/hooks/account-staff/use-account-staff-columns";
+import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
 
 /**
  * IRetreatRegistration을 AccountStaffTableData로 변환하는 함수

@@ -1,14 +1,13 @@
 import { Suspense } from "react";
 import {
-  fetchAccountStaffRegistrations,
+  fetchAccountPaymentConfirmationRegistrations,
   fetchRetreatSchedules,
 } from "@/lib/api/server-actions";
 import {
-  AccountStaffRegistrationTable,
   PaymentSummary,
-  RetreatScheduleSummary,
   AccountStatus,
-} from "@/components/features/account-staff";
+} from "@/components/features/retreat-payment-confirmation";
+import { RegistrationTable } from "@/components/registration-table";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageProps {
@@ -18,43 +17,39 @@ interface PageProps {
 }
 
 /**
- * 재정 간사 - 수양회 전체 신청 관리 페이지 (Server Component)
+ * 부서 재정 팀원 - 입금 확인 페이지 (Server Component)
  *
  * Features:
- * - 전체 신청자 목록 조회 및 관리
- * - 입금 확인, 간사 배정, 환불 처리
- * - 회계 메모 작성 및 관리
- * - 부서별 계좌 현황 및 입금 집계
+ * - 부서 재정 팀원 전용 페이지 (UNIV_GROUP_ACCOUNT_MEMBER 권한)
+ * - 입금 확인, 입금 요청, 환불 처리
+ * - 부서별 입금 현황 및 계좌 정보
  * - Server Component로 초기 데이터 페칭
  * - 병렬 데이터 로딩 (Promise.all)
  * - TanStack Table 기반 테이블
  * - SWR로 실시간 데이터 동기화
  */
-export default async function RetreatRegistrationsPage({ params }: PageProps) {
+export default async function AccountPaymentConfirmationPage({ params }: PageProps) {
   const { retreatSlug } = await params;
 
   // ✅ 서버에서 병렬 데이터 페칭 (Promise.all)
   const [registrations, schedules] = await Promise.all([
-    fetchAccountStaffRegistrations(retreatSlug),
+    fetchAccountPaymentConfirmationRegistrations(retreatSlug),
     fetchRetreatSchedules(retreatSlug),
   ]);
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-4 md:space-y-8 p-6">
+      <h1 className="text-3xl font-bold">입금 조회</h1>
+
       {/* ✅ Server Component (정적 집계) */}
       <PaymentSummary registrations={registrations} />
-
-      <RetreatScheduleSummary
-        registrations={registrations}
-        schedules={schedules}
-      />
 
       <AccountStatus registrations={registrations} />
 
       {/* ✅ Client Component (인터랙션 필요 - TanStack Table) */}
       <Suspense fallback={<TableSkeleton />}>
-        <AccountStaffRegistrationTable
-          initialData={registrations}
+        <RegistrationTable
+          registrations={registrations}
           schedules={schedules}
           retreatSlug={retreatSlug}
         />

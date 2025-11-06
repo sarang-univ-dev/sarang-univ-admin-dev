@@ -1,9 +1,9 @@
 import { useState } from "react";
 import useSWR, { SWRConfiguration } from "swr";
-import { AccountStaffAPI } from "@/lib/api/account-staff-api";
+import { AccountStaffAPI } from "@/lib/api/account-api";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
-import { IRetreatRegistration } from "@/types/account-staff";
+import { IRetreatRegistration } from "@/types/account";
 import { AxiosError } from "axios";
 
 /**

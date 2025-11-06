@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import { IRetreatRegistration } from "@/types/account-staff";
+import { IRetreatRegistration } from "@/types/account";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { formatDate } from "@/utils/formatDate";
 import { createRetreatScheduleColumns } from "@/hooks/retreat/use-retreat-schedule-columns";
 import { useAccountStaffRegistration } from "./use-account-staff-registration";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
-import { AccountStaffRegistrationTableActions } from "@/components/features/account-staff/AccountStaffRegistrationTableActions";
+import { AccountStaffRegistrationTableActions } from "@/components/features/account/AccountStaffRegistrationTableActions";
 
 // 테이블 데이터 타입 정의
 export interface AccountStaffTableData {

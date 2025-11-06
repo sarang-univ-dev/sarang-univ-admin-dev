@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   UserRetreatRegistrationPaymentStatus,
 } from "@/types";
-import { IRetreatRegistration } from "@/types/account-staff";
+import { IRetreatRegistration } from "@/types/account";
 import { useMemo } from "react";
 import { StatusBadge } from "@/components/Badge";
 

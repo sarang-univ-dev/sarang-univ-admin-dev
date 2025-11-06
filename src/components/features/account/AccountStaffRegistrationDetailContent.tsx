@@ -1,5 +1,5 @@
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
-import { AccountStaffTableData } from "@/hooks/account-staff/use-account-staff-columns";
+import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { formatDate } from "@/utils/formatDate";
 

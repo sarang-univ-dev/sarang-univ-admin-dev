@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import debounce from "lodash/debounce";
-import { useAccountStaffRegistration } from "@/hooks/account-staff/use-account-staff-registration";
+import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
 
 interface AccountStaffRegistrationTableToolbarProps {
   table: Table<any>;

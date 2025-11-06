@@ -18,13 +18,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAccountStaffColumns } from "@/hooks/account-staff/use-account-staff-columns";
+import { useAccountStaffColumns } from "@/hooks/account/use-account-staff-columns";
 import { AccountStaffRegistrationTableToolbar } from "./AccountStaffRegistrationTableToolbar";
 import { transformRegistrationsForTable } from "./utils";
-import { useAccountStaffRegistration } from "@/hooks/account-staff/use-account-staff-registration";
-import { IRetreatRegistration } from "@/types/account-staff";
+import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
+import { IRetreatRegistration } from "@/types/account";
 import { TRetreatRegistrationSchedule } from "@/types";
-import { AccountStaffTableData } from "@/hooks/account-staff/use-account-staff-columns";
+import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
 import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
 import { AccountStaffRegistrationDetailContent } from "./AccountStaffRegistrationDetailContent";
 

@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, RotateCcw } from "lucide-react";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
-import { AccountStaffTableData } from "@/hooks/account-staff/use-account-staff-columns";
-import { useAccountStaffRegistration } from "@/hooks/account-staff/use-account-staff-registration";
+import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
+import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
 
 interface AccountStaffRegistrationTableActionsProps {
   row: AccountStaffTableData;

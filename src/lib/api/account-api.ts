@@ -1,5 +1,5 @@
 import { webAxios } from "@/lib/api/axios";
-import { IRetreatRegistration } from "@/types/account-staff";
+import { IRetreatRegistration } from "@/types/account";
 
 /**
  * 재정 간사 수양회 신청 API 클라이언트

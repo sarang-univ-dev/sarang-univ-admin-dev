@@ -360,6 +360,6 @@ export enum UserRetreatShuttleBusRegistrationHistoryMemoType {
 
 // #region Module Re-exports
 export * from "./univ-group-admin-staff";
-export * from "./account-staff";
+export * from "./account";
 export * from "./schedule-change-request";
 // #endregion
