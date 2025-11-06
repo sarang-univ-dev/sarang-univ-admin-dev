@@ -202,6 +202,42 @@ export async function fetchUnivGroupBusRegistrations(retreatSlug: string) {
 }
 
 /**
+ * 셔틀버스 재정 팀원용 신청 내역 조회 (Server Action)
+ *
+ * @description
+ * SHUTTLE_BUS_ACCOUNT_MEMBER 권한으로 셔틀버스 신청 내역을 조회합니다.
+ * - 입금 확인, 입금 요청, 일정 변동 승인 기능에 사용
+ * - 부서 번호, 성별, 학년, 이름, 전화번호, 입금 현황 등 포함
+ *
+ * @param retreatSlug - 수양회 슬러그
+ * @returns 셔틀버스 신청 내역 배열
+ */
+export async function fetchShuttleBusPaymentConfirmationRegistrations(
+  retreatSlug: string
+) {
+  const token = await getServerToken();
+
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/shuttle-bus/registrations`;
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store", // 실시간 데이터를 위해 캐싱 비활성화
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch shuttle bus payment confirmation registrations: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data = await response.json();
+  return data.retreatShuttleBusRegistrations;
+}
+
+/**
  * 셔틀버스 스케줄 정보 조회 (Server Action)
  *
  * @description

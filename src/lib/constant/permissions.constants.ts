@@ -5,7 +5,7 @@ export enum PagePath {
   SCHEDULE_HISTORY = "/schedule-change-history",
   COMFIRM_PAYMENT = "/confirm-retreat-payment",
   SCHEDULE_CHANGE = "/schedule-change-request",
-  CONFIRM_BUS_PAYMENT = "/confirm-bus-payment",
+  CONFIRM_BUS_PAYMENT = "/shuttle-bus-payment-confirmation",
   UNIV_GROUP_BUS = "/univ-group-bus-registration",
   BUS_SCHEDULE_HISTORY = "/bus-schedule-change-history",
   BUS_SCHEDULE_CHANGE = "/bus-schedule-change-request",
