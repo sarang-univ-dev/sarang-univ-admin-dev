@@ -115,6 +115,8 @@ export function UnivGroupRetreatRegistrationTable({
     enableSortingRemoval: true,
     enableColumnFilters: true,
     enableFilters: true,
+    // ✅ 모든 클릭을 multi-sort event로 처리 (Shift 키 불필요)
+    isMultiSortEvent: () => true,
     // 전역 필터 함수 (통합 검색)
     globalFilterFn: (row, columnId, filterValue) => {
       const searchableFields = [
