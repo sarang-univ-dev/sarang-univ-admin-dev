@@ -123,7 +123,7 @@ export function LineUpMemoEditor<T extends { id: string }>({
   // ✅ 편집 모드 UI
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-2 p-2 min-w-[200px] max-w-full">
+      <div className="relative z-50 flex flex-col gap-2 p-2 min-w-[200px] max-w-full bg-white border border-gray-300 rounded-md shadow-lg">
         <div className="relative">
           <Textarea
             ref={textareaRef}

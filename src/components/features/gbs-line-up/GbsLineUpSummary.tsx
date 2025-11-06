@@ -13,19 +13,16 @@ interface GbsLineUpSummaryProps {
  * - 전체 인원
  * - GBS 배정 완료
  * - 미배정
- * - 남성/여성 인원
  */
 export function GbsLineUpSummary({ lineups }: GbsLineUpSummaryProps) {
   const stats = {
     total: lineups.length,
     assigned: lineups.filter((l) => l.gbsNumber != null).length,
     unassigned: lineups.filter((l) => l.gbsNumber == null).length,
-    male: lineups.filter((l) => l.gender === "MALE").length,
-    female: lineups.filter((l) => l.gender === "FEMALE").length,
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-4 md:grid-cols-3">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -57,30 +54,6 @@ export function GbsLineUpSummary({ lineups }: GbsLineUpSummaryProps) {
         <CardContent>
           <div className="text-2xl font-bold text-orange-600">
             {stats.unassigned}명
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            남성
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-blue-600">
-            {stats.male}명
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            여성
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-pink-600">
-            {stats.female}명
           </div>
         </CardContent>
       </Card>

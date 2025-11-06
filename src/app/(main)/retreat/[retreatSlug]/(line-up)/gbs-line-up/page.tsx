@@ -4,9 +4,9 @@ import {
   fetchRetreatSchedules,
 } from "@/lib/api/server-actions";
 import {
-  GbsLineUpTable,
   GbsLineUpSummary,
 } from "@/components/features/gbs-line-up";
+import { GbsLineUpTable } from "@/components/features/gbs-line-up/GbsLineUpTableNew";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageProps {
@@ -39,7 +39,7 @@ export default async function GbsLineUpPage({ params }: PageProps) {
   ]);
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-4 md:space-y-8">
       {/* ✅ Server Component (통계 요약) */}
       <GbsLineUpSummary lineups={lineups} />
 
