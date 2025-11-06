@@ -110,13 +110,16 @@ export function UnivGroupRetreatRegistrationTable({
     getSortedRowModel: getSortedRowModel(),
     columnResizeMode: "onChange",
     enableColumnResizing: false,
+    // ✅ Multi-sort 및 필터 활성화
+    enableMultiSort: true,
+    enableSortingRemoval: true,
+    enableColumnFilters: true,
+    enableFilters: true,
     // 전역 필터 함수 (통합 검색)
     globalFilterFn: (row, columnId, filterValue) => {
       const searchableFields = [
         row.original.name,
-        row.original.department,
         row.original.grade,
-        row.original.type?.toString(),
         row.original.phone,
         row.original.currentLeaderName,
         row.original.hadRegisteredShuttleBus ? "신청함" : "신청 안함",
@@ -147,6 +150,7 @@ export function UnivGroupRetreatRegistrationTable({
           globalFilter={globalFilter}
           setGlobalFilter={setGlobalFilter}
           retreatSlug={retreatSlug}
+          schedules={schedules}
         />
 
         {/* ✅ 모바일: 컴팩트 테이블 */}
@@ -167,7 +171,7 @@ export function UnivGroupRetreatRegistrationTable({
                     {headerGroup.headers.map((header) => (
                       <TableHead
                         key={header.id}
-                        className="px-2 py-2 text-center bg-gray-100"
+                        className="text-center bg-gray-100"
                       >
                         {header.isPlaceholder
                           ? null
@@ -189,7 +193,7 @@ export function UnivGroupRetreatRegistrationTable({
                       className="group hover:bg-gray-50 transition-colors duration-150"
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="px-2 py-2">
+                        <TableCell key={cell.id}>
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()

@@ -120,7 +120,7 @@ export function MemoEditor<T extends { id: string }>({
   // ✅ 편집 모드 UI
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-2 p-2 min-w-[200px] max-w-full">
+      <div className="flex flex-col gap-1 p-2 min-w-[200px] max-w-full">
         <div className="relative">
           <Textarea
             ref={textareaRef}
@@ -210,7 +210,7 @@ export function MemoEditor<T extends { id: string }>({
   // ✅ 읽기 모드 UI (편집 모드와 동일한 레이아웃 구조)
   return (
     <>
-      <div className="flex flex-col gap-2 p-2 min-w-[200px] max-w-full">
+      <div className="flex flex-col gap-1 p-2 min-w-[200px] max-w-full">
         {/* 메모 내용 또는 플레이스홀더 */}
         <button
           onClick={() => {

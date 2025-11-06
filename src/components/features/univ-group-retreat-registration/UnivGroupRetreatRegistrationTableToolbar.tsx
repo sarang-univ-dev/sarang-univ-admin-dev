@@ -16,12 +16,15 @@ import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import { formatDate } from "@/utils/formatDate";
 import { useIsMobile } from "@/hooks/use-media-query";
+import { TRetreatRegistrationSchedule } from "@/types";
+import { SCHEDULE_TYPE_SHORT_LABELS } from "@/lib/constant/labels";
 
 interface UnivGroupRetreatRegistrationTableToolbarProps {
   table: Table<any>;
   globalFilter: string;
   setGlobalFilter: (value: string) => void;
   retreatSlug: string;
+  schedules: TRetreatRegistrationSchedule[];
 }
 
 /**
@@ -35,6 +38,7 @@ export function UnivGroupRetreatRegistrationTableToolbar({
   globalFilter,
   setGlobalFilter,
   retreatSlug,
+  schedules,
 }: UnivGroupRetreatRegistrationTableToolbarProps) {
   const addToast = useToastStore((state) => state.add);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -101,8 +105,8 @@ export function UnivGroupRetreatRegistrationTableToolbar({
         <Input
           placeholder={
             isMobile
-              ? "통합 검색 (이름, 부서, 전화번호...)..."
-              : "통합 검색 (이름, 부서, 전화번호, 리더명, GBS, 숙소 등)..."
+              ? "통합 검색 (이름, 전화번호...)..."
+              : "통합 검색 (이름, 전화번호, 리더명, GBS, 숙소 등)..."
           }
           defaultValue={globalFilter ?? ""}
           onChange={(e) => debouncedSetGlobalFilter(e.target.value)}
@@ -128,16 +132,25 @@ export function UnivGroupRetreatRegistrationTableToolbar({
                 .map((column) => {
                   // 컬럼 ID에서 표시 이름 추출
                   const getColumnName = (id: string) => {
-                    if (id.startsWith("schedule_")) return "스케줄";
+                    // 스케줄 컬럼: schedule_${id} → "요일 앞글자 + 타입 앞글자" 형식
+                    if (id.startsWith("schedule_")) {
+                      const scheduleId = parseInt(id.replace("schedule_", ""));
+                      const schedule = schedules.find((s) => s.id === scheduleId);
+                      if (schedule) {
+                        const date = new Date(schedule.time);
+                        const dayOfWeek = ["주", "월", "화", "수", "목", "금", "토"][date.getDay()];
+                        const typeShort = SCHEDULE_TYPE_SHORT_LABELS[schedule.type] || schedule.type;
+                        return `${dayOfWeek}${typeShort}`;
+                      }
+                      return "스케줄";
+                    }
+
                     const names: Record<string, string> = {
-                      department: "부서",
                       gender: "성별",
                       grade: "학년",
                       name: "이름",
                       phone: "전화번호",
                       currentLeaderName: "부서 리더명",
-                      type: "타입",
-                      amount: "금액",
                       createdAt: "신청시각",
                       status: "입금 현황",
                       confirmedBy: "처리자명",
@@ -156,6 +169,10 @@ export function UnivGroupRetreatRegistrationTableToolbar({
                       key={column.id}
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      onSelect={(event) => {
+                        // 체크박스 클릭 시 드롭다운이 닫히지 않도록 방지
+                        event.preventDefault();
+                      }}
                     >
                       {getColumnName(column.id)}
                     </DropdownMenuCheckboxItem>
