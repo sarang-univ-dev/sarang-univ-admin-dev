@@ -6,8 +6,8 @@ import {
 import {
   PaymentSummary,
   AccountStatus,
+  RetreatPaymentConfirmationTable,
 } from "@/components/features/retreat-payment-confirmation";
-import { RegistrationTable } from "@/components/registration-table";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageProps {
@@ -48,8 +48,8 @@ export default async function AccountPaymentConfirmationPage({ params }: PagePro
 
       {/* ✅ Client Component (인터랙션 필요 - TanStack Table) */}
       <Suspense fallback={<TableSkeleton />}>
-        <RegistrationTable
-          registrations={registrations}
+        <RetreatPaymentConfirmationTable
+          initialData={registrations}
           schedules={schedules}
           retreatSlug={retreatSlug}
         />
