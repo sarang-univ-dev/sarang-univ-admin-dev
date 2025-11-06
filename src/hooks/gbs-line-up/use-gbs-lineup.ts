@@ -37,7 +37,7 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
   const addToast = useToastStore(state => state.add);
   const [data, setData] = useState<GBSLineupRow[]>([]);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
-  
+
   // 검색 및 필터 상태
   const [searchTerm, setSearchTerm] = useState("");
   const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
@@ -58,7 +58,7 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
   // 데이터 변환
   const transformedData = useMemo(() => {
     if (!registrations.length || !schedules.length) return [];
-    
+
     return registrations.map(registration => {
       const scheduleData: Record<string, boolean> = {};
       schedules.forEach(schedule => {
@@ -113,12 +113,12 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
 
     if (includedSchedules.length > 0 || excludedSchedules.length > 0) {
       temp = temp.filter(row => {
-        const hasAllIncludedSchedules = includedSchedules.length === 0 || 
+        const hasAllIncludedSchedules = includedSchedules.length === 0 ||
           includedSchedules.every(scheduleKey => row.schedule[scheduleKey] === true);
-        
-        const hasNoExcludedSchedules = excludedSchedules.length === 0 || 
+
+        const hasNoExcludedSchedules = excludedSchedules.length === 0 ||
           excludedSchedules.every(scheduleKey => row.schedule[scheduleKey] === false);
-        
+
         return hasAllIncludedSchedules && hasNoExcludedSchedules;
       });
     }
@@ -218,11 +218,11 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
       });
 
       const updatedData = await mutate(lineupEndpoint);
-      
+
       if (updatedData) {
         const targetGbsNumber = parseInt(newGbsNumber);
         const gbsGroup = updatedData.filter((r: any) => r.gbsNumber === targetGbsNumber);
-        
+
         if (gbsGroup.length >= 7) {
           setTimeout(() => {
             addToast({
@@ -260,7 +260,7 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     try {
       if ((memo && memo.trim()) || color !== undefined) {
         const processedColor = color === "" ? null : (color ? color.trim() : undefined);
-        
+
         if (memoId) {
           await webAxios.put(
             `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`,
@@ -351,7 +351,7 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     filteredData,
     groupedData,
     departmentOptions,
-    
+
     // 상태
     searchTerm,
     setSearchTerm,
@@ -363,7 +363,7 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     setIncludedSchedules,
     excludedSchedules,
     setExcludedSchedules,
-    
+
     // 편집 상태
     editingMemo,
     setEditingMemo,
@@ -377,7 +377,7 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     setEditingScheduleMemo,
     scheduleMemoValues,
     setScheduleMemoValues,
-    
+
     // 함수들
     isLoading,
     setLoading,
@@ -386,4 +386,4 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
     handleSaveMemo,
     handleDeleteMemo,
   };
-}; 
+};

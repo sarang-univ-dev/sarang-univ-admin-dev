@@ -16,9 +16,9 @@ import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/utils/formatDate";
-import { useGBSLineup } from "@/hooks/useGBSLineup";
-import { GBSLineupTableHeader } from "@/components/GBSLineup/TableHeader";
-import { GBSLineupTableRow } from "@/components/GBSLineup/GBSLineupTableRow";
+import { useGBSLineup } from "@/hooks/gbs-line-up/use-gbs-lineup";
+import { GbsLineUpTableHeader } from "./GbsLineUpTableHeader";
+import { GbsLineUpTableRow } from "./GbsLineUpTableRow";
 import { webAxios } from "@/lib/api/axios";
 import { AxiosError } from "axios";
 import { useRetreatGbsLineupData, type IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
@@ -90,70 +90,112 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     handleDeleteMemo,
   } = useGBSLineup(retreatSlug, registrations, schedules);
 
-  // 일정 변동 메모 편집 시작 (메모가 없을 때만 가능)
-  const handleStartEditScheduleMemo = useCallback((id: string, currentMemo: string) => {
-    if (currentMemo && currentMemo.trim()) {
-      return;
-    }
-    setEditingScheduleMemo(prev => ({ ...prev, [id]: true }));
-    setScheduleMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
-  }, [setEditingScheduleMemo, setScheduleMemoValues]);
-
-  // 일정 변동 메모 편집 취소
-  const handleCancelEditScheduleMemo = useCallback((id: string) => {
-    setEditingScheduleMemo(prev => ({ ...prev, [id]: false }));
-    setScheduleMemoValues(prev => ({ ...prev, [id]: "" }));
-  }, [setEditingScheduleMemo, setScheduleMemoValues]);
-
-  // 일정 변동 메모 저장
-  const handleSaveScheduleMemo = useCallback(async (id: string) => {
-    alert('일정 변동 요청 메모 추가는 구현이 필요합니다');
-  }, []);
-
-  // 메모 편집 시작
-  const handleStartEditMemo = useCallback((id: string, currentMemo: string, currentColor?: string) => {
-    setEditingMemo(prev => ({ ...prev, [id]: true }));
-    setMemoValues(prev => ({ ...prev, [id]: currentMemo || "" }));
-    setMemoBgColors(prev => ({ 
-      ...prev, 
-      [id]: currentColor || "" 
-    }));
-  }, [setEditingMemo, setMemoValues, setMemoBgColors]);
-
-  // 메모 편집 취소
-  const handleCancelEditMemo = useCallback((id: string) => {
-    setEditingMemo(prev => ({ ...prev, [id]: false }));
-    setMemoValues(prev => ({ ...prev, [id]: "" }));
-  }, [setEditingMemo, setMemoValues]);
-
-  // 메모 삭제 확인
-  const handleConfirmDeleteMemo = useCallback((id: string) => {
-    confirmDialog.show({
-      title: "메모 삭제",
-      description: "정말로 메모를 삭제하시겠습니까?",
-      onConfirm: () => handleDeleteMemo(id),
-    });
-  }, [confirmDialog, handleDeleteMemo]);
-
-  // 메모 값 변경
-  const handleMemoValueChange = useCallback((id: string, value: string) => {
-    debouncedUpdateMemo(id, value);
-  }, [debouncedUpdateMemo]);
-
-  // 메모 배경색 변경
-  const handleMemoBgColorChange = useCallback((id: string, color: string) => {
-    setMemoBgColors(prev => ({ ...prev, [id]: color }));
-  }, [setMemoBgColors]);
-
   // GBS 번호 입력 변경
   const handleGbsNumberInputChange = useCallback((id: string, value: string) => {
     setGbsNumberInputs(prev => ({ ...prev, [id]: value }));
   }, [setGbsNumberInputs]);
 
-  // 스케줄 메모 값 변경
-  const handleScheduleMemoValueChange = useCallback((id: string, value: string) => {
-    setScheduleMemoValues(prev => ({ ...prev, [id]: value }));
-  }, [setScheduleMemoValues]);
+  // ✅ 라인업 메모 핸들러 (LineUpMemoEditor용)
+  const handleSaveLineupMemo = useCallback(async (id: string, memo: string, color?: string) => {
+    const currentRow = registrations.find(r => r.id.toString() === id);
+    if (!currentRow) return;
+
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/line-up/${id}/lineup-memo`,
+        { memo: memo.trim(), color: color || null }
+      );
+
+      addToast({
+        title: "성공",
+        description: "메모가 저장되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "오류",
+        description: "메모 저장 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [retreatSlug, registrations, addToast]);
+
+  const handleUpdateLineupMemo = useCallback(async (id: string, memo: string, color?: string) => {
+    const currentRow = registrations.find(r => r.id.toString() === id);
+    const memoId = currentRow?.lineupMemoId;
+    if (!memoId) return;
+
+    try {
+      await webAxios.put(
+        `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`,
+        { memo: memo.trim(), color: color || null }
+      );
+
+      addToast({
+        title: "성공",
+        description: "메모가 수정되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "오류",
+        description: "메모 수정 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [retreatSlug, registrations, addToast]);
+
+  const handleDeleteLineupMemo = useCallback(async (id: string) => {
+    const currentRow = registrations.find(r => r.id.toString() === id);
+    const memoId = currentRow?.lineupMemoId;
+    if (!memoId) return;
+
+    try {
+      await webAxios.delete(
+        `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`
+      );
+
+      addToast({
+        title: "성공",
+        description: "메모가 삭제되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "오류",
+        description: "메모 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [retreatSlug, registrations, addToast]);
+
+  // ✅ 일정 변동 메모 핸들러 (MemoEditor용)
+  const handleSaveScheduleMemo = useCallback(async (id: string, memo: string) => {
+    addToast({
+      title: "알림",
+      description: "일정 변동 메모 추가 기능은 구현 예정입니다.",
+      variant: "default",
+    });
+  }, [addToast]);
+
+  const handleUpdateScheduleMemo = useCallback(async (id: string, memo: string) => {
+    addToast({
+      title: "알림",
+      description: "일정 변동 메모 수정 기능은 구현 예정입니다.",
+      variant: "default",
+    });
+  }, [addToast]);
+
+  const handleDeleteScheduleMemo = useCallback(async (id: string) => {
+    addToast({
+      title: "알림",
+      description: "일정 변동 메모 삭제 기능은 구현 예정입니다.",
+      variant: "default",
+    });
+  }, [addToast]);
 
   // 꼬리표 다운로드 함수들
   const handleDownloadUnivGbsLabel = async () => {
@@ -434,7 +476,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
             <div className="min-w-max">
               <div className="max-h-[80vh] overflow-auto">
                 <Table className="w-full whitespace-nowrap relative">
-                  <GBSLineupTableHeader
+                  <GbsLineUpTableHeader
                     scheduleColumns={scheduleColumns}
                     selectedDepartments={selectedDepartments}
                     setSelectedDepartments={setSelectedDepartments}
@@ -457,59 +499,43 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
 
                       return [
                         ...withNumber.map((row, idx) => (
-                          <GBSLineupTableRow
+                          <GbsLineUpTableRow
                             key={row.id}
                             row={row}
                             groupSize={withNumber.length}
                             isFirstInGroup={idx === 0}
+                            retreatSlug={retreatSlug}
                             scheduleColumns={scheduleColumns}
-                            editingMemo={editingMemo[row.id] || false}
-                            memoValue={memoValues[row.id] || ""}
                             gbsNumberInput={gbsNumberInputs[row.id] || ""}
-                            memoBgColor={memoBgColors[row.id] || ""}
-                            editingScheduleMemo={editingScheduleMemo[row.id] || false}
-                            scheduleMemoValue={scheduleMemoValues[row.id] || ""}
-                            isLoading={isLoading}
-                            onStartEditMemo={handleStartEditMemo}
-                            onCancelEditMemo={handleCancelEditMemo}
-                            onSaveMemo={handleSaveMemo}
-                            onDeleteMemo={handleConfirmDeleteMemo}
-                            onMemoValueChange={handleMemoValueChange}
-                            onMemoBgColorChange={handleMemoBgColorChange}
                             onGbsNumberInputChange={handleGbsNumberInputChange}
                             onSaveGbsNumber={handleSaveGbsNumber}
-                            onStartEditScheduleMemo={handleStartEditScheduleMemo}
-                            onCancelEditScheduleMemo={handleCancelEditScheduleMemo}
+                            onSaveLineupMemo={handleSaveLineupMemo}
+                            onUpdateLineupMemo={handleUpdateLineupMemo}
+                            onDeleteLineupMemo={handleDeleteLineupMemo}
                             onSaveScheduleMemo={handleSaveScheduleMemo}
-                            onScheduleMemoValueChange={handleScheduleMemoValueChange}
+                            onUpdateScheduleMemo={handleUpdateScheduleMemo}
+                            onDeleteScheduleMemo={handleDeleteScheduleMemo}
+                            isLoading={isLoading}
                           />
                         )),
                         ...withoutNumber.map(row => (
-                          <GBSLineupTableRow
+                          <GbsLineUpTableRow
                             key={row.id}
                             row={row}
                             groupSize={1}
                             isFirstInGroup={false}
+                            retreatSlug={retreatSlug}
                             scheduleColumns={scheduleColumns}
-                            editingMemo={editingMemo[row.id] || false}
-                            memoValue={memoValues[row.id] || ""}
                             gbsNumberInput={gbsNumberInputs[row.id] || ""}
-                            memoBgColor={memoBgColors[row.id] || ""}
-                            editingScheduleMemo={editingScheduleMemo[row.id] || false}
-                            scheduleMemoValue={scheduleMemoValues[row.id] || ""}
-                            isLoading={isLoading}
-                            onStartEditMemo={handleStartEditMemo}
-                            onCancelEditMemo={handleCancelEditMemo}
-                            onSaveMemo={handleSaveMemo}
-                            onDeleteMemo={handleConfirmDeleteMemo}
-                            onMemoValueChange={handleMemoValueChange}
-                            onMemoBgColorChange={handleMemoBgColorChange}
                             onGbsNumberInputChange={handleGbsNumberInputChange}
                             onSaveGbsNumber={handleSaveGbsNumber}
-                            onStartEditScheduleMemo={handleStartEditScheduleMemo}
-                            onCancelEditScheduleMemo={handleCancelEditScheduleMemo}
+                            onSaveLineupMemo={handleSaveLineupMemo}
+                            onUpdateLineupMemo={handleUpdateLineupMemo}
+                            onDeleteLineupMemo={handleDeleteLineupMemo}
                             onSaveScheduleMemo={handleSaveScheduleMemo}
-                            onScheduleMemoValueChange={handleScheduleMemoValueChange}
+                            onUpdateScheduleMemo={handleUpdateScheduleMemo}
+                            onDeleteScheduleMemo={handleDeleteScheduleMemo}
+                            isLoading={isLoading}
                           />
                         )),
                       ];

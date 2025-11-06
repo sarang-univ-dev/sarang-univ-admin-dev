@@ -9,32 +9,32 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface TableHeaderProps {
+interface GbsLineUpTableHeaderProps {
   scheduleColumns: Array<{
     key: string;
     label: string;
     bgColorClass: string;
   }>;
-  
+
   // 필터 상태
   selectedDepartments: string[];
   setSelectedDepartments: React.Dispatch<React.SetStateAction<string[]>>;
   departmentOptions: string[];
   isFilterModalOpen: boolean;
   setIsFilterModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  
+
   includedSchedules: string[];
   setIncludedSchedules: React.Dispatch<React.SetStateAction<string[]>>;
   excludedSchedules: string[];
   setExcludedSchedules: React.Dispatch<React.SetStateAction<string[]>>;
   isScheduleFilterModalOpen: boolean;
   setIsScheduleFilterModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  
+
   showOnlyUnassigned: boolean;
   setShowOnlyUnassigned: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const GBSLineupTableHeader = memo<TableHeaderProps>(({
+export const GbsLineUpTableHeader = memo<GbsLineUpTableHeaderProps>(({
   scheduleColumns,
   selectedDepartments,
   setSelectedDepartments,
@@ -168,7 +168,7 @@ export const GBSLineupTableHeader = memo<TableHeaderProps>(({
                     <h4 className="font-medium text-sm mb-2">스케줄 필터</h4>
                     <p className="text-xs text-gray-600 mb-3">포함할 스케줄과 제외할 스케줄을 선택하세요.</p>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <Button
                       size="sm"
@@ -316,4 +316,4 @@ export const GBSLineupTableHeader = memo<TableHeaderProps>(({
   );
 });
 
-GBSLineupTableHeader.displayName = 'GBSLineupTableHeader'; 
+GbsLineUpTableHeader.displayName = 'GbsLineUpTableHeader';
