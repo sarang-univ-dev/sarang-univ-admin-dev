@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useScheduleChangeRequest } from "@/hooks/schedule-change-request/use-schedule-change-request";
 import { useScheduleChangeRequestColumns, ScheduleChangeRequestTableData } from "@/hooks/schedule-change-request/use-schedule-change-request-columns";
 import { ScheduleChangeRequestTableToolbar } from "./ScheduleChangeRequestTableToolbar";
-import { ScheduleChangeModal } from "./ScheduleChangeModal";
+import { ScheduleChangeModal } from "@/components/common/retreat";
 import { transformScheduleChangeRequestForTable } from "./utils";
 import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
 import { webAxios } from "@/lib/api/axios";
@@ -93,17 +93,12 @@ export function ScheduleChangeRequestTable({
   };
 
   // 모달 확인 핸들러
-  const handleModalConfirm = (afterScheduleIds: number[]) => {
+  const handleModalConfirm = async (data: {
+    scheduleIds: number[];
+    calculatedAmount: number;
+  }) => {
     if (!selectedRow) return;
-    approveScheduleChange(selectedRow.id, afterScheduleIds);
-    setIsModalOpen(false);
-    setSelectedRow(null);
-  };
-
-  // 모달 닫기 핸들러
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedRow(null);
+    await approveScheduleChange(selectedRow.id, data.scheduleIds);
   };
 
   // 컬럼 훅으로 컬럼 정의 가져오기
@@ -230,15 +225,32 @@ export function ScheduleChangeRequestTable({
       </Card>
 
       {/* 일정 변경 모달 */}
-      <ScheduleChangeModal
-        isOpen={isModalOpen}
-        selectedRow={selectedRow}
-        schedules={schedules}
-        payments={payments}
-        retreatInfo={retreatInfo}
-        onClose={handleModalClose}
-        onConfirm={handleModalConfirm}
-      />
+      {selectedRow && (
+        <ScheduleChangeModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          userData={{
+            name: selectedRow.name,
+            department: selectedRow.department,
+            grade: selectedRow.grade,
+            type: selectedRow.type || "",
+          }}
+          schedules={schedules}
+          payments={payments}
+          initialScheduleIds={selectedRow.scheduleIds}
+          originalAmount={selectedRow.amount}
+          retreatInfo={retreatInfo}
+          memo={{
+            content: selectedRow.memo,
+            issuerName: selectedRow.issuerName,
+            createdAt: selectedRow.memoCreatedAt,
+          }}
+          memoMode="readonly"
+          onConfirm={handleModalConfirm}
+          confirmButtonText="일정 변동 처리 완료"
+          title="일정 변경 처리"
+        />
+      )}
     </>
   );
 }

@@ -4,3 +4,6 @@
  */
 
 export { StatusBadge, TypeBadge } from "./badges";
+export { ScheduleSelectionTable } from "./ScheduleSelectionTable";
+export { ScheduleChangeFormContent } from "./ScheduleChangeFormContent";
+export { ScheduleChangeModal } from "./ScheduleChangeModal";
