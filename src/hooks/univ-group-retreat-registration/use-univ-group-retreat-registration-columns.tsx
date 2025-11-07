@@ -8,8 +8,8 @@ import { Info } from "lucide-react";
 import { UnivGroupRetreatRegistrationTableActions } from "@/components/features/univ-group-retreat-registration/UnivGroupRetreatRegistrationTableActions";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { ShuttleBusStatusBadge } from "@/components/features/univ-group-retreat-registration/ShuttleBusStatusBadge";
+import { AttendanceBadge } from "@/components/features/univ-group-retreat-registration/AttendanceBadge";
 import { formatDate } from "@/utils/formatDate";
-import { createRetreatScheduleColumns } from "@/hooks/retreat/use-retreat-schedule-columns";
 import { useUnivGroupRetreatRegistration } from "./use-univ-group-retreat-registration";
 import { ColumnHeader } from "@/components/common/table/ColumnHeader";
 import {
@@ -55,6 +55,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             column={column}
             table={table}
             title="성별"
+            enableSorting
             enableFiltering
             formatFilterValue={(value) => value === "MALE" ? "남자" : "여자"}
           />
@@ -74,6 +75,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             column={column}
             table={table}
             title="학년"
+            enableSorting
             enableFiltering
           />
         ),
@@ -81,6 +83,16 @@ export function useUnivGroupRetreatRegistrationColumns(
           <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">{info.getValue()}</div>
         ),
         filterFn: "arrIncludesSome",
+        sortingFn: (rowA, rowB, columnId) => {
+          const gradeA = rowA.getValue(columnId) as string;
+          const gradeB = rowB.getValue(columnId) as string;
+
+          // 숫자 부분만 추출 (예: "1학년" -> 1, "10학년" -> 10)
+          const numA = parseInt(gradeA?.replace(/[^0-9]/g, '') || '0', 10);
+          const numB = parseInt(gradeB?.replace(/[^0-9]/g, '') || '0', 10);
+
+          return numA - numB;
+        },
       }),
 
       columnHelper.accessor("name", {
@@ -91,6 +103,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             table={table}
             title="이름"
             enableSorting
+            enableFiltering
           />
         ),
         cell: info => (
@@ -99,28 +112,68 @@ export function useUnivGroupRetreatRegistrationColumns(
           </div>
         ),
         enableHiding: false,
+        filterFn: "arrIncludesSome",
       }),
 
       columnHelper.accessor("phone", {
         id: "phone",
-        header: () => <div className="text-center text-sm whitespace-nowrap">전화번호</div>,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="전화번호"
+            enableSorting
+            enableFiltering
+          />
+        ),
         cell: info => (
           <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">{info.getValue() || "-"}</div>
         ),
+        filterFn: "arrIncludesSome",
       }),
 
       columnHelper.accessor("currentLeaderName", {
         id: "currentLeaderName",
-        header: () => <div className="text-center text-sm whitespace-nowrap">부서 리더명</div>,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="부서 리더명"
+            enableSorting
+            enableFiltering
+          />
+        ),
         cell: info => (
           <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">{info.getValue() || "-"}</div>
         ),
+        filterFn: "arrIncludesSome",
       }),
     ];
 
-    // 2. 동적 스케줄 컬럼 (날짜별 색상 적용)
-    // ✅ 공통 훅 사용으로 코드 간소화 및 재사용성 향상
-    const scheduleColumns = createRetreatScheduleColumns(schedules, columnHelper);
+    // 2. 참석 현황 컬럼 (기존 13개 스케줄 컬럼을 하나의 뱃지로 대체)
+    const attendanceColumn = columnHelper.accessor("hasFullAttendance", {
+      id: "attendance",
+      header: ({ column, table }) => (
+        <ColumnHeader
+          column={column}
+          table={table}
+          title="참석 현황"
+          enableSorting
+          enableFiltering
+          formatFilterValue={(value) => value ? "전체 참석" : "일부 불참"}
+        />
+      ),
+      cell: info => (
+        <div className="flex justify-center shrink-0 px-1">
+          <AttendanceBadge isFullAttendance={info.getValue()} />
+        </div>
+      ),
+      filterFn: (row, columnId, filterValue) => {
+        if (!filterValue || filterValue.length === 0) return true;
+        const value = row.getValue(columnId);
+        return filterValue.includes(value);
+      },
+    });
 
     // 3. 오른쪽 정적 컬럼
     const rightColumns = [
@@ -131,6 +184,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             column={column}
             table={table}
             title="입금 현황"
+            enableSorting
             enableFiltering
             formatFilterValue={(value) =>
               PAYMENT_STATUS_LABELS[value as keyof typeof PAYMENT_STATUS_LABELS] || value
@@ -151,24 +205,38 @@ export function useUnivGroupRetreatRegistrationColumns(
 
       columnHelper.accessor("hadRegisteredShuttleBus", {
         id: "shuttleBus",
-        header: () => (
-          <div className="text-center text-sm whitespace-nowrap">
-            셔틀버스 신청 여부
-          </div>
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="셔틀버스 신청 여부"
+            enableSorting
+            enableFiltering
+            formatFilterValue={(value) => value ? "신청함" : "신청 안함"}
+          />
         ),
         cell: info => (
           <div className="flex justify-center shrink-0 px-1">
             <ShuttleBusStatusBadge hasRegistered={info.getValue()} />
           </div>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || filterValue.length === 0) return true;
+          const value = row.getValue(columnId);
+          return filterValue.includes(value);
+        },
       }),
 
-      columnHelper.display({
+      columnHelper.accessor("staffMemo", {
         id: "adminMemo",
-        header: () => (
-          <div className="text-center text-sm whitespace-nowrap">
-            행정간사 메모
-          </div>
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="행정간사 메모"
+            enableSorting
+            enableFiltering
+          />
         ),
         cell: props => {
           const row = props.row.original;
@@ -196,6 +264,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             </div>
           );
         },
+        filterFn: "arrIncludesSome",
       }),
 
       columnHelper.display({
@@ -217,7 +286,7 @@ export function useUnivGroupRetreatRegistrationColumns(
       }),
     ];
 
-    return [...leftColumns, ...scheduleColumns, ...rightColumns];
+    return [...leftColumns, attendanceColumn, ...rightColumns];
   }, [
     schedules,
     retreatSlug,

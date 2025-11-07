@@ -7,7 +7,14 @@ import { RetreatScheduleTable } from "@/components/common/retreat/RetreatSchedul
 import { formatDate } from "@/utils/formatDate";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import {
+  Download,
+  UserCircle,
+  CreditCard,
+  Calendar,
+  Info,
+  FileText
+} from "lucide-react";
 import { webAxios } from "@/lib/api/axios";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 
@@ -67,8 +74,8 @@ export function UnivGroupRetreatRegistrationDetailContent({
 
   return (
     <>
-      {/* 기본 정보 */}
-      <InfoSection title="📋 기본 정보">
+      {/* 기본 정보 - 2컬럼 그리드 */}
+      <InfoSection title="기본 정보" icon={UserCircle} columns={2}>
         <InfoItem label="이름" value={data.name} />
         <InfoItem label="부서" value={data.department} />
         <InfoItem label="학년" value={data.grade} />
@@ -87,8 +94,8 @@ export function UnivGroupRetreatRegistrationDetailContent({
         <InfoItem label="부서 리더명" value={data.currentLeaderName || "-"} />
       </InfoSection>
 
-      {/* 신청 정보 */}
-      <InfoSection title="💰 신청 정보">
+      {/* 신청 정보 (처리 정보 포함) */}
+      <InfoSection title="신청 정보" icon={CreditCard}>
         <InfoItem
           label="신청시각"
           value={formatDate(data.createdAt)}
@@ -105,11 +112,21 @@ export function UnivGroupRetreatRegistrationDetailContent({
           label="입금 현황"
           value={<StatusBadge status={data.status} />}
         />
+        {/* 입금 확인 정보 */}
+        {data.confirmedBy && (
+          <InfoItem label="입금 확인자" value={data.confirmedBy} />
+        )}
+        {data.paymentConfirmedAt && (
+          <InfoItem
+            label="입금 확인 시각"
+            value={formatDate(data.paymentConfirmedAt)}
+          />
+        )}
       </InfoSection>
 
       {/* 신청 스케줄 */}
       {schedules.length > 0 && (
-        <InfoSection title="📅 신청 스케줄">
+        <InfoSection title="신청 스케줄" icon={Calendar}>
           <RetreatScheduleTable
             schedules={schedules}
             selectedScheduleIds={selectedScheduleIds}
@@ -118,33 +135,8 @@ export function UnivGroupRetreatRegistrationDetailContent({
         </InfoSection>
       )}
 
-      {/* 기타 정보 */}
-      <InfoSection title="🚌 기타 정보">
-        <InfoItem
-          label="셔틀버스"
-          value={<ShuttleBusStatusBadge hasRegistered={data.hadRegisteredShuttleBus} />}
-        />
-        <InfoItem
-          label="QR 코드"
-          value={
-            data.qrUrl ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDownloadQR}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                QR 다운로드
-              </Button>
-            ) : (
-              <span className="text-sm text-gray-500">미생성</span>
-            )
-          }
-        />
-      </InfoSection>
-
       {/* 일정 변동 요청 메모 */}
-      <InfoSection title="📝 일정 변동 요청 메모">
+      <InfoSection title="일정 변동 요청 메모" icon={FileText}>
         <div className="space-y-2">
           <p className="text-xs text-gray-500">
             * 재정 간사가 처리하면 메모가 사라집니다
@@ -171,29 +163,30 @@ export function UnivGroupRetreatRegistrationDetailContent({
         </div>
       </InfoSection>
 
-      {/* 처리 정보 */}
-      {(data.confirmedBy || data.paymentConfirmedAt) && (
-        <InfoSection title="ℹ️ 처리 정보">
-          {data.confirmedBy && (
-            <InfoItem label="처리자명" value={data.confirmedBy} />
-          )}
-          {data.paymentConfirmedAt && (
-            <InfoItem
-              label="처리시각"
-              value={formatDate(data.paymentConfirmedAt)}
-            />
-          )}
-        </InfoSection>
-      )}
-
-      {/* 행정간사 메모 */}
-      {data.staffMemo && (
-        <InfoSection title="✏️ 행정간사 메모">
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm whitespace-pre-wrap">{data.staffMemo}</p>
-          </div>
-        </InfoSection>
-      )}
+      {/* 기타 정보 */}
+      <InfoSection title="기타 정보" icon={Info}>
+        <InfoItem
+          label="셔틀버스"
+          value={<ShuttleBusStatusBadge hasRegistered={data.hadRegisteredShuttleBus} />}
+        />
+        <InfoItem
+          label="QR 코드"
+          value={
+            data.qrUrl ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadQR}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                QR 다운로드
+              </Button>
+            ) : (
+              <span className="text-sm text-gray-500">미생성</span>
+            )
+          }
+        />
+      </InfoSection>
     </>
   );
 }

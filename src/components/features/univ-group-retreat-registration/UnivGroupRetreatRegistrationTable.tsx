@@ -9,15 +9,8 @@ import {
   ColumnFiltersState,
   SortingState,
   VisibilityState,
-  flexRender,
 } from "@tanstack/react-table";
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { VirtualizedTable } from "@/components/common/table";
 import { useUnivGroupRetreatRegistrationColumns } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration-columns";
 import { UnivGroupRetreatRegistrationTableToolbar } from "./UnivGroupRetreatRegistrationTableToolbar";
 import { UnivGroupRetreatRegistrationMobileTable } from "./UnivGroupRetreatRegistrationMobileTable";
@@ -136,6 +129,11 @@ export function UnivGroupRetreatRegistrationTable({
   // ✅ 필터링된 데이터 (모바일 테이블과 공유)
   const filteredData = table.getRowModel().rows.map((row) => row.original);
 
+  // ✅ 사이드바에 표시할 최신 데이터 (SWR 캐시와 동기화)
+  const currentSidebarData = sidebar.selectedItem
+    ? data.find((item) => item.id === sidebar.selectedItem.id) || sidebar.selectedItem
+    : null;
+
   return (
     <>
       <div className="space-y-4">
@@ -163,70 +161,28 @@ export function UnivGroupRetreatRegistrationTable({
           />
         </div>
 
-        {/* ✅ 데스크톱: 전체 테이블 */}
-        <div className="hidden md:block border rounded-lg">
-          <div className="max-h-[80vh] overflow-auto">
-            <table className="relative w-full caption-bottom text-sm">
-              <TableHeader className="sticky top-0 z-10 bg-gray-100">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        className="text-center bg-gray-100"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody className="divide-y divide-gray-200">
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="group hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      {globalFilter
-                        ? "검색 결과가 없습니다."
-                        : "표시할 데이터가 없습니다."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </table>
-          </div>
+        {/* ✅ 데스크톱: 가상화 테이블 */}
+        <div className="hidden md:block">
+          <VirtualizedTable
+            table={table}
+            estimateSize={50}
+            overscan={10}
+            onRowClick={sidebar.open}
+            className="max-h-[80vh]"
+            emptyMessage={
+              globalFilter
+                ? "검색 결과가 없습니다."
+                : "표시할 데이터가 없습니다."
+            }
+          />
         </div>
       </div>
 
-      {/* ✅ 상세 정보 사이드바 (반응형) */}
+      {/* ✅ 상세 정보 사이드바 (반응형) - 최신 데이터로 실시간 동기화 */}
       <DetailSidebar
         open={sidebar.isOpen}
         onOpenChange={sidebar.setIsOpen}
-        data={sidebar.selectedItem}
+        data={currentSidebarData}
         title="신청자 상세 정보"
         description={(data) => `${data.name} (${data.department}) 신청 내역`}
         side={isMobile ? "bottom" : "right"}

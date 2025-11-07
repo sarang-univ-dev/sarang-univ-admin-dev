@@ -43,41 +43,38 @@ export function useUnivGroupRetreatRegistration(
   );
 
   /**
-   * Optimistic Update 헬퍼
+   * 단일 Item 병합 헬퍼 (단순하고 명확한 로직)
    *
-   * @param action - 실행할 API 액션
-   * @param optimisticUpdate - 낙관적 업데이트 함수 (옵션)
+   * @param action - 실행할 API 액션 (업데이트된 단일 item 반환)
    * @param successMessage - 성공 메시지
+   *
+   * 동작 방식:
+   * 1. API 호출 (1초)
+   * 2. 서버에서 업데이트된 단일 item 반환
+   * 3. 배열에서 해당 item만 교체
+   * 4. SWR mutate로 캐시 업데이트
    */
   const updateCache = async (
-    action: () => Promise<void>,
-    optimisticUpdate?: (
-      data: IUnivGroupAdminStaffRetreat[]
-    ) => IUnivGroupAdminStaffRetreat[],
+    action: () => Promise<IUnivGroupAdminStaffRetreat | void>,
     successMessage?: string
   ) => {
     setIsMutating(true);
     try {
-      // Optimistic update가 있는 경우
-      if (optimisticUpdate && data) {
+      // 1. API 호출
+      const updated = await action();
+
+      // 2. 단일 item만 교체 (나머지 9,999개는 그대로)
+      if (updated && data) {
         await mutate(
-          async () => {
-            await action();
-            // 서버에서 최신 데이터를 다시 가져옴
-            return UnivGroupRetreatRegistrationAPI.getRegistrations(retreatSlug);
-          },
-          {
-            optimisticData: optimisticUpdate(data),
-            rollbackOnError: true,
-            revalidate: false,
-          }
+          data.map((item) => (item.id === updated.id ? updated : item)),
+          { revalidate: false }
         );
       } else {
-        // Optimistic update 없이 그냥 실행
-        await action();
-        await mutate(); // 서버 데이터로 revalidate
+        // fallback: 전체 revalidate
+        await mutate();
       }
 
+      // 3. 성공 메시지
       if (successMessage) {
         addToast({
           title: "성공",
@@ -107,6 +104,7 @@ export function useUnivGroupRetreatRegistration(
    * 환불 처리
    *
    * @param registrationId - 신청 ID
+   * @deprecated 서버에 미구현 (API 엔드포인트 없음)
    */
   const refundComplete = async (registrationId: string) => {
     confirmDialog.show({
@@ -116,7 +114,6 @@ export function useUnivGroupRetreatRegistration(
         await updateCache(
           () =>
             UnivGroupRetreatRegistrationAPI.refundComplete(retreatSlug, registrationId),
-          undefined, // 복잡한 업데이트이므로 서버 응답을 기다림
           "환불이 성공적으로 처리되었습니다."
         );
       },
@@ -146,7 +143,6 @@ export function useUnivGroupRetreatRegistration(
               registrationId,
               approve ? "NEW_COMER" : null
             ),
-          undefined, // 복잡한 업데이트이므로 서버 응답을 기다림
           `새가족 신청이 성공적으로 ${approve ? "승인" : "거절"}되었습니다.`
         );
       },
@@ -176,7 +172,6 @@ export function useUnivGroupRetreatRegistration(
               registrationId,
               approve ? "SOLDIER" : null
             ),
-          undefined, // 복잡한 업데이트이므로 서버 응답을 기다림
           `군지체 신청이 성공적으로 ${approve ? "승인" : "거절"}되었습니다.`
         );
       },
@@ -191,7 +186,6 @@ export function useUnivGroupRetreatRegistration(
   const sendPaymentRequest = async (registrationId: string) => {
     await updateCache(
       () => UnivGroupRetreatRegistrationAPI.requestPayment(retreatSlug, registrationId),
-      undefined,
       "입금 요청 메시지가 성공적으로 전송되었습니다."
     );
   };
@@ -210,7 +204,6 @@ export function useUnivGroupRetreatRegistration(
           registrationId,
           memo
         ),
-      undefined, // 메모는 서버 응답을 기다려야 정확함
       "메모가 성공적으로 저장되었습니다."
     );
   };
@@ -229,7 +222,6 @@ export function useUnivGroupRetreatRegistration(
           historyMemoId,
           memo
         ),
-      undefined,
       "메모가 성공적으로 수정되었습니다."
     );
   };
@@ -250,7 +242,6 @@ export function useUnivGroupRetreatRegistration(
               retreatSlug,
               historyMemoId
             ),
-          undefined,
           "메모가 성공적으로 삭제되었습니다."
         );
       },
@@ -267,7 +258,6 @@ export function useUnivGroupRetreatRegistration(
     await updateCache(
       () =>
         UnivGroupRetreatRegistrationAPI.saveAdminMemo(retreatSlug, registrationId, memo),
-      undefined,
       "메모가 성공적으로 저장되었습니다."
     );
   };
@@ -281,7 +271,6 @@ export function useUnivGroupRetreatRegistration(
   const updateAdminMemo = async (memoId: number, memo: string) => {
     await updateCache(
       () => UnivGroupRetreatRegistrationAPI.updateAdminMemo(retreatSlug, memoId, memo),
-      undefined,
       "메모가 성공적으로 수정되었습니다."
     );
   };
@@ -298,7 +287,6 @@ export function useUnivGroupRetreatRegistration(
       onConfirm: async () => {
         await updateCache(
           () => UnivGroupRetreatRegistrationAPI.deleteAdminMemo(retreatSlug, memoId),
-          undefined,
           "메모가 성공적으로 삭제되었습니다."
         );
       },

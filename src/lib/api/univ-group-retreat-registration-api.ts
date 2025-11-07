@@ -30,15 +30,17 @@ export const UnivGroupRetreatRegistrationAPI = {
    *
    * @param retreatSlug - 수양회 슬러그
    * @param registrationId - 신청 ID
+   * @returns 업데이트된 신청 정보
    */
   refundComplete: async (
     retreatSlug: string,
     registrationId: string
-  ): Promise<void> => {
-    await webAxios.post(
+  ): Promise<IUnivGroupAdminStaffRetreat> => {
+    const response = await webAxios.post(
       `/api/v1/retreat/${retreatSlug}/account/refund-complete`,
       { userRetreatRegistrationId: registrationId }
     );
+    return response.data.userRetreatRegistration;
   },
 
   /**
@@ -47,16 +49,18 @@ export const UnivGroupRetreatRegistrationAPI = {
    * @param retreatSlug - 수양회 슬러그
    * @param registrationId - 신청 ID
    * @param userType - 사용자 타입 (NEW_COMER | SOLDIER | null)
+   * @returns 업데이트된 신청 정보
    */
   assignUserType: async (
     retreatSlug: string,
     registrationId: string,
     userType: "NEW_COMER" | "SOLDIER" | null
-  ): Promise<void> => {
-    await webAxios.post(
+  ): Promise<IUnivGroupAdminStaffRetreat> => {
+    const response = await webAxios.post(
       `/api/v1/retreat/${retreatSlug}/registration/${registrationId}/assign-user-type`,
       { userType }
     );
+    return response.data.userRetreatRegistration;
   },
 
   /**
