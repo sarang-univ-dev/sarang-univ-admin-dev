@@ -44,6 +44,7 @@ export interface UnivGroupAdminStaffData {
   phone: string;
   currentLeaderName: string | null;
   schedules: Record<string, boolean>; // schedule_${id} -> boolean
+  hasFullAttendance: boolean; // 전체 스케줄 참석 여부
   type: UserRetreatRegistrationType | null;
   amount: number;
   createdAt: string;

@@ -27,14 +27,15 @@ export async function getRetreatsWithMenusServer(): Promise<RetreatWithMenus[]> 
   }
 
   try {
+    // 표준 fetch 사용 (HTTP localhost)
     const response = await fetch(`${config.API_HOST}/api/v1/admin/retreats`, {
+      method: "GET",
       headers: {
         Cookie: `accessToken=${accessToken}`,
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      cache: "no-store", // 항상 최신 데이터
-      // 또는: next: { revalidate: 60 } // 60초 캐시
+      cache: "no-store",
     })
 
     if (!response.ok) {

@@ -135,13 +135,13 @@ export function RetreatScheduleSummaryClient({
                 <TableRow className="border-b-0">
                   <TableHead
                     rowSpan={2}
-                    className="sticky left-0 bg-gray-100 z-10 border-r font-semibold text-xs md:text-sm px-2 md:px-4"
+                    className="sticky left-0 bg-gray-100 z-10 border-r font-semibold text-xs md:text-sm px-2 md:px-4 whitespace-nowrap"
                   >
                     부서
                   </TableHead>
                   <TableHead
                     colSpan={3}
-                    className="text-center bg-gray-100 font-semibold text-gray-800 border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4"
+                    className="text-center bg-gray-100 font-semibold text-gray-800 border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4 whitespace-nowrap"
                   >
                     요약
                   </TableHead>
@@ -151,20 +151,20 @@ export function RetreatScheduleSummaryClient({
                       colSpan={group.schedules.length}
                       className={`text-center font-semibold text-gray-800 border-b ${getDayColor(
                         index
-                      )} border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4`}
+                      )} border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4 whitespace-nowrap`}
                     >
                       {group.dayName}
                     </TableHead>
                   ))}
                 </TableRow>
                 <TableRow>
-                  <TableHead className="text-center font-medium text-gray-700 bg-gray-100 border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4">
+                  <TableHead className="text-center font-medium text-gray-700 bg-gray-100 border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4 whitespace-nowrap">
                     전참
                   </TableHead>
-                  <TableHead className="text-center font-medium text-gray-700 bg-gray-100 text-xs md:text-sm px-2 md:px-4">
+                  <TableHead className="text-center font-medium text-gray-700 bg-gray-100 text-xs md:text-sm px-2 md:px-4 whitespace-nowrap">
                     부분참
                   </TableHead>
-                  <TableHead className="text-center font-medium text-gray-700 bg-gray-100 text-xs md:text-sm px-2 md:px-4">
+                  <TableHead className="text-center font-medium text-gray-700 bg-gray-100 text-xs md:text-sm px-2 md:px-4 whitespace-nowrap">
                     합계
                   </TableHead>
                   {dayGroups.map((group, groupIndex) =>
@@ -175,7 +175,7 @@ export function RetreatScheduleSummaryClient({
                           key={schedule.key}
                           className={`text-center font-medium text-gray-700 ${getDayColor(
                             groupIndex
-                          )} ${isFirstInGroup ? "border-l border-l-gray-300" : ""} text-xs md:text-sm px-2 md:px-4`}
+                          )} ${isFirstInGroup ? "border-l border-l-gray-300" : ""} text-xs md:text-sm px-2 md:px-4 whitespace-nowrap`}
                         >
                           {schedule.label}
                         </TableHead>
@@ -194,7 +194,7 @@ export function RetreatScheduleSummaryClient({
                   >
                     <TableCell className="font-medium sticky left-0 bg-gray-50 z-10 border-r px-2 md:px-4 py-2 md:py-3">
                       <span
-                        className={`inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md font-medium text-xs md:text-sm ${
+                        className={`inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md font-medium text-xs md:text-sm whitespace-nowrap shrink-0 ${
                           row.id === "total"
                             ? "bg-gray-200 text-gray-800"
                             : "bg-gray-100 text-gray-700"
@@ -204,21 +204,21 @@ export function RetreatScheduleSummaryClient({
                       </span>
                     </TableCell>
                     <TableCell
-                      className={`text-center border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 ${
+                      className={`text-center border-l border-l-gray-300 text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 whitespace-nowrap ${
                         row.id === "total" ? "bg-gray-50" : ""
                       }`}
                     >
                       {row.fullParticipation}
                     </TableCell>
                     <TableCell
-                      className={`text-center text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 ${
+                      className={`text-center text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 whitespace-nowrap ${
                         row.id === "total" ? "bg-gray-50" : ""
                       }`}
                     >
                       {row.partialParticipation}
                     </TableCell>
                     <TableCell
-                      className={`text-center text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 ${
+                      className={`text-center text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 whitespace-nowrap ${
                         row.id === "total" ? "bg-gray-50" : ""
                       }`}
                     >
@@ -230,7 +230,7 @@ export function RetreatScheduleSummaryClient({
                         return (
                           <TableCell
                             key={`${row.id}-${schedule.key}`}
-                            className={`text-center text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 ${
+                            className={`text-center text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 whitespace-nowrap ${
                               isFirstInGroup ? "border-l border-l-gray-300" : ""
                             } ${row.id === "total" ? "bg-gray-50" : ""}`}
                           >

@@ -92,7 +92,7 @@ const renderStatusBadgeWithCount = (
       );
     case "total":
       return (
-        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
+        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 shrink-0">
           <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
             전체 인원 <span className="font-bold">{count}</span>명
           </span>

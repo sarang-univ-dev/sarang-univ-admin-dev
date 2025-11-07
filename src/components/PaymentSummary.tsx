@@ -81,8 +81,8 @@ export function PaymentSummary({
       id: "total",
       header: (
         <div className="flex justify-center">
-          <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
-            <span className="text-xs font-medium text-gray-700">전체 인원</span>
+          <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 shrink-0">
+            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">전체 인원</span>
           </div>
         </div>
       ),

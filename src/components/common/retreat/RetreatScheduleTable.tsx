@@ -77,8 +77,8 @@ export function RetreatScheduleTable({
   ).sort();
 
   return (
-    <div className="w-full overflow-x-auto">
-      <Table className="min-w-full">
+    <div className="w-full">
+      <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="text-center whitespace-nowrap px-2 sm:px-4">

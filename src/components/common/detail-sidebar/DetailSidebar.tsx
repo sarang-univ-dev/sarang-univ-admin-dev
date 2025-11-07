@@ -34,7 +34,7 @@ export function DetailSidebar<T>({
           "overflow-y-auto",
           side === "bottom"
             ? "h-[90vh]"
-            : "w-[500px] sm:w-[600px]",
+            : "!w-fit !max-w-[95vw] min-w-[500px]",
           className
         )}
       >

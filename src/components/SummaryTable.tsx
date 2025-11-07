@@ -161,12 +161,12 @@ export function SummaryTable({
                 {rows.map(row => (
                   <TableRow key={row.id}>
                     <TableCell className="font-medium sticky left-0 bg-gray-50 z-10 border-r px-2 md:px-4 py-2 md:py-3">
-                      <span className="inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md bg-gray-100 text-gray-700 font-medium text-xs md:text-sm">
+                      <span className="inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md bg-gray-100 text-gray-700 font-medium text-xs md:text-sm whitespace-nowrap shrink-0">
                         {row.label}
                       </span>
                     </TableCell>
                     {columns.map(column => (
-                      <TableCell key={`${row.id}-${column.id}`} className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3">
+                      <TableCell key={`${row.id}-${column.id}`} className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 whitespace-nowrap">
                         {row.cells[column.id] || "-"}
                       </TableCell>
                     ))}

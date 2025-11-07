@@ -1,7 +1,8 @@
 import "server-only";
 import { cookies } from "next/headers";
+import config from "@/lib/constant/config";
 
-const API_BASE_URL = process.env.API_URL || "http://localhost:3001";
+const API_BASE_URL = config.API_HOST;
 
 /**
  * 서버에서 액세스 토큰 가져오기
@@ -20,10 +21,11 @@ export async function fetchUnivGroupAdminStaffData(retreatSlug: string) {
   const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/registration/univ-group-registrations`;
 
   const response = await fetch(url, {
+    method: "GET",
     headers: {
       Cookie: `accessToken=${token}`,
     },
-    cache: "no-store", // 캐싱 비활성화 (실시간 데이터)
+    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -46,6 +48,7 @@ export async function fetchRetreatSchedules(retreatSlug: string) {
   const response = await fetch(
     `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/info`,
     {
+      method: "GET",
       headers: {
         Cookie: `accessToken=${token}`,
       },
@@ -94,6 +97,7 @@ export async function fetchScheduleChangeRequests(retreatSlug: string) {
   const response = await fetch(
     `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/account/schedule-change-request`,
     {
+      method: "GET",
       headers: {
         Cookie: `accessToken=${token}`,
       },
@@ -118,6 +122,7 @@ export async function fetchRetreatPayments(retreatSlug: string) {
   const response = await fetch(
     `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/info`,
     {
+      method: "GET",
       headers: {
         Cookie: `accessToken=${token}`,
       },
