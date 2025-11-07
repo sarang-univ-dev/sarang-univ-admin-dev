@@ -79,13 +79,14 @@ export function ColumnHeader<TData>({
   const sortOrder = sortIndex !== -1 ? sortIndex + 1 : null;
 
   // 3-state 토글: false → 'asc' → 'desc' → false
+  // multi-sort 활성화: 각 컬럼 클릭 시 기존 정렬 유지하면서 추가 정렬
   const handleSort = () => {
     if (!enableSorting) return;
 
     if (!sortingState) {
-      column.toggleSorting(false); // 오름차순
+      column.toggleSorting(false, true); // 오름차순, multi-sort 활성화
     } else if (sortingState === "asc") {
-      column.toggleSorting(true); // 내림차순
+      column.toggleSorting(true, true); // 내림차순, multi-sort 활성화
     } else {
       column.clearSorting(); // 정렬 해제
     }

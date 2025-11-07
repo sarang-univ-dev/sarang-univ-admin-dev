@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Column, Table } from "@tanstack/react-table";
-import { Filter, Check } from "lucide-react";
+import { Filter, Check, Search } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 
 interface FilterableHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -47,6 +48,7 @@ export function FilterableHeader<TData>({
   formatValue = (value) => String(value),
 }: FilterableHeaderProps<TData>) {
   const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // 현재 필터 값 (배열)
   const filterValue = (column.getFilterValue() as any[]) || [];
@@ -75,19 +77,34 @@ export function FilterableHeader<TData>({
     return values;
   }, [table, column.id]);
 
+  // 검색어로 필터링된 값 목록
+  const filteredValues = useMemo(() => {
+    if (!searchTerm) return uniqueValues;
+
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return uniqueValues.filter((value) => {
+      const displayValue = value === "__EMPTY__" ? "값 없음" : formatValue(value);
+      return displayValue.toLowerCase().includes(lowerSearchTerm);
+    });
+  }, [uniqueValues, searchTerm, formatValue]);
+
   // 체크박스 상태 관리
   const [selectedValues, setSelectedValues] = useState<Set<any>>(
     new Set(filterValue)
   );
 
-  // 전체 선택
+  // 전체 선택 (현재 필터링된 값들만)
   const handleSelectAll = () => {
-    setSelectedValues(new Set(uniqueValues));
+    const newSet = new Set(selectedValues);
+    filteredValues.forEach((value) => newSet.add(value));
+    setSelectedValues(newSet);
   };
 
-  // 전체 해제
+  // 전체 해제 (현재 필터링된 값들만)
   const handleClearAll = () => {
-    setSelectedValues(new Set());
+    const newSet = new Set(selectedValues);
+    filteredValues.forEach((value) => newSet.delete(value));
+    setSelectedValues(newSet);
   };
 
   // 개별 선택/해제
@@ -119,6 +136,7 @@ export function FilterableHeader<TData>({
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
       setSelectedValues(new Set(filterValue.length > 0 ? filterValue : uniqueValues));
+      setSearchTerm(""); // 검색어 초기화
     }
     setOpen(isOpen);
   };
@@ -158,6 +176,20 @@ export function FilterableHeader<TData>({
             </div>
           </div>
 
+          {/* 검색 입력 필드 */}
+          <div className="px-3 py-2 border-b">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+          </div>
+
           {/* 전체 선택/해제 버튼 */}
           <div className="flex gap-1 px-3 py-2 border-b">
             <Button
@@ -181,26 +213,32 @@ export function FilterableHeader<TData>({
           {/* 값 목록 (Checkbox) */}
           <ScrollArea className="h-[200px]">
             <div className="p-2">
-              {uniqueValues.map((value) => {
-                const isSelected = selectedValues.has(value);
-                return (
-                  <div
-                    key={String(value)}
-                    className="flex items-center space-x-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer"
-                    onClick={() => handleToggle(value)}
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => handleToggle(value)}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-sm flex-1 cursor-pointer">
-                      {value === "__EMPTY__" ? "값 없음" : formatValue(value)}
-                    </span>
-                    {isSelected && <Check className="h-3 w-3 text-blue-600" />}
-                  </div>
-                );
-              })}
+              {filteredValues.length === 0 ? (
+                <div className="text-center text-sm text-gray-500 py-4">
+                  검색 결과가 없습니다.
+                </div>
+              ) : (
+                filteredValues.map((value) => {
+                  const isSelected = selectedValues.has(value);
+                  return (
+                    <div
+                      key={String(value)}
+                      className="flex items-center space-x-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer"
+                      onClick={() => handleToggle(value)}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => handleToggle(value)}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-sm flex-1 cursor-pointer">
+                        {value === "__EMPTY__" ? "값 없음" : formatValue(value)}
+                      </span>
+                      {isSelected && <Check className="h-3 w-3 text-blue-600" />}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </ScrollArea>
 
