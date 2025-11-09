@@ -10,7 +10,6 @@ import {
   ColumnFiltersState,
   SortingState,
   VisibilityState,
-  flexRender,
   createColumnHelper,
 } from "@tanstack/react-table";
 import {
@@ -23,6 +22,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Eye } from "lucide-react";
 import { IUnivGroupBusRegistration } from "@/types/bus-registration";
 import { TRetreatShuttleBus } from "@/types";
 import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
@@ -34,6 +35,8 @@ import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-side
 import { useToastStore } from "@/store/toast-store";
 import { webAxios } from "@/lib/api/axios";
 import { mutate } from "swr";
+import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
+import { useIsMobile } from "@/hooks/use-media-query";
 
 interface UnivGroupBusRegistrationTableProps {
   initialData: IUnivGroupBusRegistration[];
@@ -73,6 +76,9 @@ export function UnivGroupBusRegistrationTable({
   // ✅ 사이드바 상태 관리
   const sidebar = useDetailSidebar<IUnivGroupBusRegistration>();
 
+  // ✅ 모바일 감지
+  const isMobile = useIsMobile();
+
   // ✅ TanStack Table State
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -108,6 +114,63 @@ export function UnivGroupBusRegistrationTable({
     }
   };
 
+  // ✅ 메모 업데이트 핸들러
+  const handleUpdateMemo = async (id: string, memo: string) => {
+    setIsSaving(true);
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/schedule-change-memo`,
+        { memo }
+      );
+      await mutate(registrationsEndpoint);
+      addToast({
+        title: "성공",
+        description: "메모가 수정되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("메모 수정 실패:", error);
+      addToast({
+        title: "오류",
+        description: "메모 수정에 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ✅ 메모 삭제 핸들러
+  const handleDeleteMemo = async (id: string) => {
+    setIsSaving(true);
+    try {
+      await webAxios.delete(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/schedule-change-memo`
+      );
+      await mutate(registrationsEndpoint);
+      addToast({
+        title: "성공",
+        description: "메모가 삭제되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("메모 삭제 실패:", error);
+      addToast({
+        title: "오류",
+        description: "메모 삭제에 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ✅ 색상이 포함된 스케줄 컬럼 정보 생성
+  const scheduleColumnsWithColor = useMemo(
+    () => generateShuttleBusScheduleColumns(schedules),
+    [schedules]
+  );
+
   // ✅ 컬럼 정의 (Timestamp 정보 제외)
   const columns = useMemo<ColumnDef<IUnivGroupBusRegistration>[]>(() => {
     const staticColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
@@ -129,14 +192,7 @@ export function UnivGroupBusRegistrationTable({
       columnHelper.accessor("name", {
         id: "name",
         header: "이름",
-        cell: (info) => (
-          <button
-            onClick={() => sidebar.open(info.row.original)}
-            className="font-medium hover:underline text-blue-600"
-          >
-            {info.getValue()}
-          </button>
-        ),
+        cell: (info) => info.getValue(),
       }),
       columnHelper.accessor("userPhoneNumber", {
         id: "phone",
@@ -145,29 +201,33 @@ export function UnivGroupBusRegistrationTable({
       }),
     ];
 
-    // 동적 스케줄 컬럼
-    const scheduleColumns: ColumnDef<IUnivGroupBusRegistration>[] = schedules.map(
-      (schedule) =>
+    // 동적 스케줄 컬럼 (색상 포함)
+    const scheduleColumns: ColumnDef<IUnivGroupBusRegistration>[] =
+      scheduleColumnsWithColor.map((scheduleCol) =>
         columnHelper.accessor(
           (row) =>
             row.userRetreatShuttleBusRegistrationScheduleIds?.includes(
-              schedule.id
+              scheduleCol.id
             ),
           {
-            id: `schedule_${schedule.id}`,
+            id: scheduleCol.key,
             header: () => (
               <div className="text-xs whitespace-pre-line text-center">
-                {schedule.name}
+                {scheduleCol.label}
               </div>
             ),
             cell: (info) => (
               <div className="flex justify-center">
-                <Checkbox checked={!!info.getValue()} disabled />
+                <Checkbox
+                  checked={!!info.getValue()}
+                  disabled
+                  className={scheduleCol.bgColorClass}
+                />
               </div>
             ),
           }
         )
-    );
+      );
 
     const endColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
       columnHelper.accessor("price", {
@@ -207,10 +267,25 @@ export function UnivGroupBusRegistrationTable({
           />
         ),
       }),
+      columnHelper.display({
+        id: "detail",
+        header: "상세 보기",
+        cell: (props) => (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => sidebar.open(props.row.original)}
+            className="flex items-center gap-1.5 text-xs h-7"
+          >
+            <Eye className="h-3 w-3" />
+            <span>보기</span>
+          </Button>
+        ),
+      }),
     ];
 
     return [...staticColumns, ...scheduleColumns, ...endColumns];
-  }, [schedules, registrations, sidebar]);
+  }, [scheduleColumnsWithColor, registrations, sidebar.open]);
 
   // ✅ TanStack Table 초기화
   const table = useReactTable<IUnivGroupBusRegistration>({
@@ -246,6 +321,11 @@ export function UnivGroupBusRegistrationTable({
 
   const filteredData = table.getRowModel().rows.map((row) => row.original);
 
+  // ✅ 사이드바에 표시할 최신 데이터 (SWR 캐시와 동기화)
+  const currentSidebarData = sidebar.selectedItem
+    ? registrations.find((item) => item.id === sidebar.selectedItem.id) || sidebar.selectedItem
+    : null;
+
   return (
     <>
       <Card className="shadow-sm">
@@ -271,32 +351,88 @@ export function UnivGroupBusRegistrationTable({
 
             {/* 테이블 */}
             <div className="rounded-md border">
-              <div className="max-h-[70vh] overflow-auto">
-                <Table>
-                  <TableHeader className="bg-gray-100 sticky top-0 z-10">
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <TableHead
-                            key={header.id}
-                            className="text-center px-3 py-2.5"
-                          >
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    ))}
+              <div className="min-w-max">
+                <div className="max-h-[80vh] overflow-auto">
+                  <Table className="min-w-full whitespace-nowrap relative text-sm">
+                  <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
+                    <TableRow>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>부서</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>성별</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>학년</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>이름</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>전화번호</span>
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        colSpan={scheduleColumnsWithColor.length}
+                        className="text-center px-3 py-2.5"
+                      >
+                        버스 신청 일정
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>금액</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>입금 현황</span>
+                        </div>
+                      </TableHead>
+                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>일정 변동 메모</span>
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="px-3 py-2.5 text-center"
+                        rowSpan={2}
+                      >
+                        메모 관리
+                      </TableHead>
+                      <TableHead
+                        className="px-3 py-2.5 text-center"
+                        rowSpan={2}
+                      >
+                        상세 보기
+                      </TableHead>
+                    </TableRow>
+                    <TableRow>
+                      {scheduleColumnsWithColor.map((scheduleCol) => (
+                        <TableHead
+                          key={scheduleCol.key}
+                          className="p-2 text-center"
+                        >
+                          <span className="text-xs whitespace-pre-line">
+                            {scheduleCol.label}
+                          </span>
+                        </TableHead>
+                      ))}
+                    </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody className="divide-y divide-gray-200">
                     {table.getRowModel().rows.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={columns.length}
+                          colSpan={5 + scheduleColumnsWithColor.length + 5}
                           className="text-center py-10 text-gray-500"
                         >
                           {globalFilter
@@ -305,44 +441,117 @@ export function UnivGroupBusRegistrationTable({
                         </TableCell>
                       </TableRow>
                     ) : (
-                      table.getRowModel().rows.map((row) => (
-                        <TableRow
-                          key={row.id}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          {row.getVisibleCells().map((cell) => (
-                            <TableCell
-                              key={cell.id}
-                              className="text-center px-3 py-2.5"
-                            >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
+                      table.getRowModel().rows.map((row) => {
+                        const data = row.original;
+                        return (
+                          <TableRow
+                            key={row.id}
+                            className="group hover:bg-gray-50 transition-colors duration-150"
+                          >
+                            <TableCell className="text-center px-3 py-2.5">
+                              {data.univGroupNumber}부
                             </TableCell>
-                          ))}
-                        </TableRow>
-                      ))
+                            <TableCell className="text-center px-3 py-2.5">
+                              <GenderBadge gender={data.gender} />
+                            </TableCell>
+                            <TableCell className="text-center px-3 py-2.5">
+                              {data.gradeNumber}학년
+                            </TableCell>
+                            <TableCell className="text-center px-3 py-2.5">
+                              {data.name}
+                            </TableCell>
+                            <TableCell className="font-medium text-center px-3 py-2.5">
+                              {data.userPhoneNumber || "-"}
+                            </TableCell>
+                            {scheduleColumnsWithColor.map((col) => (
+                              <TableCell
+                                key={`${row.id}-${col.key}`}
+                                className="p-2 text-center"
+                              >
+                                <Checkbox
+                                  checked={
+                                    !!data.userRetreatShuttleBusRegistrationScheduleIds?.includes(
+                                      col.id
+                                    )
+                                  }
+                                  disabled
+                                  className={
+                                    data.userRetreatShuttleBusRegistrationScheduleIds?.includes(
+                                      col.id
+                                    )
+                                      ? col.bgColorClass
+                                      : ""
+                                  }
+                                />
+                              </TableCell>
+                            ))}
+                            <TableCell className="font-medium text-center px-3 py-2.5">
+                              {data.price.toLocaleString()}원
+                            </TableCell>
+                            <TableCell className="text-center px-3 py-2.5">
+                              <StatusBadge status={data.shuttleBusPaymentStatus} />
+                            </TableCell>
+                            <TableCell
+                              className="text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
+                              title={data.univGroupStaffShuttleBusHistoryMemo || ""}
+                            >
+                              {data.univGroupStaffShuttleBusHistoryMemo || "-"}
+                            </TableCell>
+                            <TableCell className="text-center px-3 py-2.5">
+                              <UnivGroupBusRegistrationTableActions
+                                row={{
+                                  id: data.id.toString(),
+                                  status: data.shuttleBusPaymentStatus,
+                                  memo: data.univGroupStaffShuttleBusHistoryMemo,
+                                }}
+                                onOpenMemo={(id) => {
+                                  const registration = registrations.find(
+                                    (r) => r.id.toString() === id
+                                  );
+                                  if (registration) sidebar.open(registration);
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="text-center px-3 py-2.5">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => sidebar.open(data)}
+                                className="flex items-center gap-1.5 text-xs h-7"
+                              >
+                                <Eye className="h-3 w-3" />
+                                <span>보기</span>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
-                  </TableBody>
-                </Table>
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Detail Sidebar - Timestamp 정보는 여기에만 표시 */}
+      {/* ✅ 상세 정보 사이드바 (반응형) - 최신 데이터로 실시간 동기화 */}
       <DetailSidebar
-        isOpen={sidebar.isOpen}
-        onClose={sidebar.close}
-        title={sidebar.selectedItem ? `${sidebar.selectedItem.name} 상세 정보` : ""}
+        open={sidebar.isOpen}
+        onOpenChange={sidebar.setIsOpen}
+        data={currentSidebarData}
+        title="신청자 상세 정보"
+        description={(data) => `${data.name} (${data.univGroupNumber}부) 버스 신청 내역`}
+        side={isMobile ? "bottom" : "right"}
       >
-        {sidebar.selectedItem && (
+        {(data) => (
           <UnivGroupBusRegistrationDetailContent
-            data={sidebar.selectedItem}
+            data={data}
             schedules={schedules}
             onSaveMemo={handleSaveMemo}
+            onUpdateMemo={handleUpdateMemo}
+            onDeleteMemo={handleDeleteMemo}
             isMutating={isSaving}
           />
         )}
