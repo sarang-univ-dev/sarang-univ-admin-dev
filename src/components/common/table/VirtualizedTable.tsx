@@ -10,6 +10,7 @@ interface VirtualizedTableProps<TData> {
   estimateSize?: number;
   overscan?: number;
   onRowClick?: (row: TData) => void;
+  getRowClassName?: (row: TData) => string;
   className?: string;
   emptyMessage?: string;
 }
@@ -39,6 +40,7 @@ export function VirtualizedTable<TData>({
   estimateSize = 50,
   overscan = 10,
   onRowClick,
+  getRowClassName,
   className = "max-h-[80vh]",
   emptyMessage,
 }: VirtualizedTableProps<TData>) {
@@ -110,6 +112,7 @@ export function VirtualizedTable<TData>({
                     key={row.id}
                     row={row}
                     onRowClick={onRowClick}
+                    getRowClassName={getRowClassName}
                   />
                 );
               })}
@@ -137,14 +140,18 @@ export function VirtualizedTable<TData>({
 const MemoizedTableRow = <TData,>({
   row,
   onRowClick,
+  getRowClassName,
 }: {
   row: any;
   onRowClick?: (row: TData) => void;
+  getRowClassName?: (row: TData) => string;
 }) => {
+  const customClassName = getRowClassName?.(row.original) || '';
+
   return (
     <TableRow
       data-state={row.getIsSelected() && "selected"}
-      className="group hover:bg-gray-50 transition-colors duration-150"
+      className={`group hover:bg-gray-50 transition-colors duration-150 ${customClassName}`}
       onClick={() => onRowClick?.(row.original)}
     >
       {row.getVisibleCells().map((cell: any) => (

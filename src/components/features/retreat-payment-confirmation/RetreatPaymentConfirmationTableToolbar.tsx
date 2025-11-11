@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Download } from "lucide-react";
@@ -8,56 +8,41 @@ import { debounce } from "lodash";
 import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import { formatDate } from "@/utils/formatDate";
+import { Table } from "@tanstack/react-table";
 
 interface RetreatPaymentConfirmationTableToolbarProps {
-  onSearch: (results: any[], searchTerm: string) => void;
-  data: any[];
+  table: Table<any>;
+  globalFilter: string;
+  setGlobalFilter: (value: string) => void;
   retreatSlug: string;
 }
 
 /**
  * 부서 재정 팀원 - 입금 확인 테이블 툴바
- * - 검색바 (이름, 부서, 학년, 타입)
+ * - 검색바 (Global Filter)
  * - 엑셀 다운로드 버튼
  */
 export function RetreatPaymentConfirmationTableToolbar({
-  onSearch,
-  data,
+  table,
+  globalFilter,
+  setGlobalFilter,
   retreatSlug,
 }: RetreatPaymentConfirmationTableToolbarProps) {
-  const [searchTerm, setSearchTerm] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const addToast = useToastStore((state) => state.add);
 
-  // Debounced 검색
-  const debouncedSearch = useRef(
-    debounce((term: string, currentData: any[]) => {
-      if (!term.trim()) {
-        onSearch(currentData, term);
-        return;
-      }
+  // ✅ Debounced search (useMemo로 안정적인 참조 유지)
+  const debouncedSetGlobalFilter = useMemo(
+    () => debounce((value: string) => setGlobalFilter(value), 300),
+    [setGlobalFilter]
+  );
 
-      const lowercasedTerm = term.toLowerCase();
-      const filtered = currentData.filter(
-        (item) =>
-          (item.name && item.name.toLowerCase().includes(lowercasedTerm)) ||
-          (item.department &&
-            item.department.toLowerCase().includes(lowercasedTerm)) ||
-          (item.grade &&
-            item.grade.toString().toLowerCase().includes(lowercasedTerm)) ||
-          (item.type && item.type.toLowerCase().includes(lowercasedTerm))
-      );
-
-      onSearch(filtered, term);
-    }, 300)
-  ).current;
-
-  // 검색어 변경 핸들러
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-    debouncedSearch(term, data);
-  };
+  // ✅ Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetGlobalFilter.cancel();
+    };
+  }, [debouncedSetGlobalFilter]);
 
   // 엑셀 다운로드
   const handleExcelDownload = async () => {
@@ -101,10 +86,10 @@ export function RetreatPaymentConfirmationTableToolbar({
       <div className="relative flex-1 max-w-sm">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
         <Input
-          placeholder="이름, 부서, 학년, 타입으로 검색..."
+          placeholder="이름, 부서, 학년으로 검색..."
           className="pl-8 pr-4 py-2 border-gray-200 focus:border-gray-300 focus:ring-0"
-          value={searchTerm}
-          onChange={handleSearchChange}
+          value={globalFilter ?? ""}
+          onChange={(e) => debouncedSetGlobalFilter(e.target.value)}
         />
       </div>
 

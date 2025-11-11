@@ -4,25 +4,20 @@ import { useMemo, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
+  getFilteredRowModel,
   getSortedRowModel,
   ColumnDef,
   SortingState,
-  flexRender,
+  ColumnFiltersState,
+  VisibilityState,
   createColumnHelper,
 } from "@tanstack/react-table";
 import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { VirtualizedTable } from "@/components/common/table";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import {
   TRetreatRegistrationSchedule,
@@ -77,18 +72,23 @@ export function RetreatPaymentConfirmationTable({
   schedules,
   retreatSlug,
 }: RetreatPaymentConfirmationTableProps) {
-  // ✅ SWR로 실시간 데이터 동기화
-  const { data: registrations = initialData } = useRetreatPaymentConfirmation(
-    retreatSlug,
-    {
-      fallbackData: initialData,
-      revalidateOnFocus: true,
-    }
-  );
+  // ✅ SWR로 실시간 데이터 동기화 + Mutation 함수들
+  const {
+    data: registrations,
+    confirmPayment,
+    sendPaymentRequest,
+    refundComplete,
+    isMutating,
+  } = useRetreatPaymentConfirmation(retreatSlug, {
+    fallbackData: initialData,
+    revalidateOnFocus: true,
+  });
 
   // ✅ TanStack Table State
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [filteredData, setFilteredData] = useState<TableRow[]>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [globalFilter, setGlobalFilter] = useState("");
 
   // ✅ 스케줄 컬럼 메타데이터 생성
   const scheduleColumnsMeta = useMemo(
@@ -96,8 +96,8 @@ export function RetreatPaymentConfirmationTable({
     [schedules]
   );
 
-  // 데이터 변환
-  const tableData = useMemo<TableRow[]>(() => {
+  // ✅ 데이터 변환 (useMemo로 메모이제이션)
+  const data = useMemo<TableRow[]>(() => {
     return registrations.map((reg) => {
       const scheduleData: Record<string, boolean> = {};
       schedules.forEach((schedule) => {
@@ -123,13 +123,6 @@ export function RetreatPaymentConfirmationTable({
       };
     });
   }, [registrations, schedules]);
-
-  // filteredData 초기화
-  useMemo(() => {
-    if (filteredData.length === 0 && tableData.length > 0) {
-      setFilteredData(tableData);
-    }
-  }, [tableData, filteredData]);
 
   // ✅ 컬럼 정의
   const columns = useMemo<ColumnDef<TableRow>[]>(() => {
@@ -233,7 +226,10 @@ export function RetreatPaymentConfirmationTable({
           <div className="text-center">
             <RetreatPaymentConfirmationTableActions
               registration={props.row.original.original}
-              retreatSlug={retreatSlug}
+              confirmPayment={confirmPayment}
+              sendPaymentRequest={sendPaymentRequest}
+              refundComplete={refundComplete}
+              isMutating={isMutating}
             />
           </div>
         ),
@@ -260,24 +256,45 @@ export function RetreatPaymentConfirmationTable({
     ];
 
     return [...staticColumns, ...scheduleColumns, ...endColumns];
-  }, [schedules, retreatSlug]);
+  }, [schedules, confirmPayment, sendPaymentRequest, refundComplete, isMutating]);
 
   // ✅ TanStack Table 초기화
   const table = useReactTable<TableRow>({
-    data: filteredData.length > 0 ? filteredData : tableData,
+    data,
     columns,
     state: {
       sorting,
+      columnFilters,
+      columnVisibility,
+      globalFilter,
     },
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-  });
+    // ✅ Multi-sort 및 필터 활성화
+    enableMultiSort: true,
+    enableSortingRemoval: true,
+    enableColumnFilters: true,
+    enableFilters: true,
+    // ✅ 모든 클릭을 multi-sort event로 처리 (Shift 키 불필요)
+    isMultiSortEvent: () => true,
+    // 전역 필터 함수 (통합 검색)
+    globalFilterFn: (row, columnId, filterValue) => {
+      const searchableFields = [
+        row.original.name,
+        row.original.department,
+        row.original.grade,
+      ];
 
-  // 검색 결과 처리
-  const handleSearch = (results: TableRow[], searchTerm: string) => {
-    setFilteredData(results);
-  };
+      return searchableFields.some((field) =>
+        field?.toLowerCase().includes(filterValue.toLowerCase())
+      );
+    },
+  });
 
   return (
     <Card className="shadow-sm">
@@ -289,71 +306,30 @@ export function RetreatPaymentConfirmationTable({
               신청 현황 및 입금 조회
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              전체 신청자 목록 ({(filteredData.length > 0 ? filteredData : tableData).length}명)
+              전체 신청자 목록 ({table.getFilteredRowModel().rows.length}명)
             </p>
           </div>
 
           {/* 툴바 */}
           <RetreatPaymentConfirmationTableToolbar
-            onSearch={handleSearch}
-            data={tableData}
+            table={table}
+            globalFilter={globalFilter}
+            setGlobalFilter={setGlobalFilter}
             retreatSlug={retreatSlug}
           />
 
-          {/* 테이블 */}
-          <div className="rounded-md border">
-            <div className="max-h-[70vh] overflow-auto">
-              <Table>
-                <TableHeader className="bg-gray-100 sticky top-0 z-10">
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <TableHead
-                          key={header.id}
-                          className="text-center px-3 py-2.5"
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-24 text-center"
-                      >
-                        데이터가 없습니다.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    table.getRowModel().rows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        className="hover:bg-gray-50"
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id} className="px-3 py-2.5">
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          {/* ✅ 가상화 테이블 */}
+          <VirtualizedTable
+            table={table}
+            estimateSize={50}
+            overscan={10}
+            className="max-h-[70vh]"
+            emptyMessage={
+              globalFilter
+                ? "검색 결과가 없습니다."
+                : "표시할 데이터가 없습니다."
+            }
+          />
         </div>
       </CardContent>
     </Card>

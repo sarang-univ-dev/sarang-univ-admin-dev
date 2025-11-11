@@ -138,7 +138,7 @@ export function useGbsLineupColumns(
     } = handlers;
 
     return [
-      // GBS 번호 (rowSpan)
+      // ✅ GBS 번호 (리더 행에만 표시, rowSpan 제거)
       columnHelper.accessor("gbsNumber", {
         id: "gbsNumber",
         header: ({ column, table }) => (
@@ -158,25 +158,24 @@ export function useGbsLineupColumns(
         ),
         cell: (info) => {
           const row = info.row.original;
-          const { isFirstInGroup, groupSize } = getGroupInfo(row, allRows);
 
+          // ✅ 리더가 아니면 빈 셀
+          if (!row.isLeader) {
+            return <div className="text-center px-2 py-1">-</div>;
+          }
+
+          // ✅ GBS 번호가 없으면 빈 셀
           if (!row.gbsNumber) {
-            return <TableCell className="text-center px-2 py-1" />;
+            return <div className="text-center px-2 py-1">-</div>;
           }
 
-          if (!isFirstInGroup) {
-            return null; // rowSpan으로 이미 표시됨
-          }
+          const { groupSize } = getGroupInfo(row, allRows);
+          const isOverCapacity = groupSize > COMPLETE_GROUP_ROW_COUNT;
 
           return (
-            <TableCell
-              rowSpan={groupSize}
-              className={`align-middle font-bold text-center px-2 py-1 ${
-                groupSize > COMPLETE_GROUP_ROW_COUNT ? "bg-rose-200" : ""
-              }`}
-            >
+            <div className={`font-bold text-center px-2 py-1 ${isOverCapacity ? "text-red-600" : ""}`}>
               {row.gbsNumber}
-            </TableCell>
+            </div>
           );
         },
         filterFn: (row, columnId, filterValue) => {
@@ -188,59 +187,59 @@ export function useGbsLineupColumns(
         },
       }),
 
-      // 전참/부분참 (rowSpan)
+      // ✅ 전참/부분참 (리더 행에만 표시, rowSpan 제거)
       columnHelper.display({
         id: "attendance",
         header: "전참/부분참",
         cell: (info) => {
           const row = info.row.original;
-          const { isFirstInGroup, groupSize } = getGroupInfo(row, allRows);
+
+          // ✅ 리더가 아니면 빈 셀
+          if (!row.isLeader) {
+            return <div className="text-center px-2 py-1">-</div>;
+          }
 
           if (!row.gbsNumber) {
-            return <TableCell className="text-center px-2 py-1" />;
+            return <div className="text-center px-2 py-1">-</div>;
           }
 
-          if (!isFirstInGroup) {
-            return null;
-          }
+          const { groupSize } = getGroupInfo(row, allRows);
+          const isOverCapacity = groupSize > COMPLETE_GROUP_ROW_COUNT;
 
           return (
-            <TableCell
-              rowSpan={groupSize}
-              className="align-middle text-center font-semibold px-2 py-1"
-            >
+            <div className={`text-center font-semibold px-2 py-1 ${isOverCapacity ? "text-red-600" : ""}`}>
               전참 {row.fullAttendanceCount}
               <br />
               부분참 {row.partialAttendanceCount}
-            </TableCell>
+            </div>
           );
         },
       }),
 
-      // 남/여 (rowSpan)
+      // ✅ 남/여 (리더 행에만 표시, rowSpan 제거)
       columnHelper.display({
         id: "genderCount",
         header: "남/여",
         cell: (info) => {
           const row = info.row.original;
-          const { isFirstInGroup, groupSize } = getGroupInfo(row, allRows);
+
+          // ✅ 리더가 아니면 빈 셀
+          if (!row.isLeader) {
+            return <div className="text-center px-2 py-1">-</div>;
+          }
 
           if (!row.gbsNumber) {
-            return <TableCell className="text-center px-2 py-1" />;
+            return <div className="text-center px-2 py-1">-</div>;
           }
 
-          if (!isFirstInGroup) {
-            return null;
-          }
+          const { groupSize } = getGroupInfo(row, allRows);
+          const isOverCapacity = groupSize > COMPLETE_GROUP_ROW_COUNT;
 
           return (
-            <TableCell
-              rowSpan={groupSize}
-              className="align-middle text-center font-semibold px-2 py-1"
-            >
+            <div className={`text-center font-semibold px-2 py-1 ${isOverCapacity ? "text-red-600" : ""}`}>
               남 {row.maleCount}
               <br />여 {row.femaleCount}
-            </TableCell>
+            </div>
           );
         },
       }),

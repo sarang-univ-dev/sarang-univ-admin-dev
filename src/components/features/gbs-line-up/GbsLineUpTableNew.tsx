@@ -9,13 +9,10 @@ import {
   ColumnFiltersState,
   SortingState,
   VisibilityState,
-  flexRender,
 } from "@tanstack/react-table";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useToastStore } from "@/store/toast-store";
+import { VirtualizedTable } from "@/components/common/table";
 import { useRetreatGbsLineupData, type IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import type { TRetreatRegistrationSchedule } from "@/types";
-import { webAxios } from "@/lib/api/axios";
 import { useGbsLineupColumns } from "@/hooks/gbs-line-up/use-gbs-lineup-columns";
 import { GBSLineupRow } from "@/hooks/gbs-line-up/use-gbs-lineup";
 import { GbsLineUpTableToolbar } from "./GbsLineUpTableToolbar";
@@ -27,13 +24,15 @@ interface GbsLineUpTableProps {
 }
 
 /**
- * GBS Line-Up 테이블 (TanStack Table)
+ * GBS Line-Up 테이블 (TanStack Table + Virtual Scrolling)
  *
  * @description
- * - TanStack Table v8 기반
- * - SWR 2초 polling으로 실시간 협업 지원
+ * - TanStack Table v8 + TanStack Virtual 기반
+ * - SWR Cache Validation으로 실시간 협업 지원
  * - 열 가시성, 정렬, 필터 지원
- * - rowSpan 자동 처리
+ * - Virtual Scrolling으로 성능 최적화
+ * - 리더 행에만 GBS 정보 표시 (하늘색 배경)
+ * - 인원 초과 시 빨간색 표시
  *
  * ✅ Props: 3개 (기존 19개에서 대폭 감소!)
  */
@@ -42,10 +41,15 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   schedules,
   retreatSlug,
 }: GbsLineUpTableProps) {
-  const addToast = useToastStore((state) => state.add);
-
-  // ✅ SWR로 실시간 데이터 가져오기 (2초 polling)
-  const { data: pollingData } = useRetreatGbsLineupData(retreatSlug, {
+  // ✅ SWR로 실시간 데이터 + Mutation 함수들
+  const {
+    data: pollingData,
+    saveGbsNumber,
+    saveLineupMemo,
+    updateLineupMemo,
+    deleteLineupMemo,
+    isMutating,
+  } = useRetreatGbsLineupData(retreatSlug, {
     fallbackData: initialData,
   });
 
@@ -62,7 +66,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
       });
 
       return {
-        id: registration.id,
+        id: registration.id.toString(),
         maleCount: registration.maleCount,
         femaleCount: registration.femaleCount,
         fullAttendanceCount: registration.fullAttendanceCount,
@@ -84,7 +88,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         lineupMemocolor: registration.lineupMemocolor,
         unresolvedLineupHistoryMemo: registration.unresolvedLineupHistoryMemo,
         adminMemo: registration.adminMemo,
-      };
+      } as GBSLineupRow;
     });
   }, [pollingData, initialData, schedules]);
 
@@ -94,151 +98,56 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
 
-  // ✅ 핸들러
-  const lineupEndpoint = `/api/v1/retreat/${retreatSlug}/line-up/user-lineups`;
-
+  // ✅ Wrapper 함수들 (컬럼 훅이 기대하는 시그니처에 맞춤)
   const handleSaveGbsNumber = useCallback(
     async (row: GBSLineupRow, value: string) => {
       if (!value.trim() || row.isLeader) return;
-
-      try {
-        await webAxios.put(`${lineupEndpoint}/${row.id}`, {
-          gbsNumber: parseInt(value),
-        });
-
-        addToast({
-          title: "성공",
-          description: "GBS 번호가 저장되었습니다.",
-          variant: "success",
-        });
-      } catch (error) {
-        console.error("GBS 번호 저장 중 오류:", error);
-        addToast({
-          title: "오류",
-          description: "GBS 번호 저장 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-      }
+      await saveGbsNumber(parseInt(row.id), parseInt(value));
     },
-    [lineupEndpoint, addToast]
+    [saveGbsNumber]
   );
 
   const handleSaveLineupMemo = useCallback(
     async (id: string, memo: string, color?: string) => {
-      try {
-        await webAxios.post(`/api/v1/retreat/${retreatSlug}/line-up/${id}/lineup-memo`, {
-          memo: memo.trim(),
-          color: color || null,
-        });
-
-        addToast({
-          title: "성공",
-          description: "메모가 저장되었습니다.",
-          variant: "success",
-        });
-      } catch (error) {
-        addToast({
-          title: "오류",
-          description: "메모 저장 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-        throw error;
-      }
+      await saveLineupMemo(id, memo, color);
     },
-    [retreatSlug, addToast]
+    [saveLineupMemo]
   );
 
   const handleUpdateLineupMemo = useCallback(
     async (id: string, memo: string, color?: string) => {
-      const currentRow = data.find((r) => r.id.toString() === id);
+      const currentRow = data.find((r) => r.id === id);
       const memoId = currentRow?.lineupMemoId;
       if (!memoId) return;
-
-      try {
-        await webAxios.put(`/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`, {
-          memo: memo.trim(),
-          color: color || null,
-        });
-
-        addToast({
-          title: "성공",
-          description: "메모가 수정되었습니다.",
-          variant: "success",
-        });
-      } catch (error) {
-        addToast({
-          title: "오류",
-          description: "메모 수정 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-        throw error;
-      }
+      await updateLineupMemo(memoId, memo, color);
     },
-    [retreatSlug, data, addToast]
+    [updateLineupMemo, data]
   );
 
   const handleDeleteLineupMemo = useCallback(
     async (id: string) => {
-      const currentRow = data.find((r) => r.id.toString() === id);
+      const currentRow = data.find((r) => r.id === id);
       const memoId = currentRow?.lineupMemoId;
       if (!memoId) return;
-
-      try {
-        await webAxios.delete(`/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`);
-
-        addToast({
-          title: "성공",
-          description: "메모가 삭제되었습니다.",
-          variant: "success",
-        });
-      } catch (error) {
-        addToast({
-          title: "오류",
-          description: "메모 삭제 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-        throw error;
-      }
+      await deleteLineupMemo(memoId);
     },
-    [retreatSlug, data, addToast]
+    [deleteLineupMemo, data]
   );
 
-  const handleSaveScheduleMemo = useCallback(
-    async (id: string, memo: string) => {
-      addToast({
-        title: "알림",
-        description: "일정 변동 메모 추가 기능은 구현 예정입니다.",
-        variant: "default",
-      });
-    },
-    [addToast]
-  );
-
-  const handleUpdateScheduleMemo = useCallback(
-    async (id: string, memo: string) => {
-      addToast({
-        title: "알림",
-        description: "일정 변동 메모 수정 기능은 구현 예정입니다.",
-        variant: "default",
-      });
-    },
-    [addToast]
-  );
-
-  const handleDeleteScheduleMemo = useCallback(
-    async (id: string) => {
-      addToast({
-        title: "알림",
-        description: "일정 변동 메모 삭제 기능은 구현 예정입니다.",
-        variant: "default",
-      });
-    },
-    [addToast]
-  );
-
-  const isLoading = useCallback((id: string, action: string) => {
-    return false; // TODO: 로딩 상태 구현
+  // Placeholder handlers (미구현 기능)
+  const handleSaveScheduleMemo = useCallback(async (id: string, memo: string) => {
+    // 미구현
   }, []);
+
+  const handleUpdateScheduleMemo = useCallback(async (id: string, memo: string) => {
+    // 미구현
+  }, []);
+
+  const handleDeleteScheduleMemo = useCallback(async (id: string) => {
+    // 미구현
+  }, []);
+
+  const isLoadingFn = useCallback((id: string, action: string) => isMutating, [isMutating]);
 
   // ✅ 컬럼 정의
   const columns = useGbsLineupColumns(schedules, retreatSlug, data, {
@@ -249,7 +158,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     onSaveScheduleMemo: handleSaveScheduleMemo,
     onUpdateScheduleMemo: handleUpdateScheduleMemo,
     onDeleteScheduleMemo: handleDeleteScheduleMemo,
-    isLoading,
+    isLoading: isLoadingFn,
   });
 
   // ✅ TanStack Table 초기화
@@ -300,56 +209,19 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
       {/* ✅ Toolbar (Props 2개만!) */}
       <GbsLineUpTableToolbar table={table} retreatSlug={retreatSlug} />
 
-      {/* 테이블 */}
-      <div className="border rounded-lg overflow-x-auto">
-        <div className="min-w-max">
-          <div className="max-h-[80vh] overflow-y-auto">
-            <Table className="relative w-full whitespace-nowrap">
-              <TableHeader className="sticky top-0 z-10 bg-gray-100">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id} className="text-center bg-gray-100">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody className="divide-y divide-gray-200">
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      className="group hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      {row.getVisibleCells().map((cell) => {
-                        const rendered = flexRender(cell.column.columnDef.cell, cell.getContext());
-
-                        // ✅ rowSpan으로 인해 null을 반환하는 셀은 렌더링하지 않음
-                        if (rendered === null) {
-                          return null;
-                        }
-
-                        // ✅ flexRender 결과가 이미 TableCell이므로 직접 반환
-                        return <React.Fragment key={cell.id}>{rendered}</React.Fragment>;
-                      })}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <td colSpan={columns.length} className="h-24 text-center">
-                      {globalFilter ? "검색 결과가 없습니다." : "표시할 데이터가 없습니다."}
-                    </td>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </div>
+      {/* ✅ 가상화 테이블 */}
+      <VirtualizedTable
+        table={table}
+        estimateSize={50}
+        overscan={10}
+        getRowClassName={(row) => row.isLeader ? 'bg-cyan-100' : ''}
+        className="max-h-[80vh]"
+        emptyMessage={
+          globalFilter
+            ? "검색 결과가 없습니다."
+            : "표시할 데이터가 없습니다."
+        }
+      />
     </div>
   );
 });

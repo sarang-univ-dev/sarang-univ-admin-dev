@@ -1,20 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Send, RotateCcw } from "lucide-react";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
-import { useToastStore } from "@/store/toast-store";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import { webAxios } from "@/lib/api/axios";
-import { mutate } from "swr";
-import { AxiosError } from "axios";
 
 interface RetreatPaymentConfirmationTableActionsProps {
   registration: IUserRetreatRegistration;
-  retreatSlug: string;
-  onOpenDetail?: () => void;
+  confirmPayment: (registrationId: number) => void;
+  sendPaymentRequest: (registrationId: number) => void;
+  refundComplete: (registrationId: number) => void;
+  isMutating: boolean;
 }
 
 /**
@@ -25,150 +21,11 @@ interface RetreatPaymentConfirmationTableActionsProps {
  */
 export function RetreatPaymentConfirmationTableActions({
   registration,
-  retreatSlug,
-  onOpenDetail,
+  confirmPayment,
+  sendPaymentRequest,
+  refundComplete,
+  isMutating,
 }: RetreatPaymentConfirmationTableActionsProps) {
-  const addToast = useToastStore((state) => state.add);
-  const confirmDialog = useConfirmDialogStore();
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
-
-  const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/user-retreat-registrations`;
-
-  // 로딩 상태 설정
-  const setLoading = (action: string, isLoading: boolean) => {
-    setLoadingStates((prev) => ({
-      ...prev,
-      [`${registration.id}_${action}`]: isLoading,
-    }));
-  };
-
-  // 로딩 상태 확인
-  const isLoading = (action: string) => {
-    return !!loadingStates[`${registration.id}_${action}`];
-  };
-
-  // 입금 확인
-  const performConfirmPayment = async () => {
-    setLoading("confirm", true);
-    try {
-      await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/account/confirm-payment`,
-        { userRetreatRegistrationId: registration.id }
-      );
-
-      await mutate(registrationsEndpoint);
-
-      addToast({
-        title: "성공",
-        description: "입금이 성공적으로 확인되었습니다.",
-        variant: "success",
-      });
-    } catch (error) {
-      addToast({
-        title: "오류 발생",
-        description:
-          error instanceof AxiosError
-            ? error.response?.data?.message || error.message
-            : error instanceof Error
-              ? error.message
-              : "입금 확인 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading("confirm", false);
-    }
-  };
-
-  const handleConfirmPayment = () => {
-    confirmDialog.show({
-      title: "입금 확인",
-      description:
-        "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
-      onConfirm: performConfirmPayment,
-    });
-  };
-
-  // 입금 요청
-  const performSendPaymentRequest = async () => {
-    setLoading("payment_request", true);
-    try {
-      await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/account/request-payment`,
-        {
-          userRetreatRegistrationId: registration.id,
-        }
-      );
-
-      addToast({
-        title: "성공",
-        description: "입금 요청 메시지가 성공적으로 전송되었습니다.",
-        variant: "default",
-      });
-    } catch (error) {
-      addToast({
-        title: "오류 발생",
-        description:
-          error instanceof AxiosError
-            ? error.response?.data?.message || error.message
-            : error instanceof Error
-              ? error.message
-              : "입금 요청 메시지 전송 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading("payment_request", false);
-    }
-  };
-
-  const handleSendPaymentRequest = () => {
-    confirmDialog.show({
-      title: "입금 요청",
-      description:
-        "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",
-      onConfirm: performSendPaymentRequest,
-    });
-  };
-
-  // 환불 처리 완료
-  const performCompleteRefund = async () => {
-    setLoading("refund", true);
-    try {
-      await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/account/refund-complete`,
-        { userRetreatRegistrationId: registration.id }
-      );
-
-      await mutate(registrationsEndpoint);
-
-      addToast({
-        title: "성공",
-        description: "환불이 성공적으로 처리되었습니다.",
-        variant: "default",
-      });
-    } catch (error) {
-      addToast({
-        title: "오류 발생",
-        description:
-          error instanceof AxiosError
-            ? error.response?.data?.message || error.message
-            : error instanceof Error
-              ? error.message
-              : "환불 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading("refund", false);
-    }
-  };
-
-  const handleCompleteRefund = () => {
-    confirmDialog.show({
-      title: "환불 처리",
-      description: "정말로 환불 처리를 완료하시겠습니까?",
-      onConfirm: performCompleteRefund,
-    });
-  };
-
   // 상태에 따른 액션 버튼 렌더링
   switch (registration.paymentStatus) {
     case UserRetreatRegistrationPaymentStatus.PENDING:
@@ -177,11 +34,11 @@ export function RetreatPaymentConfirmationTableActions({
           <Button
             size="sm"
             variant="outline"
-            onClick={handleConfirmPayment}
-            disabled={isLoading("confirm")}
+            onClick={() => confirmPayment(registration.id)}
+            disabled={isMutating}
             className="flex items-center gap-1.5 text-xs h-7 hover:bg-black hover:text-white transition-colors"
           >
-            {isLoading("confirm") ? (
+            {isMutating ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -191,11 +48,11 @@ export function RetreatPaymentConfirmationTableActions({
           <Button
             size="sm"
             variant="outline"
-            onClick={handleSendPaymentRequest}
-            disabled={isLoading("payment_request")}
+            onClick={() => sendPaymentRequest(registration.id)}
+            disabled={isMutating}
             className="flex items-center gap-1.5 text-xs h-7"
           >
-            {isLoading("payment_request") ? (
+            {isMutating ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <Send className="h-3.5 w-3.5" />
@@ -211,11 +68,11 @@ export function RetreatPaymentConfirmationTableActions({
           <Button
             size="sm"
             variant="outline"
-            onClick={handleCompleteRefund}
-            disabled={isLoading("refund")}
+            onClick={() => refundComplete(registration.id)}
+            disabled={isMutating}
             className="flex items-center gap-1.5 text-xs h-7 hover:bg-black hover:text-white transition-colors"
           >
-            {isLoading("refund") ? (
+            {isMutating ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <RotateCcw className="h-3.5 w-3.5" />
