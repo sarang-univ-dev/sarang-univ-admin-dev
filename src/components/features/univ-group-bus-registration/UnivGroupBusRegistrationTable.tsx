@@ -11,6 +11,7 @@ import {
   SortingState,
   VisibilityState,
   createColumnHelper,
+  flexRender,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -20,9 +21,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { IUnivGroupBusRegistration } from "@/types/bus-registration";
 import { TRetreatShuttleBus } from "@/types";
 import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
@@ -170,6 +172,17 @@ export function UnivGroupBusRegistrationTable({
     [schedules]
   );
 
+  // ✅ 색상 매핑 헬퍼 함수
+  const getChipColorClass = (color: string) => {
+    const colorMap: Record<string, string> = {
+      rose: "border-rose-500 bg-rose-50 text-rose-700",
+      amber: "border-amber-500 bg-amber-50 text-amber-700",
+      teal: "border-teal-500 bg-teal-50 text-teal-700",
+      indigo: "border-indigo-500 bg-indigo-50 text-indigo-700",
+    };
+    return colorMap[color] || "border-gray-500 bg-gray-50 text-gray-700";
+  };
+
   // ✅ 컬럼 정의 (Timestamp 정보 제외)
   const columns = useMemo<ColumnDef<IUnivGroupBusRegistration>[]>(() => {
     const staticColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
@@ -193,35 +206,39 @@ export function UnivGroupBusRegistrationTable({
         header: "전화번호",
         cell: (info) => info.getValue() || "-",
       }),
-    ];
+      // ✅ 신청 버스 컬럼 (chip/badge로 표시)
+      columnHelper.accessor("userRetreatShuttleBusRegistrationScheduleIds", {
+        id: "selected-buses",
+        header: "신청 버스",
+        cell: (info) => {
+          const selectedIds = info.getValue() || [];
+          const selectedSchedules = scheduleColumnsWithColor.filter((s) =>
+            selectedIds.includes(s.id)
+          );
 
-    // 동적 스케줄 컬럼 (색상 포함)
-    const scheduleColumns: ColumnDef<IUnivGroupBusRegistration>[] =
-      scheduleColumnsWithColor.map((scheduleCol) =>
-        columnHelper.accessor(
-          (row) =>
-            row.userRetreatShuttleBusRegistrationScheduleIds?.includes(
-              scheduleCol.id
-            ),
-          {
-            id: scheduleCol.key,
-            header: () => (
-              <div className="text-xs whitespace-pre-line text-center">
-                {scheduleCol.label}
-              </div>
-            ),
-            cell: (info) => (
-              <div className="flex justify-center">
-                <Checkbox
-                  checked={!!info.getValue()}
-                  disabled
-                  className={scheduleCol.bgColorClass}
-                />
-              </div>
-            ),
+          if (selectedSchedules.length === 0) {
+            return <span className="text-sm text-muted-foreground">-</span>;
           }
-        )
-      );
+
+          return (
+            <div className="grid grid-cols-2 gap-1 py-1">
+              {selectedSchedules.map((schedule) => (
+                <Badge
+                  key={schedule.id}
+                  variant="outline"
+                  className={cn(
+                    "text-xs whitespace-nowrap justify-center",
+                    getChipColorClass(schedule.color)
+                  )}
+                >
+                  {schedule.label}
+                </Badge>
+              ))}
+            </div>
+          );
+        },
+      }),
+    ];
 
     const endColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
       columnHelper.accessor("shuttleBusPaymentStatus", {
@@ -246,8 +263,8 @@ export function UnivGroupBusRegistrationTable({
       }),
     ];
 
-    return [...staticColumns, ...scheduleColumns, ...endColumns];
-  }, [scheduleColumnsWithColor, registrations, sidebar.open]);
+    return [...staticColumns, ...endColumns];
+  }, [scheduleColumnsWithColor, registrations, sidebar]);
 
   // ✅ TanStack Table 초기화
   const table = useReactTable<IUnivGroupBusRegistration>({
@@ -316,62 +333,46 @@ export function UnivGroupBusRegistrationTable({
                   <Table className="min-w-full whitespace-nowrap relative text-sm">
                   <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
                     <TableRow>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-3 py-2.5">
                         <div className="flex items-center space-x-1 justify-center">
                           <span>성별</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-3 py-2.5">
                         <div className="flex items-center space-x-1 justify-center">
                           <span>학년</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-3 py-2.5">
                         <div className="flex items-center space-x-1 justify-center">
                           <span>이름</span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-3 py-2.5">
                         <div className="flex items-center space-x-1 justify-center">
                           <span>전화번호</span>
                         </div>
                       </TableHead>
-                      <TableHead
-                        colSpan={scheduleColumnsWithColor.length}
-                        className="text-center px-3 py-2.5"
-                      >
-                        버스 신청 일정
+                      <TableHead className="px-3 py-2.5">
+                        <div className="flex items-center space-x-1 justify-center">
+                          <span>신청 버스</span>
+                        </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <TableHead className="px-3 py-2.5">
                         <div className="flex items-center space-x-1 justify-center">
                           <span>입금 현황</span>
                         </div>
                       </TableHead>
-                      <TableHead
-                        className="px-3 py-2.5 text-center"
-                        rowSpan={2}
-                      >
+                      <TableHead className="px-3 py-2.5 text-center">
                         상세 보기
                       </TableHead>
-                    </TableRow>
-                    <TableRow>
-                      {scheduleColumnsWithColor.map((scheduleCol) => (
-                        <TableHead
-                          key={scheduleCol.key}
-                          className="p-2 text-center"
-                        >
-                          <span className="text-xs whitespace-pre-line">
-                            {scheduleCol.label}
-                          </span>
-                        </TableHead>
-                      ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-gray-200">
                     {table.getRowModel().rows.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={4 + scheduleColumnsWithColor.length + 2}
+                          colSpan={7}
                           className="text-center py-10 text-gray-500"
                         >
                           {globalFilter
@@ -380,64 +381,24 @@ export function UnivGroupBusRegistrationTable({
                         </TableCell>
                       </TableRow>
                     ) : (
-                      table.getRowModel().rows.map((row) => {
-                        const data = row.original;
-                        return (
-                          <TableRow
-                            key={row.id}
-                            className="group hover:bg-gray-50 transition-colors duration-150"
-                          >
-                            <TableCell className="text-center px-3 py-2.5">
-                              <GenderBadge gender={data.gender} />
+                      table.getRowModel().rows.map((row) => (
+                        <TableRow
+                          key={row.id}
+                          className="group hover:bg-gray-50 transition-colors duration-150"
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell
+                              key={cell.id}
+                              className="px-3 py-2.5 text-center"
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
                             </TableCell>
-                            <TableCell className="text-center px-3 py-2.5">
-                              {data.gradeNumber}학년
-                            </TableCell>
-                            <TableCell className="text-center px-3 py-2.5">
-                              {data.name}
-                            </TableCell>
-                            <TableCell className="font-medium text-center px-3 py-2.5">
-                              {data.userPhoneNumber || "-"}
-                            </TableCell>
-                            {scheduleColumnsWithColor.map((col) => (
-                              <TableCell
-                                key={`${row.id}-${col.key}`}
-                                className="p-2 text-center"
-                              >
-                                <Checkbox
-                                  checked={
-                                    !!data.userRetreatShuttleBusRegistrationScheduleIds?.includes(
-                                      col.id
-                                    )
-                                  }
-                                  disabled
-                                  className={
-                                    data.userRetreatShuttleBusRegistrationScheduleIds?.includes(
-                                      col.id
-                                    )
-                                      ? col.bgColorClass
-                                      : ""
-                                  }
-                                />
-                              </TableCell>
-                            ))}
-                            <TableCell className="text-center px-3 py-2.5">
-                              <StatusBadge status={data.shuttleBusPaymentStatus} />
-                            </TableCell>
-                            <TableCell className="text-center px-3 py-2.5">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => sidebar.open(data)}
-                                className="flex items-center gap-1.5 text-xs h-7"
-                              >
-                                <Eye className="h-3 w-3" />
-                                <span>보기</span>
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
+                          ))}
+                        </TableRow>
+                      ))
                     )}
                     </TableBody>
                   </Table>
