@@ -37,9 +37,7 @@ export default async function UnivGroupBusRegistrationPage({
   ]);
 
   return (
-    <div className="space-y-4 md:space-y-8 p-6">
-      <h1 className="text-3xl font-bold">부서 셔틀버스 등록 조회</h1>
-
+    <div className="space-y-4 md:space-y-8">
       {/* ✅ Server Component (정적 집계) */}
       <BusPaymentSummary registrations={registrations} />
 

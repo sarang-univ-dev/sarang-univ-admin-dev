@@ -20,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
@@ -174,11 +173,6 @@ export function UnivGroupBusRegistrationTable({
   // ✅ 컬럼 정의 (Timestamp 정보 제외)
   const columns = useMemo<ColumnDef<IUnivGroupBusRegistration>[]>(() => {
     const staticColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
-      columnHelper.accessor("univGroupNumber", {
-        id: "department",
-        header: "부서",
-        cell: (info) => `${info.getValue()}부`,
-      }),
       columnHelper.accessor("gender", {
         id: "gender",
         header: "성별",
@@ -230,42 +224,10 @@ export function UnivGroupBusRegistrationTable({
       );
 
     const endColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
-      columnHelper.accessor("price", {
-        id: "amount",
-        header: "금액",
-        cell: (info) => `${info.getValue().toLocaleString()}원`,
-      }),
       columnHelper.accessor("shuttleBusPaymentStatus", {
         id: "status",
         header: "입금 현황",
         cell: (info) => <StatusBadge status={info.getValue()} />,
-      }),
-      // ❌ Timestamp 정보 제거: createdAt, paymentConfirmedAt, paymentConfirmUserName
-      columnHelper.accessor("univGroupStaffShuttleBusHistoryMemo", {
-        id: "memo",
-        header: "일정 변동 메모",
-        cell: (info) => (
-          <div className="max-w-[200px] truncate" title={info.getValue() || ""}>
-            {info.getValue() || "-"}
-          </div>
-        ),
-      }),
-      columnHelper.display({
-        id: "actions",
-        header: "메모 관리",
-        cell: (props) => (
-          <UnivGroupBusRegistrationTableActions
-            row={{
-              id: props.row.original.id.toString(),
-              status: props.row.original.shuttleBusPaymentStatus,
-              memo: props.row.original.univGroupStaffShuttleBusHistoryMemo,
-            }}
-            onOpenMemo={(id) => {
-              const registration = registrations.find((r) => r.id.toString() === id);
-              if (registration) sidebar.open(registration);
-            }}
-          />
-        ),
       }),
       columnHelper.display({
         id: "detail",
@@ -328,39 +290,32 @@ export function UnivGroupBusRegistrationTable({
 
   return (
     <>
-      <Card className="shadow-sm">
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {/* 헤더 */}
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight">
-                부서 현황 및 버스 입금 조회
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                부서 버스 신청자 목록 ({filteredData.length}명)
-              </p>
-            </div>
+      <div className="space-y-4">
+        {/* 헤더 */}
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            부서 셔틀버스 신청 내역
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            부서 버스 신청자 목록 ({filteredData.length}명)
+          </p>
+        </div>
 
-            {/* 툴바 */}
-            <UnivGroupBusRegistrationTableToolbar
-              table={table}
-              globalFilter={globalFilter}
-              setGlobalFilter={setGlobalFilter}
-              retreatSlug={retreatSlug}
-            />
+        {/* 툴바 */}
+        <UnivGroupBusRegistrationTableToolbar
+          table={table}
+          globalFilter={globalFilter}
+          setGlobalFilter={setGlobalFilter}
+          retreatSlug={retreatSlug}
+        />
 
-            {/* 테이블 */}
-            <div className="rounded-md border">
+        {/* 테이블 */}
+        <div className="rounded-md border">
               <div className="min-w-max">
                 <div className="max-h-[80vh] overflow-auto">
                   <Table className="min-w-full whitespace-nowrap relative text-sm">
                   <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
                     <TableRow>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>부서</span>
-                        </div>
-                      </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
                           <span>성별</span>
@@ -389,24 +344,8 @@ export function UnivGroupBusRegistrationTable({
                       </TableHead>
                       <TableHead className="px-3 py-2.5" rowSpan={2}>
                         <div className="flex items-center space-x-1 justify-center">
-                          <span>금액</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
                           <span>입금 현황</span>
                         </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>일정 변동 메모</span>
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className="px-3 py-2.5 text-center"
-                        rowSpan={2}
-                      >
-                        메모 관리
                       </TableHead>
                       <TableHead
                         className="px-3 py-2.5 text-center"
@@ -432,7 +371,7 @@ export function UnivGroupBusRegistrationTable({
                     {table.getRowModel().rows.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={5 + scheduleColumnsWithColor.length + 5}
+                          colSpan={4 + scheduleColumnsWithColor.length + 2}
                           className="text-center py-10 text-gray-500"
                         >
                           {globalFilter
@@ -448,9 +387,6 @@ export function UnivGroupBusRegistrationTable({
                             key={row.id}
                             className="group hover:bg-gray-50 transition-colors duration-150"
                           >
-                            <TableCell className="text-center px-3 py-2.5">
-                              {data.univGroupNumber}부
-                            </TableCell>
                             <TableCell className="text-center px-3 py-2.5">
                               <GenderBadge gender={data.gender} />
                             </TableCell>
@@ -485,32 +421,8 @@ export function UnivGroupBusRegistrationTable({
                                 />
                               </TableCell>
                             ))}
-                            <TableCell className="font-medium text-center px-3 py-2.5">
-                              {data.price.toLocaleString()}원
-                            </TableCell>
                             <TableCell className="text-center px-3 py-2.5">
                               <StatusBadge status={data.shuttleBusPaymentStatus} />
-                            </TableCell>
-                            <TableCell
-                              className="text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
-                              title={data.univGroupStaffShuttleBusHistoryMemo || ""}
-                            >
-                              {data.univGroupStaffShuttleBusHistoryMemo || "-"}
-                            </TableCell>
-                            <TableCell className="text-center px-3 py-2.5">
-                              <UnivGroupBusRegistrationTableActions
-                                row={{
-                                  id: data.id.toString(),
-                                  status: data.shuttleBusPaymentStatus,
-                                  memo: data.univGroupStaffShuttleBusHistoryMemo,
-                                }}
-                                onOpenMemo={(id) => {
-                                  const registration = registrations.find(
-                                    (r) => r.id.toString() === id
-                                  );
-                                  if (registration) sidebar.open(registration);
-                                }}
-                              />
                             </TableCell>
                             <TableCell className="text-center px-3 py-2.5">
                               <Button
@@ -532,9 +444,7 @@ export function UnivGroupBusRegistrationTable({
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+      </div>
 
       {/* ✅ 상세 정보 사이드바 (반응형) - 최신 데이터로 실시간 동기화 */}
       <DetailSidebar
