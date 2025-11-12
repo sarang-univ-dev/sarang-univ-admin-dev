@@ -245,12 +245,12 @@ export function GbsLineUpTableToolbar({
 
       {/* 버튼 그룹 */}
       <div className="flex items-center gap-2 flex-wrap">
-        {/* 열 설정 */}
+        {/* 열 숨기기 */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
               <Settings className="h-4 w-4 mr-2" />
-              열 설정
+              열 숨기기
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[200px] max-h-[400px] overflow-y-auto">

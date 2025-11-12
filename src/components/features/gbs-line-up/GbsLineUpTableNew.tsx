@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -92,6 +92,12 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     });
   }, [pollingData, initialData, schedules]);
 
+  // ✅ 최신 데이터를 참조하기 위한 ref (스크롤 위치 유지)
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
   // ✅ TanStack Table 상태
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -116,22 +122,22 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
 
   const handleUpdateLineupMemo = useCallback(
     async (id: string, memo: string, color?: string) => {
-      const currentRow = data.find((r) => r.id === id);
+      const currentRow = dataRef.current.find((r) => r.id === id);
       const memoId = currentRow?.lineupMemoId;
       if (!memoId) return;
       await updateLineupMemo(memoId, memo, color);
     },
-    [updateLineupMemo, data]
+    [updateLineupMemo]
   );
 
   const handleDeleteLineupMemo = useCallback(
     async (id: string) => {
-      const currentRow = data.find((r) => r.id === id);
+      const currentRow = dataRef.current.find((r) => r.id === id);
       const memoId = currentRow?.lineupMemoId;
       if (!memoId) return;
       await deleteLineupMemo(memoId);
     },
-    [deleteLineupMemo, data]
+    [deleteLineupMemo]
   );
 
   // Placeholder handlers (미구현 기능)
@@ -149,8 +155,8 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
 
   const isLoadingFn = useCallback((id: string, action: string) => isMutating, [isMutating]);
 
-  // ✅ 컬럼 정의
-  const columns = useGbsLineupColumns(schedules, retreatSlug, data, {
+  // ✅ handlers 객체 안정화 (스크롤 위치 유지를 위해)
+  const handlers = useMemo(() => ({
     onSaveGbsNumber: handleSaveGbsNumber,
     onSaveLineupMemo: handleSaveLineupMemo,
     onUpdateLineupMemo: handleUpdateLineupMemo,
@@ -159,7 +165,19 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     onUpdateScheduleMemo: handleUpdateScheduleMemo,
     onDeleteScheduleMemo: handleDeleteScheduleMemo,
     isLoading: isLoadingFn,
-  });
+  }), [
+    handleSaveGbsNumber,
+    handleSaveLineupMemo,
+    handleUpdateLineupMemo,
+    handleDeleteLineupMemo,
+    handleSaveScheduleMemo,
+    handleUpdateScheduleMemo,
+    handleDeleteScheduleMemo,
+    isLoadingFn,
+  ]);
+
+  // ✅ 컬럼 정의
+  const columns = useGbsLineupColumns(schedules, retreatSlug, data, handlers);
 
   // ✅ TanStack Table 초기화
   const table = useReactTable({
@@ -196,13 +214,27 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     },
   });
 
+  // ✅ 통계 계산
+  const stats = useMemo(() => {
+    const total = data.length;
+    const assigned = data.filter((l) => l.gbsNumber != null).length;
+    const unassigned = data.filter((l) => l.gbsNumber == null).length;
+    return { total, assigned, unassigned };
+  }, [data]);
+
   return (
     <div className="space-y-4">
       {/* 제목 */}
       <div>
         <h2 className="text-xl font-semibold tracking-tight">GBS 라인업 현황 조회</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          대학부 전체 GBS 목록 조회 및 배정 ({table.getFilteredRowModel().rows.length}명)
+          대학부 전체 GBS 목록 조회 및 배정 (
+          <span className="font-medium text-foreground">전체 {stats.total}명</span>
+          {" · "}
+          <span className="font-medium text-green-600">배정 완료 {stats.assigned}명</span>
+          {" · "}
+          <span className="font-medium text-orange-600">미배정 {stats.unassigned}명</span>
+          )
         </p>
       </div>
 
@@ -214,7 +246,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         table={table}
         estimateSize={50}
         overscan={10}
-        getRowClassName={(row) => row.isLeader ? 'bg-cyan-100' : ''}
+        getRowClassName={(row) => row.isLeader ? 'bg-cyan-50 hover:bg-cyan-100' : ''}
         className="max-h-[80vh]"
         emptyMessage={
           globalFilter

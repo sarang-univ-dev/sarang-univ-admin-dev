@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, memo } from "react";
 import { Table as TanStackTable, flexRender } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { TableHeader, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
+import isEqual from "lodash/isEqual";
 
 interface VirtualizedTableProps<TData> {
   table: TanStackTable<TData>;
@@ -48,12 +49,14 @@ export function VirtualizedTable<TData>({
 
   const { rows } = table.getRowModel();
 
-  // ✅ TanStack Virtual 설정
+  // ✅ TanStack Virtual 설정 (스크롤 위치 유지)
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => tableContainerRef.current,
     estimateSize: () => estimateSize,
     overscan,
+    // ✅ 데이터 변경 시 스크롤 위치 유지
+    // measureElement를 사용하지 않으면 기본적으로 스크롤 위치가 유지됨
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();
@@ -74,7 +77,7 @@ export function VirtualizedTable<TData>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="text-center bg-gray-100">
+                <TableHead key={header.id} className="text-center bg-gray-100 whitespace-nowrap">
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}
@@ -136,29 +139,59 @@ export function VirtualizedTable<TData>({
  *
  * - 변경된 행만 리렌더링
  * - 나머지 행은 그대로 유지
+ * - lodash isEqual로 깊은 비교 (polling 시 동일한 데이터는 재렌더링 안 함)
  */
-const MemoizedTableRow = <TData,>({
-  row,
-  onRowClick,
-  getRowClassName,
-}: {
-  row: any;
-  onRowClick?: (row: TData) => void;
-  getRowClassName?: (row: TData) => string;
-}) => {
-  const customClassName = getRowClassName?.(row.original) || '';
+const MemoizedTableRow = memo(
+  function TableRowComponent<TData>({
+    row,
+    onRowClick,
+    getRowClassName,
+  }: {
+    row: any;
+    onRowClick?: (row: TData) => void;
+    getRowClassName?: (row: TData) => string;
+  }) {
+    const customClassName = getRowClassName?.(row.original) || '';
+    // customClassName에 이미 hover 클래스가 있으면 기본 hover를 적용하지 않음
+    const hasCustomHover = customClassName.includes('hover:');
+    const defaultHoverClass = hasCustomHover ? '' : 'hover:bg-gray-50';
 
-  return (
-    <TableRow
-      data-state={row.getIsSelected() && "selected"}
-      className={`group hover:bg-gray-50 transition-colors duration-150 ${customClassName}`}
-      onClick={() => onRowClick?.(row.original)}
-    >
-      {row.getVisibleCells().map((cell: any) => (
-        <TableCell key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </TableCell>
-      ))}
-    </TableRow>
-  );
-};
+    return (
+      <TableRow
+        data-state={row.getIsSelected() && "selected"}
+        className={`group ${defaultHoverClass} transition-colors duration-150 ${customClassName}`}
+        onClick={() => onRowClick?.(row.original)}
+      >
+        {row.getVisibleCells().map((cell: any) => (
+          <MemoizedTableCell key={cell.id} cell={cell} />
+        ))}
+      </TableRow>
+    );
+  },
+  // ✅ 커스텀 비교 함수: row.original이 실제로 변경된 경우에만 리렌더링
+  (prevProps, nextProps) => {
+    return (
+      prevProps.row.id === nextProps.row.id &&
+      isEqual(prevProps.row.original, nextProps.row.original)
+    );
+  }
+);
+
+/**
+ * React.memo로 메모이제이션된 TableCell
+ *
+ * - Cell 단위로도 메모이제이션하여 성능 최적화
+ */
+const MemoizedTableCell = memo(
+  function TableCellComponent({ cell }: { cell: any }) {
+    return (
+      <TableCell>
+        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      </TableCell>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Cell 값이 실제로 변경된 경우에만 리렌더링
+    return isEqual(prevProps.cell.getValue(), nextProps.cell.getValue());
+  }
+);

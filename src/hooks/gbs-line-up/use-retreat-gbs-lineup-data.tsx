@@ -4,6 +4,7 @@ import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { AxiosError } from "axios";
+import isEqual from "lodash/isEqual";
 
 export interface IUserRetreatGBSLineup {
   gbsNumber: number | null;
@@ -66,7 +67,23 @@ export function useRetreatGbsLineupData(
     Error
   >(endpoint, fetcher, {
     // ✅ 실시간 협업을 위한 2초 polling
-    refreshInterval: 2000,
+    // ✅ UX 개선: input에 focus가 있을 때는 polling 중지
+    // ✅ 탭이 백그라운드에 있을 때도 polling 중지 (배터리/성능 절약)
+    refreshInterval: () => {
+      // 1. 탭이 백그라운드에 있으면 polling 중지
+      if (typeof document !== 'undefined' && document.hidden) {
+        return 0;
+      }
+
+      // 2. input에 focus가 있으면 polling 멈춤 (사용자 입력 중)
+      const activeElement = document.activeElement;
+      if (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') {
+        return 0;
+      }
+
+      // 3. 그 외의 경우 2초마다 polling
+      return 2000;
+    },
 
     // ✅ 탭 포커스 시 갱신
     revalidateOnFocus: true,
@@ -80,6 +97,13 @@ export function useRetreatGbsLineupData(
     // ✅ 에러 발생 시 재시도
     errorRetryCount: 3,
     errorRetryInterval: 5000,
+
+    // ✅ 데이터 비교: 동일한 데이터는 리렌더링 방지
+    // lodash isEqual로 깊은 비교 (배열/객체 구조 전체 비교)
+    compare: (a, b) => {
+      if (!a || !b) return a === b;
+      return isEqual(a, b);
+    },
 
     // ✅ Server Component의 initialData를 fallback으로 사용
     ...options,

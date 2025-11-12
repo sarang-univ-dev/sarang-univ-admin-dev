@@ -3,9 +3,6 @@ import {
   fetchGbsLineUpData,
   fetchRetreatSchedules,
 } from "@/lib/api/server-actions";
-import {
-  GbsLineUpSummary,
-} from "@/components/features/gbs-line-up";
 import { GbsLineUpTable } from "@/components/features/gbs-line-up/GbsLineUpTableNew";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -40,9 +37,6 @@ export default async function GbsLineUpPage({ params }: PageProps) {
 
   return (
     <div className="space-y-4 md:space-y-8">
-      {/* ✅ Server Component (통계 요약) */}
-      <GbsLineUpSummary lineups={lineups} />
-
       {/* ✅ Client Component (인터랙션 필요 - TanStack Table + SWR Polling) */}
       <Suspense fallback={<TableSkeleton />}>
         <GbsLineUpTable
