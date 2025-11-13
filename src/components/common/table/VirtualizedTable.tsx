@@ -76,13 +76,15 @@ export function VirtualizedTable<TData>({
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="text-center bg-gray-100 whitespace-nowrap">
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              ))}
+              {headerGroup.headers
+                .filter((header) => header.column.getIsVisible())
+                .map((header) => (
+                  <TableHead key={header.id} className="text-center bg-gray-100 whitespace-nowrap">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
             </TableRow>
           ))}
         </TableHeader>

@@ -88,16 +88,25 @@ export function LineUpMemoEditor<T extends { id: string }>({
   const hasExisting = hasExistingMemo ? hasExistingMemo(row) : !!memoValue;
 
   const handleSave = async () => {
-    if (!localMemoValue.trim() || !hasChanges) {
+    // ✅ 변경사항이 없으면 저장하지 않음
+    if (!hasChanges) {
+      return;
+    }
+
+    // ✅ 메모와 색깔이 둘 다 비어있으면 저장하지 않음
+    if (!localMemoValue.trim() && !localColor) {
       return;
     }
 
     try {
       const processedColor = localColor === "" ? undefined : localColor;
+      // ✅ 빈 메모도 색깔이 있으면 저장 가능
+      const processedMemo = localMemoValue.trim();
+
       if (hasExisting) {
-        await onUpdate(row.id, localMemoValue.trim(), processedColor);
+        await onUpdate(row.id, processedMemo, processedColor);
       } else {
-        await onSave(row.id, localMemoValue.trim(), processedColor);
+        await onSave(row.id, processedMemo, processedColor);
       }
       setIsEditing(false);
     } catch (error) {
@@ -214,7 +223,7 @@ export function LineUpMemoEditor<T extends { id: string }>({
               size="sm"
               variant="default"
               onClick={handleSave}
-              disabled={loading || !localMemoValue.trim() || !hasChanges}
+              disabled={loading || !hasChanges || (!localMemoValue.trim() && !localColor)}
               className="h-8 px-3"
               aria-label="메모 저장"
             >
