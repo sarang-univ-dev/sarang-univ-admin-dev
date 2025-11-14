@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { TableCell } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,30 +7,15 @@ import { TRetreatRegistrationSchedule, RetreatRegistrationScheduleType } from "@
 import { GBSLineupRow } from "./use-gbs-lineup";
 import { MEMO_COLORS, COMPLETE_GROUP_ROW_COUNT } from "@/lib/constant/lineup.constant";
 import { LineUpMemoEditor } from "@/components/features/gbs-line-up/LineUpMemoEditor";
+import { GbsNumberCell } from "@/components/features/gbs-line-up/GbsNumberCell";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { UserRetreatRegistrationType } from "@/types";
-import { User, UserPlus, Shield, GraduationCap } from "lucide-react";
+import { User, UserPlus, Shield, GraduationCap, Info } from "lucide-react";
 import { ColumnHeader } from "@/components/common/table/ColumnHeader";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
+import { Button } from "@/components/ui/button";
 
 const columnHelper = createColumnHelper<GBSLineupRow>();
-
-/**
- * 스케줄 타입별 색상 매핑
- */
-function getScheduleColorClass(type: RetreatRegistrationScheduleType): string {
-  switch (type) {
-    case RetreatRegistrationScheduleType.BREAKFAST:
-      return "data-[state=checked]:bg-rose-500 border-rose-300";
-    case RetreatRegistrationScheduleType.LUNCH:
-      return "data-[state=checked]:bg-cyan-500 border-cyan-300";
-    case RetreatRegistrationScheduleType.DINNER:
-      return "data-[state=checked]:bg-amber-500 border-amber-300";
-    case RetreatRegistrationScheduleType.SLEEP:
-      return "data-[state=checked]:bg-indigo-500 border-indigo-300";
-    default:
-      return "data-[state=checked]:bg-blue-500 border-blue-300";
-  }
-}
 
 /**
  * rowSpan 헬퍼 함수
@@ -125,6 +110,8 @@ function TypeBadgeWithFreshman({
   return <span>-</span>;
 }
 
+// ✅ GbsNumberCell 컴포넌트는 별도 파일로 분리됨
+
 /**
  * GBS Line-Up 테이블 컬럼 정의
  */
@@ -141,7 +128,8 @@ export function useGbsLineupColumns(
     onUpdateScheduleMemo: (id: string, memo: string) => Promise<void>;
     onDeleteScheduleMemo: (id: string) => Promise<void>;
     isLoading: (id: string, action: string) => boolean;
-  }
+  },
+  onRowClick?: (row: GBSLineupRow) => void
 ) {
   return useMemo<ColumnDef<GBSLineupRow>[]>(() => {
     const {
@@ -165,6 +153,7 @@ export function useGbsLineupColumns(
             table={table}
             title="GBS 번호"
             enableFiltering
+            enableSorting
             formatFilterValue={(value) => (value === null ? "미배정" : `${value}`)}
           />
         ),
@@ -196,6 +185,42 @@ export function useGbsLineupColumns(
             return value === null;
           }
           return filterValue.includes(String(value));
+        },
+        /**
+         * 복잡한 다단계 정렬 로직
+         *
+         * 정렬 우선순위:
+         * 1. GBS 번호 오름차순 (null은 맨 뒤로)
+         * 2. 같은 GBS 그룹 내에서 리더가 먼저
+         * 3. 학년 내림차순 (4학년 → 1학년)
+         * 4. 이름 오름차순 (가나다순)
+         *
+         * @see https://tanstack.com/table/v8/docs/guide/sorting
+         */
+        sortingFn: (rowA, rowB, columnId) => {
+          const a = rowA.original;
+          const b = rowB.original;
+
+          // 1. GBS 번호 비교 (null은 맨 뒤로)
+          if (a.gbsNumber === null && b.gbsNumber !== null) return 1;
+          if (a.gbsNumber !== null && b.gbsNumber === null) return -1;
+          if (a.gbsNumber !== b.gbsNumber) {
+            return (a.gbsNumber || 0) - (b.gbsNumber || 0);
+          }
+
+          // 2. 같은 GBS 그룹 내에서 리더가 먼저
+          if (a.isLeader && !b.isLeader) return -1;
+          if (!a.isLeader && b.isLeader) return 1;
+
+          // 3. 학년 내림차순 (숫자가 큰 학년이 먼저)
+          const gradeA = parseInt(a.grade.replace('학년', '')) || 0;
+          const gradeB = parseInt(b.grade.replace('학년', '')) || 0;
+          if (gradeA !== gradeB) {
+            return gradeB - gradeA; // 내림차순: 4학년 → 1학년
+          }
+
+          // 4. 이름 오름차순 (가나다순)
+          return a.name.localeCompare(b.name, 'ko-KR');
         },
       }),
 
@@ -476,30 +501,34 @@ export function useGbsLineupColumns(
         },
       }),
 
-      // 라인업 메모
-      columnHelper.display({
-        id: "lineupMemo",
-        header: "라인업 메모",
-        cell: (info) => {
-          const row = info.row.original;
-          return (
-            <TableCell className="relative px-2 py-1 whitespace-nowrap">
-              <LineUpMemoEditor
-                row={row}
-                memoValue={row.lineupMemo}
-                memoColor={row.lineupMemocolor}
-                onSave={onSaveLineupMemo}
-                onUpdate={onUpdateLineupMemo}
-                onDelete={onDeleteLineupMemo}
-                loading={isLoading(row.id, "lineup_memo")}
-                placeholder="메모를 입력하세요..."
-                hasExistingMemo={(r) => !!r.lineupMemoId}
-                colors={MEMO_COLORS}
-              />
-            </TableCell>
-          );
-        },
-      }),
+      // 라인업 메모 (✅ V2: 버퍼링 + Debounce 지원)
+      columnHelper.accessor(
+        (row) => `${row.lineupMemo}__${row.lineupMemocolor}__${row.lineupMemoId}`,
+        {
+          id: "lineupMemo",
+          header: "라인업 메모",
+          cell: (info) => {
+            const row = info.row.original;
+
+            return (
+              <div className="relative px-2 py-1 whitespace-nowrap">
+                <LineUpMemoEditor
+                  row={row}
+                  memoValue={row.lineupMemo}
+                  memoColor={row.lineupMemocolor}
+                  onSave={onSaveLineupMemo}
+                  onUpdate={onUpdateLineupMemo}
+                  onDelete={onDeleteLineupMemo}
+                  loading={isLoading(row.id, "lineup_memo")}
+                  placeholder="메모를 입력하세요..."
+                  hasExistingMemo={(r) => !!r.lineupMemoId}
+                  colors={MEMO_COLORS}
+                />
+              </div>
+            );
+          },
+        }
+      ),
 
       // 타입
       columnHelper.display({
@@ -509,144 +538,116 @@ export function useGbsLineupColumns(
           const row = info.row.original;
           const gradeNumber = parseInt(row.grade.split("학년")[0]);
           return (
-            <TableCell className="text-center whitespace-nowrap px-2 py-1">
+            <div className="text-center whitespace-nowrap px-2 py-1">
               <TypeBadgeWithFreshman
                 type={row.type}
                 gradeNumber={gradeNumber}
                 lineupMemo={row.lineupMemo}
               />
-            </TableCell>
+            </div>
           );
         },
       }),
 
-      // 스케줄 동적 컬럼들
-      ...schedules.map((schedule) =>
-        columnHelper.display({
-          id: `schedule_${schedule.id}`,
-          header: schedule.name,
+      // 스케줄 동적 컬럼들 (날짜별로 다른 색상)
+      ...(() => {
+        const scheduleColumnsMeta = generateScheduleColumns(schedules);
+        return scheduleColumnsMeta.map((col) =>
+          columnHelper.display({
+            id: col.key,
+            header: col.label,
+            cell: (info) => {
+              const row = info.row.original;
+              const isChecked = row.schedule[col.key];
+              return (
+                <div className="px-2 py-1 text-center whitespace-nowrap">
+                  <Checkbox
+                    checked={isChecked}
+                    disabled
+                    className={col.bgColorClass}
+                  />
+                </div>
+              );
+            },
+          })
+        );
+      })(),
+
+      // GBS 배정하기 (✅ V2: 버퍼링 + Debounce 지원)
+      // ✅ accessor로 변경: TanStack Table이 gbsNumber 변경을 감지하여 Cell 리렌더링
+      columnHelper.accessor(
+        (row) => row.gbsNumber,
+        {
+          id: "gbsAssign",
+          header: "GBS 배정하기",
           cell: (info) => {
             const row = info.row.original;
-            const isChecked = row.schedule[`schedule_${schedule.id}`];
-            const colorClass = getScheduleColorClass(schedule.type);
+
             return (
-              <TableCell className="px-2 py-1 text-center whitespace-nowrap">
-                <Checkbox
-                  checked={isChecked}
-                  disabled
-                  className={colorClass}
-                />
-              </TableCell>
+              <div className="align-middle text-center px-2 py-1 whitespace-nowrap">
+                {row.isLeader ? (
+                  <span className="inline-block w-36 text-center py-1 font-semibold rounded bg-gray-100 text-gray-800 border border-gray-400 text-base tracking-wide">
+                    리더
+                  </span>
+                ) : (
+                  <GbsNumberCell
+                    row={row}
+                    onSave={onSaveGbsNumber}
+                    isLoading={isLoading(row.id, "gbs_number")}
+                  />
+                )}
+              </div>
             );
           },
-        })
+        }
       ),
 
-      // GBS 배정하기
-      columnHelper.display({
-        id: "gbsAssign",
-        header: "GBS 배정하기",
-        cell: (info) => {
-          const row = info.row.original;
-
-          return (
-            <TableCell className="align-middle text-center px-2 py-1 whitespace-nowrap">
-              {row.isLeader ? (
-                <span className="inline-block w-36 text-center py-1 font-semibold rounded bg-gray-100 text-gray-800 border border-gray-400 text-base tracking-wide">
-                  리더
-                </span>
-              ) : (
-                <input
-                  type="text"
-                  defaultValue={row.gbsNumber || ""}
-                  className={`rounded px-2 py-1 text-center w-36 transition-all ${
-                    row.gbsNumber
-                      ? "border border-blue-400 font-bold bg-blue-50"
-                      : "border border-gray-300 bg-white font-normal text-gray-700"
-                  }`}
-                  onClick={(e) => e.currentTarget.select()}
-                  onChange={(e) => {
-                    // 엔터 처리는 onKeyDown에서
-                  }}
-                  placeholder="gbs 번호 입력후 엔터"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const value = e.currentTarget.value;
-                      onSaveGbsNumber(row, value);
-                    }
-                  }}
-                />
-              )}
-            </TableCell>
-          );
-        },
-      }),
-
-      // GBS 메모 (rowSpan)
+      // GBS 메모 (같은 GBS 그룹의 모든 행에 동일한 내용 표시)
       columnHelper.accessor("gbsMemo", {
         id: "gbsMemo",
         header: "GBS 메모",
         cell: (info) => {
           const row = info.row.original;
-          const { isFirstInGroup, groupSize } = getGroupInfo(row, allRows);
 
+          // GBS 번호가 없으면 빈 셀
           if (!row.gbsNumber) {
-            return <TableCell className="text-center px-2 py-1 whitespace-nowrap" />;
+            return <div className="text-center px-2 py-1 whitespace-nowrap"></div>;
           }
 
-          if (!isFirstInGroup) {
-            return null;
-          }
+          // 같은 GBS 그룹의 리더 행 찾기
+          const leaderRow = allRows.find(
+            r => r.gbsNumber === row.gbsNumber && r.isLeader
+          );
+
+          // 리더 행의 GBS 메모를 표시 (없으면 현재 행의 메모)
+          const memoContent = leaderRow?.gbsMemo || row.gbsMemo || "-";
 
           return (
-            <TableCell
-              rowSpan={groupSize}
-              className="align-middle text-center px-2 py-1 whitespace-nowrap"
-            >
-              {row.gbsMemo}
-            </TableCell>
-          );
-        },
-      }),
-
-      // 라인업 일정변동 요청
-      columnHelper.display({
-        id: "scheduleMemo",
-        header: "라인업 일정변동 요청",
-        cell: (info) => {
-          const row = info.row.original;
-          return (
-            <TableCell
-              className={`align-middle px-2 py-1 whitespace-nowrap ${
-                row.unresolvedLineupHistoryMemo ? "bg-yellow-100" : ""
-              }`}
-            >
-              <MemoEditor
-                row={row}
-                memoValue={row.unresolvedLineupHistoryMemo}
-                onSave={onSaveScheduleMemo}
-                onUpdate={onUpdateScheduleMemo}
-                onDelete={onDeleteScheduleMemo}
-                loading={isLoading(row.id, "schedule_memo")}
-                placeholder="일정 변동 메모를 입력하세요..."
-              />
-            </TableCell>
-          );
-        },
-      }),
-
-      // 행정간사 메모
-      columnHelper.accessor("adminMemo", {
-        id: "adminMemo",
-        header: "행정간사 메모",
-        cell: (info) => (
-          <TableCell className="align-middle text-center px-2 py-1 whitespace-nowrap">
-            <div className="text-sm text-gray-700">
-              {info.getValue() || ""}
+            <div className="align-middle text-center px-2 py-1 whitespace-nowrap">
+              {memoContent}
             </div>
-          </TableCell>
+          );
+        },
+      }),
+
+      // 상세 보기 버튼
+      columnHelper.display({
+        id: "detailInfo",
+        header: () => <div className="text-center text-sm whitespace-nowrap">상세</div>,
+        cell: (props) => (
+          <div className="text-center px-2 py-1 whitespace-nowrap">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onRowClick?.(props.row.original)}
+              className="h-8 px-3 whitespace-nowrap"
+            >
+              <Info className="h-4 w-4 mr-1" />
+              보기
+            </Button>
+          </div>
         ),
       }),
     ];
-  }, [schedules, allRows, handlers]);
+  }, [schedules, allRows, handlers, onRowClick]);
 }

@@ -22,10 +22,13 @@ import {
   type IUserRetreatGBSLineup,
 } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import { useWebSocketGbsLineup } from "@/hooks/gbs-line-up/use-websocket-gbs-lineup";
+import { useGbsLineupSwr } from "@/hooks/gbs-line-up/use-gbs-lineup-swr";
 import type { TRetreatRegistrationSchedule } from "@/types";
 import { useGbsLineupColumns } from "@/hooks/gbs-line-up/use-gbs-lineup-columns";
 import { GBSLineupRow } from "@/hooks/gbs-line-up/use-gbs-lineup";
 import { GbsLineUpTableToolbar } from "./GbsLineUpTableToolbar";
+import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
+import { GbsLineUpDetailContent } from "./GbsLineUpDetailContent";
 
 interface GbsLineUpTableProps {
   initialData: IUserRetreatGBSLineup[];
@@ -34,68 +37,47 @@ interface GbsLineUpTableProps {
 }
 
 /**
- * GBS Line-Up 테이블 (TanStack Table + Virtual Scrolling)
+ * GBS Line-Up 테이블 (TanStack Table + Virtual Scrolling + SWR)
  *
  * @description
  * - TanStack Table v8 + TanStack Virtual 기반
- * - SWR Cache Validation으로 실시간 협업 지원
- * - 열 가시성, 정렬, 필터 지원
+ * - ✅ SWR + WebSocket으로 실시간 협업 지원
+ * - ✅ Optimistic Updates (GBS 번호, 메모)
+ * - ✅ 편집 중 버퍼링으로 Stale Data 방지
+ * - ✅ Debounce 2초 자동 저장
+ * - ✅ Exponential Backoff 재연결
  * - Virtual Scrolling으로 성능 최적화
  * - 리더 행에만 GBS 정보 표시 (하늘색 배경)
  * - 인원 초과 시 빨간색 표시
- *
- * ✅ Props: 3개 (기존 19개에서 대폭 감소!)
  */
 export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   initialData,
   schedules,
   retreatSlug,
 }: GbsLineUpTableProps) {
-  // ✅ WebSocket으로 실시간 데이터 + Mutation 함수들
-  // Note: WEBSOCKET_ENABLED 환경 변수로 제어 가능 (기본: WebSocket 사용)
-  const useWebSocket = process.env.NEXT_PUBLIC_WEBSOCKET_ENABLED !== "false";
-
-  const pollingHook = useRetreatGbsLineupData(retreatSlug, {
-    fallbackData: initialData,
-  });
-
-  const websocketHook = useWebSocketGbsLineup(retreatSlug);
-
-  // WebSocket 또는 Polling 선택
+  // ✅ SWR + WebSocket 통합 Hook (Optimistic Update 지원)
   const {
-    data: pollingData,
+    data: swrData,
+    isLoading: swrLoading,
+    error: swrError,
+    isConnected,
+    isMutating,
     saveGbsNumber,
     saveLineupMemo,
     updateLineupMemo,
     deleteLineupMemo,
-    isMutating,
-    isConnected,
-  } = useWebSocket
-    ? {
-        data: websocketHook.data,
-        saveGbsNumber: websocketHook.saveGbsNumber,
-        saveLineupMemo: websocketHook.saveLineupMemo,
-        updateLineupMemo: websocketHook.updateLineupMemo,
-        deleteLineupMemo: websocketHook.deleteLineupMemo,
-        isMutating: websocketHook.isMutating,
-        isConnected: websocketHook.isConnected,
-      }
-    : {
-        data: pollingHook.data,
-        saveGbsNumber: pollingHook.saveGbsNumber,
-        saveLineupMemo: pollingHook.saveLineupMemo,
-        updateLineupMemo: pollingHook.updateLineupMemo,
-        deleteLineupMemo: pollingHook.deleteLineupMemo,
-        isMutating: pollingHook.isMutating,
-        isConnected: undefined,
-      };
+    refresh,
+  } = useGbsLineupSwr(retreatSlug);
 
   // ✅ 데이터 변환
   const data = useMemo<GBSLineupRow[]>(() => {
-    const registrations = pollingData || initialData;
-    if (!registrations.length || !schedules.length) return [];
+    const registrations = swrData.length > 0 ? swrData : initialData;
 
-    return registrations.map(registration => {
+    if (!registrations.length || !schedules.length) {
+      return [];
+    }
+
+    const transformedData = registrations.map(registration => {
       const scheduleData: Record<string, boolean> = {};
       schedules.forEach(schedule => {
         scheduleData[`schedule_${schedule.id}`] =
@@ -129,7 +111,9 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         adminMemo: registration.adminMemo,
       } as GBSLineupRow;
     });
-  }, [pollingData, initialData, schedules]);
+
+    return transformedData;
+  }, [swrData, initialData, schedules]);
 
   // ✅ 최신 데이터를 참조하기 위한 ref (스크롤 위치 유지)
   const dataRef = useRef(data);
@@ -137,11 +121,20 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     dataRef.current = data;
   }, [data]);
 
+  // ✅ 사이드바 상태 관리
+  const sidebar = useDetailSidebar<GBSLineupRow>();
+
   // ✅ TanStack Table 상태
-  const [sorting, setSorting] = useState<SortingState>([]);
+  // 초기 sorting: GBS 번호 오름차순 정렬 (plans 요구사항)
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'gbsNumber', desc: false }
+  ]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [globalFilter, setGlobalFilter] = useState("");
+  // ✅ globalFilter를 객체로 관리 (search + timestamp)
+  const [globalFilter, setGlobalFilter] = useState<{ search: string; _trigger?: number }>({ search: "" });
+  // ✅ 3-State 필터: { [scheduleKey]: 'none' | 'include' | 'exclude' }
+  const [scheduleFilter, setScheduleFilter] = useState<Record<string, 'none' | 'include' | 'exclude'>>({});
 
   // ✅ Wrapper 함수들 (컬럼 훅이 기대하는 시그니처에 맞춘 + WebSocket 지원)
   const handleSaveGbsNumber = useCallback(
@@ -156,15 +149,10 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
 
   const handleSaveLineupMemo = useCallback(
     async (id: string, memo: string, color?: string) => {
-      // WebSocket: saveLineupMemo(userRetreatRegistrationId, memo, color)
-      // Polling: saveLineupMemo(id, memo, color)
-      if (useWebSocket) {
-        await saveLineupMemo(parseInt(id), memo, color);
-      } else {
-        await saveLineupMemo(id as any, memo, color);
-      }
+      // SWR: saveLineupMemo(userRetreatRegistrationId, memo, color)
+      await saveLineupMemo(parseInt(id), memo, color);
     },
-    [saveLineupMemo, useWebSocket]
+    [saveLineupMemo]
   );
 
   const handleUpdateLineupMemo = useCallback(
@@ -173,15 +161,10 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
       const memoId = currentRow?.lineupMemoId;
       if (!memoId) return;
 
-      // WebSocket: updateLineupMemo(userRetreatRegistrationMemoId, memo, color)
-      // Polling: updateLineupMemo(memoId, memo, color)
-      if (useWebSocket) {
-        await updateLineupMemo(parseInt(memoId), memo, color);
-      } else {
-        await updateLineupMemo(memoId as any, memo, color);
-      }
+      // SWR: updateLineupMemo(userRetreatRegistrationMemoId, memo, color)
+      await updateLineupMemo(parseInt(memoId), memo, color);
     },
-    [updateLineupMemo, useWebSocket]
+    [updateLineupMemo]
   );
 
   const handleDeleteLineupMemo = useCallback(
@@ -190,15 +173,10 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
       const memoId = currentRow?.lineupMemoId;
       if (!memoId) return;
 
-      // WebSocket: deleteLineupMemo(userRetreatRegistrationMemoId)
-      // Polling: deleteLineupMemo(memoId)
-      if (useWebSocket) {
-        await deleteLineupMemo(parseInt(memoId));
-      } else {
-        await deleteLineupMemo(memoId as any);
-      }
+      // SWR: deleteLineupMemo(userRetreatRegistrationMemoId)
+      await deleteLineupMemo(parseInt(memoId));
     },
-    [deleteLineupMemo, useWebSocket]
+    [deleteLineupMemo]
   );
 
   // Placeholder handlers (미구현 기능)
@@ -250,12 +228,56 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   );
 
   // ✅ 컬럼 정의
-  const columns = useGbsLineupColumns(schedules, retreatSlug, data, handlers);
+  const columns = useGbsLineupColumns(schedules, retreatSlug, data, handlers, sidebar.open);
+
+  // ✅ 전역 필터 함수 (통합 검색 + 3-State 일정 필터)
+  const globalFilterFn = useCallback((row: any, columnId: string, filterValue: any) => {
+    // filterValue는 { search: string, _trigger?: number } 객체
+    const searchTerm = typeof filterValue === 'object' ? filterValue.search : filterValue || "";
+
+    // ✅ 3-State 일정 필터 체크 (클로저로 scheduleFilter 직접 참조)
+    for (const [scheduleKey, filterMode] of Object.entries(scheduleFilter)) {
+      if (filterMode === 'none') continue; // 무시
+
+      const hasSchedule = row.original.schedule[scheduleKey];
+
+      if (filterMode === 'include' && !hasSchedule) {
+        // Include: 반드시 참석해야 함
+        return false;
+      }
+
+      if (filterMode === 'exclude' && hasSchedule) {
+        // Exclude: 반드시 불참해야 함
+        return false;
+      }
+    }
+
+    // 검색어 필터
+    if (!searchTerm) return true;
+
+    const searchableFields = [
+      row.original.gbsNumber?.toString(),
+      row.original.department,
+      row.original.grade,
+      row.original.name,
+      row.original.phoneNumber,
+      row.original.lineupMemo,
+      row.original.currentLeader,
+    ];
+
+    return searchableFields.some(
+      field =>
+        field && field.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [scheduleFilter]);
 
   // ✅ TanStack Table 초기화
   const table = useReactTable({
     data,
     columns,
+    // ✅ WebSocket 업데이트 대응: row.id를 실제 DB ID로 설정 (index 대신)
+    // 정렬 후에도 row.id가 안정적으로 유지되어 cell.id가 변경되지 않음
+    getRowId: (originalRow) => originalRow.id,
     state: {
       sorting,
       columnFilters,
@@ -269,24 +291,16 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    // ✅ 전역 필터 함수 (통합 검색)
-    globalFilterFn: (row, columnId, filterValue) => {
-      const searchableFields = [
-        row.original.gbsNumber?.toString(),
-        row.original.department,
-        row.original.grade,
-        row.original.name,
-        row.original.phoneNumber,
-        row.original.lineupMemo,
-        row.original.currentLeader,
-      ];
-
-      return searchableFields.some(
-        field =>
-          field && field.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    },
+    globalFilterFn,
   });
+
+  // ✅ scheduleFilter 변경 시 강제로 재필터링 트리거
+  useEffect(() => {
+    setGlobalFilter(prev => ({
+      search: prev.search,
+      _trigger: Date.now() // timestamp로 강제 변경
+    }));
+  }, [scheduleFilter]);
 
   // ✅ 통계 계산
   const stats = useMemo(() => {
@@ -296,16 +310,22 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     return { total, assigned, unassigned };
   }, [data]);
 
+  // ✅ 사이드바에 표시할 최신 데이터 (SWR/WebSocket 캐시와 동기화)
+  const currentSidebarData = sidebar.selectedItem
+    ? data.find((item) => item.id === sidebar.selectedItem.id) || sidebar.selectedItem
+    : null;
+
   return (
-    <div className="space-y-4">
+    <>
+      <div className="space-y-4">
       {/* 제목 */}
       <div>
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-semibold tracking-tight">
             GBS 라인업 현황 조회
           </h2>
-          {/* ✅ WebSocket 연결 상태 표시 (WebSocket 모드일 때만) */}
-          {useWebSocket && isConnected !== undefined && (
+          {/* ✅ WebSocket 연결 상태 표시 */}
+          {isConnected !== undefined && (
             <div className="flex items-center gap-2 text-xs">
               <div
                 className={`h-2 w-2 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
@@ -333,22 +353,49 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         </p>
       </div>
 
-      {/* ✅ Toolbar (Props 2개만!) */}
-      <GbsLineUpTableToolbar table={table} retreatSlug={retreatSlug} />
+      {/* ✅ Toolbar */}
+      <GbsLineUpTableToolbar
+        table={table}
+        retreatSlug={retreatSlug}
+        schedules={schedules}
+        scheduleFilter={scheduleFilter}
+        setScheduleFilter={setScheduleFilter}
+      />
 
       {/* ✅ 가상화 테이블 */}
       <VirtualizedTable
         table={table}
         estimateSize={50}
         overscan={10}
+        onRowClick={sidebar.open}
         getRowClassName={row =>
           row.isLeader ? "bg-cyan-50 hover:bg-cyan-100" : ""
         }
         className="max-h-[80vh]"
         emptyMessage={
-          globalFilter ? "검색 결과가 없습니다." : "표시할 데이터가 없습니다."
+          globalFilter.search ? "검색 결과가 없습니다." : "표시할 데이터가 없습니다."
         }
       />
     </div>
+
+    {/* ✅ 상세 정보 사이드바 */}
+    <DetailSidebar
+      isOpen={sidebar.isOpen}
+      onClose={sidebar.close}
+      title="상세 정보"
+    >
+      {currentSidebarData && (
+        <GbsLineUpDetailContent
+          data={currentSidebarData}
+          retreatSlug={retreatSlug}
+          schedules={schedules}
+          onSaveScheduleMemo={handleSaveScheduleMemo}
+          onUpdateScheduleMemo={handleUpdateScheduleMemo}
+          onDeleteScheduleMemo={handleDeleteScheduleMemo}
+          isMutating={isMutating}
+        />
+      )}
+    </DetailSidebar>
+  </>
   );
 });

@@ -4,7 +4,7 @@ import { useMemo, useEffect, useState } from "react";
 import { Table } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Download, Search, Settings } from "lucide-react";
+import { Download, Search, Settings, Filter, Check, X, Circle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -17,10 +17,15 @@ import { useToastStore } from "@/store/toast-store";
 import { formatDate } from "@/utils/formatDate";
 import { GBSLineupRow } from "@/hooks/gbs-line-up/use-gbs-lineup";
 import { AxiosError } from "axios";
+import { TRetreatRegistrationSchedule } from "@/types";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 interface GbsLineUpTableToolbarProps {
   table: Table<GBSLineupRow>;
   retreatSlug: string;
+  schedules: TRetreatRegistrationSchedule[];
+  scheduleFilter: Record<string, 'none' | 'include' | 'exclude'>;
+  setScheduleFilter: (filter: Record<string, 'none' | 'include' | 'exclude'>) => void;
 }
 
 /**
@@ -37,6 +42,9 @@ interface GbsLineUpTableToolbarProps {
 export function GbsLineUpTableToolbar({
   table,
   retreatSlug,
+  schedules,
+  scheduleFilter,
+  setScheduleFilter,
 }: GbsLineUpTableToolbarProps) {
   const addToast = useToastStore((state) => state.add);
   const [loadingStates, setLoadingStates] = useState({
@@ -45,11 +53,17 @@ export function GbsLineUpTableToolbar({
     exportRetreatGbsTags: false,
   });
 
+  // 스케줄 컬럼 메타데이터 생성
+  const scheduleColumnsMeta = useMemo(
+    () => generateScheduleColumns(schedules),
+    [schedules]
+  );
+
   // ✅ Lodash debounce를 useMemo로 메모이제이션
   const debouncedSetGlobalFilter = useMemo(
     () =>
       debounce((value: string) => {
-        table.setGlobalFilter(value);
+        table.setGlobalFilter({ search: value });
       }, 300),
     [table]
   );
@@ -202,6 +216,30 @@ export function GbsLineUpTableToolbar({
     }
   };
 
+  // ✅ 3-State 토글 함수: none → include → exclude → none
+  const toggleScheduleFilter = (scheduleKey: string) => {
+    const currentState = scheduleFilter[scheduleKey] || 'none';
+
+    let nextState: 'none' | 'include' | 'exclude';
+    if (currentState === 'none') {
+      nextState = 'include';
+    } else if (currentState === 'include') {
+      nextState = 'exclude';
+    } else {
+      nextState = 'none';
+    }
+
+    setScheduleFilter({
+      ...scheduleFilter,
+      [scheduleKey]: nextState,
+    });
+  };
+
+  // ✅ 활성화된 필터 개수 계산
+  const activeFilterCount = Object.values(scheduleFilter).filter(
+    (mode) => mode !== 'none'
+  ).length;
+
   // 컬럼명 매핑
   const getColumnName = (id: string): string => {
     const names: Record<string, string> = {
@@ -237,7 +275,11 @@ export function GbsLineUpTableToolbar({
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder="GBS번호/부서/학년/이름/타입/메모로 검색..."
-          defaultValue={(table.getState().globalFilter as string) ?? ""}
+          defaultValue={
+            typeof table.getState().globalFilter === 'object'
+              ? (table.getState().globalFilter as any).search
+              : table.getState().globalFilter ?? ""
+          }
           onChange={(e) => debouncedSetGlobalFilter(e.target.value)}
           className="pl-8 text-sm"
         />
@@ -245,6 +287,74 @@ export function GbsLineUpTableToolbar({
 
       {/* 버튼 그룹 */}
       <div className="flex items-center gap-2 flex-wrap">
+        {/* ✅ 3-State 일정 필터 */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              일정 필터
+              {activeFilterCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-white rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[280px] max-h-[400px] overflow-y-auto">
+            <div className="px-2 py-1.5 text-xs text-muted-foreground border-b mb-1">
+              <p className="font-medium mb-1">클릭으로 상태 변경:</p>
+              <div className="flex items-center gap-3 text-[10px]">
+                <div className="flex items-center gap-1">
+                  <Circle className="h-3 w-3 text-gray-400" />
+                  <span>무시</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Check className="h-3 w-3 text-green-600" />
+                  <span>포함</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <X className="h-3 w-3 text-red-600" />
+                  <span>제외</span>
+                </div>
+              </div>
+            </div>
+            {scheduleColumnsMeta.map((col) => {
+              const filterMode = scheduleFilter[col.key] || 'none';
+
+              return (
+                <div
+                  key={col.key}
+                  className="flex items-center justify-between px-2 py-2 hover:bg-gray-50 cursor-pointer rounded-sm"
+                  onClick={() => toggleScheduleFilter(col.key)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${col.simpleColorClass}`} />
+                    <span className="text-sm">{col.label}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {filterMode === 'none' && (
+                      <Circle className="h-4 w-4 text-gray-400" />
+                    )}
+                    {filterMode === 'include' && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-green-50 border border-green-200">
+                        <Check className="h-3.5 w-3.5 text-green-600" />
+                        <span className="text-xs font-medium text-green-700">포함</span>
+                      </div>
+                    )}
+                    {filterMode === 'exclude' && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-red-50 border border-red-200">
+                        <X className="h-3.5 w-3.5 text-red-600" />
+                        <span className="text-xs font-medium text-red-700">제외</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* 열 숨기기 */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

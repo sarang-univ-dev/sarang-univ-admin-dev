@@ -169,13 +169,16 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
 
           if (response.status === 'OK' && response.data) {
             console.log(`✅ [saveGbsNumber] Server confirmed update for registration ${userRetreatRegistrationId}`);
+            console.log(`📊 [saveGbsNumber] Updated data:`, response.data);
 
             // ✅ 서버에서 받은 전체 lineup 객체로 갱신 (totalCount, maleCount 등 포함)
-            setData((prev) =>
-              prev.map((item) =>
+            setData((prev) => {
+              const updated = prev.map((item) =>
                 item.id === response.data!.id ? response.data! : item
-              )
-            );
+              );
+              console.log(`🔄 [saveGbsNumber] Data updated, total rows: ${updated.length}`);
+              return updated;
+            });
 
             addToast({
               title: '성공',
@@ -227,12 +230,17 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
           setIsMutating(false);
 
           if (response.status === 'OK' && response.data) {
+            console.log(`✅ [saveLineupMemo] Server confirmed update`);
+            console.log(`📊 [saveLineupMemo] Updated data:`, response.data);
+
             // ✅ 서버에서 받은 전체 lineup 객체로 갱신
-            setData((prev) =>
-              prev.map((item) =>
+            setData((prev) => {
+              const updated = prev.map((item) =>
                 item.id === response.data!.id ? response.data! : item
-              )
-            );
+              );
+              console.log(`🔄 [saveLineupMemo] Data updated, affected row:`, response.data!.id);
+              return updated;
+            });
 
             addToast({
               title: '성공',
@@ -279,12 +287,17 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
           setIsMutating(false);
 
           if (response.status === 'OK' && response.data) {
+            console.log(`✅ [updateLineupMemo] Server confirmed update`);
+            console.log(`📊 [updateLineupMemo] Updated data:`, response.data);
+
             // ✅ 서버에서 받은 전체 lineup 객체로 갱신
-            setData((prev) =>
-              prev.map((item) =>
+            setData((prev) => {
+              const updated = prev.map((item) =>
                 item.id === response.data!.id ? response.data! : item
-              )
-            );
+              );
+              console.log(`🔄 [updateLineupMemo] Data updated, affected row:`, response.data!.id);
+              return updated;
+            });
 
             addToast({
               title: '성공',
@@ -331,12 +344,17 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
               setIsMutating(false);
 
               if (response.status === 'OK' && response.data) {
+                console.log(`✅ [deleteLineupMemo] Server confirmed deletion`);
+                console.log(`📊 [deleteLineupMemo] Updated data:`, response.data);
+
                 // ✅ 서버에서 받은 전체 lineup 객체로 갱신
-                setData((prev) =>
-                  prev.map((item) =>
+                setData((prev) => {
+                  const updated = prev.map((item) =>
                     item.id === response.data!.id ? response.data! : item
-                  )
-                );
+                  );
+                  console.log(`🔄 [deleteLineupMemo] Data updated, affected row:`, response.data!.id);
+                  return updated;
+                });
 
                 addToast({
                   title: '성공',
