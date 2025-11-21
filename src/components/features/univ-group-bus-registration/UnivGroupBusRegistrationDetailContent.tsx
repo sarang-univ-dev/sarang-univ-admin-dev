@@ -7,6 +7,7 @@ import { formatDate } from "@/utils/formatDate";
 import { useMemo } from "react";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import {
   UserCircle,
   Bus,
@@ -14,9 +15,17 @@ import {
   FileText,
 } from "lucide-react";
 
+interface ScheduleWithColor {
+  id: number;
+  label: string;
+  color: string;
+  bgColorClass: string;
+}
+
 interface UnivGroupBusRegistrationDetailContentProps {
   data: IUnivGroupBusRegistration;
   schedules: TRetreatShuttleBus[];
+  scheduleColumnsWithColor: ScheduleWithColor[];
   onSaveMemo: (id: string, memo: string) => Promise<void>;
   onUpdateMemo: (id: string, memo: string) => Promise<void>;
   onDeleteMemo: (id: string) => Promise<void>;
@@ -31,17 +40,49 @@ interface UnivGroupBusRegistrationDetailContentProps {
 export function UnivGroupBusRegistrationDetailContent({
   data,
   schedules,
+  scheduleColumnsWithColor,
   onSaveMemo,
   onUpdateMemo,
   onDeleteMemo,
   isMutating,
 }: UnivGroupBusRegistrationDetailContentProps) {
-  // 선택된 스케줄 정보 추출
+  // 색상 매핑 헬퍼 함수
+  const getScheduleColorClass = (color: string) => {
+    const colorMap: Record<string, string> = {
+      rose: "bg-rose-50 border-rose-200",
+      amber: "bg-amber-50 border-amber-200",
+      teal: "bg-teal-50 border-teal-200",
+      indigo: "bg-indigo-50 border-indigo-200",
+    };
+    return colorMap[color] || "bg-gray-50 border-gray-200";
+  };
+
+  const getCheckboxColorClass = (color: string) => {
+    const colorMap: Record<string, string> = {
+      rose: "data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500",
+      amber: "data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500",
+      teal: "data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500",
+      indigo: "data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500",
+    };
+    return colorMap[color] || "";
+  };
+
+  // 선택된 스케줄 정보 추출 (색상 정보 포함)
   const selectedSchedules = useMemo(() => {
-    return schedules.filter((schedule) =>
-      data.userRetreatShuttleBusRegistrationScheduleIds?.includes(schedule.id)
-    );
-  }, [schedules, data.userRetreatShuttleBusRegistrationScheduleIds]);
+    return schedules
+      .filter((schedule) =>
+        data.userRetreatShuttleBusRegistrationScheduleIds?.includes(schedule.id)
+      )
+      .map((schedule) => {
+        const colorInfo = scheduleColumnsWithColor.find(
+          (s) => s.id === schedule.id
+        );
+        return {
+          ...schedule,
+          color: colorInfo?.color || "gray",
+        };
+      });
+  }, [schedules, scheduleColumnsWithColor, data.userRetreatShuttleBusRegistrationScheduleIds]);
 
   return (
     <>
@@ -96,9 +137,16 @@ export function UnivGroupBusRegistrationDetailContent({
             {selectedSchedules.map((schedule) => (
               <div
                 key={schedule.id}
-                className="flex items-center gap-2 p-2 bg-gray-50 rounded-md"
+                className={cn(
+                  "flex items-center gap-2 p-2 rounded-md border",
+                  getScheduleColorClass(schedule.color)
+                )}
               >
-                <Checkbox checked disabled />
+                <Checkbox
+                  checked
+                  disabled
+                  className={cn(getCheckboxColorClass(schedule.color))}
+                />
                 <div className="flex-1">
                   <p className="text-sm font-medium">{schedule.name}</p>
                   <p className="text-xs text-gray-500">

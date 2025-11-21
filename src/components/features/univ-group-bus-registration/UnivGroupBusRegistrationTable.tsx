@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VirtualizedTable } from "@/components/common/table";
+import { ColumnHeader } from "@/components/common/table/ColumnHeader";
 import { IUnivGroupBusRegistration } from "@/types/bus-registration";
 import { TRetreatShuttleBus } from "@/types";
 import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
@@ -97,28 +98,116 @@ export function UnivGroupBusRegistrationTable({
     const staticColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
       columnHelper.accessor("gender", {
         id: "gender",
-        header: "성별",
-        cell: (info) => <GenderBadge gender={info.getValue()} />,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="성별"
+            enableSorting
+            enableFiltering
+            formatFilterValue={(value) => (value === "MALE" ? "남" : "여")}
+          />
+        ),
+        cell: (info) => (
+          <div className="flex justify-center">
+            <GenderBadge gender={info.getValue()} />
+          </div>
+        ),
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          return value.includes(row.getValue(id));
+        },
       }),
       columnHelper.accessor("gradeNumber", {
         id: "grade",
-        header: "학년",
-        cell: (info) => `${info.getValue()}학년`,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="학년"
+            enableSorting
+            enableFiltering
+            formatFilterValue={(value) => `${value}학년`}
+          />
+        ),
+        cell: (info) => <div className="text-center">{`${info.getValue()}학년`}</div>,
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          const gradeNumber = row.getValue(id) as number;
+          return value.includes(gradeNumber);
+        },
       }),
       columnHelper.accessor("name", {
         id: "name",
-        header: "이름",
-        cell: (info) => info.getValue(),
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="이름"
+            enableSorting
+            enableFiltering
+          />
+        ),
+        cell: (info) => <div className="text-center">{info.getValue()}</div>,
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          return value.includes(row.getValue(id));
+        },
       }),
       columnHelper.accessor("userPhoneNumber", {
         id: "phone",
-        header: "전화번호",
-        cell: (info) => info.getValue() || "-",
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="전화번호"
+            enableSorting
+            enableFiltering
+          />
+        ),
+        cell: (info) => <div className="text-center">{info.getValue() || "-"}</div>,
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          return value.includes(row.getValue(id));
+        },
       }),
       // ✅ 신청 버스 컬럼 (chip/badge로 표시)
       columnHelper.accessor("userRetreatShuttleBusRegistrationScheduleIds", {
         id: "selected-buses",
-        header: "신청 버스",
+        header: ({ column, table }) => {
+          // 버스 스케줄 ID를 이름으로 포맷
+          const formatBusValue = (value: number) => {
+            const schedule = scheduleColumnsWithColor.find(s => s.id === value);
+            return schedule ? schedule.label : String(value);
+          };
+
+          // 버스를 시간 순서대로 정렬
+          const sortBusByTime = (a: number, b: number) => {
+            const indexA = scheduleColumnsWithColor.findIndex(s => s.id === a);
+            const indexB = scheduleColumnsWithColor.findIndex(s => s.id === b);
+            return (indexA === -1 ? Infinity : indexA) - (indexB === -1 ? Infinity : indexB);
+          };
+
+          return (
+            <ColumnHeader
+              column={column}
+              table={table}
+              title="신청 버스"
+              enableSorting
+              enableFiltering
+              formatFilterValue={formatBusValue}
+              sortFilterValues={sortBusByTime}
+            />
+          );
+        },
         cell: (info) => {
           const selectedIds = info.getValue() || [];
           const selectedSchedules = scheduleColumnsWithColor.filter((s) =>
@@ -126,25 +215,73 @@ export function UnivGroupBusRegistrationTable({
           );
 
           if (selectedSchedules.length === 0) {
-            return <span className="text-sm text-muted-foreground">-</span>;
+            return <div className="text-center"><span className="text-sm text-muted-foreground">-</span></div>;
           }
 
           return (
-            <div className="grid grid-cols-2 gap-1 py-1">
-              {selectedSchedules.map((schedule) => (
-                <Badge
-                  key={schedule.id}
-                  variant="outline"
-                  className={cn(
-                    "text-xs whitespace-nowrap justify-center",
-                    getChipColorClass(schedule.color)
-                  )}
-                >
-                  {schedule.label}
-                </Badge>
-              ))}
+            <div className="flex justify-center py-1">
+              <div className="grid grid-cols-2 gap-1">
+                {selectedSchedules.map((schedule) => (
+                  <Badge
+                    key={schedule.id}
+                    variant="outline"
+                    className={cn(
+                      "text-xs whitespace-nowrap shrink-0 justify-center",
+                      getChipColorClass(schedule.color)
+                    )}
+                  >
+                    {schedule.label}
+                  </Badge>
+                ))}
+              </div>
             </div>
           );
+        },
+        enableSorting: true,
+        enableColumnFilter: true,
+        // 정렬: 신청한 버스 개수 기준 → 개수 같으면 각 버스 순차적 비교
+        sortingFn: (rowA, rowB, columnId) => {
+          const idsA = (rowA.getValue(columnId) as number[]) || [];
+          const idsB = (rowB.getValue(columnId) as number[]) || [];
+
+          // 1차 정렬: 신청한 버스 개수 (많은 순 → 적은 순)
+          const countDiff = idsA.length - idsB.length;
+          if (countDiff !== 0) {
+            return countDiff;
+          }
+
+          // 2차 정렬: 개수가 같으면 각 버스를 순차적으로 비교
+          // 가장 이른 버스부터 비교하고, 같으면 다음 버스 비교
+          const maxLength = Math.max(idsA.length, idsB.length);
+
+          for (let i = 0; i < maxLength; i++) {
+            const idA = idsA[i];
+            const idB = idsB[i];
+
+            // 한쪽이 버스가 없으면 (배열 길이가 다른 경우)
+            if (idA === undefined) return 1;  // A가 없으면 B가 앞
+            if (idB === undefined) return -1; // B가 없으면 A가 앞
+
+            // schedules에서 각 ID의 인덱스를 찾아 시간 순서 비교
+            const indexA = scheduleColumnsWithColor.findIndex(s => s.id === idA);
+            const indexB = scheduleColumnsWithColor.findIndex(s => s.id === idB);
+
+            const diff = (indexA === -1 ? Infinity : indexA) - (indexB === -1 ? Infinity : indexB);
+
+            // 다르면 그 결과 반환, 같으면 다음 버스 비교
+            if (diff !== 0) {
+              return diff;
+            }
+          }
+
+          return 0; // 모든 버스가 같으면 동일
+        },
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          const userScheduleIds = row.getValue(id) as number[];
+          if (!userScheduleIds || userScheduleIds.length === 0) return false;
+          // 선택된 필터 값 중 하나라도 사용자의 스케줄에 포함되어 있으면 true
+          return value.some(filterId => userScheduleIds.includes(filterId));
         },
       }),
     ];
@@ -152,22 +289,55 @@ export function UnivGroupBusRegistrationTable({
     const endColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
       columnHelper.accessor("shuttleBusPaymentStatus", {
         id: "status",
-        header: "입금 현황",
-        cell: (info) => <StatusBadge status={info.getValue()} />,
+        header: ({ column, table }) => {
+          const formatStatusValue = (value: string) => {
+            const statusMap: Record<string, string> = {
+              PENDING: "입금 확인 대기",
+              PAID: "입금 확인 완료",
+              REFUND_REQUEST: "환불 요청",
+              REFUNDED: "환불 완료",
+            };
+            return statusMap[value] || value;
+          };
+
+          return (
+            <ColumnHeader
+              column={column}
+              table={table}
+              title="입금 현황"
+              enableSorting
+              enableFiltering
+              formatFilterValue={formatStatusValue}
+            />
+          );
+        },
+        cell: (info) => (
+          <div className="flex justify-center">
+            <StatusBadge status={info.getValue()} />
+          </div>
+        ),
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          return value.includes(row.getValue(id));
+        },
       }),
       columnHelper.display({
         id: "detail",
-        header: "상세 보기",
+        header: () => <div className="text-center">상세보기</div>,
         cell: (props) => (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => sidebar.open(props.row.original)}
-            className="flex items-center gap-1.5 text-xs h-7"
-          >
-            <Eye className="h-3 w-3" />
-            <span>보기</span>
-          </Button>
+          <div className="flex justify-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => sidebar.open(props.row.original)}
+              className="flex items-center gap-1.5 text-xs h-7"
+            >
+              <Eye className="h-3 w-3" />
+              <span>보기</span>
+            </Button>
+          </div>
         ),
       }),
     ];
@@ -261,6 +431,7 @@ export function UnivGroupBusRegistrationTable({
           <UnivGroupBusRegistrationDetailContent
             data={data}
             schedules={schedules}
+            scheduleColumnsWithColor={scheduleColumnsWithColor}
             onSaveMemo={saveMemo}
             onUpdateMemo={updateMemo}
             onDeleteMemo={deleteMemo}
