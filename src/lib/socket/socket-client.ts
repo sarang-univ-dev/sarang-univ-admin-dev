@@ -28,13 +28,13 @@ export function getSocketClient(): Socket<ServerToClientEvents, ClientToServerEv
   socket = io(`${serverUrl}/gbs-lineup`, {
     // httpOnly 쿠키를 자동으로 전송
     withCredentials: true,
-    // 재연결 설정 (빠른 재연결)
+    // ✅ Exponential Backoff 재연결 설정
     reconnection: true,
-    reconnectionAttempts: 10,
-    reconnectionDelay: 200, // 200ms (빠른 재연결)
-    reconnectionDelayMax: 2000, // 최대 2초
-    // 타임아웃 단축
-    timeout: 5000, // 5초로 단축
+    reconnectionAttempts: 10, // 최대 10회 시도
+    reconnectionDelay: 1000, // 초기 지연 1초
+    reconnectionDelayMax: 30000, // 최대 30초 (1→2→4→8→16→30초)
+    // 타임아웃
+    timeout: 10000, // 10초 타임아웃
     // Transport (WebSocket only)
     transports: ['websocket'],
     // 추가 최적화
