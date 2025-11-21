@@ -2,6 +2,7 @@ import { Column, Table } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterableHeader } from "./FilterableHeader";
+import { UnifiedColumnHeader } from "./UnifiedColumnHeader";
 
 interface ColumnHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -24,6 +25,12 @@ interface ColumnHeaderProps<TData> {
    * 정렬/필터 없이 제목만 표시
    */
   titleOnly?: boolean;
+  /**
+   * 통합 모드 사용 (하나의 아이콘으로 정렬+필터) (기본값: true)
+   * - true: 하나의 아이콘으로 정렬과 필터를 모두 제공 (공간 절약)
+   * - false: 정렬과 필터 아이콘을 나란히 표시 (기존 방식)
+   */
+  unified?: boolean;
 }
 
 /**
@@ -32,11 +39,13 @@ interface ColumnHeaderProps<TData> {
  * @description
  * - 정렬과 필터 기능을 통합한 헤더 컴포넌트
  * - 옵션에 따라 정렬/필터 개별 활성화 가능
+ * - unified=true (기본값): 하나의 아이콘으로 정렬+필터 제공 (공간 절약)
+ * - unified=false: 정렬과 필터 아이콘을 나란히 표시 (기존 방식)
  * - Google Spreadsheet 스타일 UI
  *
  * @example
  * ```tsx
- * // 정렬 + 필터
+ * // 정렬 + 필터 (통합 모드 - 기본값)
  * <ColumnHeader
  *   column={column}
  *   table={table}
@@ -44,6 +53,16 @@ interface ColumnHeaderProps<TData> {
  *   enableSorting
  *   enableFiltering
  *   formatFilterValue={(value) => value === 'MALE' ? '남자' : '여자'}
+ * />
+ *
+ * // 정렬 + 필터 (기존 방식)
+ * <ColumnHeader
+ *   column={column}
+ *   table={table}
+ *   title="성별"
+ *   enableSorting
+ *   enableFiltering
+ *   unified={false}
  * />
  *
  * // 정렬만
@@ -64,6 +83,7 @@ export function ColumnHeader<TData>({
   enableFiltering = false,
   formatFilterValue,
   titleOnly = false,
+  unified = true,
 }: ColumnHeaderProps<TData>) {
   // 제목만 표시
   if (titleOnly || (!enableSorting && !enableFiltering)) {
@@ -74,6 +94,22 @@ export function ColumnHeader<TData>({
     );
   }
 
+  // 통합 모드: 하나의 아이콘으로 정렬+필터 제공
+  if (unified) {
+    return (
+      <UnifiedColumnHeader
+        column={column}
+        table={table}
+        title={title}
+        enableSorting={enableSorting}
+        enableFiltering={enableFiltering}
+        formatFilterValue={formatFilterValue}
+        titleOnly={titleOnly}
+      />
+    );
+  }
+
+  // 기존 방식: 정렬과 필터 아이콘을 나란히 표시
   const sortingState = column.getIsSorted();
   const sortIndex = column.getSortIndex();
   const sortOrder = sortIndex !== -1 ? sortIndex + 1 : null;

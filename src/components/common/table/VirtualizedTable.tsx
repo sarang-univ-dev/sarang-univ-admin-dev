@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useMemo, memo } from "react";
+import { useRef, useMemo, memo, useCallback } from "react";
 import { Table as TanStackTable, flexRender } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { TableHeader, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
-import isEqual from "lodash/isEqual";
 
 interface VirtualizedTableProps<TData> {
   table: TanStackTable<TData>;
@@ -49,12 +48,21 @@ export function VirtualizedTable<TData>({
 
   const { rows } = table.getRowModel();
 
+  // ✅ Best Practice: getItemKey를 useCallback으로 메모이제이션
+  // - 안정적인 key로 virtualization 성능 향상
+  // - row.id를 사용하여 각 행을 고유하게 식별
+  const getItemKey = useCallback(
+    (index: number) => rows[index]?.id ?? index,
+    [rows]
+  );
+
   // ✅ TanStack Virtual 설정 (스크롤 위치 유지)
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => tableContainerRef.current,
     estimateSize: () => estimateSize,
     overscan,
+    getItemKey, // Best Practice: 안정적인 key 제공
     // ✅ 데이터 변경 시 스크롤 위치 유지
     // measureElement를 사용하지 않으면 기본적으로 스크롤 위치가 유지됨
   });
@@ -139,9 +147,14 @@ export function VirtualizedTable<TData>({
 /**
  * React.memo로 메모이제이션된 TableRow
  *
- * - 변경된 행만 리렌더링
- * - 나머지 행은 그대로 유지
- * - lodash isEqual로 깊은 비교 (polling 시 동일한 데이터는 재렌더링 안 함)
+ * Best Practices (출처: TanStack Table + Material React Table docs):
+ * 1. getItemKey를 사용하여 안정적인 row 식별 (위에서 구현됨)
+ * 2. Shallow comparison 사용 (Deep comparison은 성능 저하)
+ * 3. Column visibility는 visible cells ID로 감지
+ * 4. Row ID 변경은 무조건 리렌더링 (Virtual Scrolling row 재사용 대응)
+ *
+ * 주의: Material React Table 문서에 따르면 "Usually you should not ever need to do this"
+ * 하지만 SWR polling + WebSocket 업데이트 환경에서는 필요함
  */
 const MemoizedTableRow = memo(
   function TableRowComponent<TData>({
@@ -170,30 +183,70 @@ const MemoizedTableRow = memo(
       </TableRow>
     );
   },
-  // ✅ 커스텀 비교 함수: row.original이 실제로 변경된 경우에만 리렌더링
+  // ✅ Best Practice: Shallow comparison으로 성능 최적화
+  // Deep comparison (isEqual)은 제거하여 성능 향상
   (prevProps, nextProps) => {
-    return (
-      prevProps.row.id === nextProps.row.id &&
-      isEqual(prevProps.row.original, nextProps.row.original)
-    );
+    // 1. Row ID 변경 체크 (Virtual Scrolling으로 다른 row가 같은 위치에 올 수 있음)
+    if (prevProps.row.id !== nextProps.row.id) {
+      return false; // Row가 바뀌었으면 무조건 리렌더링
+    }
+
+    // 2. Column visibility 변경 체크 (visible cells ID 비교)
+    const prevVisibleCellIds = prevProps.row.getVisibleCells().map((c: any) => c.id).join(',');
+    const nextVisibleCellIds = nextProps.row.getVisibleCells().map((c: any) => c.id).join(',');
+
+    if (prevVisibleCellIds !== nextVisibleCellIds) {
+      return false; // Column visibility가 변경되었으면 리렌더링
+    }
+
+    // 3. 데이터 변경 체크 (Shallow comparison - 1 depth만)
+    // SWR이 같은 참조를 반환하면 리렌더링 안 함
+    if (prevProps.row.original !== nextProps.row.original) {
+      return false; // 데이터 참조가 변경되었으면 리렌더링
+    }
+
+    return true; // 변경사항 없으면 리렌더링 안 함
   }
 );
 
 /**
  * React.memo로 메모이제이션된 TableCell
  *
- * - Cell 단위로도 메모이제이션하여 성능 최적화
+ * Best Practices:
+ * - Cell 값과 row ID만 비교 (shallow comparison)
+ * - Deep comparison 제거하여 성능 향상
+ * - Virtual Scrolling row 재사용 대응
  */
 const MemoizedTableCell = memo(
   function TableCellComponent({ cell }: { cell: any }) {
+    const content = flexRender(cell.column.columnDef.cell, cell.getContext());
+
     return (
       <TableCell>
-        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        {content}
       </TableCell>
     );
   },
   (prevProps, nextProps) => {
-    // Cell 값이 실제로 변경된 경우에만 리렌더링
-    return isEqual(prevProps.cell.getValue(), nextProps.cell.getValue());
+    // 1. Row ID 변경 체크 (Virtual Scrolling으로 다른 row가 같은 위치에 올 수 있음)
+    const prevRowId = prevProps.cell.row.original.id;
+    const nextRowId = nextProps.cell.row.original.id;
+
+    if (prevRowId !== nextRowId) {
+      return false; // 다른 row면 무조건 리렌더링
+    }
+
+    // 2. Cell ID 변경 체크 (column visibility 변경)
+    if (prevProps.cell.id !== nextProps.cell.id) {
+      return false; // Cell ID가 변경되었으면 리렌더링
+    }
+
+    // 3. Cell 값 변경 체크 (Shallow comparison)
+    // 같은 참조면 리렌더링 안 함
+    if (prevProps.cell.getValue() !== nextProps.cell.getValue()) {
+      return false; // 값이 변경되었으면 리렌더링
+    }
+
+    return true; // 변경사항 없으면 리렌더링 안 함
   }
 );
