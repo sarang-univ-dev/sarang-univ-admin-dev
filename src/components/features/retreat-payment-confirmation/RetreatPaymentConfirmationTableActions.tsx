@@ -83,10 +83,6 @@ export function RetreatPaymentConfirmationTableActions({
       );
 
     default:
-      return (
-        <div className="text-center text-gray-400 text-sm">
-          -
-        </div>
-      );
+      return null;
   }
 }

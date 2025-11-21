@@ -4,6 +4,7 @@ export { RetreatPaymentConfirmationTable } from "./RetreatPaymentConfirmationTab
 // 서브 컴포넌트
 export { RetreatPaymentConfirmationTableToolbar } from "./RetreatPaymentConfirmationTableToolbar";
 export { RetreatPaymentConfirmationTableActions } from "./RetreatPaymentConfirmationTableActions";
+export { RetreatPaymentConfirmationDetailContent } from "./RetreatPaymentConfirmationDetailContent";
 
 // Server Component (정적 집계)
 export { PaymentSummary } from "./PaymentSummary";

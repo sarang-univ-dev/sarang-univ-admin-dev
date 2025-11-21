@@ -38,9 +38,7 @@ export default async function AccountPaymentConfirmationPage({ params }: PagePro
   ]);
 
   return (
-    <div className="space-y-4 md:space-y-8 p-6">
-      <h1 className="text-3xl font-bold">입금 조회</h1>
-
+    <div className="space-y-4 md:space-y-8">
       {/* ✅ Server Component (정적 집계) */}
       <PaymentSummary registrations={registrations} />
 
