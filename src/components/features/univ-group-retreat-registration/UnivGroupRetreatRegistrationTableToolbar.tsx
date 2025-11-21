@@ -122,7 +122,7 @@ export function UnivGroupRetreatRegistrationTableToolbar({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
-                열 설정
+                열 숨기기
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[200px]">
@@ -152,14 +152,16 @@ export function UnivGroupRetreatRegistrationTableToolbar({
                       phone: "전화번호",
                       currentLeaderName: "부서 리더명",
                       createdAt: "신청시각",
+                      attendance: "참석 현황",
                       status: "입금 현황",
                       confirmedBy: "처리자명",
                       paymentConfirmedAt: "처리시각",
                       gbs: "GBS",
                       accommodation: "숙소",
-                      shuttleBus: "셔틀버스",
+                      shuttleBus: "셔틀버스 신청 여부",
                       scheduleMemo: "일정 변동 메모",
                       adminMemo: "행정간사 메모",
+                      detailInfo: "상세보기",
                     };
                     return names[id] || id;
                   };

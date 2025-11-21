@@ -57,7 +57,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             title="성별"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => value === "MALE" ? "남자" : "여자"}
+            formatFilterValue={(value) => value === "MALE" ? "남" : "여"}
           />
         ),
         cell: info => (
@@ -160,7 +160,7 @@ export function useUnivGroupRetreatRegistrationColumns(
           title="참석 현황"
           enableSorting
           enableFiltering
-          formatFilterValue={(value) => value ? "전체 참석" : "일부 불참"}
+          formatFilterValue={(value) => value ? "전참" : "부분참"}
         />
       ),
       cell: info => (
@@ -269,7 +269,7 @@ export function useUnivGroupRetreatRegistrationColumns(
 
       columnHelper.display({
         id: "detailInfo",
-        header: () => <div className="text-center text-sm whitespace-nowrap">상세</div>,
+        header: () => <div className="text-center text-sm whitespace-nowrap">상세보기</div>,
         cell: props => (
           <div className="flex justify-center shrink-0 px-1">
             <Button

@@ -1,30 +1,25 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+"use client";
+
+import { useMemo } from "react";
+import { SummaryTable } from "@/components/SummaryTable";
 import {
   UserRetreatRegistrationPaymentStatus,
 } from "@/types";
 import { IRetreatRegistration } from "@/types/account";
-import { useMemo } from "react";
 import { StatusBadge } from "@/components/Badge";
 
 interface AccountStatusProps {
   registrations?: IRetreatRegistration[];
 }
 
+/**
+ * 계좌 현황 컴포넌트 (SummaryTable 형식)
+ *
+ * @description
+ * - SummaryTable을 사용하여 일관된 디자인 적용
+ * - 부서별 입출금 현황 표시
+ * - Card wrap 제거
+ */
 export function AccountStatus({ registrations = [] }: AccountStatusProps) {
   // 부서별 데이터 계산
   const departmentStats = useMemo(() => {
@@ -124,201 +119,151 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
     return stats;
   }, [registrations]);
 
-  // 부서가 없는 경우 빈 UI 반환
+  // 부서가 없는 경우 빈 메시지
   if (departmentStats.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>계좌 현황</CardTitle>
-          <CardDescription>입출금 요약 표</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-10 text-gray-500">
-            표시할 데이터가 없습니다.
+      <div className="space-y-3 md:space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            계좌 현황
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            입출금 요약 표
+          </p>
+        </div>
+        <div className="p-6 md:p-8 text-center text-gray-500 text-sm">
+          표시할 데이터가 없습니다.
+        </div>
+      </div>
+    );
+  }
+
+  // SummaryTable 컬럼 정의
+  const columns = [
+    {
+      id: "expectedIncome",
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge status={UserRetreatRegistrationPaymentStatus.PENDING} />
+        </div>
+      ),
+    },
+    {
+      id: "actualIncome",
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge status={UserRetreatRegistrationPaymentStatus.PAID} />
+        </div>
+      ),
+    },
+    {
+      id: "expectedRefund",
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge status={UserRetreatRegistrationPaymentStatus.REFUND_REQUEST} />
+        </div>
+      ),
+    },
+    {
+      id: "actualRefund",
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge status={UserRetreatRegistrationPaymentStatus.REFUNDED} />
+        </div>
+      ),
+    },
+    {
+      id: "currentBalance",
+      header: (
+        <div className="flex flex-col items-center gap-1">
+          <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 shrink-0">
+            <span className="text-xs font-medium text-blue-700 whitespace-nowrap">현재 계좌</span>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
+          <span className="text-[10px] text-gray-500 text-center whitespace-nowrap">(입금완료 - 환불완료)</span>
+        </div>
+      ),
+    },
+    {
+      id: "expectedFutureBalance",
+      header: (
+        <div className="flex flex-col items-center gap-1">
+          <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200 shrink-0">
+            <span className="text-xs font-medium text-purple-700 whitespace-nowrap">예상 계좌</span>
+          </div>
+          <span className="text-[10px] text-gray-500 text-center whitespace-nowrap">(입금대기 + 입금완료 - 환불대기 - 환불완료)</span>
+        </div>
+      ),
+    },
+  ];
 
-  // 단일 부서인 경우 테이블 직접 표시
-  if (departmentStats.length === 1) {
-    const dept = departmentStats[0];
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>계좌 현황 - {dept.name}</CardTitle>
-          <CardDescription>입출금 요약 표</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-2/3">항목</TableHead>
-                <TableHead className="text-right">금액</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="flex items-center">
-                  <StatusBadge
-                    status={UserRetreatRegistrationPaymentStatus.PENDING}
-                  />
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  {dept.expectedIncome.toLocaleString()}원
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="flex items-center">
-                  <StatusBadge
-                    status={UserRetreatRegistrationPaymentStatus.PAID}
-                  />
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  {dept.actualIncome.toLocaleString()}원
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="flex items-center">
-                  <StatusBadge
-                    status={UserRetreatRegistrationPaymentStatus.REFUND_REQUEST}
-                  />
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  {dept.expectedRefund.toLocaleString()}원
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="flex items-center">
-                  <StatusBadge
-                    status={UserRetreatRegistrationPaymentStatus.REFUNDED}
-                  />
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  {dept.actualRefund.toLocaleString()}원
-                </TableCell>
-              </TableRow>
-              <TableRow className="bg-gray-50">
-                <TableCell className="font-bold">
-                  현재 계좌 현황 (입금 완료 - 환불 완료)
-                </TableCell>
-                <TableCell className="text-right font-bold">
-                  {dept.currentBalance.toLocaleString()}원
-                </TableCell>
-              </TableRow>
-              <TableRow className="bg-gray-50">
-                <TableCell className="font-bold">
-                  예상 계좌 현황 (입금 대기 + 입금 완료 - 환불 대기 - 환불 완료)
-                </TableCell>
-                <TableCell className="text-right font-bold">
-                  {dept.expectedFutureBalance.toLocaleString()}원
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    );
-  }
+  // SummaryTable rows 생성
+  const rows = departmentStats.map((dept) => ({
+    id: dept.id.toString(),
+    label: dept.name,
+    cells: {
+      expectedIncome: (
+        <div className="text-center">
+          {dept.id === "all" ? (
+            <span className="font-semibold">{dept.expectedIncome.toLocaleString()}원</span>
+          ) : (
+            <span>{dept.expectedIncome.toLocaleString()}원</span>
+          )}
+        </div>
+      ),
+      actualIncome: (
+        <div className="text-center">
+          {dept.id === "all" ? (
+            <span className="font-semibold">{dept.actualIncome.toLocaleString()}원</span>
+          ) : (
+            <span>{dept.actualIncome.toLocaleString()}원</span>
+          )}
+        </div>
+      ),
+      expectedRefund: (
+        <div className="text-center">
+          {dept.id === "all" ? (
+            <span className="font-semibold">{dept.expectedRefund.toLocaleString()}원</span>
+          ) : (
+            <span>{dept.expectedRefund.toLocaleString()}원</span>
+          )}
+        </div>
+      ),
+      actualRefund: (
+        <div className="text-center">
+          {dept.id === "all" ? (
+            <span className="font-semibold">{dept.actualRefund.toLocaleString()}원</span>
+          ) : (
+            <span>{dept.actualRefund.toLocaleString()}원</span>
+          )}
+        </div>
+      ),
+      currentBalance: (
+        <div className="text-center">
+          {dept.id === "all" ? (
+            <span className="font-bold text-blue-700">{dept.currentBalance.toLocaleString()}원</span>
+          ) : (
+            <span className="font-semibold text-blue-600">{dept.currentBalance.toLocaleString()}원</span>
+          )}
+        </div>
+      ),
+      expectedFutureBalance: (
+        <div className="text-center">
+          {dept.id === "all" ? (
+            <span className="font-bold text-purple-700">{dept.expectedFutureBalance.toLocaleString()}원</span>
+          ) : (
+            <span className="font-semibold text-purple-600">{dept.expectedFutureBalance.toLocaleString()}원</span>
+          )}
+        </div>
+      ),
+    },
+  }));
 
-  // 부서가 여러 개인 경우 탭으로 표시
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>계좌 현황</CardTitle>
-        <CardDescription>입출금 요약 표</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue={departmentStats[0].id.toString()}>
-          <TabsList
-            className="grid w-full mb-6"
-            style={{
-              gridTemplateColumns: `repeat(${departmentStats.length}, 1fr)`,
-            }}
-          >
-            {departmentStats.map((dept) => (
-              <TabsTrigger key={dept.id} value={dept.id.toString()}>
-                {dept.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {departmentStats.map((dept) => (
-            <TabsContent key={dept.id} value={dept.id.toString()}>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-2/3">항목</TableHead>
-                    <TableHead className="text-right">금액</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="flex items-center">
-                      <StatusBadge
-                        status={UserRetreatRegistrationPaymentStatus.PENDING}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {dept.expectedIncome.toLocaleString()}원
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="flex items-center">
-                      <StatusBadge
-                        status={UserRetreatRegistrationPaymentStatus.PAID}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {dept.actualIncome.toLocaleString()}원
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="flex items-center">
-                      <StatusBadge
-                        status={
-                          UserRetreatRegistrationPaymentStatus.REFUND_REQUEST
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {dept.expectedRefund.toLocaleString()}원
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="flex items-center">
-                      <StatusBadge
-                        status={UserRetreatRegistrationPaymentStatus.REFUNDED}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {dept.actualRefund.toLocaleString()}원
-                    </TableCell>
-                  </TableRow>
-                  <TableRow className="bg-gray-50">
-                    <TableCell className="font-bold">
-                      현재 계좌 금액 (입금 완료 - 환불 완료)
-                    </TableCell>
-                    <TableCell className="text-right font-bold">
-                      {dept.currentBalance.toLocaleString()}원
-                    </TableCell>
-                  </TableRow>
-                  <TableRow className="bg-gray-50">
-                    <TableCell className="font-bold">
-                      목표 계좌 금액 (입금 대기 + 입금 완료 - 환불 대기 - 환불
-                      완료)
-                    </TableCell>
-                    <TableCell className="text-right font-bold">
-                      {dept.expectedFutureBalance.toLocaleString()}원
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TabsContent>
-          ))}
-        </Tabs>
-      </CardContent>
-    </Card>
+    <SummaryTable
+      title="계좌 현황"
+      description="부서별 입출금 요약 표"
+      columns={columns}
+      rows={rows}
+    />
   );
 }
