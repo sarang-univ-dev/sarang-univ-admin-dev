@@ -120,10 +120,14 @@ export function VirtualizedTable<TData>({
               {/* 보이는 행만 렌더링 */}
               {virtualRows.map((virtualRow) => {
                 const row = rows[virtualRow.index];
+                // ✅ visible cell IDs를 미리 계산하여 prop으로 전달
+                // memo 비교 함수에서 안정적으로 비교 가능
+                const visibleCellIds = row.getVisibleCells().map(c => c.id).join(',');
                 return (
                   <MemoizedTableRow
                     key={row.id}
                     row={row}
+                    visibleCellIds={visibleCellIds}
                     onRowClick={onRowClick}
                     getRowClassName={getRowClassName}
                   />
@@ -159,10 +163,12 @@ export function VirtualizedTable<TData>({
 const MemoizedTableRow = memo(
   function TableRowComponent<TData>({
     row,
+    visibleCellIds,
     onRowClick,
     getRowClassName,
   }: {
     row: any;
+    visibleCellIds: string;
     onRowClick?: (row: TData) => void;
     getRowClassName?: (row: TData) => string;
   }) {
@@ -184,18 +190,16 @@ const MemoizedTableRow = memo(
     );
   },
   // ✅ Best Practice: Shallow comparison으로 성능 최적화
-  // Deep comparison (isEqual)은 제거하여 성능 향상
+  // visibleCellIds를 prop으로 받아서 안정적으로 비교
   (prevProps, nextProps) => {
     // 1. Row ID 변경 체크 (Virtual Scrolling으로 다른 row가 같은 위치에 올 수 있음)
     if (prevProps.row.id !== nextProps.row.id) {
       return false; // Row가 바뀌었으면 무조건 리렌더링
     }
 
-    // 2. Column visibility 변경 체크 (visible cells ID 비교)
-    const prevVisibleCellIds = prevProps.row.getVisibleCells().map((c: any) => c.id).join(',');
-    const nextVisibleCellIds = nextProps.row.getVisibleCells().map((c: any) => c.id).join(',');
-
-    if (prevVisibleCellIds !== nextVisibleCellIds) {
+    // 2. Column visibility 변경 체크 (prop으로 전달받은 visibleCellIds 비교)
+    // ✅ Fix: row.getVisibleCells() 대신 prop으로 비교하여 정확한 visibility 감지
+    if (prevProps.visibleCellIds !== nextProps.visibleCellIds) {
       return false; // Column visibility가 변경되었으면 리렌더링
     }
 
