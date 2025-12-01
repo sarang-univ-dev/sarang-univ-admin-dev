@@ -3,9 +3,10 @@ import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { StatusBadge, TypeBadge } from "@/components/Badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
-import { formatDate } from "@/utils/formatDate";
-import { createRetreatScheduleColumns } from "@/hooks/retreat/use-retreat-schedule-columns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Info } from "lucide-react";
+import { ColumnHeader } from "@/components/common/table/ColumnHeader";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 // 테이블 데이터 타입 정의
 export interface ScheduleChangeRequestTableData {
@@ -34,9 +35,9 @@ const columnHelper = createColumnHelper<ScheduleChangeRequestTableData>();
  * - 정적 컬럼 + 동적 스케줄 컬럼 생성
  * - useMemo로 메모이제이션하여 불필요한 재생성 방지
  * - 타입 안전성 보장
+ * - 금액, 신청 시각, 메모 관련 정보는 DetailSidebar로 이동
  *
  * @param schedules - 수양회 스케줄 목록 (동적 컬럼 생성에 사용)
- * @param retreatSlug - 수양회 슬러그 (액션에 필요)
  * @param onRowClick - 행 클릭 시 실행할 콜백 함수 (상세 정보 사이드바 열기)
  * @param onProcessSchedule - 일정 처리 버튼 클릭 시 실행할 콜백 함수
  * @param onResolveSchedule - 처리 완료 버튼 클릭 시 실행할 콜백 함수
@@ -44,181 +45,190 @@ const columnHelper = createColumnHelper<ScheduleChangeRequestTableData>();
  */
 export function useScheduleChangeRequestColumns(
   schedules: TRetreatRegistrationSchedule[],
-  retreatSlug: string,
+  onRowClick?: (row: ScheduleChangeRequestTableData) => void,
   onProcessSchedule?: (row: ScheduleChangeRequestTableData) => void,
   onResolveSchedule?: (row: ScheduleChangeRequestTableData) => void
 ) {
-  const columns = useMemo(() => {
+  // 스케줄 컬럼 메타데이터 생성
+  const scheduleColumnsMeta = useMemo(
+    () => generateScheduleColumns(schedules),
+    [schedules]
+  );
+
+  const columns = useMemo<ColumnDef<ScheduleChangeRequestTableData>[]>(() => {
     // 1. 왼쪽 정적 컬럼
-    const leftColumns = [
+    const leftColumns: ColumnDef<ScheduleChangeRequestTableData>[] = [
       columnHelper.accessor("department", {
         id: "department",
-        header: ({ column }) => (
-          <div className="flex items-center justify-center">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              size="sm"
-              className="h-auto p-1"
-            >
-              부서
-              <ArrowUpDown className="ml-1 h-3 w-3" />
-            </Button>
-          </div>
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="부서"
+            enableSorting
+            enableFiltering
+          />
         ),
         cell: (info) => (
-          <div className="text-center text-sm">{info.getValue()}</div>
+          <div className="text-center px-2 py-1 whitespace-nowrap">
+            {info.getValue()}
+          </div>
         ),
         enableHiding: false,
-        size: 80,
+        filterFn: "arrIncludesSome",
       }),
 
       columnHelper.accessor("grade", {
         id: "grade",
-        header: () => <div className="text-center text-sm">학년</div>,
-        cell: (info) => (
-          <div className="text-center text-sm">{info.getValue()}</div>
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="학년"
+            enableSorting
+            enableFiltering
+          />
         ),
-        size: 70,
+        cell: (info) => (
+          <div className="text-center px-2 py-1 whitespace-nowrap">
+            {info.getValue()}
+          </div>
+        ),
+        filterFn: "arrIncludesSome",
+        sortingFn: (rowA, rowB, columnId) => {
+          const gradeA = rowA.getValue(columnId) as string;
+          const gradeB = rowB.getValue(columnId) as string;
+          const numA = parseInt(gradeA?.replace(/[^0-9]/g, "") || "0", 10);
+          const numB = parseInt(gradeB?.replace(/[^0-9]/g, "") || "0", 10);
+          return numA - numB;
+        },
       }),
 
       columnHelper.accessor("name", {
         id: "name",
-        header: ({ column }) => (
-          <div className="flex items-center justify-center">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              size="sm"
-              className="h-auto p-1"
-            >
-              이름
-              <ArrowUpDown className="ml-1 h-3 w-3" />
-            </Button>
-          </div>
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="이름"
+            enableSorting
+            enableFiltering
+          />
         ),
         cell: (info) => (
-          <div className="text-center font-medium text-sm">{info.getValue()}</div>
+          <div className="font-medium text-center px-2 py-1 whitespace-nowrap">
+            {info.getValue()}
+          </div>
         ),
         enableHiding: false,
-        size: 100,
+        filterFn: "arrIncludesSome",
       }),
     ];
 
     // 2. 동적 스케줄 컬럼
-    const scheduleColumns = createRetreatScheduleColumns(schedules, columnHelper);
+    const scheduleColumns: ColumnDef<ScheduleChangeRequestTableData>[] =
+      scheduleColumnsMeta.map((col) =>
+        columnHelper.accessor((row) => row.schedules[col.key], {
+          id: col.key,
+          header: col.label,
+          cell: (info) => {
+            const isChecked = !!info.getValue();
+            return (
+              <div className="flex justify-center px-2 py-1">
+                <Checkbox
+                  checked={isChecked}
+                  disabled
+                  className={isChecked ? col.bgColorClass : ""}
+                />
+              </div>
+            );
+          },
+        })
+      );
 
     // 3. 오른쪽 정적 컬럼
-    const rightColumns = [
+    const rightColumns: ColumnDef<ScheduleChangeRequestTableData>[] = [
       columnHelper.accessor("type", {
         id: "type",
-        header: () => <div className="text-center text-sm">타입</div>,
-        cell: (info) => (
-          <div className="flex justify-center">
-            <TypeBadge type={info.getValue() as any} />
-          </div>
-        ),
-        size: 90,
-      }),
-
-      columnHelper.accessor("amount", {
-        id: "amount",
-        header: ({ column }) => (
-          <div className="flex items-center justify-center">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              size="sm"
-              className="h-auto p-1"
-            >
-              금액
-              <ArrowUpDown className="ml-1 h-3 w-3" />
-            </Button>
-          </div>
-        ),
-        cell: (info) => (
-          <div className="text-center font-medium text-sm">
-            {info.getValue().toLocaleString()}원
-          </div>
-        ),
-        size: 100,
-      }),
-
-      columnHelper.accessor("createdAt", {
-        id: "createdAt",
-        header: () => <div className="text-center text-sm">신청 시각</div>,
-        cell: (info) => (
-          <div className="text-center text-sm text-gray-600">
-            {info.getValue() ? formatDate(info.getValue()) : "-"}
-          </div>
-        ),
-        size: 150,
+        header: "타입",
+        cell: (info) => {
+          const type = info.getValue();
+          return (
+            <div className="flex justify-center px-2 py-1">
+              {type ? <TypeBadge type={type as any} /> : <span>-</span>}
+            </div>
+          );
+        },
       }),
 
       columnHelper.accessor("status", {
         id: "status",
-        header: () => <div className="text-center text-sm">입금 현황</div>,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="입금 현황"
+            enableSorting
+            enableFiltering
+          />
+        ),
         cell: (info) => (
-          <div className="flex justify-center">
+          <div className="flex justify-center px-2 py-1">
             <StatusBadge status={info.getValue() as any} />
           </div>
         ),
-        size: 110,
-      }),
-
-      columnHelper.accessor("issuerName", {
-        id: "issuerName",
-        header: () => <div className="text-center text-sm">메모 작성자명</div>,
-        cell: (info) => (
-          <div className="text-center text-sm">{info.getValue() || "-"}</div>
-        ),
-        size: 120,
-      }),
-
-      columnHelper.accessor("memoCreatedAt", {
-        id: "memoCreatedAt",
-        header: () => <div className="text-center text-sm">메모 작성 시각</div>,
-        cell: (info) => (
-          <div className="text-center text-sm text-gray-600">
-            {formatDate(info.getValue())}
-          </div>
-        ),
-        size: 150,
+        filterFn: "arrIncludesSome",
       }),
 
       columnHelper.accessor("memo", {
         id: "memo",
-        header: () => <div className="text-center text-sm">메모 내용</div>,
+        header: "메모 내용",
         cell: (info) => (
-          <div
-            className="text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5 text-sm"
-            title={info.getValue() || ""}
-          >
+          <div className="text-center min-w-[150px] max-w-[250px] whitespace-pre-wrap break-words px-3 py-2.5 text-sm">
             {info.getValue() || "-"}
           </div>
         ),
-        size: 250,
       }),
 
+      // 상세 정보 버튼
+      columnHelper.display({
+        id: "detailInfo",
+        header: () => <div className="text-center whitespace-nowrap">상세</div>,
+        cell: (props) => (
+          <div className="flex justify-center px-2 py-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRowClick?.(props.row.original);
+              }}
+              className="h-8 px-3 whitespace-nowrap"
+            >
+              <Info className="h-4 w-4 mr-1" />
+              보기
+            </Button>
+          </div>
+        ),
+      }),
+
+      // 액션 버튼
       columnHelper.display({
         id: "actions",
-        header: () => <div className="text-center text-sm">액션</div>,
+        header: () => <div className="text-center whitespace-nowrap">액션</div>,
         cell: (props) => {
           const row = props.row.original;
           return (
-            <div className="flex flex-col space-y-2 px-2">
+            <div className="flex flex-col items-center gap-1 px-2 py-1">
               {onProcessSchedule && (
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onProcessSchedule(row)}
-                  className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onProcessSchedule(row);
+                  }}
+                  className="h-8 px-3 whitespace-nowrap hover:bg-black hover:text-white transition-colors text-xs"
                 >
                   일정 처리
                 </Button>
@@ -227,8 +237,11 @@ export function useScheduleChangeRequestColumns(
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onResolveSchedule(row)}
-                  className="flex items-center gap-1.5 hover:bg-green-600 hover:text-white transition-colors text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onResolveSchedule(row);
+                  }}
+                  className="h-8 px-3 whitespace-nowrap hover:bg-green-600 hover:text-white transition-colors text-xs"
                 >
                   처리 완료
                 </Button>
@@ -236,13 +249,12 @@ export function useScheduleChangeRequestColumns(
             </div>
           );
         },
-        size: 100,
         enableHiding: false,
       }),
     ];
 
     return [...leftColumns, ...scheduleColumns, ...rightColumns];
-  }, [schedules, retreatSlug, onProcessSchedule, onResolveSchedule]);
+  }, [scheduleColumnsMeta, onRowClick, onProcessSchedule, onResolveSchedule]);
 
   return columns;
 }

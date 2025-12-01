@@ -40,14 +40,7 @@ export default async function ScheduleChangeRequestsPage({
   ]);
 
   return (
-    <div className="space-y-8 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">일정 변경 요청</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          재정 간사 일정 변경 요청 조회 및 처리
-        </p>
-      </div>
-
+    <div className="space-y-4 p-6">
       <Suspense fallback={<TableSkeleton />}>
         <ScheduleChangeRequestTable
           initialData={scheduleChangeRequests}

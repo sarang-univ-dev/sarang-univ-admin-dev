@@ -1,26 +1,26 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   ColumnFiltersState,
   SortingState,
-  flexRender,
+  VisibilityState,
 } from "@tanstack/react-table";
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { VirtualizedTable } from "@/components/common/table";
+import { DetailSidebar } from "@/components/common/detail-sidebar";
 import { useScheduleChangeRequest } from "@/hooks/schedule-change-request/use-schedule-change-request";
-import { useScheduleChangeRequestColumns, ScheduleChangeRequestTableData } from "@/hooks/schedule-change-request/use-schedule-change-request-columns";
+import {
+  useScheduleChangeRequestColumns,
+  ScheduleChangeRequestTableData,
+} from "@/hooks/schedule-change-request/use-schedule-change-request-columns";
 import { ScheduleChangeRequestTableToolbar } from "./ScheduleChangeRequestTableToolbar";
+import { ScheduleChangeRequestDetailContent } from "./ScheduleChangeRequestDetailContent";
 import { ScheduleChangeModal } from "@/components/common/retreat";
 import { transformScheduleChangeRequestForTable } from "./utils";
 import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
@@ -38,10 +38,13 @@ interface ScheduleChangeRequestTableProps {
  *
  * Features:
  * - 동적 스케줄 컬럼
- * - 정렬
+ * - 정렬, 필터링
  * - 통합 검색
  * - 일정 변경 처리 모달
  * - 처리 완료 기능
+ * - Card wrap 제거
+ * - 금액, 신청 시각, 메모 작성자명, 메모 작성 시각은 Detail Sidebar에 표시
+ * - VirtualizedTable 사용
  */
 export function ScheduleChangeRequestTable({
   initialData,
@@ -50,26 +53,38 @@ export function ScheduleChangeRequestTable({
   retreatSlug,
 }: ScheduleChangeRequestTableProps) {
   // SWR로 실시간 데이터 동기화 (initialData를 fallback으로)
-  const { scheduleChangeRequests, approveScheduleChange, resolveScheduleChange } =
-    useScheduleChangeRequest(retreatSlug, {
-      fallbackData: initialData,
-    });
+  const {
+    scheduleChangeRequests,
+    approveScheduleChange,
+    resolveScheduleChange,
+  } = useScheduleChangeRequest(retreatSlug, {
+    fallbackData: initialData,
+  });
 
   // 모달 상태 관리
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<ScheduleChangeRequestTableData | null>(null);
+  const [selectedRow, setSelectedRow] =
+    useState<ScheduleChangeRequestTableData | null>(null);
   const [retreatInfo, setRetreatInfo] = useState<any>(null);
+
+  // Detail Sidebar State
+  const [sidebarData, setSidebarData] =
+    useState<ScheduleChangeRequestTableData | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // TanStack Table State
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
 
   // Retreat info 가져오기 (금액 계산에 필요)
   useEffect(() => {
     const getRetreatInfo = async () => {
       try {
-        const response = await webAxios.get(`/api/v1/retreat/${retreatSlug}/info`);
+        const response = await webAxios.get(
+          `/api/v1/retreat/${retreatSlug}/info`
+        );
         setRetreatInfo(response.data.retreatInfo);
       } catch (error) {
         console.error("Retreat 조회 중 오류 발생:", error);
@@ -78,19 +93,31 @@ export function ScheduleChangeRequestTable({
     getRetreatInfo();
   }, [retreatSlug]);
 
+  // 행 클릭 핸들러 (DetailSidebar 열기)
+  const handleRowClick = useCallback((row: ScheduleChangeRequestTableData) => {
+    setSidebarData(row);
+    setIsSidebarOpen(true);
+  }, []);
+
   // 일정 처리 버튼 클릭 핸들러
-  const handleProcessSchedule = (row: ScheduleChangeRequestTableData) => {
-    setSelectedRow(row);
-    setIsModalOpen(true);
-  };
+  const handleProcessSchedule = useCallback(
+    (row: ScheduleChangeRequestTableData) => {
+      setSelectedRow(row);
+      setIsModalOpen(true);
+    },
+    []
+  );
 
   // 처리 완료 버튼 클릭 핸들러
-  const handleResolveSchedule = (row: ScheduleChangeRequestTableData) => {
-    if (!row.memoId) {
-      return;
-    }
-    resolveScheduleChange(row.memoId);
-  };
+  const handleResolveSchedule = useCallback(
+    (row: ScheduleChangeRequestTableData) => {
+      if (!row.memoId) {
+        return;
+      }
+      resolveScheduleChange(row.memoId);
+    },
+    [resolveScheduleChange]
+  );
 
   // 모달 확인 핸들러
   const handleModalConfirm = async (data: {
@@ -104,14 +131,15 @@ export function ScheduleChangeRequestTable({
   // 컬럼 훅으로 컬럼 정의 가져오기
   const columns = useScheduleChangeRequestColumns(
     schedules,
-    retreatSlug,
+    handleRowClick,
     handleProcessSchedule,
     handleResolveSchedule
   );
 
   // useMemo로 data 메모이제이션
   const data = useMemo(
-    () => transformScheduleChangeRequestForTable(scheduleChangeRequests, schedules),
+    () =>
+      transformScheduleChangeRequestForTable(scheduleChangeRequests, schedules),
     [scheduleChangeRequests, schedules]
   );
 
@@ -122,14 +150,25 @@ export function ScheduleChangeRequestTable({
     state: {
       sorting,
       columnFilters,
+      columnVisibility,
       globalFilter,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    // Multi-sort 및 필터 활성화
+    enableMultiSort: true,
+    enableSortingRemoval: true,
+    enableColumnFilters: true,
+    enableFilters: true,
+    // 모든 클릭을 multi-sort event로 처리 (Shift 키 불필요)
+    isMultiSortEvent: () => true,
     // 전역 필터 함수 (통합 검색)
     globalFilterFn: (row, columnId, filterValue) => {
       const searchableFields = [
@@ -149,80 +188,51 @@ export function ScheduleChangeRequestTable({
 
   return (
     <>
-      <Card className="shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between bg-gray-50 border-b">
-          <div className="whitespace-nowrap">
-            <CardTitle>일정 변경 요청 조회</CardTitle>
-            <CardDescription>일정 변경 요청 목록</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="space-y-4">
-            {/* 툴바 */}
-            <ScheduleChangeRequestTableToolbar
-              globalFilter={globalFilter}
-              setGlobalFilter={setGlobalFilter}
-            />
+      <div className="space-y-4">
+        {/* 헤더 */}
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            일정 변경 요청 조회
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            전체 요청 목록 ({table.getFilteredRowModel().rows.length}건)
+          </p>
+        </div>
 
-            {/* 테이블 */}
-            <div className="rounded-md border">
-              <div className="max-h-[calc(100vh-300px)] overflow-auto">
-                <table className="relative w-full caption-bottom text-sm whitespace-nowrap">
-                  <TableHeader className="bg-gray-50 sticky top-0 z-10">
-                      {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => (
-                            <TableHead
-                              key={header.id}
-                              className="px-2 py-2 text-center bg-gray-50"
-                            >
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableHeader>
-                    <TableBody className="divide-y divide-gray-200">
-                      {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            className="group hover:bg-gray-50 transition-colors duration-150"
-                          >
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id} className="px-2 py-2">
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell
-                            colSpan={columns.length}
-                            className="h-24 text-center"
-                          >
-                            {globalFilter
-                              ? "검색 결과가 없습니다."
-                              : "표시할 데이터가 없습니다."}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </table>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* 툴바 */}
+        <ScheduleChangeRequestTableToolbar
+          globalFilter={globalFilter}
+          setGlobalFilter={setGlobalFilter}
+        />
+
+        {/* 가상화 테이블 */}
+        <VirtualizedTable
+          table={table}
+          estimateSize={50}
+          overscan={10}
+          className="max-h-[70vh]"
+          emptyMessage={
+            globalFilter
+              ? "검색 결과가 없습니다."
+              : "표시할 데이터가 없습니다."
+          }
+        />
+      </div>
+
+      {/* Detail Sidebar */}
+      <DetailSidebar
+        open={isSidebarOpen}
+        onOpenChange={setIsSidebarOpen}
+        data={sidebarData}
+        title="상세 정보"
+      >
+        {(data) => (
+          <ScheduleChangeRequestDetailContent
+            data={data}
+            schedules={schedules}
+          />
+        )}
+      </DetailSidebar>
 
       {/* 일정 변경 모달 */}
       {selectedRow && (
