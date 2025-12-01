@@ -1,18 +1,18 @@
 import { useMemo } from "react";
-import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
+import { ColumnDef, createColumnHelper, FilterFn } from "@tanstack/react-table";
 import { IRetreatRegistration } from "@/types/account";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { formatDate } from "@/utils/formatDate";
 import { createRetreatScheduleColumns } from "@/hooks/retreat/use-retreat-schedule-columns";
 import { useAccountStaffRegistration } from "./use-account-staff-registration";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { AccountStaffRegistrationTableActions } from "@/components/features/account/AccountStaffRegistrationTableActions";
-import { TableCell } from "@/components/ui/table";
+import { UnifiedColumnHeader } from "@/components/common/table/UnifiedColumnHeader";
 
-// 테이블 데이터 타입 정의
+// 테이블 데이터 타입 정의 (filterFn보다 먼저 정의)
 export interface AccountStaffTableData {
   id: number;
   department: string;
@@ -30,6 +30,30 @@ export interface AccountStaffTableData {
   accountMemo: string | null;
   accountMemoId: number | null;
 }
+
+/**
+ * 배열 기반 필터 함수 (다중 선택 필터용)
+ * UnifiedColumnHeader에서 선택된 값들의 배열로 필터링
+ *
+ * TanStack Table Best Practice:
+ * - filterFns 옵션에 등록하여 문자열로 참조 가능
+ * - getFacetedUniqueValues()와 호환
+ */
+export const arrayIncludesFilterFn: FilterFn<AccountStaffTableData> = (
+  row,
+  columnId,
+  filterValue: (string | number)[]
+) => {
+  if (!filterValue || filterValue.length === 0) return true;
+  const value = row.getValue(columnId);
+  // "__EMPTY__"는 빈 값을 나타냄
+  if (filterValue.includes("__EMPTY__")) {
+    if (value === null || value === undefined || value === "") {
+      return true;
+    }
+  }
+  return filterValue.includes(value as string | number);
+};
 
 const columnHelper = createColumnHelper<AccountStaffTableData>();
 
@@ -60,73 +84,83 @@ export function useAccountStaffColumns(
     const leftColumns = [
       columnHelper.accessor("department", {
         id: "department",
-        header: ({ column }) => (
-          <div className="flex items-center justify-center">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              size="sm"
-              className="h-auto p-1"
-            >
-              부서
-              <ArrowUpDown className="ml-1 h-3 w-3" />
-            </Button>
-          </div>
+        header: ({ column, table }) => (
+          <UnifiedColumnHeader
+            column={column}
+            table={table}
+            title="부서"
+            enableSorting
+            enableFiltering
+          />
         ),
         cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()}
-          </TableCell>
+          </div>
         ),
+        filterFn: arrayIncludesFilterFn,
+        enableColumnFilter: true,
         enableHiding: false,
         size: 80,
       }),
 
       columnHelper.accessor("gender", {
         id: "gender",
-        header: () => <div className="text-center text-sm">성별</div>,
-        cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
-            <GenderBadge gender={info.getValue() as any} />
-          </TableCell>
+        header: ({ column, table }) => (
+          <UnifiedColumnHeader
+            column={column}
+            table={table}
+            title="성별"
+            enableFiltering
+            formatFilterValue={(value) =>
+              value === "MALE" ? "남자" : value === "FEMALE" ? "여자" : value
+            }
+          />
         ),
+        cell: (info) => (
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+            <GenderBadge gender={info.getValue() as any} />
+          </div>
+        ),
+        filterFn: arrayIncludesFilterFn,
+        enableColumnFilter: true,
         size: 70,
       }),
 
       columnHelper.accessor("grade", {
         id: "grade",
-        header: () => <div className="text-center text-sm">학년</div>,
-        cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
-            {info.getValue()}
-          </TableCell>
+        header: ({ column, table }) => (
+          <UnifiedColumnHeader
+            column={column}
+            table={table}
+            title="학년"
+            enableFiltering
+          />
         ),
+        cell: (info) => (
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+            {info.getValue()}
+          </div>
+        ),
+        filterFn: arrayIncludesFilterFn,
+        enableColumnFilter: true,
         size: 70,
       }),
 
       columnHelper.accessor("name", {
         id: "name",
-        header: ({ column }) => (
-          <div className="flex items-center justify-center">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              size="sm"
-              className="h-auto p-1"
-            >
-              이름
-              <ArrowUpDown className="ml-1 h-3 w-3" />
-            </Button>
-          </div>
+        header: ({ column, table }) => (
+          <UnifiedColumnHeader
+            column={column}
+            table={table}
+            title="이름"
+            enableSorting
+          />
         ),
         cell: (info) => (
-          <TableCell className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()}
-          </TableCell>
+          </div>
         ),
         enableHiding: false,
         size: 100,
@@ -136,9 +170,9 @@ export function useAccountStaffColumns(
         id: "phoneNumber",
         header: () => <div className="text-center text-sm">전화번호</div>,
         cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue() || "-"}
-          </TableCell>
+          </div>
         ),
         size: 120,
       }),
@@ -154,16 +188,33 @@ export function useAccountStaffColumns(
     const rightColumns = [
       columnHelper.accessor("type", {
         id: "type",
-        header: () => <div className="text-center text-sm">타입</div>,
+        header: ({ column, table }) => (
+          <UnifiedColumnHeader
+            column={column}
+            table={table}
+            title="타입"
+            enableFiltering
+            formatFilterValue={(value) => {
+              const typeNames: Record<string, string> = {
+                FULL: "전참",
+                FIRST_NIGHT: "1박",
+                SECOND_NIGHT: "2박",
+                DAY: "당일",
+              };
+              return typeNames[value] || value;
+            }}
+          />
+        ),
         cell: (info) => {
           const type = info.getValue();
           return (
-            <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+            <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
               {type ? <TypeBadge type={type as any} /> : "-"}
-            </TableCell>
+            </div>
           );
         },
-        filterFn: "equals",
+        filterFn: arrayIncludesFilterFn,
+        enableColumnFilter: true,
         size: 100,
       }),
 
@@ -171,9 +222,9 @@ export function useAccountStaffColumns(
         id: "amount",
         header: () => <div className="text-center text-sm">금액</div>,
         cell: (info) => (
-          <TableCell className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()?.toLocaleString()}원
-          </TableCell>
+          </div>
         ),
         size: 100,
       }),
@@ -182,22 +233,40 @@ export function useAccountStaffColumns(
         id: "createdAt",
         header: () => <div className="text-center text-sm">신청 시각</div>,
         cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0 text-gray-600">
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0 text-gray-600">
             {formatDate(info.getValue())}
-          </TableCell>
+          </div>
         ),
         size: 140,
       }),
 
       columnHelper.accessor("status", {
         id: "status",
-        header: () => <div className="text-center text-sm">입금 현황</div>,
-        cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
-            <StatusBadge status={info.getValue() as any} />
-          </TableCell>
+        header: ({ column, table }) => (
+          <UnifiedColumnHeader
+            column={column}
+            table={table}
+            title="입금 현황"
+            enableFiltering
+            formatFilterValue={(value) => {
+              const statusNames: Record<string, string> = {
+                PENDING: "입금 대기",
+                PAYMENT_REQUESTED: "입금 요청",
+                CONFIRMED: "입금 확인",
+                REFUNDED: "환불 완료",
+                CANCELLED: "취소",
+              };
+              return statusNames[value] || value;
+            }}
+          />
         ),
-        filterFn: "equals",
+        cell: (info) => (
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+            <StatusBadge status={info.getValue() as any} />
+          </div>
+        ),
+        filterFn: arrayIncludesFilterFn,
+        enableColumnFilter: true,
         size: 120,
       }),
 
@@ -205,7 +274,7 @@ export function useAccountStaffColumns(
         id: "detailInfo",
         header: () => <div className="text-center text-sm">상세</div>,
         cell: (props) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             <Button
               size="sm"
               variant="outline"
@@ -215,7 +284,7 @@ export function useAccountStaffColumns(
               <Info className="h-3 w-3 mr-1" />
               보기
             </Button>
-          </TableCell>
+          </div>
         ),
         size: 80,
       }),
@@ -236,9 +305,9 @@ export function useAccountStaffColumns(
         id: "confirmedBy",
         header: () => <div className="text-center text-sm">처리자명</div>,
         cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue() || "-"}
-          </TableCell>
+          </div>
         ),
         size: 100,
       }),
@@ -247,9 +316,9 @@ export function useAccountStaffColumns(
         id: "paymentConfirmedAt",
         header: () => <div className="text-center text-sm">처리 시각</div>,
         cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0 text-gray-600">
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0 text-gray-600">
             {formatDate(info.getValue())}
-          </TableCell>
+          </div>
         ),
         size: 140,
       }),

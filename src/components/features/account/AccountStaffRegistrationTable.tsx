@@ -6,18 +6,13 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
-  flexRender,
 } from "@tanstack/react-table";
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { VirtualizedTable } from "@/components/common/table";
 import { useAccountStaffColumns } from "@/hooks/account/use-account-staff-columns";
 import { AccountStaffRegistrationTableToolbar } from "./AccountStaffRegistrationTableToolbar";
 import { transformRegistrationsForTable } from "./utils";
@@ -95,8 +90,17 @@ export function AccountStaffRegistrationTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     columnResizeMode: "onChange",
     enableColumnResizing: false,
+    // ✅ Multi-sort 및 필터 활성화
+    enableMultiSort: true,
+    enableSortingRemoval: true,
+    enableColumnFilters: true,
+    enableFilters: true,
+    // ✅ 모든 클릭을 multi-sort event로 처리 (Shift 키 불필요)
+    isMultiSortEvent: () => true,
     // 전역 필터 함수 (통합 검색)
     globalFilterFn: (row, columnId, filterValue) => {
       const searchableFields = [
@@ -114,13 +118,21 @@ export function AccountStaffRegistrationTable({
     },
   });
 
+  // ✅ 필터링된 데이터 수
+  const filteredRowCount = table.getRowModel().rows.length;
+
+  // ✅ 사이드바에 표시할 최신 데이터 (SWR 캐시와 동기화)
+  const currentSidebarData = sidebar.selectedItem
+    ? data.find((item) => item.id === sidebar.selectedItem?.id) || sidebar.selectedItem
+    : null;
+
   return (
     <>
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">재정 간사 조회</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            대학부 전체 신청자 목록 조회
+            대학부 전체 신청자 목록 ({filteredRowCount}명)
           </p>
         </div>
 
@@ -132,70 +144,26 @@ export function AccountStaffRegistrationTable({
           retreatSlug={retreatSlug}
         />
 
-        {/* 테이블 */}
-        <div className="border rounded-lg">
-          <div className="max-h-[80vh] overflow-auto">
-            <table className="relative w-full caption-bottom text-sm">
-              <TableHeader className="sticky top-0 z-10 bg-gray-100">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        className="px-2 py-2 text-center bg-gray-100"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody className="divide-y divide-gray-200">
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="group hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="px-2 py-2">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      {globalFilter
-                        ? "검색 결과가 없습니다."
-                        : "표시할 데이터가 없습니다."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </table>
-          </div>
-        </div>
+        {/* ✅ 가상화 테이블 (성능 최적화) */}
+        <VirtualizedTable
+          table={table}
+          estimateSize={50}
+          overscan={10}
+          onRowClick={sidebar.open}
+          className="max-h-[80vh]"
+          emptyMessage={
+            globalFilter
+              ? "검색 결과가 없습니다."
+              : "표시할 데이터가 없습니다."
+          }
+        />
       </div>
 
-      {/* 상세 정보 사이드바 */}
+      {/* ✅ 상세 정보 사이드바 - 최신 데이터로 실시간 동기화 */}
       <DetailSidebar
         open={sidebar.isOpen}
         onOpenChange={sidebar.setIsOpen}
-        data={sidebar.selectedItem}
+        data={currentSidebarData}
         title="신청자 상세 정보"
         description={(data) => `${data.name} (${data.department}) 신청 내역`}
       >
