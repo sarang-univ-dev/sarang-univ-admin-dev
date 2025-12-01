@@ -3,7 +3,6 @@ import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { Checkbox } from "@/components/ui/custom-checkbox";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
-import { TableCell } from "@/components/ui/table";
 
 /**
  * 일정 컬럼 정보 타입
@@ -99,14 +98,14 @@ export function createScheduleCheckboxCell(scheduleInfo: ScheduleColumnInfo) {
   return (info: { getValue: () => unknown }) => {
     const isChecked = Boolean(info.getValue());
     return (
-      <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+      <div className="flex justify-center">
         <Checkbox
           checked={isChecked}
           disabled
           checkedColor={scheduleInfo.simpleColorClass}
           uncheckedColor="bg-gray-300"
         />
-      </TableCell>
+      </div>
     );
   };
 }

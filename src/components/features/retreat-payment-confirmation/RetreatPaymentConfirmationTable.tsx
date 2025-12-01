@@ -6,6 +6,8 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   ColumnDef,
   SortingState,
   ColumnFiltersState,
@@ -16,7 +18,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Info } from "lucide-react";
 import { VirtualizedTable } from "@/components/common/table";
-import { TableCell } from "@/components/ui/table";
 import { ColumnHeader } from "@/components/common/table/ColumnHeader";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import {
@@ -149,9 +150,9 @@ export function RetreatPaymentConfirmationTable({
           />
         ),
         cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="flex justify-center px-2 py-1 whitespace-nowrap shrink-0">
             <GenderBadge gender={info.getValue()} />
-          </TableCell>
+          </div>
         ),
         filterFn: "arrIncludesSome",
       }),
@@ -167,9 +168,9 @@ export function RetreatPaymentConfirmationTable({
           />
         ),
         cell: (info) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()}
-          </TableCell>
+          </div>
         ),
         filterFn: "arrIncludesSome",
         sortingFn: (rowA, rowB, columnId) => {
@@ -195,9 +196,9 @@ export function RetreatPaymentConfirmationTable({
           />
         ),
         cell: (info) => (
-          <TableCell className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()}
-          </TableCell>
+          </div>
         ),
         enableHiding: false,
         filterFn: "arrIncludesSome",
@@ -212,13 +213,13 @@ export function RetreatPaymentConfirmationTable({
         cell: (info) => {
           const isChecked = !!info.getValue();
           return (
-            <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+            <div className="flex justify-center px-2 py-1 whitespace-nowrap shrink-0">
               <Checkbox
                 checked={isChecked}
                 disabled
                 className={isChecked ? col.bgColorClass : ""}
               />
-            </TableCell>
+            </div>
           );
         },
       })
@@ -231,9 +232,9 @@ export function RetreatPaymentConfirmationTable({
         cell: (info) => {
           const type = info.getValue();
           return (
-            <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+            <div className="flex justify-center px-2 py-1 whitespace-nowrap shrink-0">
               {type ? <TypeBadge type={type} /> : <span>-</span>}
-            </TableCell>
+            </div>
           );
         },
       }),
@@ -241,9 +242,9 @@ export function RetreatPaymentConfirmationTable({
         id: "amount",
         header: "금액",
         cell: (info) => (
-          <TableCell className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue().toLocaleString()}원
-          </TableCell>
+          </div>
         ),
       }),
       // ✅ 입금 현황 + 액션 (세로 배치)
@@ -262,7 +263,7 @@ export function RetreatPaymentConfirmationTable({
           />
         ),
         cell: (props) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             <div className="flex flex-col items-center gap-1">
               <StatusBadge status={props.getValue()} />
               <RetreatPaymentConfirmationTableActions
@@ -273,7 +274,7 @@ export function RetreatPaymentConfirmationTable({
                 isMutating={isMutating}
               />
             </div>
-          </TableCell>
+          </div>
         ),
         filterFn: "arrIncludesSome",
       }),
@@ -282,7 +283,7 @@ export function RetreatPaymentConfirmationTable({
         id: "detailInfo",
         header: () => <div className="text-center whitespace-nowrap">상세</div>,
         cell: (props) => (
-          <TableCell className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div className="flex justify-center px-2 py-1 whitespace-nowrap shrink-0">
             <Button
               size="sm"
               variant="outline"
@@ -295,7 +296,7 @@ export function RetreatPaymentConfirmationTable({
               <Info className="h-4 w-4 mr-1" />
               보기
             </Button>
-          </TableCell>
+          </div>
         ),
       }),
     ];
@@ -320,6 +321,8 @@ export function RetreatPaymentConfirmationTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     // ✅ Multi-sort 및 필터 활성화
     enableMultiSort: true,
     enableSortingRemoval: true,

@@ -6,6 +6,8 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   ColumnDef,
   ColumnFiltersState,
   SortingState,
@@ -362,6 +364,8 @@ export function UnivGroupBusRegistrationTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     // 전역 필터 함수
     globalFilterFn: (row, columnId, filterValue) => {
       const searchableFields = [

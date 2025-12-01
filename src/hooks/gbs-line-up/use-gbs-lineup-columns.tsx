@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import { TableCell } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GenderBadge } from "@/components/Badge";
 import { TRetreatRegistrationSchedule, RetreatRegistrationScheduleType } from "@/types";
@@ -398,9 +397,9 @@ export function useGbsLineupColumns(
         ),
         cell: (info) => {
           return (
-            <TableCell className="text-center px-2 py-1 whitespace-nowrap">
+            <div className="text-center px-2 py-1 whitespace-nowrap">
               {info.getValue()}
-            </TableCell>
+            </div>
           );
         },
         filterFn: "arrIncludesSome",
@@ -422,9 +421,9 @@ export function useGbsLineupColumns(
         ),
         cell: (info) => {
           return (
-            <TableCell className="text-center px-2 py-1 whitespace-nowrap">
+            <div className="flex justify-center px-2 py-1 whitespace-nowrap">
               <GenderBadge gender={info.getValue()} />
-            </TableCell>
+            </div>
           );
         },
         filterFn: "arrIncludesSome",
@@ -444,9 +443,9 @@ export function useGbsLineupColumns(
         ),
         cell: (info) => {
           return (
-            <TableCell className="text-center px-2 py-1 whitespace-nowrap">
+            <div className="text-center px-2 py-1 whitespace-nowrap">
               {info.getValue()}
-            </TableCell>
+            </div>
           );
         },
         filterFn: "arrIncludesSome",
@@ -468,9 +467,9 @@ export function useGbsLineupColumns(
           const row = info.row.original;
           const nameClassName = row.isLeader ? "font-bold text-base" : "";
           return (
-            <TableCell className={`text-center px-2 py-1 whitespace-nowrap ${nameClassName}`}>
+            <div className={`text-center px-2 py-1 whitespace-nowrap ${nameClassName}`}>
               {info.getValue()}
-            </TableCell>
+            </div>
           );
         },
       }),
@@ -481,9 +480,9 @@ export function useGbsLineupColumns(
         header: "부서 리더명",
         cell: (info) => {
           return (
-            <TableCell className="text-center px-2 py-1 whitespace-nowrap">
+            <div className="text-center px-2 py-1 whitespace-nowrap">
               {info.getValue()}
-            </TableCell>
+            </div>
           );
         },
       }),
@@ -494,9 +493,9 @@ export function useGbsLineupColumns(
         header: "전화번호",
         cell: (info) => {
           return (
-            <TableCell className="text-center px-2 py-1 whitespace-nowrap">
+            <div className="text-center px-2 py-1 whitespace-nowrap">
               {info.getValue()}
-            </TableCell>
+            </div>
           );
         },
       }),

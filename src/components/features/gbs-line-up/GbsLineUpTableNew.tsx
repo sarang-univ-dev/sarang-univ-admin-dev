@@ -12,6 +12,8 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
@@ -291,6 +293,8 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     globalFilterFn,
   });
 

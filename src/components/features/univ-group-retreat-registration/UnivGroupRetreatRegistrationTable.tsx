@@ -6,6 +6,8 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
@@ -101,6 +103,8 @@ export function UnivGroupRetreatRegistrationTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     columnResizeMode: "onChange",
     enableColumnResizing: false,
     // ✅ Multi-sort 및 필터 활성화
