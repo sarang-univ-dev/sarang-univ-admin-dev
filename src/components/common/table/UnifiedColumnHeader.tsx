@@ -38,6 +38,11 @@ interface UnifiedColumnHeaderProps<TData> {
    */
   formatFilterValue?: (value: any) => string;
   /**
+   * 필터 값을 정렬할 함수
+   * @example (a, b) => schedules.findIndex(s => s.id === a) - schedules.findIndex(s => s.id === b)
+   */
+  sortFilterValues?: (a: any, b: any) => number;
+  /**
    * 정렬/필터 없이 제목만 표시
    */
   titleOnly?: boolean;
@@ -81,6 +86,7 @@ export function UnifiedColumnHeader<TData>({
   enableSorting = false,
   enableFiltering = false,
   formatFilterValue = (value) => String(value),
+  sortFilterValues,
   titleOnly = false,
 }: UnifiedColumnHeaderProps<TData>) {
   const [open, setOpen] = useState(false);
@@ -111,32 +117,50 @@ export function UnifiedColumnHeader<TData>({
   };
 
   // === 필터 관련 로직 ===
-  const filterValue = (column.getFilterValue() as any[]) || [];
+  const filterValue = (column.getFilterValue() as string[]) || [];
 
-  // 해당 컬럼의 고유 값 목록 추출
+  // ✅ getPreFilteredRowModel() 사용 (가장 안정적인 방식)
+  // getFacetedUniqueValues()가 빈 Map을 반환하는 문제가 있어서
+  // 공식 문서의 대안인 getPreFilteredRowModel()을 사용
   const uniqueValues = useMemo(() => {
     if (!enableFiltering) return [];
 
-    const valuesSet = new Set<any>();
+    const valuesSet = new Set<string | number>();
     let hasEmptyValue = false;
 
+    // 필터링 전 모든 행에서 고유 값 추출
     table.getPreFilteredRowModel().rows.forEach((row) => {
       const value = row.getValue(column.id);
-      if (value === null || value === undefined || value === "") {
+
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          hasEmptyValue = true;
+        } else {
+          value.forEach((item) => valuesSet.add(item));
+        }
+      } else if (value === null || value === undefined || value === "") {
         hasEmptyValue = true;
       } else {
-        valuesSet.add(value);
+        valuesSet.add(value as string | number);
       }
     });
 
-    const values = Array.from(valuesSet).sort();
+    // 정렬
+    const values = Array.from(valuesSet).sort((a, b) => {
+      if (sortFilterValues) {
+        return sortFilterValues(a, b);
+      }
+      if (typeof a === "number" && typeof b === "number") {
+        return a - b;
+      }
+      return String(a).localeCompare(String(b));
+    });
 
     if (hasEmptyValue) {
-      return ["__EMPTY__", ...values];
+      return ["__EMPTY__", ...values] as (string | number)[];
     }
-
     return values;
-  }, [table, column.id, enableFiltering]);
+  }, [table, column.id, enableFiltering, sortFilterValues]);
 
   // 검색어로 필터링된 값 목록
   const filteredValues = useMemo(() => {

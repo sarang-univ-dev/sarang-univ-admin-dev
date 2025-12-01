@@ -22,6 +22,11 @@ interface ColumnHeaderProps<TData> {
    */
   formatFilterValue?: (value: any) => string;
   /**
+   * 필터 값을 정렬할 함수
+   * @example (a, b) => schedules.findIndex(s => s.id === a) - schedules.findIndex(s => s.id === b)
+   */
+  sortFilterValues?: (a: any, b: any) => number;
+  /**
    * 정렬/필터 없이 제목만 표시
    */
   titleOnly?: boolean;
@@ -82,6 +87,7 @@ export function ColumnHeader<TData>({
   enableSorting = false,
   enableFiltering = false,
   formatFilterValue,
+  sortFilterValues,
   titleOnly = false,
   unified = true,
 }: ColumnHeaderProps<TData>) {
@@ -104,6 +110,7 @@ export function ColumnHeader<TData>({
         enableSorting={enableSorting}
         enableFiltering={enableFiltering}
         formatFilterValue={formatFilterValue}
+        sortFilterValues={sortFilterValues}
         titleOnly={titleOnly}
       />
     );
@@ -167,6 +174,7 @@ export function ColumnHeader<TData>({
           table={table}
           title={title}
           formatValue={formatFilterValue}
+          sortFilterValues={sortFilterValues}
         />
       )}
     </div>

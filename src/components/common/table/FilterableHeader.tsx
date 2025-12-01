@@ -20,6 +20,11 @@ interface FilterableHeaderProps<TData> {
    * @example (value) => value === 'M' ? '남자' : '여자'
    */
   formatValue?: (value: any) => string;
+  /**
+   * 필터 값을 정렬할 함수
+   * @example (a, b) => schedules.findIndex(s => s.id === a) - schedules.findIndex(s => s.id === b)
+   */
+  sortFilterValues?: (a: any, b: any) => number;
 }
 
 /**
@@ -46,6 +51,7 @@ export function FilterableHeader<TData>({
   table,
   title,
   formatValue = (value) => String(value),
+  sortFilterValues,
 }: FilterableHeaderProps<TData>) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,14 +66,33 @@ export function FilterableHeader<TData>({
 
     table.getPreFilteredRowModel().rows.forEach((row) => {
       const value = row.getValue(column.id);
-      if (value === null || value === undefined || value === "") {
+
+      // ✅ 배열 값 처리 (예: 버스 신청 - 여러 버스를 선택한 경우)
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          hasEmptyValue = true;
+        } else {
+          // 배열의 각 요소를 개별적으로 추가
+          value.forEach(item => valuesSet.add(item));
+        }
+      } else if (value === null || value === undefined || value === "") {
         hasEmptyValue = true;
       } else {
         valuesSet.add(value);
       }
     });
 
-    const values = Array.from(valuesSet).sort();
+    // ✅ 커스텀 정렬 함수가 있으면 사용, 없으면 기본 정렬
+    const values = Array.from(valuesSet).sort((a, b) => {
+      if (sortFilterValues) {
+        return sortFilterValues(a, b);
+      }
+      // 기본 정렬
+      if (typeof a === 'number' && typeof b === 'number') {
+        return a - b;
+      }
+      return String(a).localeCompare(String(b));
+    });
 
     // 값이 없는 행이 있으면 맨 앞에 추가
     if (hasEmptyValue) {
@@ -75,7 +100,7 @@ export function FilterableHeader<TData>({
     }
 
     return values;
-  }, [table, column.id]);
+  }, [table, column.id, sortFilterValues]);
 
   // 검색어로 필터링된 값 목록
   const filteredValues = useMemo(() => {
