@@ -35,10 +35,10 @@ export function transformRegistrationsForTable(
       amount: registration.price,
       createdAt: registration.createdAt,
       status: registration.paymentStatus,
-      confirmedBy: registration.paymentConfirmUserName,
-      paymentConfirmedAt: registration.paymentConfirmedAt,
-      accountMemo: registration.accountMemo,
-      accountMemoId: registration.accountMemoId,
+      confirmedBy: registration.paymentConfirmUserName ?? null,
+      paymentConfirmedAt: registration.paymentConfirmedAt ?? null,
+      accountMemo: registration.accountMemo ?? null,
+      accountMemoId: registration.accountMemoId ?? null,
     };
   });
 }
