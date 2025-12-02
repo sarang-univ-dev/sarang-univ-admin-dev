@@ -1,26 +1,23 @@
 /**
- * Next.js Middleware - 인증 처리
+ * Next.js Middleware - 쿠키 기반 인증
  *
- * NextAuth.js v5의 auth() 함수를 사용하여 세션을 확인합니다.
- * 인증되지 않은 사용자는 /login으로 리다이렉트됩니다.
+ * Express 서버에서 설정한 accessToken 쿠키를 확인합니다.
+ * 쿠키가 없으면 /login으로 리다이렉트합니다.
+ *
+ * 실제 JWT 검증은 Express 서버의 retreatAdminAuthMiddleware에서 수행됩니다.
+ * 이 미들웨어는 쿠키 존재 여부만 확인하여 불필요한 API 호출을 방지합니다.
  */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
 
 // 인증 없이 접근 가능한 경로
-const PUBLIC_PATHS = [
-  "/login",
-  "/api/auth", // NextAuth API routes
-  "/_next",
-  "/favicon.ico",
-];
+const PUBLIC_PATHS = ["/login", "/api/auth", "/_next", "/favicon.ico"];
 
 // 정적 자산 패턴
 const STATIC_ASSET_REGEX = /\.(png|jpg|jpeg|svg|webp|gif|ico|css|js|woff2?)$/;
 
-export default auth((req) => {
-  const { pathname } = req.nextUrl;
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
   // 정적 자산 / public 경로는 그대로 통과
   if (
@@ -30,27 +27,23 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  // NextAuth 세션 확인
-  const isAuthenticated = !!req.auth;
+  // Express 서버에서 설정한 accessToken 쿠키 확인
+  const accessToken = request.cookies.get("accessToken")?.value;
+  const isAuthenticated = !!accessToken;
 
   // 인증되지 않은 경우 /login으로 리다이렉트
   if (!isAuthenticated) {
-    if (pathname === "/login") {
-      return NextResponse.next();
-    }
-
-    console.log("[Middleware] Redirecting to /login (not authenticated)");
-    return NextResponse.redirect(new URL("/login", req.url));
+    console.log("[Middleware] Redirecting to /login (no accessToken cookie)");
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // 인증된 상태에서 /login 페이지 접근 시 홈으로 리다이렉트
   if (isAuthenticated && pathname === "/login") {
-    console.log("[Middleware] Redirecting to / (already authenticated)");
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   // 미들웨어가 실행될 경로 패턴

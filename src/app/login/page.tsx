@@ -1,30 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import IconGoogleLogo from "@/components/icons/IconGoogleLogo";
+import config from "@/lib/constant/config";
 
 /**
  * 로그인 페이지
  *
- * NextAuth.js v5를 사용한 Google OAuth 로그인
- * - signIn 함수로 Google OAuth 흐름 시작
- * - 관리자 검증은 서버의 signIn 콜백에서 처리
+ * Express 서버의 BFF 패턴을 사용한 Google OAuth 로그인
+ * - Express 서버의 /api/v1/auth/google로 리다이렉트
+ * - 관리자 검증은 서버에서 처리
+ * - 로그인 성공 시 httpOnly 쿠키가 설정되고 / 로 리다이렉트됨
  */
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     setIsLoading(true);
-    try {
-      // NextAuth.js의 signIn 함수 사용
-      // callbackUrl: 로그인 성공 후 리다이렉트할 경로
-      await signIn("google", { callbackUrl: "/" });
-    } catch (error) {
-      console.error("[Login] Google sign-in error:", error);
-      setIsLoading(false);
-    }
+    // Express 서버의 Google OAuth 엔드포인트로 리다이렉트
+    window.location.href = `${config.API_HOST}/api/v1/auth/google`;
   };
 
   return (
