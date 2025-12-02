@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import config from "@/lib/constant/config";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import LoadingIndicator from "@/components/common/LoadingIndicator";
 
-export default function Redirect() {
+/**
+ * useSearchParams()를 사용하는 내부 컴포넌트
+ * Next.js 14에서는 Suspense 경계 내에서 사용해야 함
+ */
+function RedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState(false);
@@ -56,4 +60,16 @@ export default function Redirect() {
     return <ErrorMessage message="로그인 중 오류가 발생했습니다." />;
   }
   return <LoadingIndicator />;
+}
+
+/**
+ * 로그인 리다이렉트 페이지
+ * Suspense로 감싸서 useSearchParams() CSR bailout 방지
+ */
+export default function Redirect() {
+  return (
+    <Suspense fallback={<LoadingIndicator />}>
+      <RedirectContent />
+    </Suspense>
+  );
 }
