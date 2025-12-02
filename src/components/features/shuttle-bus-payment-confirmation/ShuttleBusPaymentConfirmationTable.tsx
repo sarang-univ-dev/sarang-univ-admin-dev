@@ -25,7 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
 import { TRetreatShuttleBus } from "@/types";
-import { GenderBadge, StatusBadge } from "@/components/Badge";
+import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
 import { useShuttleBusPaymentConfirmation } from "@/hooks/shuttle-bus-payment-confirmation/use-shuttle-bus-payment-confirmation";
 import { ShuttleBusPaymentConfirmationTableToolbar } from "./ShuttleBusPaymentConfirmationTableToolbar";
 import { ShuttleBusPaymentConfirmationTableActions } from "./ShuttleBusPaymentConfirmationTableActions";
@@ -75,8 +75,8 @@ export function ShuttleBusPaymentConfirmationTable({
   const [globalFilter, setGlobalFilter] = useState("");
 
   // ✅ 컬럼 정의 (Timestamp 정보 제외)
-  const columns = useMemo<ColumnDef<IShuttleBusPaymentConfirmationRegistration>[]>(() => {
-    const staticColumns: ColumnDef<IShuttleBusPaymentConfirmationRegistration>[] = [
+  const columns = useMemo(() => {
+    const staticColumns = [
       columnHelper.accessor("univGroupNumber", {
         id: "department",
         header: "부서",
@@ -107,7 +107,7 @@ export function ShuttleBusPaymentConfirmationTable({
     ];
 
     // 동적 스케줄 컬럼
-    const scheduleColumns: ColumnDef<IShuttleBusPaymentConfirmationRegistration>[] = schedules.map(
+    const scheduleColumns = schedules.map(
       (schedule) =>
         columnHelper.accessor(
           (row) =>
@@ -130,7 +130,7 @@ export function ShuttleBusPaymentConfirmationTable({
         )
     );
 
-    const endColumns: ColumnDef<IShuttleBusPaymentConfirmationRegistration>[] = [
+    const endColumns = [
       columnHelper.accessor("price", {
         id: "amount",
         header: "금액",
@@ -280,13 +280,14 @@ export function ShuttleBusPaymentConfirmationTable({
 
       {/* Detail Sidebar - Timestamp 정보는 여기에만 표시 */}
       <DetailSidebar
-        isOpen={sidebar.isOpen}
-        onClose={sidebar.close}
-        title={sidebar.selectedItem ? `${sidebar.selectedItem.name} 상세 정보` : ""}
+        open={sidebar.isOpen}
+        onOpenChange={sidebar.setIsOpen}
+        data={sidebar.selectedItem}
+        title={sidebar.selectedItem ? `${sidebar.selectedItem.name} 상세 정보` : "상세 정보"}
       >
-        {sidebar.selectedItem && (
+        {(data) => (
           <ShuttleBusPaymentConfirmationDetailContent
-            data={sidebar.selectedItem}
+            data={data}
             schedules={schedules}
             retreatSlug={retreatSlug}
           />

@@ -135,8 +135,8 @@ export function RetreatPaymentConfirmationTable({
   }, []);
 
   // ✅ 컬럼 정의
-  const columns = useMemo<ColumnDef<TableRow>[]>(() => {
-    const staticColumns: ColumnDef<TableRow>[] = [
+  const columns = useMemo(() => {
+    const staticColumns = [
       columnHelper.accessor("gender", {
         id: "gender",
         header: ({ column, table }) => (
@@ -206,7 +206,7 @@ export function RetreatPaymentConfirmationTable({
     ];
 
     // 동적 스케줄 컬럼
-    const scheduleColumns: ColumnDef<TableRow>[] = scheduleColumnsMeta.map((col) =>
+    const scheduleColumns = scheduleColumnsMeta.map((col) =>
       columnHelper.accessor((row) => row.schedule[col.key], {
         id: col.key,
         header: col.label,
@@ -225,7 +225,7 @@ export function RetreatPaymentConfirmationTable({
       })
     );
 
-    const endColumns: ColumnDef<TableRow>[] = [
+    const endColumns = [
       columnHelper.accessor("type", {
         id: "type",
         header: "타입",

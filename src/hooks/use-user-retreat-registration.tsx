@@ -10,6 +10,7 @@ export interface IUserRetreatRegistration {
   gender: Gender;
   gradeNumber: number;
   name: string;
+  phoneNumber?: string;
   userRetreatRegistrationScheduleIds: number[];
   price: number;
   userType: UserRetreatRegistrationType | null;

@@ -42,7 +42,7 @@ export function useScheduleChangeRequest(
    */
   const updateCache = async (
     action: () => Promise<void>,
-    optimisticUpdate?: (currentData: any[]) => any[],
+    optimisticUpdate?: (currentData: IUserScheduleChangeRetreat[] | undefined) => IUserScheduleChangeRetreat[],
     successMessage?: string
   ) => {
     setIsMutating(true);
@@ -52,7 +52,6 @@ export function useScheduleChangeRequest(
       if (optimisticUpdate) {
         await mutate(optimisticUpdate, {
           revalidate: false,
-          optimisticData: optimisticUpdate,
         });
       }
 

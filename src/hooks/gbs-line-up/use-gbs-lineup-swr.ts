@@ -311,24 +311,26 @@ export function useGbsLineupSwr(retreatSlug: string) {
 
       try {
         // ✅ 1. Optimistic Update (즉시 UI 업데이트)
-        await mutate(
-          swrKey,
-          (currentData: UserRetreatGbsLineup[] | undefined) => {
-            if (!currentData) return currentData;
+        if (swrKey) {
+          await mutate(
+            swrKey,
+            (currentData: UserRetreatGbsLineup[] | undefined) => {
+              if (!currentData) return currentData;
 
-            return currentData.map((item) =>
-              item.id === userRetreatRegistrationId
-                ? {
-                    ...item,
-                    lineupMemo: memo.trim(),
-                    lineupMemocolor: color || null,
-                    updatedAt: new Date().toISOString(),
-                  }
-                : item
-            );
-          },
-          { revalidate: false, rollbackOnError: true }
-        );
+              return currentData.map((item) =>
+                item.id === userRetreatRegistrationId
+                  ? {
+                      ...item,
+                      lineupMemo: memo.trim(),
+                      lineupMemocolor: color ?? '',
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : item
+              );
+            },
+            { revalidate: false, rollbackOnError: true }
+          );
+        }
 
         // ✅ 2. 서버에 요청 전송
         return new Promise<UserRetreatGbsLineup>((resolve, reject) => {
@@ -421,26 +423,28 @@ export function useGbsLineupSwr(retreatSlug: string) {
 
       try {
         // ✅ 1. Optimistic Update
-        await mutate(
-          swrKey,
-          (currentData: UserRetreatGbsLineup[] | undefined) => {
-            if (!currentData) return currentData;
+        if (swrKey) {
+          await mutate(
+            swrKey,
+            (currentData: UserRetreatGbsLineup[] | undefined) => {
+              if (!currentData) return currentData;
 
-            return currentData.map((item) => {
-              // lineupMemoId가 일치하는 항목 찾기
-              if (item.lineupMemoId === userRetreatRegistrationMemoId.toString()) {
-                return {
-                  ...item,
-                  lineupMemo: memo.trim(),
-                  lineupMemocolor: color || null,
-                  updatedAt: new Date().toISOString(),
-                };
-              }
-              return item;
-            });
-          },
-          { revalidate: false, rollbackOnError: true }
-        );
+              return currentData.map((item) => {
+                // lineupMemoId가 일치하는 항목 찾기
+                if (item.lineupMemoId === userRetreatRegistrationMemoId) {
+                  return {
+                    ...item,
+                    lineupMemo: memo.trim(),
+                    lineupMemocolor: color ?? '',
+                    updatedAt: new Date().toISOString(),
+                  };
+                }
+                return item;
+              });
+            },
+            { revalidate: false, rollbackOnError: true }
+          );
+        }
 
         // ✅ 2. 서버에 요청 전송
         return new Promise<UserRetreatGbsLineup>((resolve, reject) => {
@@ -537,26 +541,28 @@ export function useGbsLineupSwr(retreatSlug: string) {
 
             try {
               // ✅ 1. Optimistic Update
-              await mutate(
-                swrKey,
-                (currentData: UserRetreatGbsLineup[] | undefined) => {
-                  if (!currentData) return currentData;
+              if (swrKey) {
+                await mutate(
+                  swrKey,
+                  (currentData: UserRetreatGbsLineup[] | undefined) => {
+                    if (!currentData) return currentData;
 
-                  return currentData.map((item) => {
-                    if (item.lineupMemoId === userRetreatRegistrationMemoId.toString()) {
-                      return {
-                        ...item,
-                        lineupMemo: null,
-                        lineupMemocolor: null,
-                        lineupMemoId: null,
-                        updatedAt: new Date().toISOString(),
-                      };
-                    }
-                    return item;
-                  });
-                },
-                { revalidate: false, rollbackOnError: true }
-              );
+                    return currentData.map((item) => {
+                      if (item.lineupMemoId === userRetreatRegistrationMemoId) {
+                        return {
+                          ...item,
+                          lineupMemo: '',
+                          lineupMemocolor: '',
+                          lineupMemoId: null,
+                          updatedAt: new Date().toISOString(),
+                        };
+                      }
+                      return item;
+                    });
+                  },
+                  { revalidate: false, rollbackOnError: true }
+                );
+              }
 
               // ✅ 2. 서버에 요청 전송
               socketRef.current!.emit(

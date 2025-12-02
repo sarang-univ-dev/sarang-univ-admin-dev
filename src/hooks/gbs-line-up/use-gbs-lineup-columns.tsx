@@ -6,7 +6,7 @@ import { TRetreatRegistrationSchedule, RetreatRegistrationScheduleType } from "@
 import { GBSLineupRow } from "./use-gbs-lineup";
 import { MEMO_COLORS, COMPLETE_GROUP_ROW_COUNT } from "@/lib/constant/lineup.constant";
 import { LineUpMemoEditor } from "@/components/features/gbs-line-up/LineUpMemoEditor";
-import { GbsNumberCell } from "@/components/features/gbs-line-up/GbsNumberCell";
+import { GbsNumberCell, GbsNumberCellRow } from "@/components/features/gbs-line-up/GbsNumberCell";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { UserRetreatRegistrationType } from "@/types";
 import { User, UserPlus, Shield, GraduationCap, Info } from "lucide-react";
@@ -119,7 +119,7 @@ export function useGbsLineupColumns(
   retreatSlug: string,
   allRows: GBSLineupRow[],
   handlers: {
-    onSaveGbsNumber: (row: GBSLineupRow, value: string) => void;
+    onSaveGbsNumber: (row: GBSLineupRow, value: string) => Promise<void>;
     onSaveLineupMemo: (id: string, memo: string, color?: string) => Promise<void>;
     onUpdateLineupMemo: (id: string, memo: string, color?: string) => Promise<void>;
     onDeleteLineupMemo: (id: string) => Promise<void>;
@@ -130,7 +130,7 @@ export function useGbsLineupColumns(
   },
   onRowClick?: (row: GBSLineupRow) => void
 ) {
-  return useMemo<ColumnDef<GBSLineupRow>[]>(() => {
+  return useMemo(() => {
     const {
       onSaveGbsNumber,
       onSaveLineupMemo,
@@ -591,7 +591,7 @@ export function useGbsLineupColumns(
                 ) : (
                   <GbsNumberCell
                     row={row}
-                    onSave={onSaveGbsNumber}
+                    onSave={(cellRow, value) => onSaveGbsNumber(row, value)}
                     isLoading={isLoading(row.id, "gbs_number")}
                   />
                 )}

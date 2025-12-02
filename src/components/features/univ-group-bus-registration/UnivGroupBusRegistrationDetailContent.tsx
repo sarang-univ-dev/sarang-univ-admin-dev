@@ -150,9 +150,8 @@ export function UnivGroupBusRegistrationDetailContent({
                 <div className="flex-1">
                   <p className="text-sm font-medium">{schedule.name}</p>
                   <p className="text-xs text-gray-500">
-                    {schedule.date} {schedule.time}
+                    {formatDate(schedule.departureTime)}
                   </p>
-                  <p className="text-xs text-gray-500">{schedule.location}</p>
                 </div>
               </div>
             ))}

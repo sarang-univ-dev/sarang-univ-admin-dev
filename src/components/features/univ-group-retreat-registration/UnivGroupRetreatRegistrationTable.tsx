@@ -135,7 +135,7 @@ export function UnivGroupRetreatRegistrationTable({
 
   // ✅ 사이드바에 표시할 최신 데이터 (SWR 캐시와 동기화)
   const currentSidebarData = sidebar.selectedItem
-    ? data.find((item) => item.id === sidebar.selectedItem.id) || sidebar.selectedItem
+    ? data.find((item) => item.id === sidebar.selectedItem?.id) ?? sidebar.selectedItem
     : null;
 
   return (

@@ -55,9 +55,9 @@ export function useScheduleChangeRequestColumns(
     [schedules]
   );
 
-  const columns = useMemo<ColumnDef<ScheduleChangeRequestTableData>[]>(() => {
+  const columns = useMemo(() => {
     // 1. 왼쪽 정적 컬럼
-    const leftColumns: ColumnDef<ScheduleChangeRequestTableData>[] = [
+    const leftColumns = [
       columnHelper.accessor("department", {
         id: "department",
         header: ({ column, table }) => (
@@ -126,8 +126,7 @@ export function useScheduleChangeRequestColumns(
     ];
 
     // 2. 동적 스케줄 컬럼
-    const scheduleColumns: ColumnDef<ScheduleChangeRequestTableData>[] =
-      scheduleColumnsMeta.map((col) =>
+    const scheduleColumns = scheduleColumnsMeta.map((col) =>
         columnHelper.accessor((row) => row.schedules[col.key], {
           id: col.key,
           header: col.label,
@@ -147,7 +146,7 @@ export function useScheduleChangeRequestColumns(
       );
 
     // 3. 오른쪽 정적 컬럼
-    const rightColumns: ColumnDef<ScheduleChangeRequestTableData>[] = [
+    const rightColumns = [
       columnHelper.accessor("type", {
         id: "type",
         header: "타입",

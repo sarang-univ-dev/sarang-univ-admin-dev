@@ -96,8 +96,8 @@ export function UnivGroupBusRegistrationTable({
   };
 
   // ✅ 컬럼 정의 (Timestamp 정보 제외)
-  const columns = useMemo<ColumnDef<IUnivGroupBusRegistration>[]>(() => {
-    const staticColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
+  const columns = useMemo(() => {
+    const staticColumns = [
       columnHelper.accessor("gender", {
         id: "gender",
         header: ({ column, table }) => (
@@ -288,7 +288,7 @@ export function UnivGroupBusRegistrationTable({
       }),
     ];
 
-    const endColumns: ColumnDef<IUnivGroupBusRegistration>[] = [
+    const endColumns = [
       columnHelper.accessor("shuttleBusPaymentStatus", {
         id: "status",
         header: ({ column, table }) => {
@@ -383,7 +383,7 @@ export function UnivGroupBusRegistrationTable({
 
   // ✅ 사이드바에 표시할 최신 데이터 (SWR 캐시와 동기화)
   const currentSidebarData = sidebar.selectedItem
-    ? registrations.find((item) => item.id === sidebar.selectedItem.id) || sidebar.selectedItem
+    ? registrations.find((item) => item.id === sidebar.selectedItem?.id) ?? sidebar.selectedItem
     : null;
 
   return (

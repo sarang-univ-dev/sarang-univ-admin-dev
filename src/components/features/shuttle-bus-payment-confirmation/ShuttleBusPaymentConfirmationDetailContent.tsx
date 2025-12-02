@@ -1,7 +1,7 @@
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
 import { TRetreatShuttleBus } from "@/types";
-import { GenderBadge, StatusBadge } from "@/components/Badge";
+import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
 import { formatDate } from "@/utils/formatDate";
 import { useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -95,9 +95,8 @@ export function ShuttleBusPaymentConfirmationDetailContent({
                 <div className="flex-1">
                   <p className="text-sm font-medium">{schedule.name}</p>
                   <p className="text-xs text-gray-500">
-                    {schedule.date} {schedule.time}
+                    {formatDate(schedule.departureTime)}
                   </p>
-                  <p className="text-xs text-gray-500">{schedule.location}</p>
                 </div>
               </div>
             ))}
