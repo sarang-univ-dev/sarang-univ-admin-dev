@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getRetreatsWithMenusServer } from "@/lib/api/server-admin-api"
 import { getIconComponent } from "@/lib/utils/icon-map"
-import { Calendar, Users, Settings, LayoutDashboard } from "lucide-react"
+import { Calendar } from "lucide-react"
 
 /**
  * Admin Home Page - Server Component
@@ -46,33 +46,23 @@ export default async function HomePage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {retreats.map((retreat) => (
               <Card key={retreat.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <CardHeader className={retreat.isActive ? "bg-primary/5" : ""}>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">
-                      {retreat.name}
-                    </CardTitle>
-                    {retreat.isActive && (
-                      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-                        활성
-                      </span>
-                    )}
-                  </div>
-                  <CardDescription>
-                    {retreat.description || "수련회 설명이 없습니다"}
-                  </CardDescription>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {retreat.name}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  {retreat.menus && retreat.menus.length > 0 ? (
+                  {retreat.menuItems && retreat.menuItems.length > 0 ? (
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground mb-3">
                         사용 가능한 메뉴
                       </p>
                       <div className="grid gap-2">
-                        {retreat.menus.slice(0, 4).map((menu) => {
+                        {retreat.menuItems.slice(0, 4).map((menu) => {
                           const Icon = getIconComponent(menu.icon)
                           return (
                             <Link
-                              key={menu.id}
+                              key={menu.path}
                               href={`/retreat/${retreat.slug}${menu.path}`}
                               className="flex items-center gap-2 rounded-lg border p-2 text-sm hover:bg-accent transition-colors"
                             >
@@ -81,9 +71,9 @@ export default async function HomePage() {
                             </Link>
                           )
                         })}
-                        {retreat.menus.length > 4 && (
+                        {retreat.menuItems.length > 4 && (
                           <p className="text-xs text-muted-foreground text-center pt-1">
-                            +{retreat.menus.length - 4}개 더 보기
+                            +{retreat.menuItems.length - 4}개 더 보기
                           </p>
                         )}
                       </div>
