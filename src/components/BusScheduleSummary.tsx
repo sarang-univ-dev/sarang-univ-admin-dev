@@ -18,10 +18,9 @@ import {
   UserRetreatShuttleBusPaymentStatus,
 } from "@/types";
 import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
-import { IUnivGroupStaffBus } from "@/hooks/use-univ-group-staff-bus";
 
 interface BusScheduleSummaryProps {
-  registrations: IUserBusRegistration[] | IUnivGroupStaffBus[];
+  registrations: IUserBusRegistration[];
   schedules: TRetreatShuttleBus[];
 }
 

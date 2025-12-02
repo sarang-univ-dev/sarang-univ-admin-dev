@@ -6,12 +6,11 @@ import { StatusBadge } from "./Badge-bus";
 import { UserRetreatShuttleBusPaymentStatus } from "@/types";
 import { useMemo } from "react";
 import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
-import { IUnivGroupStaffBus } from "@/hooks/use-univ-group-staff-bus";
 
 export function PaymentSummary({
   registrations = [],
 }: {
-  registrations: IUserBusRegistration[] | IUnivGroupStaffBus[];
+  registrations: IUserBusRegistration[];
 }) {
   // 부서 수 계산
   const uniqueDepartments = useMemo(() => {
