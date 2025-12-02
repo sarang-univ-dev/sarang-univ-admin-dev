@@ -25,7 +25,7 @@ import {
 } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import { useWebSocketGbsLineup } from "@/hooks/gbs-line-up/use-websocket-gbs-lineup";
 import { useGbsLineupSwr } from "@/hooks/gbs-line-up/use-gbs-lineup-swr";
-import type { TRetreatRegistrationSchedule } from "@/types";
+import { Gender, type TRetreatRegistrationSchedule } from "@/types";
 import { useGbsLineupColumns } from "@/hooks/gbs-line-up/use-gbs-lineup-columns";
 import { GBSLineupRow } from "@/hooks/gbs-line-up/use-gbs-lineup";
 import { GbsLineUpTableToolbar } from "./GbsLineUpTableToolbar";
@@ -95,7 +95,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         fullAttendanceCount: registration.fullAttendanceCount,
         partialAttendanceCount: registration.partialAttendanceCount,
         department: `${registration.univGroupNumber}부`,
-        gender: registration.gender,
+        gender: registration.gender as Gender,
         grade: `${registration.gradeNumber}학년`,
         name: registration.name,
         phoneNumber: registration.phoneNumber,
@@ -105,13 +105,13 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         isFullAttendance: registration.isFullAttendance,
         currentLeader: registration.currentLeader,
         gbsNumber: registration.gbsNumber,
-        gbsMemo: registration.gbsMemo,
-        lineupMemo: registration.lineupMemo,
-        lineupMemoId: registration.lineupMemoId,
-        lineupMemocolor: registration.lineupMemocolor,
-        unresolvedLineupHistoryMemo: registration.unresolvedLineupHistoryMemo,
-        adminMemo: registration.adminMemo,
-      } as GBSLineupRow;
+        gbsMemo: registration.gbsMemo ?? "",
+        lineupMemo: registration.lineupMemo ?? "",
+        lineupMemoId: registration.lineupMemoId?.toString(),
+        lineupMemocolor: registration.lineupMemocolor ?? undefined,
+        unresolvedLineupHistoryMemo: registration.unresolvedLineupHistoryMemo ?? undefined,
+        adminMemo: registration.adminMemo ?? undefined,
+      } satisfies GBSLineupRow;
     });
 
     return transformedData;
@@ -316,7 +316,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
 
   // ✅ 사이드바에 표시할 최신 데이터 (SWR/WebSocket 캐시와 동기화)
   const currentSidebarData = sidebar.selectedItem
-    ? data.find((item) => item.id === sidebar.selectedItem.id) || sidebar.selectedItem
+    ? data.find((item) => item.id === sidebar.selectedItem?.id) ?? sidebar.selectedItem
     : null;
 
   return (
@@ -384,13 +384,14 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
 
     {/* ✅ 상세 정보 사이드바 */}
     <DetailSidebar
-      isOpen={sidebar.isOpen}
-      onClose={sidebar.close}
+      open={sidebar.isOpen}
+      onOpenChange={sidebar.setIsOpen}
+      data={currentSidebarData}
       title="상세 정보"
     >
-      {currentSidebarData && (
+      {(rowData) => (
         <GbsLineUpDetailContent
-          data={currentSidebarData}
+          data={rowData}
           retreatSlug={retreatSlug}
           schedules={schedules}
           onSaveScheduleMemo={handleSaveScheduleMemo}
