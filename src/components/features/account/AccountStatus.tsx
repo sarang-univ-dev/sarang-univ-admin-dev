@@ -12,6 +12,17 @@ interface AccountStatusProps {
   registrations?: IRetreatRegistration[];
 }
 
+interface DepartmentStat {
+  univGroupNumber: number | "all";
+  name: string;
+  expectedIncome: number;
+  actualIncome: number;
+  expectedRefund: number;
+  actualRefund: number;
+  currentBalance: number;
+  expectedFutureBalance: number;
+}
+
 /**
  * 계좌 현황 컴포넌트 (SummaryTable 형식)
  *
@@ -22,14 +33,14 @@ interface AccountStatusProps {
  */
 export function AccountStatus({ registrations = [] }: AccountStatusProps) {
   // 부서별 데이터 계산
-  const departmentStats = useMemo(() => {
+  const departmentStats = useMemo<DepartmentStat[]>(() => {
     // 부서 ID를 모아서 유니크 배열로 만들기
     const departments = [
       ...new Set(registrations.map((reg) => reg.univGroupNumber)),
     ].sort((a, b) => a - b); // 부서 번호 순으로 정렬
 
     // 각 부서별 통계 계산
-    const stats = departments.map((deptId) => {
+    const stats: DepartmentStat[] = departments.map((deptId) => {
       const deptRegistrations = registrations.filter(
         (reg) => reg.univGroupNumber === deptId
       );
@@ -73,12 +84,9 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       const expectedFutureBalance =
         expectedIncome + actualIncome - expectedRefund - actualRefund;
 
-      // 부서명 가져오기
-      const departmentName = `${deptId}부`;
-
       return {
-        id: deptId,
-        name: departmentName,
+        univGroupNumber: deptId,
+        name: `${deptId}부`,
         expectedIncome,
         actualIncome,
         expectedRefund,
@@ -90,8 +98,8 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
 
     // 전체 통계 계산 (모든 부서의 합계)
     if (departments.length >= 2) {
-      const totalStats = {
-        id: "all",
+      const totalStats: DepartmentStat = {
+        univGroupNumber: "all",
         name: "전체",
         expectedIncome: stats.reduce(
           (sum, dept) => sum + dept.expectedIncome,
@@ -113,7 +121,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
         ),
       };
 
-      stats.push(totalStats as any);
+      stats.push(totalStats);
     }
 
     return stats;
@@ -198,12 +206,12 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
 
   // SummaryTable rows 생성
   const rows = departmentStats.map((dept) => ({
-    id: dept.id.toString(),
+    id: dept.univGroupNumber.toString(),
     label: dept.name,
     cells: {
       expectedIncome: (
         <div className="text-center">
-          {dept.id === "all" ? (
+          {dept.univGroupNumber === "all" ? (
             <span className="font-semibold">{dept.expectedIncome.toLocaleString()}원</span>
           ) : (
             <span>{dept.expectedIncome.toLocaleString()}원</span>
@@ -212,7 +220,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       ),
       actualIncome: (
         <div className="text-center">
-          {dept.id === "all" ? (
+          {dept.univGroupNumber === "all" ? (
             <span className="font-semibold">{dept.actualIncome.toLocaleString()}원</span>
           ) : (
             <span>{dept.actualIncome.toLocaleString()}원</span>
@@ -221,7 +229,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       ),
       expectedRefund: (
         <div className="text-center">
-          {dept.id === "all" ? (
+          {dept.univGroupNumber === "all" ? (
             <span className="font-semibold">{dept.expectedRefund.toLocaleString()}원</span>
           ) : (
             <span>{dept.expectedRefund.toLocaleString()}원</span>
@@ -230,7 +238,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       ),
       actualRefund: (
         <div className="text-center">
-          {dept.id === "all" ? (
+          {dept.univGroupNumber === "all" ? (
             <span className="font-semibold">{dept.actualRefund.toLocaleString()}원</span>
           ) : (
             <span>{dept.actualRefund.toLocaleString()}원</span>
@@ -239,7 +247,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       ),
       currentBalance: (
         <div className="text-center">
-          {dept.id === "all" ? (
+          {dept.univGroupNumber === "all" ? (
             <span className="font-bold text-blue-700">{dept.currentBalance.toLocaleString()}원</span>
           ) : (
             <span className="font-semibold text-blue-600">{dept.currentBalance.toLocaleString()}원</span>
@@ -248,7 +256,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       ),
       expectedFutureBalance: (
         <div className="text-center">
-          {dept.id === "all" ? (
+          {dept.univGroupNumber === "all" ? (
             <span className="font-bold text-purple-700">{dept.expectedFutureBalance.toLocaleString()}원</span>
           ) : (
             <span className="font-semibold text-purple-600">{dept.expectedFutureBalance.toLocaleString()}원</span>
