@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useMemo, memo, useCallback } from "react";
-import { Table as TanStackTable, flexRender } from "@tanstack/react-table";
+import { useRef, memo, useCallback } from "react";
+import { Table as TanStackTable, flexRender, Row } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { TableHeader, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
 
@@ -149,6 +149,16 @@ export function VirtualizedTable<TData>({
 }
 
 /**
+ * MemoizedTableRow Props 인터페이스
+ */
+interface MemoizedTableRowProps<TData> {
+  row: Row<TData>;
+  visibleCellIds: string;
+  onRowClick?: (row: TData) => void;
+  getRowClassName?: (row: TData) => string;
+}
+
+/**
  * React.memo로 메모이제이션된 TableRow
  *
  * Best Practices (출처: TanStack Table + Material React Table docs):
@@ -159,59 +169,61 @@ export function VirtualizedTable<TData>({
  *
  * 주의: Material React Table 문서에 따르면 "Usually you should not ever need to do this"
  * 하지만 SWR polling + WebSocket 업데이트 환경에서는 필요함
+ *
+ * @see https://stackoverflow.com/questions/60386614/how-to-use-props-with-generics-with-react-memo
  */
-const MemoizedTableRow = memo(
-  function TableRowComponent<TData>({
-    row,
-    visibleCellIds,
-    onRowClick,
-    getRowClassName,
-  }: {
-    row: any;
-    visibleCellIds: string;
-    onRowClick?: (row: TData) => void;
-    getRowClassName?: (row: TData) => string;
-  }) {
-    const customClassName = getRowClassName?.(row.original) || '';
-    // customClassName에 이미 hover 클래스가 있으면 기본 hover를 적용하지 않음
-    const hasCustomHover = customClassName.includes('hover:');
-    const defaultHoverClass = hasCustomHover ? '' : 'hover:bg-gray-50';
+function TableRowComponent<TData>({
+  row,
+  visibleCellIds,
+  onRowClick,
+  getRowClassName,
+}: MemoizedTableRowProps<TData>) {
+  const customClassName = getRowClassName?.(row.original) || '';
+  // customClassName에 이미 hover 클래스가 있으면 기본 hover를 적용하지 않음
+  const hasCustomHover = customClassName.includes('hover:');
+  const defaultHoverClass = hasCustomHover ? '' : 'hover:bg-gray-50';
 
-    return (
-      <TableRow
-        data-state={row.getIsSelected() && "selected"}
-        className={`group ${defaultHoverClass} transition-colors duration-150 ${customClassName}`}
-        onClick={() => onRowClick?.(row.original)}
-      >
-        {row.getVisibleCells().map((cell: any) => (
-          <MemoizedTableCell key={cell.id} cell={cell} />
-        ))}
-      </TableRow>
-    );
-  },
-  // ✅ Best Practice: Shallow comparison으로 성능 최적화
-  // visibleCellIds를 prop으로 받아서 안정적으로 비교
-  (prevProps, nextProps) => {
-    // 1. Row ID 변경 체크 (Virtual Scrolling으로 다른 row가 같은 위치에 올 수 있음)
-    if (prevProps.row.id !== nextProps.row.id) {
-      return false; // Row가 바뀌었으면 무조건 리렌더링
-    }
+  return (
+    <TableRow
+      data-state={row.getIsSelected() && "selected"}
+      className={`group ${defaultHoverClass} transition-colors duration-150 ${customClassName}`}
+      onClick={() => onRowClick?.(row.original)}
+    >
+      {row.getVisibleCells().map((cell) => (
+        <MemoizedTableCell key={cell.id} cell={cell} />
+      ))}
+    </TableRow>
+  );
+}
 
-    // 2. Column visibility 변경 체크 (prop으로 전달받은 visibleCellIds 비교)
-    // ✅ Fix: row.getVisibleCells() 대신 prop으로 비교하여 정확한 visibility 감지
-    if (prevProps.visibleCellIds !== nextProps.visibleCellIds) {
-      return false; // Column visibility가 변경되었으면 리렌더링
-    }
-
-    // 3. 데이터 변경 체크 (Shallow comparison - 1 depth만)
-    // SWR이 같은 참조를 반환하면 리렌더링 안 함
-    if (prevProps.row.original !== nextProps.row.original) {
-      return false; // 데이터 참조가 변경되었으면 리렌더링
-    }
-
-    return true; // 변경사항 없으면 리렌더링 안 함
+// ✅ Best Practice: Shallow comparison으로 성능 최적화
+// visibleCellIds를 prop으로 받아서 안정적으로 비교
+function areTableRowPropsEqual<TData>(
+  prevProps: MemoizedTableRowProps<TData>,
+  nextProps: MemoizedTableRowProps<TData>
+): boolean {
+  // 1. Row ID 변경 체크 (Virtual Scrolling으로 다른 row가 같은 위치에 올 수 있음)
+  if (prevProps.row.id !== nextProps.row.id) {
+    return false; // Row가 바뀌었으면 무조건 리렌더링
   }
-);
+
+  // 2. Column visibility 변경 체크 (prop으로 전달받은 visibleCellIds 비교)
+  // ✅ Fix: row.getVisibleCells() 대신 prop으로 비교하여 정확한 visibility 감지
+  if (prevProps.visibleCellIds !== nextProps.visibleCellIds) {
+    return false; // Column visibility가 변경되었으면 리렌더링
+  }
+
+  // 3. 데이터 변경 체크 (Shallow comparison - 1 depth만)
+  // SWR이 같은 참조를 반환하면 리렌더링 안 함
+  if (prevProps.row.original !== nextProps.row.original) {
+    return false; // 데이터 참조가 변경되었으면 리렌더링
+  }
+
+  return true; // 변경사항 없으면 리렌더링 안 함
+}
+
+// ✅ Best Practice: memo + type casting으로 제네릭 보존
+const MemoizedTableRow = memo(TableRowComponent, areTableRowPropsEqual) as typeof TableRowComponent;
 
 /**
  * React.memo로 메모이제이션된 TableCell
