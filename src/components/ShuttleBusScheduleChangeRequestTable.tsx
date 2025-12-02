@@ -303,8 +303,7 @@ export function ShuttleBusScheduleChangeRequestTable({
             className="rounded-md border flex flex-col h-[calc(100vh-300px)]"
             ref={tableContainerRef}
           >
-            <div className="overflow-y-auto flex-grow">
-              <div className="overflow-x-auto">
+            <div className="overflow-auto flex-grow">
                 <Table className="w-full whitespace-nowrap relative">
                   <TableHeader className="bg-gray-50 sticky top-0 z-10">
                     <TableRow>
@@ -495,7 +494,6 @@ export function ShuttleBusScheduleChangeRequestTable({
               </div>
             </div>
           </div>
-        </div>
       </CardContent>
 
       {isModalOpen && selectedRow && (

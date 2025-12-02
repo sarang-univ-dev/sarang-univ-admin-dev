@@ -358,8 +358,7 @@ export function RetreatScheduleChangeHistoryTable({
             className="rounded-md border overflow-hidden"
             ref={tableContainerRef}
           >
-            <div className="overflow-x-auto">
-              <div className="max-h-[80vh] overflow-y-auto">
+            <div className="max-h-[80vh] overflow-auto">
                 <Table className="min-w-full whitespace-nowrap relative text-sm">
                   <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
                     <TableRow>
@@ -459,7 +458,6 @@ export function RetreatScheduleChangeHistoryTable({
               </div>
             </div>
           </div>
-        </div>
       </CardContent>
     </Card>
   );

@@ -4,6 +4,7 @@ import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import AuthAPI from "@/lib/api/auth"
 
 interface AuthContextType {
   isAuthenticated: boolean
@@ -52,10 +53,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(true)
   }
 
-  const logout = () => {
-    localStorage.removeItem("isAuthenticated")
-    setIsAuthenticated(false)
-    router.push("/login")
+  const logout = async () => {
+    try {
+      await AuthAPI.logout()
+      localStorage.removeItem("isAuthenticated")
+      setIsAuthenticated(false)
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout failed:", error)
+      // Still redirect to login even if API call fails
+      localStorage.removeItem("isAuthenticated")
+      setIsAuthenticated(false)
+      router.push("/login")
+    }
   }
 
   return (

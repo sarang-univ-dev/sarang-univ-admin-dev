@@ -11,16 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import html2canvas from "html2canvas";
+import { useIsMobile } from "@/hooks/use-media-query";
+import { SummaryTableMobileCard } from "./SummaryTableMobileCard";
 
 interface SummaryTableColumn {
   id: string;
@@ -50,6 +45,8 @@ export function SummaryTable({
 }: SummaryTableProps) {
   const tableRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const isMobile = useIsMobile();
 
   const handleDownloadImage = async () => {
     if (!tableRef.current) return;
@@ -94,59 +91,92 @@ export function SummaryTable({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
+    <div className="space-y-3 md:space-y-4">
+      {/* Unified Header for both Mobile and Desktop */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+          {description && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {description}
+            </p>
+          )}
         </div>
-        {downloadable && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadImage}
-            disabled={isDownloading}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            이미지 저장
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent ref={tableRef}>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px] sticky left-0 bg-gray-100 z-10 font-semibold text-gray-800"></TableHead>
-                {columns.map(column => (
-                  <TableHead
-                    key={column.id}
-                    className="bg-gray-100 font-semibold text-gray-800"
-                  >
-                    {column.header}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map(row => (
-                <TableRow key={row.id}>
-                  <TableCell className="font-medium sticky left-0 bg-gray-50 z-10 border-r">
-                    <span className="inline-flex px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 font-medium">
-                      {row.label}
-                    </span>
-                  </TableCell>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {!isMobile && downloadable && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadImage}
+              disabled={isDownloading}
+              className="text-xs md:text-sm"
+            >
+              <Download className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">이미지 저장</span>
+            </Button>
+          )}
+          {isMobile && (
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+              aria-label={isOpen ? "접기" : "펼치기"}
+            >
+              <ChevronDown
+                className={`h-5 w-5 text-gray-600 transition-transform duration-200 ${
+                  isOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Content Area */}
+      {isMobile ? (
+        /* Mobile: Collapsible Content */
+        isOpen && (
+          <div className="mt-3">
+            <SummaryTableMobileCard columns={columns} rows={rows} />
+          </div>
+        )
+      ) : (
+        /* Desktop: Table Layout */
+        <div ref={tableRef}>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[70px] md:w-[100px] sticky left-0 bg-gray-100 z-10 font-semibold text-gray-800 text-xs md:text-sm"></TableHead>
                   {columns.map(column => (
-                    <TableCell key={`${row.id}-${column.id}`}>
-                      {row.cells[column.id] || "-"}
-                    </TableCell>
+                    <TableHead
+                      key={column.id}
+                      className="bg-gray-100 font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-4"
+                    >
+                      {column.header}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {rows.map(row => (
+                  <TableRow key={row.id}>
+                    <TableCell className="font-medium sticky left-0 bg-gray-50 z-10 border-r px-2 md:px-4 py-2 md:py-3">
+                      <span className="inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md bg-gray-100 text-gray-700 font-medium text-xs md:text-sm whitespace-nowrap shrink-0">
+                        {row.label}
+                      </span>
+                    </TableCell>
+                    {columns.map(column => (
+                      <TableCell key={`${row.id}-${column.id}`} className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 whitespace-nowrap">
+                        {row.cells[column.id] || "-"}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }

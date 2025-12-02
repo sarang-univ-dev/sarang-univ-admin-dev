@@ -178,9 +178,9 @@ export const AssignGbsLocationTable = React.memo(function AssignGbsLocationTable
           </div>
 
           {/* 테이블 */}
-          <div className="rounded-md border overflow-x-auto">
+          <div className="rounded-md border">
             <div className="min-w-max">
-              <div className="max-h-[80vh] overflow-y-auto">
+              <div className="max-h-[80vh] overflow-auto">
                 <Table className="w-full whitespace-nowrap relative">
                   <TableHeader>
                     <TableRow>

@@ -1,12 +1,12 @@
 import { UserRole } from "@/types";
 
 export enum PagePath {
-  UNIV_GROUP_RETREAT = "/univ-group-staff-retreat",
+  UNIV_GROUP_RETREAT = "/univ-group-retreat-registration",
   SCHEDULE_HISTORY = "/schedule-change-history",
   COMFIRM_PAYMENT = "/confirm-retreat-payment",
   SCHEDULE_CHANGE = "/schedule-change-request",
-  CONFIRM_BUS_PAYMENT = "/confirm-bus-payment",
-  UNIV_GROUP_BUS = "/univ-group-staff-bus",
+  CONFIRM_BUS_PAYMENT = "/shuttle-bus-payment-confirmation",
+  UNIV_GROUP_BUS = "/univ-group-bus-registration",
   BUS_SCHEDULE_HISTORY = "/bus-schedule-change-history",
   BUS_SCHEDULE_CHANGE = "/bus-schedule-change-request",
   ACCOUNT_STAFF = "/account-staff",

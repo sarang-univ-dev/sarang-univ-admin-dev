@@ -2,7 +2,6 @@
 
 import useSWR from "swr";
 import { webAxios } from "@/lib/api/axios";
-import Cookies from "js-cookie";
 
 export interface IGbsLocationItem {
   id: number;
@@ -18,12 +17,7 @@ export interface IGbsLocationItem {
 }
 
 const fetcher = async (url: string) => {
-  const accessToken = Cookies.get("accessToken");
-  const response = await webAxios.get(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await webAxios.get(url);
   return response.data;
 };
 
@@ -74,15 +68,9 @@ export function useCurrentGbsLocations(retreatSlug?: string) {
 
 export function useAssignGbsLocation(retreatSlug?: string) {
   const assignLocation = async (gbsId: number, location: string) => {
-    const accessToken = Cookies.get("accessToken");
     const response = await webAxios.post(
       `/api/v1/retreat/${retreatSlug}/dormitory/${gbsId}/assign-gbs-location`,
-      { location },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
+      { location }
     );
     return response.data;
   };

@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, CSSProperties } from "react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  useReactTable,
+  getCoreRowModel,
+  ColumnDef,
+  flexRender,
+  Column,
+} from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Download, CheckCircle2, RotateCcw, Send } from "lucide-react";
@@ -20,7 +19,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
+import { GenderBadge } from "@/components/Badge";
+import { StatusBadge, TypeBadge } from "@/components/common/retreat";
 import { SearchBar } from "@/components/RegistrationTableSearchBar";
 
 import {
@@ -31,6 +31,8 @@ import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration"
 import {
   TRetreatRegistrationSchedule,
   UserRetreatRegistrationPaymentStatus,
+  UserRetreatRegistrationType,
+  Gender,
 } from "@/types";
 import { formatDate } from "@/utils/formatDate";
 import { mutate } from "swr";
@@ -38,6 +40,43 @@ import { useToastStore } from "@/store/toast-store";
 import { webAxios } from "@/lib/api/axios";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { AxiosError } from "axios";
+
+// TanStack Table용 타입 정의
+type RegistrationTableRow = {
+  id: string;
+  department: string;
+  gender: Gender;
+  grade: string;
+  name: string;
+  schedule: Record<string, boolean>;
+  type: UserRetreatRegistrationType | null;
+  amount: number;
+  createdAt: string | null;
+  status: UserRetreatRegistrationPaymentStatus;
+  confirmedBy: string | null;
+  paymentConfirmedAt: string | null;
+};
+
+// Sticky Column Helper Function (TanStack 공식 권장)
+const getCommonPinningStyles = (
+  column: Column<RegistrationTableRow>,
+  isHeader: boolean = false
+): CSSProperties => {
+  const isPinned = column.getIsPinned();
+  const isLastLeftPinnedColumn =
+    isPinned === 'left' && column.getIsLastColumn('left');
+
+  return {
+    boxShadow: isLastLeftPinnedColumn
+      ? '-4px 0 4px -4px rgba(0, 0, 0, 0.1) inset'
+      : undefined,
+    left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
+    position: isPinned ? 'sticky' : 'relative',
+    zIndex: isPinned ? 1 : 0,
+    backgroundColor: isPinned ? (isHeader ? 'rgb(249 250 251)' : 'white') : undefined,
+    whiteSpace: 'nowrap',
+  };
+};
 
 export function RegistrationTable({
   registrations = [],
@@ -49,16 +88,16 @@ export function RegistrationTable({
   retreatSlug: string;
 }) {
   const addToast = useToastStore(state => state.add);
-  const [data, setData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
-    {}
-  );
-  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [data, setData] = useState<RegistrationTableRow[]>([]);
+  const [filteredData, setFilteredData] = useState<RegistrationTableRow[]>([]);
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
   const confirmDialog = useConfirmDialogStore();
 
   // API 엔드포인트
   const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/user-retreat-registration`;
+
+  // 일정 컬럼 생성
+  const scheduleColumns = useMemo(() => generateScheduleColumns(schedules), [schedules]);
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
@@ -67,7 +106,7 @@ export function RegistrationTable({
         const transformedData = transformRegistrationsForTable(
           registrations,
           schedules
-        );
+        ).filter((row): row is RegistrationTableRow => row !== null);
         setData(transformedData);
         setFilteredData(transformedData);
       } catch (error) {
@@ -98,18 +137,11 @@ export function RegistrationTable({
   const performConfirmPayment = async (id: string) => {
     setLoading(id, "confirm", true);
     try {
-      // 실제 API 호출
-      const response = await webAxios.post(
+      await webAxios.post(
         `/api/v1/retreat/${retreatSlug}/account/confirm-payment`,
-        {
-          userRetreatRegistrationId: id,
-        }
+        { userRetreatRegistrationId: id }
       );
-
-      // SWR 캐시 업데이트
       await mutate(registrationsEndpoint);
-
-      // 성공 토스트 메시지
       addToast({
         title: "성공",
         description: "입금이 성공적으로 확인되었습니다.",
@@ -117,8 +149,6 @@ export function RegistrationTable({
       });
     } catch (error) {
       console.error("입금 확인 중 오류 발생:", error);
-
-      // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
         description:
@@ -134,12 +164,10 @@ export function RegistrationTable({
     }
   };
 
-  // 입금 확인 처리 함수
   const handleConfirmPayment = (id: string) => {
     confirmDialog.show({
       title: "입금 확인",
-      description:
-        "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
+      description: "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
       onConfirm: () => performConfirmPayment(id),
     });
   };
@@ -147,18 +175,11 @@ export function RegistrationTable({
   const handleCompleteRefund = async (id: string) => {
     setLoading(id, "refund", true);
     try {
-      // 실제 API 호출
-      const response = await webAxios.post(
+      await webAxios.post(
         `/api/v1/retreat/${retreatSlug}/account/refund-complete`,
-        {
-          userRetreatRegistrationId: id,
-        }
+        { userRetreatRegistrationId: id }
       );
-
-      // SWR 캐시 업데이트
       await mutate(registrationsEndpoint);
-
-      // 성공 토스트 메시지
       addToast({
         title: "성공",
         description: "환불이 성공적으로 처리되었습니다.",
@@ -166,8 +187,6 @@ export function RegistrationTable({
       });
     } catch (error) {
       console.error("환불 처리 중 오류 발생:", error);
-
-      // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
         description:
@@ -186,16 +205,11 @@ export function RegistrationTable({
   const performSendMessage = async (id: string, messageType: string) => {
     setLoading(id, messageType, true);
     try {
-      // 입금 요청 메시지 전송 API 호출
       if (messageType === "payment_request") {
-        const response = await webAxios.post(
+        await webAxios.post(
           `/api/v1/retreat/${retreatSlug}/account/request-payment`,
-          {
-            userRetreatRegistrationId: id,
-          }
+          { userRetreatRegistrationId: id }
         );
-
-        // 성공 토스트 메시지
         addToast({
           title: "성공",
           description: "입금 요청 메시지가 성공적으로 전송되었습니다.",
@@ -204,8 +218,6 @@ export function RegistrationTable({
       }
     } catch (error) {
       console.error(`${messageType} 메시지 전송 중 오류 발생:`, error);
-
-      // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
         description:
@@ -221,20 +233,18 @@ export function RegistrationTable({
     }
   };
 
-  // 입금 요청 처리 함수
   const handleSendMessage = (id: string, messageType: string) => {
     if (messageType === "payment_request") {
       confirmDialog.show({
         title: "입금 요청",
-        description:
-          "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",
+        description: "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",
         onConfirm: () => performSendMessage(id, messageType),
       });
     }
   };
 
   // 액션 버튼 렌더링
-  const getActionButtons = (row: any) => {
+  const getActionButtons = (row: RegistrationTableRow) => {
     switch (row.status) {
       case UserRetreatRegistrationPaymentStatus.PENDING:
         return (
@@ -288,17 +298,147 @@ export function RegistrationTable({
             </Button>
           </div>
         );
-      case UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST:
-        return null;
-      case UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST:
-        return null;
       default:
         return null;
     }
   };
 
-  // 일정 체크박스 컬럼 정의
-  const scheduleColumns = generateScheduleColumns(schedules);
+  // TanStack Table 컬럼 정의
+  const columns = useMemo<ColumnDef<RegistrationTableRow>[]>(() => {
+    const baseColumns: ColumnDef<RegistrationTableRow>[] = [
+      {
+        id: 'department',
+        header: '부서',
+        accessorKey: 'department',
+        cell: ({ getValue }) => <div className="text-center">{getValue() as string}</div>,
+      },
+      {
+        id: 'gender',
+        header: '성별',
+        accessorKey: 'gender',
+        cell: ({ getValue }) => (
+          <div className="text-center">
+            <GenderBadge gender={getValue() as Gender} />
+          </div>
+        ),
+      },
+      {
+        id: 'grade',
+        header: '학년',
+        accessorKey: 'grade',
+        cell: ({ getValue }) => <div className="text-center">{getValue() as string}</div>,
+      },
+      {
+        id: 'name',
+        header: '이름',
+        accessorKey: 'name',
+        cell: ({ getValue }) => <div className="font-medium text-center">{getValue() as string}</div>,
+      },
+    ];
+
+    // 일정 컬럼 동적 추가
+    const dynamicScheduleColumns: ColumnDef<RegistrationTableRow>[] = scheduleColumns.map(col => ({
+      id: col.key,
+      header: col.label,
+      accessorFn: (row) => row.schedule[col.key],
+      cell: ({ getValue }) => (
+        <div className="flex justify-center">
+          <Checkbox
+            checked={getValue() as boolean}
+            disabled
+            className={getValue() ? col.bgColorClass : ""}
+          />
+        </div>
+      ),
+    }));
+
+    const endColumns: ColumnDef<RegistrationTableRow>[] = [
+      {
+        id: 'type',
+        header: '타입',
+        accessorKey: 'type',
+        cell: ({ getValue }) => {
+          const type = getValue() as UserRetreatRegistrationType | null;
+          return (
+            <div className="text-center">
+              {type ? <TypeBadge type={type} /> : <span>-</span>}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'amount',
+        header: '금액',
+        accessorKey: 'amount',
+        cell: ({ getValue }) => (
+          <div className="font-medium text-center">{(getValue() as number).toLocaleString()}원</div>
+        ),
+      },
+      {
+        id: 'createdAt',
+        header: '신청 시각',
+        accessorKey: 'createdAt',
+        cell: ({ getValue }) => {
+          const createdAt = getValue() as string | null;
+          return (
+            <div className="text-gray-600 text-sm text-center">
+              {createdAt ? formatDate(createdAt) : "-"}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'status',
+        header: '입금 현황',
+        accessorKey: 'status',
+        cell: ({ getValue }) => (
+          <div className="text-center">
+            <StatusBadge status={getValue() as UserRetreatRegistrationPaymentStatus} />
+          </div>
+        ),
+      },
+      {
+        id: 'actions',
+        header: '액션',
+        cell: ({ row }) => (
+          <div className="text-center">{getActionButtons(row.original)}</div>
+        ),
+      },
+      {
+        id: 'confirmedBy',
+        header: '처리자명',
+        accessorKey: 'confirmedBy',
+        cell: ({ getValue }) => <div className="text-center">{getValue() as string || "-"}</div>,
+      },
+      {
+        id: 'paymentConfirmedAt',
+        header: '처리 시각',
+        accessorKey: 'paymentConfirmedAt',
+        cell: ({ getValue }) => {
+          const paymentConfirmedAt = getValue() as string | null;
+          return (
+            <div className="text-gray-600 text-sm text-center">
+              {paymentConfirmedAt ? formatDate(paymentConfirmedAt) : "-"}
+            </div>
+          );
+        },
+      },
+    ];
+
+    return [...baseColumns, ...dynamicScheduleColumns, ...endColumns];
+  }, [scheduleColumns]);
+
+  // TanStack Table 인스턴스
+  const table = useReactTable({
+    data: filteredData,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    initialState: {
+      columnPinning: {
+        left: ['name'], // 이름 컬럼을 왼쪽에 고정
+      },
+    },
+  });
 
   return (
     <Card className="shadow-sm">
@@ -318,7 +458,7 @@ export function RegistrationTable({
                   `/api/v1/retreat/${retreatSlug}/registration/download-univ-group-registration-excel`,
                   { responseType: 'blob' }
                 );
-                
+
                 const url = window.URL.createObjectURL(new Blob([response.data]));
                 const link = document.createElement('a');
                 link.href = url;
@@ -326,7 +466,7 @@ export function RegistrationTable({
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
-                
+
                 addToast({
                   title: "성공",
                   description: "엑셀 파일이 다운로드되었습니다.",
@@ -359,154 +499,62 @@ export function RegistrationTable({
         <div className="space-y-4">
           <SearchBar onSearch={handleSearchResults} data={data} />
 
-          <div className="rounded-md border overflow-x-auto">
-            <div className="min-w-max">
-              <div className="max-h-[80vh] overflow-y-auto">
-                <Table className="w-full whitespace-nowrap relative">
-                  <TableHeader className="bg-gray-50 sticky top-0 z-10">
-                    <TableRow>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap px-2 py-1"
-                      >
-                        <span>부서</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap px-2 py-1"
-                      >
-                        <span>성별</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap px-2 py-1"
-                      >
-                        <span>학년</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="sticky left-0 bg-gray-50 z-20 text-center whitespace-nowrap px-2 py-1"
-                      >
-                        <span>이름</span>
-                      </TableHead>
-                      <TableHead
-                        colSpan={scheduleColumns.length}
-                        className="whitespace-nowrap"
-                      >
-                        <div className="text-center">수양회 신청 일정</div>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>타입</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>금액</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>신청 시각</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>입금 현황</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        액션
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>처리자명</span>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        <span>처리 시각</span>
-                      </TableHead>
-                    </TableRow>
-                    <TableRow>
-                      {scheduleColumns.map(scheduleCol => (
-                        <TableHead
-                          key={scheduleCol.key}
-                          className="p-2 text-center whitespace-nowrap"
+          <div className="rounded-md border overflow-hidden">
+            <div className="overflow-y-auto max-h-[80vh]">
+              <table
+                className="w-auto relative text-sm caption-bottom"
+                style={{ borderCollapse: 'separate', borderSpacing: 0 }}
+              >
+                <thead className="sticky top-0 z-20">
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id} className="border-b">
+                      {headerGroup.headers.map((header) => (
+                        <th
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          className="h-12 px-4 bg-gray-50 text-center align-middle font-medium text-muted-foreground"
+                          style={{
+                            ...getCommonPinningStyles(header.column, true),
+                          }}
                         >
-                          <span className="text-xs">{scheduleCol.label}</span>
-                        </TableHead>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </th>
                       ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredData.map(row => (
-                      <TableRow
-                        key={row.id}
-                        className="group transition-colors duration-150 hover:bg-gray-50"
-                      >
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          {row.department}
-                        </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          <GenderBadge gender={row.gender} />
-                        </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          {row.grade}
-                        </TableCell>
-                        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center whitespace-nowrap px-3 py-2.5">
-                          {row.name}
-                        </TableCell>
-                        {scheduleColumns.map(col => (
-                          <TableCell
-                            key={`${row.id}-${col.key}`}
-                            className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      className="border-b transition-colors hover:bg-gray-50"
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const isPinned = cell.column.getIsPinned();
+                        return (
+                          <td
+                            key={cell.id}
+                            className={`p-4 align-middle ${isPinned ? 'bg-white' : 'bg-white'}`}
+                            style={{
+                              ...getCommonPinningStyles(cell.column, false),
+                            }}
                           >
-                            <Checkbox
-                              checked={row.schedule[col.key]}
-                              disabled
-                              className={
-                                row.schedule[col.key] ? col.bgColorClass : ""
-                              }
-                            />
-                          </TableCell>
-                        ))}
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          <TypeBadge type={row.type} />
-                        </TableCell>
-                        <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          {row.amount.toLocaleString()}원
-                        </TableCell>
-                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          {row.createdAt ? formatDate(row.createdAt) : "-"}
-                        </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          <StatusBadge status={row.status} />
-                        </TableCell>
-                        <TableCell className="min-w-[180px] group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          {getActionButtons(row)}
-                        </TableCell>
-                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          {row.confirmedBy || "-"}
-                        </TableCell>
-                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          {formatDate(row.paymentConfirmedAt)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

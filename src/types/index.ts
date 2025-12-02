@@ -106,7 +106,7 @@ export type TUserRetreatRegistration = {
   userType?: UserRetreatRegistrationType;
   price: number;
   paymentStatus: UserRetreatRegistrationPaymentStatus;
-  paymentConfirmedUserId?: number;
+  paymentConfirmedAdminUserId?: number;
   paymentConfirmedAt?: Date;
   currentLeaderName: string;
   qrUrl?: string;
@@ -122,7 +122,7 @@ export type TUserRetreatRegistrationMemo = {
   memoType: UserRetreatRegistrationMemoType;
   memo: string;
   color?: string; // 라인업 메모에서만 일단 색깔 사용
-  createdUserId: number;
+  createdAdminUserId: number;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;
@@ -133,7 +133,7 @@ export type TUserRetreatRegistrationSchedule = {
   userRetreatRegistrationId: number;
   retreatRegistrationScheduleId: number;
   confirmedAt?: Date;
-  confirmedUserId?: number;
+  confirmedAdminUserId?: number;
   createdAt: Date;
   deletedAt?: Date;
 };
@@ -145,9 +145,9 @@ export type TUserRetreatRegistrationScheduleHistory = {
   beforePrice: number;
   afterScheduleIds: number[];
   afterPrice: number;
-  createdUserId: number;
+  createdAdminUserId: number;
   createdAt: Date;
-  resolvedUserId?: number;
+  resolvedAdminUserId?: number;
   resolvedAt?: Date;
 };
 
@@ -155,10 +155,10 @@ export type TUserRetreatRegistrationHistoryMemo = {
   id: number;
   userRetreatRegistrationId: number;
   memoType: UserRetreatRegistrationHistoryMemoType;
-  issuerId: number;
-  accountReviewerId?: number;
-  lineupReviewerId?: number;
-  dormitoryReviewerId?: number;
+  issuerAdminUserId: number;
+  accountReviewerAdminUserId?: number;
+  lineupReviewerAdminUserId?: number;
+  dormitoryReviewerAdminUserId?: number;
   memo: string;
   createdAt: Date;
   updatedAt: Date;
@@ -192,7 +192,7 @@ export type TUserRetreatShuttleBusRegistration = {
   price: number;
   shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus;
   isAdminContact: boolean;
-  paymentConfirmedUserId?: number;
+  paymentConfirmedAdminUserId?: number;
   paymentConfirmedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -203,7 +203,7 @@ export type TUserRetreatShuttleBusRegistrationMemo = {
   userRetreatShuttleBusRegistrationId: number;
   memoType: UserRetreatShuttleBusRegistrationMemoType;
   memo: string;
-  createdUserId: number;
+  createdAdminUserId: number;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;
@@ -216,9 +216,9 @@ export type TUserRetreatShuttleBusRegistrationHistory = {
   beforePrice: number;
   afterShuttleBusIds: number[];
   afterPrice: number;
-  createdUserId: number;
+  createdAdminUserId: number;
   createdAt: Date;
-  resolvedUserId?: number;
+  resolvedAdminUserId?: number;
   resolvedAt?: Date;
 };
 
@@ -227,9 +227,9 @@ export type TUserRetreatShuttleBusRegistrationHistoryMemo = {
   userRetreatShuttleBusRegistrationId: number;
   memoType: UserRetreatShuttleBusRegistrationHistoryMemoType;
   memo: string;
-  createdUserId: number;
+  createdAdminUserId: number;
   createdAt: Date;
-  resolvedUserId?: number;
+  resolvedAdminUserId?: number;
   resolvedAt?: Date;
 };
 
@@ -238,7 +238,7 @@ export type TUserRetreatShuttleBusRegistrationSchedule = {
   userRetreatShuttleBusRegistrationId: number;
   retreatShuttleBusId: number;
   confirmedAt?: Date;
-  confirmedUserId?: number;
+  confirmedAdminUserId?: number;
   createdAt: Date;
   deletedAt?: Date;
 };
@@ -356,4 +356,10 @@ export enum UserRetreatShuttleBusRegistrationHistoryMemoType {
   UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사
   SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF" // 부분참 선탑 간사
 }
+// #endregion
+
+// #region Module Re-exports
+export * from "./univ-group-admin-staff";
+export * from "./account";
+export * from "./schedule-change-request";
 // #endregion
