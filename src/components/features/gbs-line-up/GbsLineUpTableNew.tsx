@@ -58,6 +58,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   retreatSlug,
 }: GbsLineUpTableProps) {
   // ✅ SWR + WebSocket 통합 Hook (Optimistic Update 지원)
+  // Best Practice: initialData를 SWR fallbackData로 전달
   const {
     data: swrData,
     isLoading: swrLoading,
@@ -69,7 +70,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     updateLineupMemo,
     deleteLineupMemo,
     refresh,
-  } = useGbsLineupSwr(retreatSlug);
+  } = useGbsLineupSwr(retreatSlug, initialData);
 
   // ✅ 데이터 변환
   const data = useMemo<GBSLineupRow[]>(() => {

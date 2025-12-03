@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { ClientToServerEvents, ServerToClientEvents } from './socket-events';
+import config from '@/lib/constant/config';
 
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
@@ -21,7 +22,8 @@ export function getSocketClient(): Socket<ServerToClientEvents, ClientToServerEv
     return socket;
   }
 
-  const serverUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  // ✅ config에서 API_HOST 가져오기 (axios와 동일한 설정 사용)
+  const serverUrl = config.API_HOST;
   console.log('🚀 [Socket Client] Initializing connection to:', `${serverUrl}/gbs-lineup`);
   console.log('🚀 [Socket Client] withCredentials: true (httpOnly 쿠키 자동 전송)');
 

@@ -4,6 +4,7 @@ import { AccountStaffAPI } from "@/lib/api/account-api";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import { IRetreatRegistration } from "@/types/account";
+import { UserRetreatRegistrationPaymentStatus } from "@/types";
 import { AxiosError } from "axios";
 
 /**
@@ -43,10 +44,15 @@ export function useAccountStaffRegistration(
   );
 
   /**
-   * Optimistic Update 헬퍼
+   * Optimistic Update 헬퍼 (Surgical Update 패턴)
+   *
+   * @description
+   * - 낙관적 업데이트 후 전체 refetch 없이 캐시만 업데이트
+   * - 서버 API가 void를 반환하므로 낙관적 업데이트 결과를 유지
+   * - 에러 발생 시 자동 롤백
    *
    * @param action - 실행할 API 액션
-   * @param optimisticUpdate - 낙관적 업데이트 함수 (옵션)
+   * @param optimisticUpdate - 낙관적 업데이트 함수 (단일 item 변경)
    * @param successMessage - 성공 메시지
    */
   const updateCache = async (
@@ -60,22 +66,25 @@ export function useAccountStaffRegistration(
     try {
       // Optimistic update가 있는 경우
       if (optimisticUpdate && data) {
+        // ✅ 낙관적 업데이트 적용 (즉시 UI 반영)
+        const optimisticData = optimisticUpdate(data);
+
         await mutate(
           async () => {
             await action();
-            // 서버에서 최신 데이터를 다시 가져옴
-            return AccountStaffAPI.getRegistrations(retreatSlug);
+            // ✅ 전체 refetch 대신 낙관적 업데이트 결과 유지
+            return optimisticData;
           },
           {
-            optimisticData: optimisticUpdate(data),
+            optimisticData,
             rollbackOnError: true,
-            revalidate: false,
+            revalidate: false, // ✅ 추가 API 호출 방지
           }
         );
       } else {
-        // Optimistic update 없이 그냥 실행
+        // Optimistic update 없이 실행 후 revalidate
         await action();
-        await mutate(); // 서버 데이터로 revalidate
+        await mutate();
       }
 
       if (successMessage) {
@@ -134,7 +143,17 @@ export function useAccountStaffRegistration(
       onConfirm: async () => {
         await updateCache(
           () => AccountStaffAPI.confirmPayment(retreatSlug, registrationId),
-          undefined,
+          // ✅ Optimistic Update: 입금 상태 변경
+          (currentData) =>
+            currentData.map((item) =>
+              item.id === Number(registrationId)
+                ? {
+                    ...item,
+                    paymentStatus: UserRetreatRegistrationPaymentStatus.PAID,
+                    paymentConfirmedAt: new Date().toISOString(),
+                  }
+                : item
+            ),
           "입금 확인이 성공적으로 처리되었습니다."
         );
       },
@@ -153,7 +172,16 @@ export function useAccountStaffRegistration(
       onConfirm: async () => {
         await updateCache(
           () => AccountStaffAPI.refundComplete(retreatSlug, registrationId),
-          undefined,
+          // ✅ Optimistic Update: 환불 상태 변경
+          (currentData) =>
+            currentData.map((item) =>
+              item.id === Number(registrationId)
+                ? {
+                    ...item,
+                    paymentStatus: UserRetreatRegistrationPaymentStatus.REFUNDED,
+                  }
+                : item
+            ),
           "환불이 성공적으로 처리되었습니다."
         );
       },
@@ -169,7 +197,13 @@ export function useAccountStaffRegistration(
   const saveAccountMemo = async (registrationId: string, memo: string) => {
     await updateCache(
       () => AccountStaffAPI.saveAccountMemo(retreatSlug, registrationId, memo),
-      undefined,
+      // ✅ Optimistic Update: 메모 저장
+      (currentData) =>
+        currentData.map((item) =>
+          item.id === Number(registrationId)
+            ? { ...item, accountMemo: memo }
+            : item
+        ),
       "메모가 성공적으로 저장되었습니다."
     );
   };
@@ -183,7 +217,11 @@ export function useAccountStaffRegistration(
   const updateAccountMemo = async (memoId: number, memo: string) => {
     await updateCache(
       () => AccountStaffAPI.updateAccountMemo(retreatSlug, memoId, memo),
-      undefined,
+      // ✅ Optimistic Update: 메모 수정
+      (currentData) =>
+        currentData.map((item) =>
+          item.accountMemoId === memoId ? { ...item, accountMemo: memo } : item
+        ),
       "메모가 성공적으로 수정되었습니다."
     );
   };
@@ -200,7 +238,13 @@ export function useAccountStaffRegistration(
       onConfirm: async () => {
         await updateCache(
           () => AccountStaffAPI.deleteAccountMemo(retreatSlug, memoId),
-          undefined,
+          // ✅ Optimistic Update: 메모 삭제
+          (currentData) =>
+            currentData.map((item) =>
+              item.accountMemoId === memoId
+                ? { ...item, accountMemo: null, accountMemoId: null }
+                : item
+            ),
           "메모가 성공적으로 삭제되었습니다."
         );
       },

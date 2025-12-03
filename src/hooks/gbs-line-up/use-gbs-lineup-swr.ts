@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useSWR, { mutate } from 'swr';
 import { getSocketClient } from '@/lib/socket/socket-client';
+import { webAxios } from '@/lib/api/axios';
 import { useToastStore } from '@/store/toast-store';
 import { useConfirmDialogStore } from '@/store/confirm-dialog-store';
 import type { UserRetreatGbsLineup } from '@/lib/socket/socket-events';
@@ -13,80 +14,67 @@ import type { ClientToServerEvents, ServerToClientEvents } from '@/lib/socket/so
  * SWR + WebSocket 기반 GBS 라인업 데이터 훅
  *
  * @description
- * - SWR로 캐시 관리 및 자동 리페칭
- * - Socket.io로 실시간 데이터 동기화
- * - Optimistic Updates로 빠른 UX
- * - 편집 중에도 버퍼링하여 Stale Data 방지
- * - Debounce로 과도한 요청 방지
- * - Exponential Backoff 재연결
+ * Best Practice 적용:
+ * - ✅ SWR은 HTTP API로 데이터 페칭 (WebSocket과 분리)
+ * - ✅ WebSocket은 실시간 업데이트만 담당 (선택적 연결)
+ * - ✅ WebSocket 연결 실패해도 앱은 정상 동작 (Graceful Degradation)
+ * - ✅ 토스트 중복 방지 (ref 사용)
+ * - ✅ 마운트 상태 추적으로 메모리 누수 방지
+ * - ✅ Optimistic Updates로 빠른 UX
+ *
+ * @see https://swr.vercel.app/docs/subscription
+ * @see https://stackoverflow.com/questions/72269969/react-js-and-websocket-io-ends-up-in-infinite-loop
  *
  * @param retreatSlug - 수양회 슬러그
+ * @param initialData - 서버에서 가져온 초기 데이터 (SSR fallback)
  */
-export function useGbsLineupSwr(retreatSlug: string) {
+export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGbsLineup[]) {
   const [isConnected, setIsConnected] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
 
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+  // ✅ Best Practice: 에러 토스트 중복 방지 (ref 사용)
+  const errorToastShownRef = useRef(false);
+  // ✅ Best Practice: 마운트 상태 추적 (unmount 후 상태 업데이트 방지)
+  const isMountedRef = useRef(true);
 
   const addToast = useToastStore((state) => state.add);
   const confirmDialog = useConfirmDialogStore();
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // SWR Key & Fetcher
+  // SWR Key & Fetcher (✅ HTTP API 사용 - WebSocket 분리)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  const swrKey = retreatSlug ? `/gbs-lineup/${retreatSlug}` : null;
+  const swrKey = retreatSlug ? `/api/v1/retreat/${retreatSlug}/line-up/user-lineups` : null;
 
-  // ✅ SWR fetcher: WebSocket으로 초기 데이터 요청
+  // ✅ Best Practice: SWR fetcher는 HTTP API 사용
+  // WebSocket 연결 실패해도 데이터 로딩은 정상 동작
   const fetcher = useCallback(
-    async (key: string): Promise<UserRetreatGbsLineup[]> => {
-      return new Promise((resolve, reject) => {
-        const socket = getSocketClient();
-
-        const requestData = () => {
-          socket.emit('join-retreat', retreatSlug, (response) => {
-            if (response.status === 'OK') {
-              resolve(response.data || []);
-            } else {
-              reject(new Error(response.message || '데이터 로딩 실패'));
-            }
-          });
-        };
-
-        if (socket.connected) {
-          // 이미 연결되어 있으면 즉시 요청
-          requestData();
-        } else {
-          // 연결될 때까지 대기 후 요청
-          socket.once('connect', requestData);
-        }
-
-        // 타임아웃 설정 (10초)
-        setTimeout(() => reject(new Error('요청 시간 초과')), 10000);
-      });
+    async (url: string): Promise<UserRetreatGbsLineup[]> => {
+      const response = await webAxios.get(url);
+      return response.data.userRetreatGbsLineups || [];
     },
-    [retreatSlug]
+    []
   );
 
-  // ✅ SWR 사용
+  // ✅ SWR 사용 (HTTP API 기반)
   const { data, error, isLoading, mutate: mutateSWR } = useSWR<UserRetreatGbsLineup[]>(
     swrKey,
     fetcher,
     {
-      revalidateOnFocus: true,
+      revalidateOnFocus: false, // WebSocket으로 실시간 동기화하므로 비활성화
       revalidateOnReconnect: true,
       refreshInterval: 0, // WebSocket 사용하므로 polling 불필요
       dedupingInterval: 2000,
-      // ✅ 에러 발생 시 자동 재시도
       errorRetryCount: 3,
       errorRetryInterval: 5000,
-      // ✅ Fallback 데이터
-      fallbackData: [],
+      // ✅ Best Practice: 서버 데이터를 fallback으로 활용
+      fallbackData: initialData || [],
     }
   );
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // WebSocket 연결 & 실시간 동기화
+  // WebSocket 연결 (✅ 실시간 업데이트 전용 - 선택적)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   useEffect(() => {
@@ -95,83 +83,82 @@ export function useGbsLineupSwr(retreatSlug: string) {
       return;
     }
 
-    // ✅ Exponential Backoff 재연결 설정
-    const socket = getSocketClient();
-    socketRef.current = socket;
+    // ✅ 마운트 상태 초기화
+    isMountedRef.current = true;
+    errorToastShownRef.current = false;
 
-    // 연결 성공 시
+    let socket: Socket<ServerToClientEvents, ClientToServerEvents>;
+
+    try {
+      socket = getSocketClient();
+      socketRef.current = socket;
+    } catch (err) {
+      console.warn('⚠️ [useGbsLineupSwr] Failed to initialize socket:', err);
+      return;
+    }
+
+    // ✅ 연결 성공 시
     const handleConnect = () => {
+      if (!isMountedRef.current) return;
+
       setIsConnected(true);
+      errorToastShownRef.current = false; // 연결 성공 시 에러 토스트 플래그 초기화
       console.log('✅ [useGbsLineupSwr] Connected to WebSocket');
 
-      // SWR 데이터 리페칭 (최신 상태로 동기화)
-      mutateSWR();
+      // retreat room 참가
+      socket.emit('join-retreat', retreatSlug, (response) => {
+        if (response.status === 'OK') {
+          console.log('✅ [useGbsLineupSwr] Joined retreat room');
+        } else {
+          console.warn('⚠️ [useGbsLineupSwr] Failed to join retreat:', response.message);
+        }
+      });
     };
 
     // ✅ 다른 사용자의 실시간 업데이트 수신
     const handleLineupUpdated = (updated: UserRetreatGbsLineup) => {
-      console.log('🔔 [DEBUG-1] WebSocket 이벤트 수신:', {
-        updatedId: updated.id,
-        updatedMemo: updated.lineupMemo,
-        updatedColor: updated.lineupMemocolor,
-        updatedMemoId: updated.lineupMemoId,
-        timestamp: new Date().toISOString(),
-      });
+      if (!isMountedRef.current) return;
+
+      console.log('🔔 [useGbsLineupSwr] Received lineup update:', updated.id);
 
       // ✅ SWR 캐시 직접 업데이트 (즉각적인 반영)
       mutate(
         swrKey,
         (currentData: UserRetreatGbsLineup[] | undefined) => {
-          if (!currentData) {
-            console.log('❌ [DEBUG-1] currentData is undefined');
-            return currentData;
-          }
+          if (!currentData) return currentData;
 
-          const updatedData = currentData.map((item) =>
+          return currentData.map((item) =>
             item.id === updated.id ? updated : item
           );
-
-          const updatedRow = updatedData.find(item => item.id === updated.id);
-          console.log('✅ [DEBUG-1] SWR 캐시 업데이트 완료:', {
-            totalRows: updatedData.length,
-            updatedRow: {
-              id: updatedRow?.id,
-              memo: updatedRow?.lineupMemo,
-              color: updatedRow?.lineupMemocolor,
-            },
-          });
-
-          return updatedData;
         },
-        { revalidate: false } // 서버 재요청 없이 캐시만 업데이트
+        { revalidate: false }
       );
     };
 
-    // 연결 해제
+    // ✅ 연결 해제
     const handleDisconnect = (reason: string) => {
+      if (!isMountedRef.current) return;
+
       setIsConnected(false);
       console.log('❌ [useGbsLineupSwr] Disconnected:', reason);
+    };
 
-      // 자동 재연결 안 되는 경우에만 수동 재연결
-      if (reason === 'io server disconnect') {
-        // 서버가 연결을 끊은 경우 수동 재연결
-        socket.connect();
+    // ✅ Best Practice: 연결 오류 시 토스트 중복 방지
+    const handleConnectError = (error: any) => {
+      if (!isMountedRef.current) return;
+
+      console.error('🔴 [useGbsLineupSwr] Connection error:', error.message);
+
+      // ✅ 한 번만 토스트 표시 (무한 루프 방지)
+      if (!errorToastShownRef.current) {
+        errorToastShownRef.current = true;
+        // 토스트 대신 콘솔 경고로 대체 (무한 렌더링 방지)
+        // WebSocket 실패해도 HTTP API로 데이터는 정상 로딩됨
+        console.warn('⚠️ [useGbsLineupSwr] WebSocket unavailable, using HTTP fallback');
       }
     };
 
-    // 연결 오류
-    const handleConnectError = (error: any) => {
-      console.error('🔴 [useGbsLineupSwr] Connection error:', error.message);
-      addToast({
-        title: '연결 오류',
-        description: error.data?.code === 'AUTH_REQUIRED'
-          ? '인증이 필요합니다.'
-          : '서버 연결에 실패했습니다.',
-        variant: 'destructive',
-      });
-    };
-
-    // Event Listeners 등록
+    // ✅ Best Practice: 빈 dependency array - 리스너 한 번만 등록
     socket.on('connect', handleConnect);
     socket.on('lineup-updated', handleLineupUpdated);
     socket.on('disconnect', handleDisconnect);
@@ -182,9 +169,10 @@ export function useGbsLineupSwr(retreatSlug: string) {
       handleConnect();
     }
 
-    // Cleanup
+    // ✅ Best Practice: Cleanup - 모든 리스너 제거
     return () => {
       console.log('🧹 [useGbsLineupSwr] Cleaning up');
+      isMountedRef.current = false;
 
       socket.off('connect', handleConnect);
       socket.off('lineup-updated', handleLineupUpdated);
@@ -195,11 +183,10 @@ export function useGbsLineupSwr(retreatSlug: string) {
         socket.emit('leave-retreat', retreatSlug);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [retreatSlug, swrKey]);
+  }, [retreatSlug, swrKey]); // ✅ 최소한의 dependency
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // Mutation 함수들
+  // Mutation 함수들 (WebSocket 사용, fallback으로 HTTP)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   /**
@@ -207,13 +194,31 @@ export function useGbsLineupSwr(retreatSlug: string) {
    */
   const saveGbsNumber = useCallback(
     async (userRetreatRegistrationId: number, gbsNumber: number | null) => {
+      // ✅ WebSocket 연결 안 되어 있으면 HTTP fallback
       if (!socketRef.current?.connected) {
-        addToast({
-          title: '연결 오류',
-          description: 'WebSocket 연결이 끊어졌습니다.',
-          variant: 'destructive',
-        });
-        return;
+        try {
+          setIsMutating(true);
+          const response = await webAxios.put(
+            `/api/v1/retreat/${retreatSlug}/line-up/gbs-number`,
+            { userRetreatRegistrationId, gbsNumber }
+          );
+          await mutateSWR(); // HTTP 성공 후 SWR 캐시 갱신
+          addToast({
+            title: '성공',
+            description: 'GBS 번호가 저장되었습니다.',
+            variant: 'success',
+          });
+          return response.data;
+        } catch (error) {
+          addToast({
+            title: '오류',
+            description: 'GBS 번호 저장에 실패했습니다.',
+            variant: 'destructive',
+          });
+          throw error;
+        } finally {
+          setIsMutating(false);
+        }
       }
 
       console.log(`🔄 [saveGbsNumber] Optimistic update: registration ${userRetreatRegistrationId} → GBS ${gbsNumber}`);
@@ -221,7 +226,7 @@ export function useGbsLineupSwr(retreatSlug: string) {
       setIsMutating(true);
 
       try {
-        // ✅ 1. Optimistic Update (즉시 UI 업데이트)
+        // ✅ 1. Optimistic Update
         await mutate(
           swrKey,
           (currentData: UserRetreatGbsLineup[] | undefined) => {
@@ -229,14 +234,14 @@ export function useGbsLineupSwr(retreatSlug: string) {
 
             return currentData.map((item) =>
               item.id === userRetreatRegistrationId
-                ? { ...item, gbsNumber, updatedAt: new Date().toISOString() } // 타임스탬프 추가
+                ? { ...item, gbsNumber, updatedAt: new Date().toISOString() }
                 : item
             );
           },
           { revalidate: false, rollbackOnError: true }
         );
 
-        // ✅ 2. 서버에 요청 전송
+        // ✅ 2. WebSocket 요청
         return new Promise<UserRetreatGbsLineup>((resolve, reject) => {
           socketRef.current!.emit(
             'update-gbs-number',
@@ -247,12 +252,10 @@ export function useGbsLineupSwr(retreatSlug: string) {
               if (response.status === 'OK' && response.data) {
                 console.log(`✅ [saveGbsNumber] Server confirmed update`);
 
-                // ✅ 3. 서버 응답으로 최종 갱신 (타임스탬프 등 서버 데이터)
                 mutate(
                   swrKey,
                   (currentData: UserRetreatGbsLineup[] | undefined) => {
                     if (!currentData) return currentData;
-
                     return currentData.map((item) =>
                       item.id === response.data!.id ? response.data! : item
                     );
@@ -268,15 +271,11 @@ export function useGbsLineupSwr(retreatSlug: string) {
 
                 resolve(response.data);
               } else {
-                console.error(`❌ [saveGbsNumber] Server error:`, response.message);
-
                 addToast({
                   title: '오류',
                   description: response.message || 'GBS 번호 저장에 실패했습니다.',
                   variant: 'destructive',
                 });
-
-                // 에러 시 자동 롤백 (rollbackOnError: true)
                 reject(new Error(response.message));
               }
             }
@@ -288,21 +287,39 @@ export function useGbsLineupSwr(retreatSlug: string) {
         throw error;
       }
     },
-    [swrKey, addToast]
+    [swrKey, addToast, retreatSlug, mutateSWR]
   );
 
   /**
-   * 라인업 메모 저장 (✅ Optimistic Update 추가)
+   * 라인업 메모 저장
    */
   const saveLineupMemo = useCallback(
     async (userRetreatRegistrationId: number, memo: string, color?: string) => {
+      // ✅ WebSocket 연결 안 되어 있으면 HTTP fallback
       if (!socketRef.current?.connected) {
-        addToast({
-          title: '연결 오류',
-          description: 'WebSocket 연결이 끊어졌습니다.',
-          variant: 'destructive',
-        });
-        return;
+        try {
+          setIsMutating(true);
+          const response = await webAxios.post(
+            `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo`,
+            { userRetreatRegistrationId, memo: memo.trim(), color }
+          );
+          await mutateSWR();
+          addToast({
+            title: '성공',
+            description: '메모가 저장되었습니다.',
+            variant: 'success',
+          });
+          return response.data;
+        } catch (error) {
+          addToast({
+            title: '오류',
+            description: '메모 저장에 실패했습니다.',
+            variant: 'destructive',
+          });
+          throw error;
+        } finally {
+          setIsMutating(false);
+        }
       }
 
       console.log(`🔄 [saveLineupMemo] Optimistic update: registration ${userRetreatRegistrationId}`);
@@ -310,7 +327,7 @@ export function useGbsLineupSwr(retreatSlug: string) {
       setIsMutating(true);
 
       try {
-        // ✅ 1. Optimistic Update (즉시 UI 업데이트)
+        // ✅ 1. Optimistic Update
         if (swrKey) {
           await mutate(
             swrKey,
@@ -332,7 +349,7 @@ export function useGbsLineupSwr(retreatSlug: string) {
           );
         }
 
-        // ✅ 2. 서버에 요청 전송
+        // ✅ 2. WebSocket 요청
         return new Promise<UserRetreatGbsLineup>((resolve, reject) => {
           socketRef.current!.emit(
             'create-lineup-memo',
@@ -346,31 +363,14 @@ export function useGbsLineupSwr(retreatSlug: string) {
 
               if (response.status === 'OK' && response.data) {
                 console.log('✅ [saveLineupMemo] Server confirmed update');
-                console.log('🔍 [DEBUG-SERVER] 서버 응답 전체 객체:', response.data);
-                console.log('🔍 [DEBUG-SERVER] 필드 확인:', {
-                  hasId: 'id' in response.data,
-                  hasName: 'name' in response.data,
-                  hasLineupMemo: 'lineupMemo' in response.data,
-                  hasLineupMemocolor: 'lineupMemocolor' in response.data,
-                  hasGender: 'gender' in response.data,
-                  hasPhoneNumber: 'phoneNumber' in response.data,
-                  allKeys: Object.keys(response.data),
-                });
 
-                // ✅ 3. 서버 응답으로 최종 갱신
                 mutate(
                   swrKey,
                   (currentData: UserRetreatGbsLineup[] | undefined) => {
-                    if (!currentData) {
-                      return currentData;
-                    }
-
-                    return currentData.map((item) => {
-                      if (item.id === response.data!.id) {
-                        return response.data!;
-                      }
-                      return item;
-                    });
+                    if (!currentData) return currentData;
+                    return currentData.map((item) =>
+                      item.id === response.data!.id ? response.data! : item
+                    );
                   },
                   { revalidate: false }
                 );
@@ -388,7 +388,6 @@ export function useGbsLineupSwr(retreatSlug: string) {
                   description: response.message || '메모 저장에 실패했습니다.',
                   variant: 'destructive',
                 });
-
                 reject(new Error(response.message));
               }
             }
@@ -400,21 +399,39 @@ export function useGbsLineupSwr(retreatSlug: string) {
         throw error;
       }
     },
-    [swrKey, addToast]
+    [swrKey, addToast, retreatSlug, mutateSWR]
   );
 
   /**
-   * 라인업 메모 수정 (✅ Optimistic Update 추가)
+   * 라인업 메모 수정
    */
   const updateLineupMemo = useCallback(
     async (userRetreatRegistrationMemoId: number, memo: string, color?: string) => {
+      // ✅ WebSocket 연결 안 되어 있으면 HTTP fallback
       if (!socketRef.current?.connected) {
-        addToast({
-          title: '연결 오류',
-          description: 'WebSocket 연결이 끊어졌습니다.',
-          variant: 'destructive',
-        });
-        return;
+        try {
+          setIsMutating(true);
+          const response = await webAxios.put(
+            `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo/${userRetreatRegistrationMemoId}`,
+            { memo: memo.trim(), color }
+          );
+          await mutateSWR();
+          addToast({
+            title: '성공',
+            description: '메모가 수정되었습니다.',
+            variant: 'success',
+          });
+          return response.data;
+        } catch (error) {
+          addToast({
+            title: '오류',
+            description: '메모 수정에 실패했습니다.',
+            variant: 'destructive',
+          });
+          throw error;
+        } finally {
+          setIsMutating(false);
+        }
       }
 
       console.log(`🔄 [updateLineupMemo] Optimistic update: memoId ${userRetreatRegistrationMemoId}`);
@@ -430,7 +447,6 @@ export function useGbsLineupSwr(retreatSlug: string) {
               if (!currentData) return currentData;
 
               return currentData.map((item) => {
-                // lineupMemoId가 일치하는 항목 찾기
                 if (item.lineupMemoId === userRetreatRegistrationMemoId) {
                   return {
                     ...item,
@@ -446,7 +462,7 @@ export function useGbsLineupSwr(retreatSlug: string) {
           );
         }
 
-        // ✅ 2. 서버에 요청 전송
+        // ✅ 2. WebSocket 요청
         return new Promise<UserRetreatGbsLineup>((resolve, reject) => {
           socketRef.current!.emit(
             'update-lineup-memo',
@@ -460,29 +476,14 @@ export function useGbsLineupSwr(retreatSlug: string) {
 
               if (response.status === 'OK' && response.data) {
                 console.log('✅ [updateLineupMemo] Server confirmed update');
-                console.log('🔍 [DEBUG-SERVER-UPDATE] 서버 응답 전체 객체:', response.data);
-                console.log('🔍 [DEBUG-SERVER-UPDATE] 필드 확인:', {
-                  hasId: 'id' in response.data,
-                  hasName: 'name' in response.data,
-                  hasLineupMemo: 'lineupMemo' in response.data,
-                  hasLineupMemocolor: 'lineupMemocolor' in response.data,
-                  allKeys: Object.keys(response.data),
-                });
 
-                // ✅ 3. 서버 응답으로 최종 갱신
                 mutate(
                   swrKey,
                   (currentData: UserRetreatGbsLineup[] | undefined) => {
-                    if (!currentData) {
-                      return currentData;
-                    }
-
-                    return currentData.map((item) => {
-                      if (item.id === response.data!.id) {
-                        return response.data!;
-                      }
-                      return item;
-                    });
+                    if (!currentData) return currentData;
+                    return currentData.map((item) =>
+                      item.id === response.data!.id ? response.data! : item
+                    );
                   },
                   { revalidate: false }
                 );
@@ -500,7 +501,6 @@ export function useGbsLineupSwr(retreatSlug: string) {
                   description: response.message || '메모 수정에 실패했습니다.',
                   variant: 'destructive',
                 });
-
                 reject(new Error(response.message));
               }
             }
@@ -512,11 +512,11 @@ export function useGbsLineupSwr(retreatSlug: string) {
         throw error;
       }
     },
-    [swrKey, addToast]
+    [swrKey, addToast, retreatSlug, mutateSWR]
   );
 
   /**
-   * 라인업 메모 삭제 (✅ Optimistic Update 추가)
+   * 라인업 메모 삭제
    */
   const deleteLineupMemo = useCallback(
     async (userRetreatRegistrationMemoId: number) => {
@@ -525,13 +525,30 @@ export function useGbsLineupSwr(retreatSlug: string) {
           title: '메모 삭제',
           description: '정말로 메모를 삭제하시겠습니까?',
           onConfirm: async () => {
+            // ✅ WebSocket 연결 안 되어 있으면 HTTP fallback
             if (!socketRef.current?.connected) {
-              addToast({
-                title: '연결 오류',
-                description: 'WebSocket 연결이 끊어졌습니다.',
-                variant: 'destructive',
-              });
-              reject(new Error('WebSocket 연결 끊김'));
+              try {
+                setIsMutating(true);
+                await webAxios.delete(
+                  `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo/${userRetreatRegistrationMemoId}`
+                );
+                await mutateSWR();
+                addToast({
+                  title: '성공',
+                  description: '메모가 삭제되었습니다.',
+                  variant: 'success',
+                });
+                resolve();
+              } catch (error) {
+                addToast({
+                  title: '오류',
+                  description: '메모 삭제에 실패했습니다.',
+                  variant: 'destructive',
+                });
+                reject(error);
+              } finally {
+                setIsMutating(false);
+              }
               return;
             }
 
@@ -564,7 +581,7 @@ export function useGbsLineupSwr(retreatSlug: string) {
                 );
               }
 
-              // ✅ 2. 서버에 요청 전송
+              // ✅ 2. WebSocket 요청
               socketRef.current!.emit(
                 'delete-lineup-memo',
                 { userRetreatRegistrationMemoId },
@@ -574,12 +591,10 @@ export function useGbsLineupSwr(retreatSlug: string) {
                   if (response.status === 'OK' && response.data) {
                     console.log(`✅ [deleteLineupMemo] Server confirmed deletion`);
 
-                    // ✅ 3. 서버 응답으로 최종 갱신
                     mutate(
                       swrKey,
                       (currentData: UserRetreatGbsLineup[] | undefined) => {
                         if (!currentData) return currentData;
-
                         return currentData.map((item) =>
                           item.id === response.data!.id ? response.data! : item
                         );
@@ -600,7 +615,6 @@ export function useGbsLineupSwr(retreatSlug: string) {
                       description: response.message || '메모 삭제에 실패했습니다.',
                       variant: 'destructive',
                     });
-
                     reject(new Error(response.message));
                   }
                 }
@@ -614,7 +628,7 @@ export function useGbsLineupSwr(retreatSlug: string) {
         });
       });
     },
-    [swrKey, addToast, confirmDialog]
+    [swrKey, addToast, confirmDialog, retreatSlug, mutateSWR]
   );
 
   return {
