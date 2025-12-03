@@ -351,7 +351,6 @@ export function useAccountStaffColumns(
                   await deleteAccountMemo(row.accountMemoId);
                 }
               }}
-              loading={isMutating}
               hasExistingMemo={(r: any) => !!r.accountMemo && !!r.accountMemoId}
             />
           );

@@ -42,7 +42,6 @@ export function useUnivGroupRetreatRegistrationColumns(
     saveAdminMemo,
     updateAdminMemo,
     deleteAdminMemo,
-    isMutating,
   } = useUnivGroupRetreatRegistration(retreatSlug);
 
   const columns = useMemo(() => {
@@ -258,7 +257,6 @@ export function useUnivGroupRetreatRegistrationColumns(
                     await deleteAdminMemo(row.adminMemoId);
                   }
                 }}
-                loading={isMutating}
                 hasExistingMemo={(r) => !!r.staffMemo && !!r.adminMemoId}
               />
             </div>
@@ -294,7 +292,6 @@ export function useUnivGroupRetreatRegistrationColumns(
     saveAdminMemo,
     updateAdminMemo,
     deleteAdminMemo,
-    isMutating,
   ]);
 
   return columns;

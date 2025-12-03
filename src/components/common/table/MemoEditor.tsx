@@ -22,7 +22,6 @@ interface MemoEditorProps<T extends { id: string }> {
   onSave: (id: string, memo: string) => Promise<void>;
   onUpdate: (id: string, memo: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  loading?: boolean;
   placeholder?: string;
   /** 메모가 이미 존재하는지 여부 판단 함수 */
   hasExistingMemo?: (row: T) => boolean;
@@ -61,7 +60,6 @@ export function MemoEditor<T extends { id: string }>({
   onSave,
   onUpdate,
   onDelete,
-  loading = false,
   placeholder = "메모를 입력하세요...",
   hasExistingMemo,
   maxLength,
@@ -69,6 +67,7 @@ export function MemoEditor<T extends { id: string }>({
   const [isEditing, setIsEditing] = useState(false);
   const [localMemoValue, setLocalMemoValue] = useState(memoValue || "");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // ✅ 자체 로딩 상태 관리
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // ✅ 편집 모드 진입 시 자동 포커스 & 커서를 끝으로
@@ -91,6 +90,7 @@ export function MemoEditor<T extends { id: string }>({
       return;
     }
 
+    setIsLoading(true);
     try {
       if (hasExisting) {
         await onUpdate(row.id, localMemoValue.trim());
@@ -100,6 +100,8 @@ export function MemoEditor<T extends { id: string }>({
       setIsEditing(false);
     } catch (error) {
       console.error("메모 저장 실패:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -109,11 +111,14 @@ export function MemoEditor<T extends { id: string }>({
   };
 
   const handleDeleteConfirm = async () => {
+    setIsLoading(true);
     try {
       await onDelete(row.id);
       setShowDeleteDialog(false);
     } catch (error) {
       console.error("메모 삭제 실패:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -130,7 +135,7 @@ export function MemoEditor<T extends { id: string }>({
             value={localMemoValue}
             onChange={(e) => setLocalMemoValue(e.target.value)}
             placeholder={placeholder}
-            disabled={loading}
+            disabled={isLoading}
             maxLength={maxLength}
             className={cn(
               "text-sm resize-none w-full transition-all",
@@ -163,7 +168,7 @@ export function MemoEditor<T extends { id: string }>({
               size="sm"
               variant="ghost"
               onClick={() => setShowDeleteDialog(true)}
-              disabled={loading}
+              disabled={isLoading}
               className="h-8 px-3 text-red-500 hover:text-red-700 hover:bg-red-50"
               aria-label="메모 삭제"
             >
@@ -178,11 +183,11 @@ export function MemoEditor<T extends { id: string }>({
               size="sm"
               variant="default"
               onClick={handleSave}
-              disabled={loading || !localMemoValue.trim() || !hasChanges}
+              disabled={isLoading || !localMemoValue.trim() || !hasChanges}
               className="h-8 px-3"
               aria-label="메모 저장"
             >
-              {loading ? (
+              {isLoading ? (
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
                 <>
@@ -197,7 +202,7 @@ export function MemoEditor<T extends { id: string }>({
               size="sm"
               variant="outline"
               onClick={handleCancel}
-              disabled={loading}
+              disabled={isLoading}
               className="h-8 px-3"
               aria-label="편집 취소"
             >

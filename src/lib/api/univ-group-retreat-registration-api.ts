@@ -136,16 +136,18 @@ export const UnivGroupRetreatRegistrationAPI = {
    * @param retreatSlug - 수양회 슬러그
    * @param registrationId - 신청 ID
    * @param memo - 메모 내용
+   * @returns 생성된 메모 정보 (id, memo)
    */
   saveAdminMemo: async (
     retreatSlug: string,
     registrationId: string,
     memo: string
-  ): Promise<void> => {
-    await webAxios.post(
+  ): Promise<{ id: number; memo: string }> => {
+    const response = await webAxios.post(
       `/api/v1/retreat/${retreatSlug}/registration/${registrationId}/memo`,
       { memo }
     );
+    return response.data.userRetreatRegistrationMemo;
   },
 
   /**
@@ -154,16 +156,18 @@ export const UnivGroupRetreatRegistrationAPI = {
    * @param retreatSlug - 수양회 슬러그
    * @param memoId - 메모 ID
    * @param memo - 수정할 메모 내용
+   * @returns 수정된 메모 정보 (id, memo)
    */
   updateAdminMemo: async (
     retreatSlug: string,
     memoId: number,
     memo: string
-  ): Promise<void> => {
-    await webAxios.put(
+  ): Promise<{ id: number; memo: string }> => {
+    const response = await webAxios.put(
       `/api/v1/retreat/${retreatSlug}/registration/${memoId}/memo`,
       { memo }
     );
+    return response.data.userRetreatRegistrationMemo;
   },
 
   /**

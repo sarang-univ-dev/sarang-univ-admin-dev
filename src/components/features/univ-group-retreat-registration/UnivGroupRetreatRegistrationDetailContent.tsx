@@ -157,7 +157,6 @@ export function UnivGroupRetreatRegistrationDetailContent({
                 await onDeleteScheduleMemo(data.historyMemoId);
               }
             }}
-            loading={isMutating}
             hasExistingMemo={(r) => !!r.memo && !!r.historyMemoId}
           />
         </div>
