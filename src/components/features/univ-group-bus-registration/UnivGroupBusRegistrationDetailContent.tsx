@@ -177,7 +177,6 @@ export function UnivGroupBusRegistrationDetailContent({
             onDelete={async (id) => {
               await onDeleteMemo(id);
             }}
-            loading={isMutating}
             hasExistingMemo={(row) => !!data.univGroupStaffShuttleBusHistoryMemo}
             placeholder="일정 변경 요청 메모를 입력하세요... (예: 수 정발 -> 수 부분참 7시)"
           />

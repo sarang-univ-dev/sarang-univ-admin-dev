@@ -126,7 +126,6 @@ export function GbsLineUpDetailContent({
             onDelete={async (id) => {
               await onDeleteScheduleMemo(id);
             }}
-            loading={isMutating}
             hasExistingMemo={(r) => !!r.unresolvedLineupHistoryMemo}
           />
         </div>
