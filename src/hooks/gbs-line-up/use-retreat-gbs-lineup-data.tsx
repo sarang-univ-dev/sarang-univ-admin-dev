@@ -127,7 +127,9 @@ export function useRetreatGbsLineupData(
       // 2. 즉시 캐시 업데이트 (2초 polling 대기하지 않음)
       if (updated && data) {
         await mutate(
-          data.map((item) => (item.id === updated.id ? updated : item)),
+          data.map((item) =>
+            item.id === updated.id ? { ...item, ...updated } : item
+          ),
           { revalidate: false }
         );
       } else {

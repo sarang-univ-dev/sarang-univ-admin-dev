@@ -128,7 +128,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
           if (!currentData) return currentData;
 
           return currentData.map((item) =>
-            item.id === updated.id ? updated : item
+            item.id === updated.id ? { ...item, ...updated } : item
           );
         },
         { revalidate: false }
@@ -257,7 +257,9 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
                   (currentData: UserRetreatGbsLineup[] | undefined) => {
                     if (!currentData) return currentData;
                     return currentData.map((item) =>
-                      item.id === response.data!.id ? response.data! : item
+                      item.id === response.data!.id
+                        ? { ...item, ...response.data! }
+                        : item
                     );
                   },
                   { revalidate: false }
@@ -369,7 +371,9 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
                   (currentData: UserRetreatGbsLineup[] | undefined) => {
                     if (!currentData) return currentData;
                     return currentData.map((item) =>
-                      item.id === response.data!.id ? response.data! : item
+                      item.id === response.data!.id
+                        ? { ...item, ...response.data! }
+                        : item
                     );
                   },
                   { revalidate: false }
@@ -482,7 +486,9 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
                   (currentData: UserRetreatGbsLineup[] | undefined) => {
                     if (!currentData) return currentData;
                     return currentData.map((item) =>
-                      item.id === response.data!.id ? response.data! : item
+                      item.id === response.data!.id
+                        ? { ...item, ...response.data! }
+                        : item
                     );
                   },
                   { revalidate: false }
@@ -596,7 +602,9 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
                       (currentData: UserRetreatGbsLineup[] | undefined) => {
                         if (!currentData) return currentData;
                         return currentData.map((item) =>
-                          item.id === response.data!.id ? response.data! : item
+                          item.id === response.data!.id
+                            ? { ...item, ...response.data! }
+                            : item
                         );
                       },
                       { revalidate: false }

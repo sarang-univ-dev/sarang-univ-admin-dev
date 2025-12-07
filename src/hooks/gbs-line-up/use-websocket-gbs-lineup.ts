@@ -74,7 +74,9 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
     // 다른 사용자의 실시간 업데이트 수신 (broadcast)
     const handleLineupUpdated = (updated: UserRetreatGbsLineup) => {
       setData((prev) =>
-        prev.map((item) => (item.id === updated.id ? updated : item))
+        prev.map((item) =>
+          item.id === updated.id ? { ...item, ...updated } : item
+        )
       );
       console.log(`🔄 Lineup updated by another user: ${updated.id}`);
     };
@@ -174,7 +176,9 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
             // ✅ 서버에서 받은 전체 lineup 객체로 갱신 (totalCount, maleCount 등 포함)
             setData((prev) => {
               const updated = prev.map((item) =>
-                item.id === response.data!.id ? response.data! : item
+                item.id === response.data!.id
+                  ? { ...item, ...response.data! }
+                  : item
               );
               console.log(`🔄 [saveGbsNumber] Data updated, total rows: ${updated.length}`);
               return updated;
@@ -236,7 +240,9 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
             // ✅ 서버에서 받은 전체 lineup 객체로 갱신
             setData((prev) => {
               const updated = prev.map((item) =>
-                item.id === response.data!.id ? response.data! : item
+                item.id === response.data!.id
+                  ? { ...item, ...response.data! }
+                  : item
               );
               console.log(`🔄 [saveLineupMemo] Data updated, affected row:`, response.data!.id);
               return updated;
@@ -293,7 +299,9 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
             // ✅ 서버에서 받은 전체 lineup 객체로 갱신
             setData((prev) => {
               const updated = prev.map((item) =>
-                item.id === response.data!.id ? response.data! : item
+                item.id === response.data!.id
+                  ? { ...item, ...response.data! }
+                  : item
               );
               console.log(`🔄 [updateLineupMemo] Data updated, affected row:`, response.data!.id);
               return updated;
@@ -350,7 +358,9 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
                 // ✅ 서버에서 받은 전체 lineup 객체로 갱신
                 setData((prev) => {
                   const updated = prev.map((item) =>
-                    item.id === response.data!.id ? response.data! : item
+                    item.id === response.data!.id
+                      ? { ...item, ...response.data! }
+                      : item
                   );
                   console.log(`🔄 [deleteLineupMemo] Data updated, affected row:`, response.data!.id);
                   return updated;

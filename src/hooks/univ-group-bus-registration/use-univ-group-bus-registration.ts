@@ -65,10 +65,12 @@ export function useUnivGroupBusRegistration(
       // 1. API 호출
       const updated = await action();
 
-      // 2. 단일 item만 교체 (또는 전체 revalidate)
+      // 2. 단일 item만 병합 (기존 데이터 유지 + 업데이트된 필드 적용)
       if (updated && data) {
         await mutate(
-          data.map((item) => (item.id === updated.id ? updated : item)),
+          data.map((item) =>
+            item.id === updated.id ? { ...item, ...updated } : item
+          ),
           { revalidate: false }
         );
       } else {
