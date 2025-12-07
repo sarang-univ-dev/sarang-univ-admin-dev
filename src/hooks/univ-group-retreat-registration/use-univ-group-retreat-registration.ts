@@ -255,37 +255,46 @@ export function useUnivGroupRetreatRegistration(
    *
    * @param registrationId - 신청 ID (string으로 전달됨, 내부에서 number로 변환)
    * @param memo - 메모 내용
+   *
+   * @description
+   * SWR Best Practice: mutate 콜백에서 currentData를 인자로 받아 사용
+   * - 외부 closure(data)에 의존하지 않음
+   * - optimisticData도 함수 형태로 현재 캐시 데이터를 받음
    */
   const saveAdminMemo = async (registrationId: string, memo: string) => {
-    if (!data) return;
-
     const numericId = Number(registrationId);
 
-    // 1. Optimistic Update: UI 먼저 업데이트
-    const optimisticData = data.map((item) =>
-      item.id === numericId
-        ? { ...item, adminMemo: memo, adminMemoId: -1 } // 임시 ID
-        : item
-    );
-
     try {
-      // 2. API 호출과 동시에 optimistic data 적용
+      // mutate 콜백에서 currentData를 직접 인자로 받아 사용
       const result = await mutate(
-        async () => {
+        async (currentData) => {
+          // API 호출
           const savedMemo = await UnivGroupRetreatRegistrationAPI.saveAdminMemo(
             retreatSlug,
             registrationId,
             memo
           );
-          // 3. 실제 memoId로 업데이트된 데이터 반환
-          return data.map((item) =>
+
+          // currentData가 없으면 revalidate로 fallback
+          if (!currentData) return undefined;
+
+          // 실제 memoId로 업데이트된 데이터 반환
+          return currentData.map((item) =>
             item.id === numericId
               ? { ...item, adminMemo: savedMemo.memo, adminMemoId: savedMemo.id }
               : item
           );
         },
         {
-          optimisticData,
+          // optimisticData를 함수로 전달하여 현재 캐시 데이터를 받음
+          optimisticData: (currentData) => {
+            if (!currentData) return [];
+            return currentData.map((item) =>
+              item.id === numericId
+                ? { ...item, adminMemo: memo, adminMemoId: -1 }
+                : item
+            );
+          },
           rollbackOnError: true,
           revalidate: false,
         }
@@ -319,33 +328,39 @@ export function useUnivGroupRetreatRegistration(
    *
    * @param memoId - 메모 ID
    * @param memo - 수정할 메모 내용
+   *
+   * @description
+   * SWR Best Practice: mutate 콜백에서 currentData를 인자로 받아 사용
    */
   const updateAdminMemo = async (memoId: number, memo: string) => {
-    if (!data) return;
-
-    // 1. Optimistic Update: UI 먼저 업데이트
-    const optimisticData = data.map((item) =>
-      item.adminMemoId === memoId ? { ...item, adminMemo: memo } : item
-    );
-
     try {
-      // 2. API 호출과 동시에 optimistic data 적용
       await mutate(
-        async () => {
+        async (currentData) => {
+          // API 호출
           const updatedMemo = await UnivGroupRetreatRegistrationAPI.updateAdminMemo(
             retreatSlug,
             memoId,
             memo
           );
-          // 3. 서버 응답으로 최종 데이터 반환
-          return data.map((item) =>
+
+          // currentData가 없으면 revalidate로 fallback
+          if (!currentData) return undefined;
+
+          // 서버 응답으로 최종 데이터 반환
+          return currentData.map((item) =>
             item.adminMemoId === memoId
               ? { ...item, adminMemo: updatedMemo.memo }
               : item
           );
         },
         {
-          optimisticData,
+          // optimisticData를 함수로 전달하여 현재 캐시 데이터를 받음
+          optimisticData: (currentData) => {
+            if (!currentData) return [];
+            return currentData.map((item) =>
+              item.adminMemoId === memoId ? { ...item, adminMemo: memo } : item
+            );
+          },
           rollbackOnError: true,
           revalidate: false,
         }
@@ -376,35 +391,41 @@ export function useUnivGroupRetreatRegistration(
    * 행정간사 메모 삭제 (Optimistic Update)
    *
    * @param memoId - 메모 ID
+   *
+   * @description
+   * SWR Best Practice: mutate 콜백에서 currentData를 인자로 받아 사용
    */
   const deleteAdminMemo = async (memoId: number) => {
     confirmDialog.show({
       title: "메모 삭제",
       description: "정말로 메모를 삭제하시겠습니까?",
       onConfirm: async () => {
-        if (!data) return;
-
-        // 1. Optimistic Update: UI 먼저 업데이트
-        const optimisticData = data.map((item) =>
-          item.adminMemoId === memoId
-            ? { ...item, adminMemo: null, adminMemoId: null }
-            : item
-        );
-
         try {
-          // 2. API 호출과 동시에 optimistic data 적용
           await mutate(
-            async () => {
+            async (currentData) => {
+              // API 호출
               await UnivGroupRetreatRegistrationAPI.deleteAdminMemo(retreatSlug, memoId);
-              // 3. 삭제 후 데이터 반환
-              return data.map((item) =>
+
+              // currentData가 없으면 revalidate로 fallback
+              if (!currentData) return undefined;
+
+              // 삭제 후 데이터 반환
+              return currentData.map((item) =>
                 item.adminMemoId === memoId
                   ? { ...item, adminMemo: null, adminMemoId: null }
                   : item
               );
             },
             {
-              optimisticData,
+              // optimisticData를 함수로 전달하여 현재 캐시 데이터를 받음
+              optimisticData: (currentData) => {
+                if (!currentData) return [];
+                return currentData.map((item) =>
+                  item.adminMemoId === memoId
+                    ? { ...item, adminMemo: null, adminMemoId: null }
+                    : item
+                );
+              },
               rollbackOnError: true,
               revalidate: false,
             }
