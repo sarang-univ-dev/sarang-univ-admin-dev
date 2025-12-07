@@ -329,7 +329,10 @@ export function UnivGroupBusRegistrationTable({
         id: "detail",
         header: () => <div className="text-center">상세보기</div>,
         cell: (props) => (
-          <div className="flex justify-center">
+          <div
+            className="flex justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Button
               size="sm"
               variant="outline"
@@ -407,12 +410,11 @@ export function UnivGroupBusRegistrationTable({
           retreatSlug={retreatSlug}
         />
 
-        {/* ✅ 가상화 테이블 */}
+        {/* ✅ 가상화 테이블 - 사이드바는 상세보기 버튼에서만 열림 */}
         <VirtualizedTable
           table={table}
           estimateSize={50}
           overscan={10}
-          onRowClick={sidebar.open}
           className="max-h-[80vh]"
           emptyMessage={
             globalFilter

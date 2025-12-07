@@ -31,6 +31,8 @@ import { GBSLineupRow } from "@/hooks/gbs-line-up/use-gbs-lineup";
 import { GbsLineUpTableToolbar } from "./GbsLineUpTableToolbar";
 import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
 import { GbsLineUpDetailContent } from "./GbsLineUpDetailContent";
+import { webAxios } from "@/lib/api/axios";
+import { useToastStore } from "@/store/toast-store";
 
 interface GbsLineUpTableProps {
   initialData: IUserRetreatGBSLineup[];
@@ -71,6 +73,9 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     deleteLineupMemo,
     refresh,
   } = useGbsLineupSwr(retreatSlug, initialData);
+
+  // ✅ 토스트 훅
+  const addToast = useToastStore((state) => state.add);
 
   // ✅ 데이터 변환
   const data = useMemo<GBSLineupRow[]>(() => {
@@ -182,24 +187,65 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
     [deleteLineupMemo]
   );
 
-  // Placeholder handlers (미구현 기능)
+  // ✅ 일정 변동 요청 메모 핸들러들
   const handleSaveScheduleMemo = useCallback(
     async (id: string, memo: string) => {
-      // 미구현
+      try {
+        await webAxios.post(
+          `/api/v1/retreat/${retreatSlug}/line-up/${id}/schedule-change-request-memo`,
+          { memo: memo.trim() }
+        );
+        await refresh(); // SWR 캐시 갱신
+        addToast({
+          title: "성공",
+          description: "일정 변동 요청 메모가 저장되었습니다.",
+          variant: "success",
+        });
+      } catch (error) {
+        addToast({
+          title: "오류",
+          description: "일정 변동 요청 메모 저장에 실패했습니다.",
+          variant: "destructive",
+        });
+        throw error;
+      }
     },
-    []
+    [retreatSlug, refresh, addToast]
   );
 
   const handleUpdateScheduleMemo = useCallback(
     async (id: string, memo: string) => {
-      // 미구현
+      // 일정 변동 요청 메모는 수정 API가 없으므로, 새로 저장
+      await handleSaveScheduleMemo(id, memo);
     },
-    []
+    [handleSaveScheduleMemo]
   );
 
-  const handleDeleteScheduleMemo = useCallback(async (id: string) => {
-    // 미구현
-  }, []);
+  const handleDeleteScheduleMemo = useCallback(
+    async (id: string) => {
+      // 일정 변동 요청 메모 삭제는 resolve-memo API 사용
+      const currentRow = dataRef.current.find((r) => r.id === id);
+      if (!currentRow) return;
+
+      try {
+        // resolve-memo는 userRetreatRegistrationHistoryMemoId가 필요하지만
+        // 현재 데이터에 해당 ID가 없으므로 일단 경고 메시지 표시
+        addToast({
+          title: "안내",
+          description: "일정 변동 요청 메모 삭제는 재정 간사 처리 후 자동으로 사라집니다.",
+          variant: "default",
+        });
+      } catch (error) {
+        addToast({
+          title: "오류",
+          description: "일정 변동 요청 메모 삭제에 실패했습니다.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    [addToast]
+  );
 
   const isLoadingFn = useCallback(
     (id: string, action: string) => isMutating,
@@ -367,12 +413,11 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         setScheduleFilter={setScheduleFilter}
       />
 
-      {/* ✅ 가상화 테이블 */}
+      {/* ✅ 가상화 테이블 - 사이드바는 상세보기 버튼에서만 열림 */}
       <VirtualizedTable
         table={table}
         estimateSize={50}
         overscan={10}
-        onRowClick={sidebar.open}
         getRowClassName={row =>
           row.isLeader ? "bg-cyan-50 hover:bg-cyan-100" : ""
         }

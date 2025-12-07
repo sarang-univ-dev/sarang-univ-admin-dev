@@ -274,7 +274,10 @@ export function useAccountStaffColumns(
         id: "detailInfo",
         header: () => <div className="text-center text-sm">상세</div>,
         cell: (props) => (
-          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+          <div
+            className="text-center px-2 py-1 whitespace-nowrap shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Button
               size="sm"
               variant="outline"

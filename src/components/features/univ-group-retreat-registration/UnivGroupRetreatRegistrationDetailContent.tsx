@@ -25,6 +25,9 @@ interface UnivGroupRetreatRegistrationDetailContentProps {
   onSaveScheduleMemo: (id: string, memo: string) => Promise<void>;
   onUpdateScheduleMemo: (historyMemoId: number, memo: string) => Promise<void>;
   onDeleteScheduleMemo: (historyMemoId: number) => Promise<void>;
+  onSaveAdminMemo: (id: string, memo: string) => Promise<unknown>;
+  onUpdateAdminMemo: (memoId: number, memo: string) => Promise<unknown>;
+  onDeleteAdminMemo: (memoId: number) => Promise<unknown>;
   isMutating: boolean;
 }
 
@@ -35,6 +38,9 @@ export function UnivGroupRetreatRegistrationDetailContent({
   onSaveScheduleMemo,
   onUpdateScheduleMemo,
   onDeleteScheduleMemo,
+  onSaveAdminMemo,
+  onUpdateAdminMemo,
+  onDeleteAdminMemo,
   isMutating,
 }: UnivGroupRetreatRegistrationDetailContentProps) {
   // 선택된 스케줄 ID 추출
@@ -160,6 +166,29 @@ export function UnivGroupRetreatRegistrationDetailContent({
             hasExistingMemo={(r) => !!r.memo && !!r.historyMemoId}
           />
         </div>
+      </InfoSection>
+
+      {/* 행정간사 메모 */}
+      <InfoSection title="행정간사 메모" icon={FileText}>
+        <MemoEditor
+          row={data}
+          memoValue={data.staffMemo}
+          onSave={async (id, memo) => {
+            await onSaveAdminMemo(id, memo);
+          }}
+          onUpdate={async (id, memo) => {
+            if (data.adminMemoId) {
+              await onUpdateAdminMemo(data.adminMemoId, memo);
+            }
+          }}
+          onDelete={async () => {
+            if (data.adminMemoId) {
+              await onDeleteAdminMemo(data.adminMemoId);
+            }
+          }}
+          hasExistingMemo={(r) => !!r.staffMemo && !!r.adminMemoId}
+          placeholder="행정간사 메모를 입력하세요..."
+        />
       </InfoSection>
 
       {/* 기타 정보 */}

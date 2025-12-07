@@ -56,6 +56,9 @@ export function UnivGroupRetreatRegistrationTable({
     saveScheduleMemo,
     updateScheduleMemo,
     deleteScheduleMemo,
+    saveAdminMemo,
+    updateAdminMemo,
+    deleteAdminMemo,
     isMutating
   } = useUnivGroupRetreatRegistration(retreatSlug, {
     fallbackData: initialData,
@@ -157,7 +160,7 @@ export function UnivGroupRetreatRegistrationTable({
           schedules={schedules}
         />
 
-        {/* ✅ 모바일: 컴팩트 테이블 */}
+        {/* ✅ 모바일: 컴팩트 테이블 - 사이드바는 상세보기 버튼에서만 열림 */}
         <div className="md:hidden">
           <UnivGroupRetreatRegistrationMobileTable
             data={filteredData}
@@ -165,13 +168,12 @@ export function UnivGroupRetreatRegistrationTable({
           />
         </div>
 
-        {/* ✅ 데스크톱: 가상화 테이블 */}
+        {/* ✅ 데스크톱: 가상화 테이블 - 사이드바는 상세보기 버튼에서만 열림 */}
         <div className="hidden md:block">
           <VirtualizedTable
             table={table}
             estimateSize={50}
             overscan={10}
-            onRowClick={sidebar.open}
             className="max-h-[80vh]"
             emptyMessage={
               globalFilter
@@ -199,6 +201,9 @@ export function UnivGroupRetreatRegistrationTable({
             onSaveScheduleMemo={saveScheduleMemo}
             onUpdateScheduleMemo={updateScheduleMemo}
             onDeleteScheduleMemo={deleteScheduleMemo}
+            onSaveAdminMemo={saveAdminMemo}
+            onUpdateAdminMemo={updateAdminMemo}
+            onDeleteAdminMemo={deleteAdminMemo}
             isMutating={isMutating}
           />
         )}

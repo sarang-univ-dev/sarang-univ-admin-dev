@@ -269,7 +269,10 @@ export function useUnivGroupRetreatRegistrationColumns(
         id: "detailInfo",
         header: () => <div className="text-center text-sm whitespace-nowrap">상세보기</div>,
         cell: props => (
-          <div className="flex justify-center shrink-0 px-1">
+          <div
+            className="flex justify-center shrink-0 px-1"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Button
               size="sm"
               variant="outline"
