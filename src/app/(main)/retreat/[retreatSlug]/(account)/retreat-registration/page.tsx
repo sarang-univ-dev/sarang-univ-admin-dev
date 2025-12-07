@@ -23,7 +23,7 @@ interface PageProps {
  * Features:
  * - 전체 신청자 목록 조회 및 관리
  * - 입금 확인, 간사 배정, 환불 처리
- * - 회계 메모 작성 및 관리
+ * - 재정간사 메모 작성 및 관리
  * - 부서별 계좌 현황 및 입금 집계
  * - Server Component로 초기 데이터 페칭
  * - 병렬 데이터 로딩 (Promise.all)

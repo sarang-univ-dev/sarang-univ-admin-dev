@@ -93,7 +93,7 @@ export function AccountStaffRegistrationTableToolbar({
                     status: "입금 현황",
                     confirmedBy: "처리자명",
                     paymentConfirmedAt: "처리시각",
-                    accountMemo: "회계 메모",
+                    accountMemo: "재정간사 메모",
                   };
                   return names[id] || id;
                 };

@@ -189,7 +189,7 @@ export function useAccountStaffRegistration(
   };
 
   /**
-   * 회계 메모 저장
+   * 재정간사 메모 저장
    *
    * @param registrationId - 신청 ID
    * @param memo - 메모 내용
@@ -209,7 +209,7 @@ export function useAccountStaffRegistration(
   };
 
   /**
-   * 회계 메모 수정
+   * 재정간사 메모 수정
    *
    * @param memoId - 메모 ID
    * @param memo - 수정할 메모 내용
@@ -227,7 +227,7 @@ export function useAccountStaffRegistration(
   };
 
   /**
-   * 회계 메모 삭제
+   * 재정간사 메모 삭제
    *
    * @param memoId - 메모 ID
    */

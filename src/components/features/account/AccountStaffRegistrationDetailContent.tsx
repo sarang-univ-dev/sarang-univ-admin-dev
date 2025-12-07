@@ -50,9 +50,9 @@ export function AccountStaffRegistrationDetailContent({
         />
       </InfoSection>
 
-      {/* 회계 메모 */}
+      {/* 재정간사 메모 */}
       {data.accountMemo && (
-        <InfoSection title="회계 메모">
+        <InfoSection title="재정간사 메모">
           <div className="p-4 bg-blue-50 rounded-lg">
             <p className="text-sm whitespace-pre-wrap">{data.accountMemo}</p>
           </div>

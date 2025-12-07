@@ -70,6 +70,13 @@ export function MemoEditor<T extends { id: string }>({
   const [isLoading, setIsLoading] = useState(false); // ✅ 자체 로딩 상태 관리
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // ✅ memoValue prop 변경 시 localMemoValue 동기화 (SWR 캐시 업데이트 반영)
+  useEffect(() => {
+    if (!isEditing) {
+      setLocalMemoValue(memoValue || "");
+    }
+  }, [memoValue, isEditing]);
+
   // ✅ 편집 모드 진입 시 자동 포커스 & 커서를 끝으로
   useEffect(() => {
     if (isEditing && textareaRef.current) {

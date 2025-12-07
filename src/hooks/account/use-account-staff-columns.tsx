@@ -330,7 +330,7 @@ export function useAccountStaffColumns(
         id: "accountMemo",
         header: () => (
           <div className="text-center text-sm whitespace-normal">
-            회계
+            재정간사
             <br />
             메모
           </div>

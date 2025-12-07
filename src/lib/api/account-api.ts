@@ -74,7 +74,7 @@ export const AccountStaffAPI = {
   },
 
   /**
-   * 회계 메모 저장 (신규 생성)
+   * 재정간사 메모 저장 (신규 생성)
    *
    * @param retreatSlug - 수양회 슬러그
    * @param registrationId - 신청 ID
@@ -92,7 +92,7 @@ export const AccountStaffAPI = {
   },
 
   /**
-   * 회계 메모 수정
+   * 재정간사 메모 수정
    *
    * @param retreatSlug - 수양회 슬러그
    * @param memoId - 메모 ID
@@ -110,7 +110,7 @@ export const AccountStaffAPI = {
   },
 
   /**
-   * 회계 메모 삭제
+   * 재정간사 메모 삭제
    *
    * @param retreatSlug - 수양회 슬러그
    * @param memoId - 메모 ID
