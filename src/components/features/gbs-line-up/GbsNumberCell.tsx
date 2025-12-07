@@ -215,7 +215,7 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
       <input
         ref={inputRef}
         type="text"

@@ -42,7 +42,7 @@ export function AccountStaffRegistrationTableActions({
   // 입금 대기 중 (PENDING)
   if (row.status === UserRetreatRegistrationPaymentStatus.PENDING) {
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
         <Button
           size="sm"
           variant="outline"
@@ -78,7 +78,7 @@ export function AccountStaffRegistrationTableActions({
   // 입금 완료 (PAID)
   if (row.status === UserRetreatRegistrationPaymentStatus.PAID) {
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
         <Button
           size="sm"
           variant="outline"

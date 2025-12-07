@@ -35,7 +35,7 @@ export function UnivGroupRetreatRegistrationTableActions({
 
     case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
       return (
-        <div className="flex justify-center">
+        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -55,7 +55,7 @@ export function UnivGroupRetreatRegistrationTableActions({
 
     case UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST:
       return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -89,7 +89,7 @@ export function UnivGroupRetreatRegistrationTableActions({
 
     case UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST:
       return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"

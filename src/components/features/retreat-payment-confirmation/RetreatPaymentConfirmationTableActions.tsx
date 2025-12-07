@@ -30,7 +30,7 @@ export function RetreatPaymentConfirmationTableActions({
   switch (registration.paymentStatus) {
     case UserRetreatRegistrationPaymentStatus.PENDING:
       return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -64,7 +64,7 @@ export function RetreatPaymentConfirmationTableActions({
 
     case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
       return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"

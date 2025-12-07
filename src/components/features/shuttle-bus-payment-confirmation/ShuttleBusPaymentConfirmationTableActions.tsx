@@ -164,7 +164,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
   switch (registration.shuttleBusPaymentStatus) {
     case UserRetreatShuttleBusPaymentStatus.PENDING:
       return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -198,7 +198,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
 
     case UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST:
       return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"

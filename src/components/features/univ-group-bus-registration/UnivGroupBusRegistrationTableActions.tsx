@@ -36,7 +36,7 @@ export function UnivGroupBusRegistrationTableActions({
   }
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
       <Button
         size="sm"
         variant="outline"

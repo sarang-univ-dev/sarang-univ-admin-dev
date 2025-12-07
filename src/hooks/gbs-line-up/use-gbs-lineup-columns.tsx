@@ -634,7 +634,10 @@ export function useGbsLineupColumns(
         id: "detailInfo",
         header: () => <div className="text-center text-sm whitespace-nowrap">상세</div>,
         cell: (props) => (
-          <div className="text-center px-2 py-1 whitespace-nowrap">
+          <div
+            className="text-center px-2 py-1 whitespace-nowrap"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Button
               size="sm"
               variant="outline"
