@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
 import { ScheduleChangeFormContent } from "./ScheduleChangeFormContent";
 import { useToastStore } from "@/store/toast-store";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 
 interface ScheduleChangeModalProps {
   open: boolean;
@@ -111,6 +112,7 @@ export function ScheduleChangeModal({
   title = "일정 변경 처리",
 }: ScheduleChangeModalProps) {
   const addToast = useToastStore((state) => state.add);
+  const confirmDialog = useConfirmDialogStore();
   const [scheduleIds, setScheduleIds] = useState(initialScheduleIds);
   const [calculatedAmount, setCalculatedAmount] = useState(originalAmount);
   const [memoContent, setMemoContent] = useState("");
@@ -125,33 +127,35 @@ export function ScheduleChangeModal({
     }
   }, [open, initialScheduleIds, originalAmount]);
 
-  // 확인 버튼 핸들러
-  const handleConfirm = async () => {
-    setIsLoading(true);
-    try {
-      await onConfirm({
-        scheduleIds,
-        calculatedAmount,
-        ...(memoMode === "editable" && { memo: memoContent }),
-      });
+  // 확인 버튼 핸들러 - 확인 다이얼로그를 먼저 표시
+  const handleConfirm = () => {
+    confirmDialog.show({
+      title: "일정 변경 확인",
+      description: "정말로 일정을 변경하시겠습니까?",
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          await onConfirm({
+            scheduleIds,
+            calculatedAmount,
+            ...(memoMode === "editable" && { memo: memoContent }),
+          });
 
-      addToast({
-        title: "성공",
-        description: "일정 변경이 처리되었습니다.",
-        variant: "success",
-      });
+          addToast({
+            title: "성공",
+            description: "일정 변경이 처리되었습니다.",
+            variant: "success",
+          });
 
-      onOpenChange(false);
-    } catch (error) {
-      console.error("일정 변경 처리 실패:", error);
-      addToast({
-        title: "오류",
-        description: "일정 변경 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+          onOpenChange(false);
+        } catch (error) {
+          console.error("일정 변경 처리 실패:", error);
+          // 에러 토스트는 호출되는 곳(예: useScheduleChangeRequest)에서 표시하므로 여기서는 생략
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   return (

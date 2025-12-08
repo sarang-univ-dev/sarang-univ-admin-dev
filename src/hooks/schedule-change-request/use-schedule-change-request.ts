@@ -83,6 +83,9 @@ export function useScheduleChangeRequest(
 
       // Rollback on error
       await mutate();
+
+      // 에러를 다시 throw하여 호출자가 처리할 수 있도록 함
+      throw error;
     } finally {
       setIsMutating(false);
     }
@@ -90,27 +93,23 @@ export function useScheduleChangeRequest(
 
   /**
    * 일정 변경 승인 (처리)
+   * - 확인 다이얼로그는 ScheduleChangeModal에서 처리
+   * - 토스트도 ScheduleChangeModal에서 표시
    */
   const approveScheduleChange = async (
     userRetreatRegistrationId: string,
     afterScheduleIds: number[]
   ) => {
-    confirmDialog.show({
-      title: "일정 변동 처리 완료",
-      description: "해당 일정 변동 요청을 처리하시겠습니까?",
-      onConfirm: async () => {
-        await updateCache(
-          () =>
-            ScheduleChangeRequestAPI.approveScheduleChange(
-              retreatSlug,
-              userRetreatRegistrationId,
-              afterScheduleIds
-            ),
-          undefined,
-          "일정 변경 요청이 처리되었습니다."
-        );
-      },
-    });
+    await updateCache(
+      () =>
+        ScheduleChangeRequestAPI.approveScheduleChange(
+          retreatSlug,
+          userRetreatRegistrationId,
+          afterScheduleIds
+        ),
+      undefined,
+      undefined // 토스트는 ScheduleChangeModal에서 표시
+    );
   };
 
   /**
