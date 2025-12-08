@@ -4,11 +4,11 @@ interface ConfirmDialogState {
   isOpen: boolean;
   title: string;
   description: string;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   show: (options: {
     title: string;
     description: string;
-    onConfirm: () => void;
+    onConfirm: () => void | Promise<void>;
   }) => void;
   close: () => void;
 }
