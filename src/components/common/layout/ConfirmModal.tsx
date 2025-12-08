@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,40 +11,32 @@ import {
   AlertDialogAction,
 } from "@/components/radix/alert-dialog";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import { Loader2 } from "lucide-react";
 
+/**
+ * 전역 확인 다이얼로그
+ *
+ * 중첩 다이얼로그 문제 방지를 위해 확인 시 즉시 닫고,
+ * async 작업은 호출자(예: ScheduleChangeModal)가 처리합니다.
+ */
 const ConfirmModal = () => {
   const { isOpen, title, description, onConfirm, close } =
     useConfirmDialogStore();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleConfirm = async () => {
-    setIsLoading(true);
-    try {
-      await onConfirm();
-      close();
-    } catch {
-      // onConfirm 내부에서 에러 처리하므로 여기서는 로딩만 해제
-    } finally {
-      setIsLoading(false);
-    }
+  const handleConfirm = () => {
+    close(); // 먼저 닫기 (중첩 다이얼로그 문제 방지)
+    onConfirm(); // async 작업은 호출자가 처리
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={open => !open && !isLoading && close()}>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && close()}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={close} disabled={isLoading}>
-            취소
-          </AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} disabled={isLoading}>
-            {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            확인
-          </AlertDialogAction>
+          <AlertDialogCancel onClick={close}>취소</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm}>확인</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
