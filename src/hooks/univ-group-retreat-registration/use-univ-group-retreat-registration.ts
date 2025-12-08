@@ -195,37 +195,143 @@ export function useUnivGroupRetreatRegistration(
   /**
    * 일정 변경 메모 저장
    *
+   * @description
+   * Best Practice: 서버 응답으로 정확한 데이터(historyMemoId 포함)를 캐시에 반영
+   * - Optimistic update로 즉시 memo 내용 반영
+   * - 서버 응답에서 생성된 memoId를 캐시에 업데이트
+   *
    * @param registrationId - 신청 ID
    * @param memo - 메모 내용
    */
   const saveScheduleMemo = async (registrationId: string, memo: string) => {
-    await updateCache(
-      () =>
-        UnivGroupRetreatRegistrationAPI.saveScheduleMemo(
-          retreatSlug,
-          registrationId,
-          memo
-        ),
-      "메모가 성공적으로 저장되었습니다."
-    );
+    const numericId = Number(registrationId);
+
+    setIsMutating(true);
+    try {
+      // 1. Optimistic update: 즉시 UI 반영
+      const optimisticData = data?.map((item) =>
+        item.id === numericId
+          ? { ...item, univGroupStaffScheduleHistoryMemo: memo }
+          : item
+      );
+
+      if (optimisticData) {
+        await mutate(optimisticData, { revalidate: false });
+      }
+
+      // 2. API 호출 및 서버 응답 받기
+      const createdMemo = await UnivGroupRetreatRegistrationAPI.saveScheduleMemo(
+        retreatSlug,
+        registrationId,
+        memo
+      );
+
+      // 3. 서버 응답으로 정확한 데이터 업데이트 (historyMemoId 포함)
+      await mutate(
+        (currentData) =>
+          currentData?.map((item) =>
+            item.id === numericId
+              ? {
+                  ...item,
+                  univGroupStaffScheduleHistoryMemo: createdMemo.memo,
+                  retreatRegistrationHistoryMemoId: createdMemo.id,
+                }
+              : item
+          ),
+        { revalidate: false }
+      );
+
+      addToast({
+        title: "성공",
+        description: "메모가 성공적으로 저장되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      // 에러 시 서버 데이터로 롤백
+      await mutate();
+
+      const message =
+        error instanceof AxiosError
+          ? error.response?.data?.message || "메모 저장 중 오류가 발생했습니다."
+          : "메모 저장 중 오류가 발생했습니다.";
+
+      addToast({
+        title: "오류 발생",
+        description: message,
+        variant: "destructive",
+      });
+
+      throw error;
+    } finally {
+      setIsMutating(false);
+    }
   };
 
   /**
    * 일정 변경 메모 수정
    *
+   * @description
+   * Best Practice: 서버 응답으로 정확한 데이터를 캐시에 반영
+   *
    * @param historyMemoId - history 메모 ID
    * @param memo - 수정할 메모 내용
    */
   const updateScheduleMemo = async (historyMemoId: number, memo: string) => {
-    await updateCache(
-      () =>
-        UnivGroupRetreatRegistrationAPI.updateScheduleMemo(
-          retreatSlug,
-          historyMemoId,
-          memo
-        ),
-      "메모가 성공적으로 수정되었습니다."
-    );
+    setIsMutating(true);
+    try {
+      // 1. Optimistic update: 즉시 UI 반영
+      const optimisticData = data?.map((item) =>
+        item.retreatRegistrationHistoryMemoId === historyMemoId
+          ? { ...item, univGroupStaffScheduleHistoryMemo: memo }
+          : item
+      );
+
+      if (optimisticData) {
+        await mutate(optimisticData, { revalidate: false });
+      }
+
+      // 2. API 호출 및 서버 응답 받기
+      const updatedMemo = await UnivGroupRetreatRegistrationAPI.updateScheduleMemo(
+        retreatSlug,
+        historyMemoId,
+        memo
+      );
+
+      // 3. 서버 응답으로 정확한 데이터 업데이트
+      await mutate(
+        (currentData) =>
+          currentData?.map((item) =>
+            item.retreatRegistrationHistoryMemoId === historyMemoId
+              ? { ...item, univGroupStaffScheduleHistoryMemo: updatedMemo.memo }
+              : item
+          ),
+        { revalidate: false }
+      );
+
+      addToast({
+        title: "성공",
+        description: "메모가 성공적으로 수정되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      // 에러 시 서버 데이터로 롤백
+      await mutate();
+
+      const message =
+        error instanceof AxiosError
+          ? error.response?.data?.message || "메모 수정 중 오류가 발생했습니다."
+          : "메모 수정 중 오류가 발생했습니다.";
+
+      addToast({
+        title: "오류 발생",
+        description: message,
+        variant: "destructive",
+      });
+
+      throw error;
+    } finally {
+      setIsMutating(false);
+    }
   };
 
   /**
@@ -238,14 +344,53 @@ export function useUnivGroupRetreatRegistration(
       title: "메모 삭제",
       description: "정말로 메모를 삭제하시겠습니까?",
       onConfirm: async () => {
-        await updateCache(
-          () =>
-            UnivGroupRetreatRegistrationAPI.deleteScheduleMemo(
-              retreatSlug,
-              historyMemoId
-            ),
-          "메모가 성공적으로 삭제되었습니다."
-        );
+        setIsMutating(true);
+        try {
+          // 1. Optimistic update: 즉시 UI 반영
+          const optimisticData = data?.map((item) =>
+            item.retreatRegistrationHistoryMemoId === historyMemoId
+              ? {
+                  ...item,
+                  univGroupStaffScheduleHistoryMemo: null,
+                  retreatRegistrationHistoryMemoId: null,
+                }
+              : item
+          );
+
+          if (optimisticData) {
+            await mutate(optimisticData, { revalidate: false });
+          }
+
+          // 2. API 호출
+          await UnivGroupRetreatRegistrationAPI.deleteScheduleMemo(
+            retreatSlug,
+            historyMemoId
+          );
+
+          addToast({
+            title: "성공",
+            description: "메모가 성공적으로 삭제되었습니다.",
+            variant: "success",
+          });
+        } catch (error) {
+          // 에러 시 서버 데이터로 롤백
+          await mutate();
+
+          const message =
+            error instanceof AxiosError
+              ? error.response?.data?.message || "메모 삭제 중 오류가 발생했습니다."
+              : "메모 삭제 중 오류가 발생했습니다.";
+
+          addToast({
+            title: "오류 발생",
+            description: message,
+            variant: "destructive",
+          });
+
+          throw error;
+        } finally {
+          setIsMutating(false);
+        }
       },
     });
   };

@@ -2,6 +2,18 @@ import { webAxios } from "@/lib/api/axios";
 import { IUnivGroupAdminStaffRetreat } from "@/types/univ-group-admin-staff";
 
 /**
+ * 일정 변경 요청 메모 응답 타입
+ */
+export interface IScheduleHistoryMemoResponse {
+  id: number;
+  userRetreatRegistrationId: number;
+  memo: string;
+  issuerAdminUserId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
  * 부서 수양회 신청 API 클라이언트
  *
  * @description
@@ -85,16 +97,18 @@ export const UnivGroupRetreatRegistrationAPI = {
    * @param retreatSlug - 수양회 슬러그
    * @param registrationId - 신청 ID
    * @param memo - 메모 내용
+   * @returns 생성된 메모 데이터 (id 포함)
    */
   saveScheduleMemo: async (
     retreatSlug: string,
     registrationId: string,
     memo: string
-  ): Promise<void> => {
-    await webAxios.post(
+  ): Promise<IScheduleHistoryMemoResponse> => {
+    const response = await webAxios.post(
       `/api/v1/retreat/${retreatSlug}/registration/${registrationId}/schedule-change-request-memo`,
       { memo }
     );
+    return response.data.userRetreatRegistrationHistoryMemo;
   },
 
   /**
@@ -103,16 +117,18 @@ export const UnivGroupRetreatRegistrationAPI = {
    * @param retreatSlug - 수양회 슬러그
    * @param historyMemoId - history 메모 ID
    * @param memo - 수정할 메모 내용
+   * @returns 수정된 메모 데이터
    */
   updateScheduleMemo: async (
     retreatSlug: string,
     historyMemoId: number,
     memo: string
-  ): Promise<void> => {
-    await webAxios.put(
+  ): Promise<IScheduleHistoryMemoResponse> => {
+    const response = await webAxios.put(
       `/api/v1/retreat/${retreatSlug}/registration/schedule-change-request-memo/${historyMemoId}`,
       { memo }
     );
+    return response.data.userRetreatRegistrationHistoryMemo;
   },
 
   /**
