@@ -240,12 +240,14 @@ export function GbsLineUpTableToolbar({
     (mode) => mode !== 'none'
   ).length;
 
-  // 컬럼명 매핑
-  const getColumnName = (id: string): string => {
+  // 컬럼명 매핑 (스케줄 라벨 참조를 위해 useMemo 사용)
+  const getColumnName = useMemo(() => {
     const names: Record<string, string> = {
       gbsNumber: "GBS 번호",
-      attendance: "전참/부분참",
-      genderCount: "남/여",
+      fullAttendanceCount: "전참",
+      partialAttendanceCount: "부분참",
+      maleCount: "남",
+      femaleCount: "여",
       department: "부서",
       gender: "성별",
       grade: "학년",
@@ -258,15 +260,16 @@ export function GbsLineUpTableToolbar({
       gbsMemo: "GBS 메모",
       scheduleMemo: "일정변동 요청",
       adminMemo: "행정간사 메모",
+      detailInfo: "상세",
     };
 
-    // 스케줄 컬럼
-    if (id.startsWith("schedule_")) {
-      return `스케줄 ${id.replace("schedule_", "")}`;
-    }
+    // 스케줄 컬럼 라벨 매핑 추가
+    scheduleColumnsMeta.forEach((col) => {
+      names[col.key] = col.label;
+    });
 
-    return names[id] || id;
-  };
+    return (id: string): string => names[id] || id;
+  }, [scheduleColumnsMeta]);
 
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
