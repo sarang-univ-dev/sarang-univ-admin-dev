@@ -186,52 +186,28 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
   }, [retreatSlug, swrKey]); // ✅ 최소한의 dependency
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // Mutation 함수들 (WebSocket 사용, fallback으로 HTTP)
+  // Mutation 함수들 (✅ Best Practice: HTTP 기반, WebSocket은 실시간 수신만)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   /**
-   * GBS 번호 저장 (Optimistic Update)
+   * GBS 번호 저장 (HTTP 기반 + Optimistic Update)
+   *
+   * @description
+   * Best Practice: HTTP를 기본 mutation 방법으로 사용
+   * - HTTP는 안정적이고 에러 처리가 명확함
+   * - WebSocket callback이 호출되지 않는 문제 방지
+   * - SWR의 권장 패턴과 일치
    */
   const saveGbsNumber = useCallback(
     async (userRetreatRegistrationId: number, gbsNumber: number | null) => {
-      // ✅ WebSocket 연결 안 되어 있으면 HTTP fallback
-      if (!socketRef.current?.connected) {
-        try {
-          setIsMutating(true);
-          const response = await webAxios.put(
-            `/api/v1/retreat/${retreatSlug}/line-up/gbs-number`,
-            { userRetreatRegistrationId, gbsNumber }
-          );
-          await mutateSWR(); // HTTP 성공 후 SWR 캐시 갱신
-          addToast({
-            title: '성공',
-            description: 'GBS 번호가 저장되었습니다.',
-            variant: 'success',
-          });
-          return response.data;
-        } catch (error) {
-          addToast({
-            title: '오류',
-            description: 'GBS 번호 저장에 실패했습니다.',
-            variant: 'destructive',
-          });
-          throw error;
-        } finally {
-          setIsMutating(false);
-        }
-      }
-
-      console.log(`🔄 [saveGbsNumber] Optimistic update: registration ${userRetreatRegistrationId} → GBS ${gbsNumber}`);
-
       setIsMutating(true);
 
       try {
-        // ✅ 1. Optimistic Update
+        // ✅ 1. Optimistic Update (즉각적인 UI 반영)
         await mutate(
           swrKey,
           (currentData: UserRetreatGbsLineup[] | undefined) => {
             if (!currentData) return currentData;
-
             return currentData.map((item) =>
               item.id === userRetreatRegistrationId
                 ? { ...item, gbsNumber, updatedAt: new Date().toISOString() }
@@ -241,91 +217,58 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
           { revalidate: false, rollbackOnError: true }
         );
 
-        // ✅ 2. WebSocket 요청
-        return new Promise<UserRetreatGbsLineup>((resolve, reject) => {
-          socketRef.current!.emit(
-            'update-gbs-number',
-            { userRetreatRegistrationId, gbsNumber },
-            (response) => {
-              setIsMutating(false);
+        // ✅ 2. HTTP API 호출 (안정적인 mutation)
+        const response = await webAxios.put(
+          `/api/v1/retreat/${retreatSlug}/line-up/gbs-number`,
+          { userRetreatRegistrationId, gbsNumber }
+        );
 
-              if (response.status === 'OK' && response.data) {
-                console.log(`✅ [saveGbsNumber] Server confirmed update`);
-
-                mutate(
-                  swrKey,
-                  (currentData: UserRetreatGbsLineup[] | undefined) => {
-                    if (!currentData) return currentData;
-                    return currentData.map((item) =>
-                      item.id === response.data!.id
-                        ? { ...item, ...response.data! }
-                        : item
-                    );
-                  },
-                  { revalidate: false }
-                );
-
-                addToast({
-                  title: '성공',
-                  description: 'GBS 번호가 저장되었습니다.',
-                  variant: 'success',
-                });
-
-                resolve(response.data);
-              } else {
-                addToast({
-                  title: '오류',
-                  description: response.message || 'GBS 번호 저장에 실패했습니다.',
-                  variant: 'destructive',
-                });
-                reject(new Error(response.message));
-              }
-            }
+        // ✅ 3. 서버 응답으로 캐시 업데이트
+        if (response.data?.userRetreatGbsLineup) {
+          await mutate(
+            swrKey,
+            (currentData: UserRetreatGbsLineup[] | undefined) => {
+              if (!currentData) return currentData;
+              return currentData.map((item) =>
+                item.id === response.data.userRetreatGbsLineup.id
+                  ? { ...item, ...response.data.userRetreatGbsLineup }
+                  : item
+              );
+            },
+            { revalidate: false }
           );
+        } else {
+          // 서버 응답에 데이터가 없으면 전체 revalidate
+          await mutateSWR();
+        }
+
+        addToast({
+          title: '성공',
+          description: 'GBS 번호가 저장되었습니다.',
+          variant: 'success',
         });
+
+        return response.data;
       } catch (error) {
-        setIsMutating(false);
-        console.error('❌ [saveGbsNumber] Error:', error);
+        // Optimistic Update 롤백은 rollbackOnError: true로 자동 처리
+        addToast({
+          title: '오류',
+          description: 'GBS 번호 저장에 실패했습니다.',
+          variant: 'destructive',
+        });
         throw error;
+      } finally {
+        setIsMutating(false);
       }
     },
     [swrKey, addToast, retreatSlug, mutateSWR]
   );
 
   /**
-   * 라인업 메모 저장
+   * 라인업 메모 저장 (HTTP 기반 + Optimistic Update)
    */
   const saveLineupMemo = useCallback(
     async (userRetreatRegistrationId: number, memo: string, color?: string) => {
-      // ✅ WebSocket 연결 안 되어 있으면 HTTP fallback
-      if (!socketRef.current?.connected) {
-        try {
-          setIsMutating(true);
-          const response = await webAxios.post(
-            `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo`,
-            { userRetreatRegistrationId, memo: memo.trim(), color }
-          );
-          await mutateSWR();
-          addToast({
-            title: '성공',
-            description: '메모가 저장되었습니다.',
-            variant: 'success',
-          });
-          return response.data;
-        } catch (error) {
-          addToast({
-            title: '오류',
-            description: '메모 저장에 실패했습니다.',
-            variant: 'destructive',
-          });
-          throw error;
-        } finally {
-          setIsMutating(false);
-        }
-      }
-
-      console.log(`🔄 [saveLineupMemo] Optimistic update: registration ${userRetreatRegistrationId}`);
-
       setIsMutating(true);
 
       try {
@@ -335,7 +278,6 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
             swrKey,
             (currentData: UserRetreatGbsLineup[] | undefined) => {
               if (!currentData) return currentData;
-
               return currentData.map((item) =>
                 item.id === userRetreatRegistrationId
                   ? {
@@ -351,95 +293,56 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
           );
         }
 
-        // ✅ 2. WebSocket 요청
-        return new Promise<UserRetreatGbsLineup>((resolve, reject) => {
-          socketRef.current!.emit(
-            'create-lineup-memo',
-            {
-              userRetreatRegistrationId,
-              memo: memo.trim(),
-              color,
+        // ✅ 2. HTTP API 호출
+        const response = await webAxios.post(
+          `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo`,
+          { userRetreatRegistrationId, memo: memo.trim(), color }
+        );
+
+        // ✅ 3. 서버 응답으로 캐시 업데이트
+        if (response.data?.userRetreatGbsLineup) {
+          await mutate(
+            swrKey,
+            (currentData: UserRetreatGbsLineup[] | undefined) => {
+              if (!currentData) return currentData;
+              return currentData.map((item) =>
+                item.id === response.data.userRetreatGbsLineup.id
+                  ? { ...item, ...response.data.userRetreatGbsLineup }
+                  : item
+              );
             },
-            (response) => {
-              setIsMutating(false);
-
-              if (response.status === 'OK' && response.data) {
-                console.log('✅ [saveLineupMemo] Server confirmed update');
-
-                mutate(
-                  swrKey,
-                  (currentData: UserRetreatGbsLineup[] | undefined) => {
-                    if (!currentData) return currentData;
-                    return currentData.map((item) =>
-                      item.id === response.data!.id
-                        ? { ...item, ...response.data! }
-                        : item
-                    );
-                  },
-                  { revalidate: false }
-                );
-
-                addToast({
-                  title: '성공',
-                  description: '메모가 저장되었습니다.',
-                  variant: 'success',
-                });
-
-                resolve(response.data);
-              } else {
-                addToast({
-                  title: '오류',
-                  description: response.message || '메모 저장에 실패했습니다.',
-                  variant: 'destructive',
-                });
-                reject(new Error(response.message));
-              }
-            }
+            { revalidate: false }
           );
+        } else {
+          await mutateSWR();
+        }
+
+        addToast({
+          title: '성공',
+          description: '메모가 저장되었습니다.',
+          variant: 'success',
         });
+
+        return response.data;
       } catch (error) {
-        setIsMutating(false);
-        console.error('❌ [saveLineupMemo] Error:', error);
+        addToast({
+          title: '오류',
+          description: '메모 저장에 실패했습니다.',
+          variant: 'destructive',
+        });
         throw error;
+      } finally {
+        setIsMutating(false);
       }
     },
     [swrKey, addToast, retreatSlug, mutateSWR]
   );
 
   /**
-   * 라인업 메모 수정
+   * 라인업 메모 수정 (HTTP 기반 + Optimistic Update)
    */
   const updateLineupMemo = useCallback(
     async (userRetreatRegistrationMemoId: number, memo: string, color?: string) => {
-      // ✅ WebSocket 연결 안 되어 있으면 HTTP fallback
-      if (!socketRef.current?.connected) {
-        try {
-          setIsMutating(true);
-          const response = await webAxios.put(
-            `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo/${userRetreatRegistrationMemoId}`,
-            { memo: memo.trim(), color }
-          );
-          await mutateSWR();
-          addToast({
-            title: '성공',
-            description: '메모가 수정되었습니다.',
-            variant: 'success',
-          });
-          return response.data;
-        } catch (error) {
-          addToast({
-            title: '오류',
-            description: '메모 수정에 실패했습니다.',
-            variant: 'destructive',
-          });
-          throw error;
-        } finally {
-          setIsMutating(false);
-        }
-      }
-
-      console.log(`🔄 [updateLineupMemo] Optimistic update: memoId ${userRetreatRegistrationMemoId}`);
-
       setIsMutating(true);
 
       try {
@@ -449,7 +352,6 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
             swrKey,
             (currentData: UserRetreatGbsLineup[] | undefined) => {
               if (!currentData) return currentData;
-
               return currentData.map((item) => {
                 if (item.lineupMemoId === userRetreatRegistrationMemoId) {
                   return {
@@ -466,63 +368,53 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
           );
         }
 
-        // ✅ 2. WebSocket 요청
-        return new Promise<UserRetreatGbsLineup>((resolve, reject) => {
-          socketRef.current!.emit(
-            'update-lineup-memo',
-            {
-              userRetreatRegistrationMemoId,
-              memo: memo.trim(),
-              color,
+        // ✅ 2. HTTP API 호출
+        const response = await webAxios.put(
+          `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo/${userRetreatRegistrationMemoId}`,
+          { memo: memo.trim(), color }
+        );
+
+        // ✅ 3. 서버 응답으로 캐시 업데이트
+        if (response.data?.userRetreatGbsLineup) {
+          await mutate(
+            swrKey,
+            (currentData: UserRetreatGbsLineup[] | undefined) => {
+              if (!currentData) return currentData;
+              return currentData.map((item) =>
+                item.id === response.data.userRetreatGbsLineup.id
+                  ? { ...item, ...response.data.userRetreatGbsLineup }
+                  : item
+              );
             },
-            (response) => {
-              setIsMutating(false);
-
-              if (response.status === 'OK' && response.data) {
-                console.log('✅ [updateLineupMemo] Server confirmed update');
-
-                mutate(
-                  swrKey,
-                  (currentData: UserRetreatGbsLineup[] | undefined) => {
-                    if (!currentData) return currentData;
-                    return currentData.map((item) =>
-                      item.id === response.data!.id
-                        ? { ...item, ...response.data! }
-                        : item
-                    );
-                  },
-                  { revalidate: false }
-                );
-
-                addToast({
-                  title: '성공',
-                  description: '메모가 수정되었습니다.',
-                  variant: 'success',
-                });
-
-                resolve(response.data);
-              } else {
-                addToast({
-                  title: '오류',
-                  description: response.message || '메모 수정에 실패했습니다.',
-                  variant: 'destructive',
-                });
-                reject(new Error(response.message));
-              }
-            }
+            { revalidate: false }
           );
+        } else {
+          await mutateSWR();
+        }
+
+        addToast({
+          title: '성공',
+          description: '메모가 수정되었습니다.',
+          variant: 'success',
         });
+
+        return response.data;
       } catch (error) {
-        setIsMutating(false);
-        console.error('❌ [updateLineupMemo] Error:', error);
+        addToast({
+          title: '오류',
+          description: '메모 수정에 실패했습니다.',
+          variant: 'destructive',
+        });
         throw error;
+      } finally {
+        setIsMutating(false);
       }
     },
     [swrKey, addToast, retreatSlug, mutateSWR]
   );
 
   /**
-   * 라인업 메모 삭제
+   * 라인업 메모 삭제 (HTTP 기반 + Optimistic Update)
    */
   const deleteLineupMemo = useCallback(
     async (userRetreatRegistrationMemoId: number) => {
@@ -531,35 +423,6 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
           title: '메모 삭제',
           description: '정말로 메모를 삭제하시겠습니까?',
           onConfirm: async () => {
-            // ✅ WebSocket 연결 안 되어 있으면 HTTP fallback
-            if (!socketRef.current?.connected) {
-              try {
-                setIsMutating(true);
-                await webAxios.delete(
-                  `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo/${userRetreatRegistrationMemoId}`
-                );
-                await mutateSWR();
-                addToast({
-                  title: '성공',
-                  description: '메모가 삭제되었습니다.',
-                  variant: 'success',
-                });
-                resolve();
-              } catch (error) {
-                addToast({
-                  title: '오류',
-                  description: '메모 삭제에 실패했습니다.',
-                  variant: 'destructive',
-                });
-                reject(error);
-              } finally {
-                setIsMutating(false);
-              }
-              return;
-            }
-
-            console.log(`🔄 [deleteLineupMemo] Optimistic update: memoId ${userRetreatRegistrationMemoId}`);
-
             setIsMutating(true);
 
             try {
@@ -569,7 +432,6 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
                   swrKey,
                   (currentData: UserRetreatGbsLineup[] | undefined) => {
                     if (!currentData) return currentData;
-
                     return currentData.map((item) => {
                       if (item.lineupMemoId === userRetreatRegistrationMemoId) {
                         return {
@@ -587,50 +449,45 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
                 );
               }
 
-              // ✅ 2. WebSocket 요청
-              socketRef.current!.emit(
-                'delete-lineup-memo',
-                { userRetreatRegistrationMemoId },
-                (response) => {
-                  setIsMutating(false);
-
-                  if (response.status === 'OK' && response.data) {
-                    console.log(`✅ [deleteLineupMemo] Server confirmed deletion`);
-
-                    mutate(
-                      swrKey,
-                      (currentData: UserRetreatGbsLineup[] | undefined) => {
-                        if (!currentData) return currentData;
-                        return currentData.map((item) =>
-                          item.id === response.data!.id
-                            ? { ...item, ...response.data! }
-                            : item
-                        );
-                      },
-                      { revalidate: false }
-                    );
-
-                    addToast({
-                      title: '성공',
-                      description: '메모가 삭제되었습니다.',
-                      variant: 'success',
-                    });
-
-                    resolve();
-                  } else {
-                    addToast({
-                      title: '오류',
-                      description: response.message || '메모 삭제에 실패했습니다.',
-                      variant: 'destructive',
-                    });
-                    reject(new Error(response.message));
-                  }
-                }
+              // ✅ 2. HTTP API 호출
+              const response = await webAxios.delete(
+                `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo/${userRetreatRegistrationMemoId}`
               );
+
+              // ✅ 3. 서버 응답으로 캐시 업데이트
+              if (response.data?.userRetreatGbsLineup) {
+                await mutate(
+                  swrKey,
+                  (currentData: UserRetreatGbsLineup[] | undefined) => {
+                    if (!currentData) return currentData;
+                    return currentData.map((item) =>
+                      item.id === response.data.userRetreatGbsLineup.id
+                        ? { ...item, ...response.data.userRetreatGbsLineup }
+                        : item
+                    );
+                  },
+                  { revalidate: false }
+                );
+              } else {
+                await mutateSWR();
+              }
+
+              addToast({
+                title: '성공',
+                description: '메모가 삭제되었습니다.',
+                variant: 'success',
+              });
+
+              resolve();
             } catch (error) {
-              setIsMutating(false);
-              console.error('❌ [deleteLineupMemo] Error:', error);
+              addToast({
+                title: '오류',
+                description: '메모 삭제에 실패했습니다.',
+                variant: 'destructive',
+              });
               reject(error);
+            } finally {
+              setIsMutating(false);
             }
           },
         });
