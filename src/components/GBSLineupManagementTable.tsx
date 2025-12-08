@@ -120,7 +120,7 @@ export function GBSLineupManagementTable({
         return arr;
     }, [registrations, leaderSearchTerm]);
 
-    // 이미 그룹장으로 지정된 사람 구분 (예시, 필요하면 props로 따로 받을 수 있음)
+    // 이미 리더로 지정된 사람 구분 (예시, 필요하면 props로 따로 받을 수 있음)
     const isAssignedLeader = (userId: number) =>
         false; // 실제 로직 필요: 이미 다른 gbsList에 leaderUserIds에 있는지 확인
 
@@ -373,10 +373,10 @@ export function GBSLineupManagementTable({
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold">GBS 관리</h1>
-                    <p className="text-muted-foreground">GBS 그룹 생성/삭제, 그룹장 지정, 메모 관리가 가능합니다.</p>
+                    <p className="text-muted-foreground">GBS 생성/삭제, 리더 지정, 메모 관리가 가능합니다.</p>
                 </div>
                 <Button onClick={() => setCreateModalOpen(true)} className="flex items-center gap-2">
-                    <Plus className="h-4 w-4"/> 그룹 생성
+                    <Plus className="h-4 w-4"/> GBS 생성
                 </Button>
             </div>
 
@@ -395,7 +395,7 @@ export function GBSLineupManagementTable({
             <Card>
                 <CardHeader>
                     <CardTitle>GBS 목록</CardTitle>
-                    <CardDescription>그룹별 상세 정보, 리더, 메모 관리</CardDescription>
+                    <CardDescription>GBS별 상세 정보, 리더, 메모 관리</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -431,7 +431,7 @@ export function GBSLineupManagementTable({
                                                             id: number;
                                                             name: string
                                                         }) => leaderInfo.name).join(", ")
-                                                        : <span className="text-gray-400">그룹장 없음</span>
+                                                        : <span className="text-gray-400">리더 없음</span>
                                                 }
                                             </Button>
                                             {group.leaders && group.leaders.length > 0 && (
@@ -542,7 +542,7 @@ export function GBSLineupManagementTable({
             <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>GBS 그룹 생성</DialogTitle>
+                        <DialogTitle>GBS 생성</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
@@ -608,11 +608,11 @@ export function GBSLineupManagementTable({
             </Dialog>
 
 
-            {/* 2차 모달: 그룹장 선택 */}
+            {/* 2차 모달: 리더 선택 */}
             <Dialog open={leaderSelectModalOpen} onOpenChange={setLeaderSelectModalOpen}>
                 <DialogContent className="max-w-4xl">
                     <DialogHeader>
-                        <DialogTitle>그룹장 선택</DialogTitle>
+                        <DialogTitle>리더 선택</DialogTitle>
                     </DialogHeader>
                     <div className="flex items-center mb-4 gap-4">
                         <Input
@@ -650,7 +650,7 @@ export function GBSLineupManagementTable({
                                                 {selected ? (
                                                     <span className="text-blue-600 font-bold">선택됨</span>
                                                 ) : isAssignedLeader(u.id) ? (
-                                                    <span className="text-gray-400">그룹장(다른 GBS)</span>
+                                                    <span className="text-gray-400">리더(다른 GBS)</span>
                                                 ) : (
                                                     <span className="text-green-600">가능</span>
                                                 )}
