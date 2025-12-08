@@ -191,39 +191,140 @@ export function useAccountStaffRegistration(
   /**
    * 재정간사 메모 저장
    *
+   * @description
+   * Best Practice: 서버 응답으로 정확한 데이터(accountMemoId 포함)를 캐시에 반영
+   * - Optimistic update로 즉시 memo 내용 반영
+   * - 서버 응답에서 생성된 memoId를 캐시에 업데이트
+   * - 이를 통해 다음 수정/삭제 시 정확한 memoId 사용 가능
+   *
    * @param registrationId - 신청 ID
    * @param memo - 메모 내용
    */
   const saveAccountMemo = async (registrationId: string, memo: string) => {
-    await updateCache(
-      () => AccountStaffAPI.saveAccountMemo(retreatSlug, registrationId, memo),
-      // ✅ Optimistic Update: 메모 저장
-      (currentData) =>
-        currentData.map((item) =>
-          item.id === Number(registrationId)
-            ? { ...item, accountMemo: memo }
-            : item
-        ),
-      "메모가 성공적으로 저장되었습니다."
-    );
+    setIsMutating(true);
+    try {
+      // 1. Optimistic update: 즉시 UI 반영
+      const optimisticData = data?.map((item) =>
+        item.id === Number(registrationId)
+          ? { ...item, accountMemo: memo }
+          : item
+      );
+
+      if (optimisticData) {
+        await mutate(optimisticData, { revalidate: false });
+      }
+
+      // 2. API 호출 및 서버 응답 받기
+      const createdMemo = await AccountStaffAPI.saveAccountMemo(
+        retreatSlug,
+        registrationId,
+        memo
+      );
+
+      // 3. 서버 응답으로 정확한 데이터 업데이트 (accountMemoId 포함)
+      await mutate(
+        (currentData) =>
+          currentData?.map((item) =>
+            item.id === Number(registrationId)
+              ? {
+                  ...item,
+                  accountMemo: createdMemo.memo,
+                  accountMemoId: createdMemo.id,
+                }
+              : item
+          ),
+        { revalidate: false }
+      );
+
+      addToast({
+        title: "성공",
+        description: "메모가 성공적으로 저장되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      // 에러 시 서버 데이터로 롤백
+      await mutate();
+
+      const message =
+        error instanceof AxiosError
+          ? error.response?.data?.message || "작업 중 오류가 발생했습니다."
+          : "작업 중 오류가 발생했습니다.";
+
+      addToast({
+        title: "오류 발생",
+        description: message,
+        variant: "destructive",
+      });
+
+      throw error;
+    } finally {
+      setIsMutating(false);
+    }
   };
 
   /**
    * 재정간사 메모 수정
    *
+   * @description
+   * Best Practice: 서버 응답으로 정확한 데이터를 캐시에 반영
+   *
    * @param memoId - 메모 ID
    * @param memo - 수정할 메모 내용
    */
   const updateAccountMemo = async (memoId: number, memo: string) => {
-    await updateCache(
-      () => AccountStaffAPI.updateAccountMemo(retreatSlug, memoId, memo),
-      // ✅ Optimistic Update: 메모 수정
-      (currentData) =>
-        currentData.map((item) =>
-          item.accountMemoId === memoId ? { ...item, accountMemo: memo } : item
-        ),
-      "메모가 성공적으로 수정되었습니다."
-    );
+    setIsMutating(true);
+    try {
+      // 1. Optimistic update: 즉시 UI 반영
+      const optimisticData = data?.map((item) =>
+        item.accountMemoId === memoId ? { ...item, accountMemo: memo } : item
+      );
+
+      if (optimisticData) {
+        await mutate(optimisticData, { revalidate: false });
+      }
+
+      // 2. API 호출 및 서버 응답 받기
+      const updatedMemo = await AccountStaffAPI.updateAccountMemo(
+        retreatSlug,
+        memoId,
+        memo
+      );
+
+      // 3. 서버 응답으로 정확한 데이터 업데이트
+      await mutate(
+        (currentData) =>
+          currentData?.map((item) =>
+            item.accountMemoId === memoId
+              ? { ...item, accountMemo: updatedMemo.memo }
+              : item
+          ),
+        { revalidate: false }
+      );
+
+      addToast({
+        title: "성공",
+        description: "메모가 성공적으로 수정되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      // 에러 시 서버 데이터로 롤백
+      await mutate();
+
+      const message =
+        error instanceof AxiosError
+          ? error.response?.data?.message || "작업 중 오류가 발생했습니다."
+          : "작업 중 오류가 발생했습니다.";
+
+      addToast({
+        title: "오류 발생",
+        description: message,
+        variant: "destructive",
+      });
+
+      throw error;
+    } finally {
+      setIsMutating(false);
+    }
   };
 
   /**
