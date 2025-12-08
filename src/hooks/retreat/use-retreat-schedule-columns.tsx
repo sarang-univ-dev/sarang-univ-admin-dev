@@ -160,6 +160,9 @@ export function createRetreatScheduleColumns<T extends ScheduleRow>(
         header: createScheduleHeaderCell(scheduleInfo),
         cell: createScheduleCheckboxCell(scheduleInfo),
         enableSorting: false,
+        meta: {
+          label: scheduleInfo.label,
+        },
       }
     );
   });

@@ -80,7 +80,11 @@ export function AccountStaffRegistrationTableToolbar({
               .map((column) => {
                 // 컬럼 ID에서 표시 이름 추출
                 const getColumnName = (id: string) => {
-                  if (id.startsWith("schedule_")) return "스케줄";
+                  // 스케줄 컬럼은 meta.label에서 실제 라벨을 가져옴
+                  if (id.startsWith("schedule_")) {
+                    const meta = column.columnDef.meta as { label?: string } | undefined;
+                    return meta?.label || id;
+                  }
                   const names: Record<string, string> = {
                     department: "부서",
                     gender: "성별",
@@ -91,8 +95,6 @@ export function AccountStaffRegistrationTableToolbar({
                     amount: "금액",
                     createdAt: "신청시각",
                     status: "입금 현황",
-                    confirmedBy: "처리자명",
-                    paymentConfirmedAt: "처리시각",
                     accountMemo: "재정간사 메모",
                   };
                   return names[id] || id;
