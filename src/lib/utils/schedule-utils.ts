@@ -1,6 +1,6 @@
 import { DayGroup, DateScheduleMap, EventTypeMap } from "@/types/retreat-schedule";
 import { Sunrise, Sun, Sunset, Bed } from "lucide-react";
-import { toKSTDate, getKSTMonth, getKSTDate, getKSTDay } from "./date-utils";
+import { getKSTDateString, getKSTMonth, getKSTDate, getKSTDay } from "./date-utils";
 
 /**
  * 이벤트 타입별 아이콘 및 레이블 매핑
@@ -24,8 +24,7 @@ export function createDateScheduleMap(dayGroups: DayGroup[]): DateScheduleMap {
   dayGroups.forEach((group) => {
     group.schedules.forEach((schedule) => {
       // KST 기준으로 날짜 키 생성
-      const kstDate = toKSTDate(schedule.time);
-      const dateKey = kstDate.toISOString().split("T")[0]; // YYYY-MM-DD (KST 기준)
+      const dateKey = getKSTDateString(schedule.time); // YYYY-MM-DD (KST 기준)
       const eventType = schedule.type;
 
       if (!dateScheduleMap.has(dateKey)) {

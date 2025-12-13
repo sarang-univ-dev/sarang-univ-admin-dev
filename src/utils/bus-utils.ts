@@ -6,7 +6,7 @@ import {
   TRetreatShuttleBus,
 } from "@/types";
 import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
-import { getKSTDay, getKSTHours, getKSTMinutes, toKSTDate } from "@/lib/utils/date-utils";
+import { getKSTDay, getKSTHours, getKSTMinutes, getKSTDateString } from "@/lib/utils/date-utils";
 
 // export function getScheduleLabel(
 //   time: Date,
@@ -170,8 +170,7 @@ export function generateScheduleColumns(schedules: TRetreatShuttleBus[]) {
 
   return sortedSchedules.map(schedule => {
     // KST 기준으로 날짜 비교 (UTC가 아닌 KST 날짜로 그룹화)
-    const kstDate = toKSTDate(schedule.departureTime);
-    const scheduleDate = kstDate.toISOString().split("T")[0]; // YYYY-MM-DD (KST 기준)
+    const scheduleDate = getKSTDateString(schedule.departureTime); // YYYY-MM-DD (KST 기준)
     const label = schedule.name;
 
     // 날짜가 바뀌면 색상 인덱스 증가
@@ -436,8 +435,7 @@ export function generateShuttleBusScheduleColumns(
 
   return sortedSchedules.map(schedule => {
     // KST 기준으로 날짜 비교 (UTC가 아닌 KST 날짜로 그룹화)
-    const kstDate = toKSTDate(schedule.departureTime);
-    const scheduleDate = kstDate.toISOString().split("T")[0]; // YYYY-MM-DD (KST 기준)
+    const scheduleDate = getKSTDateString(schedule.departureTime); // YYYY-MM-DD (KST 기준)
 
     const label = getShuttleBusScheduleLabel(
       schedule.departureTime,

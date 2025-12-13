@@ -6,7 +6,7 @@ import {
   TRetreatRegistrationSchedule,
 } from "@/types";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
-import { getKSTDay, toKSTDate } from "@/lib/utils/date-utils";
+import { getKSTDay, getKSTDateString } from "@/lib/utils/date-utils";
 // 날짜와 타입에 따라 식수 이름을 결정하는 함수
 export function getScheduleLabel(
   time: Date | string,
@@ -227,8 +227,7 @@ export function generateScheduleColumns(
 
   return sortedSchedules.map(schedule => {
     // KST 기준으로 날짜 비교 (UTC가 아닌 KST 날짜로 그룹화)
-    const kstDate = toKSTDate(schedule.time);
-    const scheduleDate = kstDate.toISOString().split("T")[0]; // YYYY-MM-DD (KST 기준)
+    const scheduleDate = getKSTDateString(schedule.time); // YYYY-MM-DD (KST 기준)
     const label = getScheduleLabel(
       schedule.time,
       schedule.type as RetreatRegistrationScheduleType

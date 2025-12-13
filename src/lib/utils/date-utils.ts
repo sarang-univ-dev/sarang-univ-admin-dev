@@ -1,85 +1,132 @@
 /**
  * KST (한국 표준시) 날짜 유틸리티
  *
- * @description
- * UTC 날짜를 KST로 변환하여 한국 시간대에 맞는 요일, 날짜를 반환합니다.
- * new Date()는 UTC 기준으로 파싱되므로 KST로 변환 필요
+ * toLocaleDateString/toLocaleTimeString과 timeZone: "Asia/Seoul"을 사용하여
+ * 정확한 KST 날짜/시간을 반환합니다.
  */
 
-const KST_OFFSET_HOURS = 9;
-const KST_OFFSET_MS = KST_OFFSET_HOURS * 60 * 60 * 1000;
+const KST_TIMEZONE = "Asia/Seoul";
+const KST_LOCALE = "ko-KR";
 
 /**
- * UTC 날짜를 KST로 변환한 Date 객체 반환
- *
- * @param dateInput - 날짜 문자열 또는 Date 객체
- * @returns KST로 변환된 Date 객체
- *
- * @example
- * // ISO 문자열 (UTC) -> KST Date
- * toKSTDate("2025-01-10T15:00:00.000Z") // 2025-01-11 00:00:00 KST
+ * 입력을 Date 객체로 변환
  */
-export function toKSTDate(dateInput: string | Date): Date {
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-  return new Date(date.getTime() + KST_OFFSET_MS);
+function toDate(dateInput: string | Date): Date {
+  return typeof dateInput === "string" ? new Date(dateInput) : dateInput;
 }
 
 /**
  * KST 기준 요일 반환 (0: 일요일 ~ 6: 토요일)
- *
- * @param dateInput - 날짜 문자열 또는 Date 객체
- * @returns 요일 (0-6)
  */
 export function getKSTDay(dateInput: string | Date): number {
-  return toKSTDate(dateInput).getUTCDay();
+  const date = toDate(dateInput);
+  const weekdayStr = date.toLocaleDateString(KST_LOCALE, {
+    timeZone: KST_TIMEZONE,
+    weekday: "short",
+  });
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  return weekdays.indexOf(weekdayStr);
 }
 
 /**
  * KST 기준 날짜(일) 반환
- *
- * @param dateInput - 날짜 문자열 또는 Date 객체
- * @returns 일 (1-31)
  */
 export function getKSTDate(dateInput: string | Date): number {
-  return toKSTDate(dateInput).getUTCDate();
+  const date = toDate(dateInput);
+  return parseInt(
+    date.toLocaleDateString(KST_LOCALE, {
+      timeZone: KST_TIMEZONE,
+      day: "numeric",
+    }),
+    10
+  );
 }
 
 /**
  * KST 기준 월 반환 (0: 1월 ~ 11: 12월)
- *
- * @param dateInput - 날짜 문자열 또는 Date 객체
- * @returns 월 (0-11)
  */
 export function getKSTMonth(dateInput: string | Date): number {
-  return toKSTDate(dateInput).getUTCMonth();
+  const date = toDate(dateInput);
+  return (
+    parseInt(
+      date.toLocaleDateString(KST_LOCALE, {
+        timeZone: KST_TIMEZONE,
+        month: "numeric",
+      }),
+      10
+    ) - 1
+  );
 }
 
 /**
  * KST 기준 연도 반환
- *
- * @param dateInput - 날짜 문자열 또는 Date 객체
- * @returns 연도
  */
 export function getKSTFullYear(dateInput: string | Date): number {
-  return toKSTDate(dateInput).getUTCFullYear();
+  const date = toDate(dateInput);
+  return parseInt(
+    date.toLocaleDateString(KST_LOCALE, {
+      timeZone: KST_TIMEZONE,
+      year: "numeric",
+    }),
+    10
+  );
 }
 
 /**
  * KST 기준 시간 반환 (0-23)
- *
- * @param dateInput - 날짜 문자열 또는 Date 객체
- * @returns 시간 (0-23)
  */
 export function getKSTHours(dateInput: string | Date): number {
-  return toKSTDate(dateInput).getUTCHours();
+  const date = toDate(dateInput);
+  return parseInt(
+    date.toLocaleTimeString(KST_LOCALE, {
+      timeZone: KST_TIMEZONE,
+      hour: "numeric",
+      hour12: false,
+    }),
+    10
+  );
 }
 
 /**
  * KST 기준 분 반환 (0-59)
- *
- * @param dateInput - 날짜 문자열 또는 Date 객체
- * @returns 분 (0-59)
  */
 export function getKSTMinutes(dateInput: string | Date): number {
-  return toKSTDate(dateInput).getUTCMinutes();
+  const date = toDate(dateInput);
+  return parseInt(
+    date.toLocaleTimeString(KST_LOCALE, {
+      timeZone: KST_TIMEZONE,
+      minute: "numeric",
+    }),
+    10
+  );
+}
+
+/**
+ * KST 기준 날짜를 YYYY-MM-DD 형식으로 반환
+ */
+export function getKSTDateString(dateInput: string | Date): string {
+  const date = toDate(dateInput);
+  const year = getKSTFullYear(date);
+  const month = String(getKSTMonth(date) + 1).padStart(2, "0");
+  const day = String(getKSTDate(date)).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * KST 기준 요일 문자열 반환 ("일", "월", "화", "수", "목", "금", "토")
+ */
+export function getKSTWeekday(dateInput: string | Date): string {
+  const date = toDate(dateInput);
+  return date.toLocaleDateString(KST_LOCALE, {
+    timeZone: KST_TIMEZONE,
+    weekday: "short",
+  });
+}
+
+/**
+ * KST 기준 요일 문자열 반환 (주일 포함: "주일", "월", "화", "수", "목", "금", "토")
+ */
+export function getKSTWeekdayWithSunday(dateInput: string | Date): string {
+  const weekday = getKSTWeekday(dateInput);
+  return weekday === "일" ? "주일" : weekday;
 }
