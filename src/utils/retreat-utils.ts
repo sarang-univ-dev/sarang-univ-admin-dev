@@ -6,13 +6,14 @@ import {
   TRetreatRegistrationSchedule,
 } from "@/types";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
+import { getKSTDay, toKSTDate } from "@/lib/utils/date-utils";
 // 날짜와 타입에 따라 식수 이름을 결정하는 함수
 export function getScheduleLabel(
-  time: Date,
+  time: Date | string,
   type: RetreatRegistrationScheduleType
 ): string {
-  const date = time;
-  const day = date.getDay();
+  // KST 기준 요일 사용
+  const day = getKSTDay(time);
 
   // 요일 접두사
   const dayPrefix = getDayPrefix(day);
@@ -225,9 +226,11 @@ export function generateScheduleColumns(
   ];
 
   return sortedSchedules.map(schedule => {
-    const scheduleDate = new Date(schedule.time).toDateString();
+    // KST 기준으로 날짜 비교 (UTC가 아닌 KST 날짜로 그룹화)
+    const kstDate = toKSTDate(schedule.time);
+    const scheduleDate = kstDate.toISOString().split("T")[0]; // YYYY-MM-DD (KST 기준)
     const label = getScheduleLabel(
-      new Date(schedule.time),
+      schedule.time,
       schedule.type as RetreatRegistrationScheduleType
     );
 
@@ -385,16 +388,16 @@ export function groupScheduleColumnsByDay(
   const groupedByDay: Record<string, any[]> = {};
 
   sortedSchedules.forEach(schedule => {
-    const date = new Date(schedule.time);
-    const dayKey = getDayPrefix(date.getDay());
-    const dayName = getDayName(date.getDay());
+    // KST 기준 요일 사용
+    const kstDay = getKSTDay(schedule.time);
+    const dayName = getDayName(kstDay);
 
     if (!groupedByDay[dayName]) {
       groupedByDay[dayName] = [];
     }
 
     const label = getScheduleLabel(
-      date,
+      schedule.time,
       schedule.type as RetreatRegistrationScheduleType
     );
 

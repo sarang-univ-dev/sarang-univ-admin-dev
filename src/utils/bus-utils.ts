@@ -6,6 +6,7 @@ import {
   TRetreatShuttleBus,
 } from "@/types";
 import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
+import { getKSTDay, getKSTHours, getKSTMinutes, toKSTDate } from "@/lib/utils/date-utils";
 
 // export function getScheduleLabel(
 //   time: Date,
@@ -168,11 +169,9 @@ export function generateScheduleColumns(schedules: TRetreatShuttleBus[]) {
   ];
 
   return sortedSchedules.map(schedule => {
-    const scheduleDate = new Date(schedule.departureTime).toDateString();
-    // const label = getScheduleLabel(
-    //   new Date(schedule.departureTime),
-    //   schedule.type as RetreatRegistrationScheduleType
-    // );
+    // KST 기준으로 날짜 비교 (UTC가 아닌 KST 날짜로 그룹화)
+    const kstDate = toKSTDate(schedule.departureTime);
+    const scheduleDate = kstDate.toISOString().split("T")[0]; // YYYY-MM-DD (KST 기준)
     const label = schedule.name;
 
     // 날짜가 바뀌면 색상 인덱스 증가
@@ -188,7 +187,6 @@ export function generateScheduleColumns(schedules: TRetreatShuttleBus[]) {
       color: colors[colorIndex].color,
       bgColorClass: colors[colorIndex].bgClass,
       time: schedule.departureTime,
-      //type: schedule.type,
     };
   });
 }
@@ -328,8 +326,8 @@ export function groupScheduleColumnsByDay(schedules: TRetreatShuttleBus[]) {
   const groupedByDay: Record<string, any[]> = {};
 
   sortedSchedules.forEach(schedule => {
-    const date = new Date(schedule.departureTime);
-    const dayName = getDayName(date.getDay());
+    // KST 기준 요일 사용
+    const dayName = getDayName(getKSTDay(schedule.departureTime));
 
     if (!groupedByDay[dayName]) {
       groupedByDay[dayName] = [];
@@ -380,10 +378,9 @@ export function getShuttleBusScheduleLabel(
   departureTime: string | Date,
   name?: string
 ) {
-  const date =
-    typeof departureTime === "string" ? new Date(departureTime) : departureTime;
-  let hour = date.getHours();
-  const minute = date.getMinutes();
+  // KST 기준 시간 사용
+  const hour = getKSTHours(departureTime);
+  const minute = getKSTMinutes(departureTime);
 
   // 오전/오후 계산
   const isAM = hour < 12;
@@ -438,7 +435,9 @@ export function generateShuttleBusScheduleColumns(
   ];
 
   return sortedSchedules.map(schedule => {
-    const scheduleDate = new Date(schedule.departureTime).toDateString();
+    // KST 기준으로 날짜 비교 (UTC가 아닌 KST 날짜로 그룹화)
+    const kstDate = toKSTDate(schedule.departureTime);
+    const scheduleDate = kstDate.toISOString().split("T")[0]; // YYYY-MM-DD (KST 기준)
 
     const label = getShuttleBusScheduleLabel(
       schedule.departureTime,
