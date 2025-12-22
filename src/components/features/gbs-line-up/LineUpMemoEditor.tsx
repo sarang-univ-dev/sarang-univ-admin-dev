@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, X, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { debounce } from "lodash";
 
 interface LineUpMemoEditorProps<T extends { id: string }> {
   row: T;
@@ -22,10 +21,12 @@ interface LineUpMemoEditorProps<T extends { id: string }> {
 }
 
 /**
- * LineUp 메모 에디터 (편집 중 버퍼링 + Debounce + Optimistic Update 지원)
+ * LineUp 메모 에디터 (수동 저장 + 버퍼링 + Optimistic Update 지원)
  *
+ * ✅ 저장 버튼 클릭 시 저장
+ * ✅ 취소 버튼 클릭 시 편집 모드 종료
+ * ✅ 삭제 버튼 클릭 시 확인 모달 후 삭제
  * ✅ 편집 중에도 외부 변경사항을 버퍼링하여 보존
- * ✅ Debounce 2초로 자동 저장
  * ✅ 충돌 감지 시 사용자에게 알림
  * ✅ Optimistic Update와 완벽 호환
  *
@@ -115,39 +116,6 @@ export function LineUpMemoEditor<T extends { id: string }>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMemoValue, initialColorValue, isEditing, row.id]);
 
-  // ✅ Debounce 2초 자동 저장
-  const debouncedSave = useMemo(
-    () =>
-      debounce(async (id: string, memo: string, color: string, isExisting: boolean) => {
-        setIsSaving(true);
-        try {
-          const processedColor = color === "" ? undefined : color;
-          const processedMemo = memo.trim();
-
-          if (isExisting) {
-            await onUpdate(id, processedMemo, processedColor);
-          } else {
-            await onSave(id, processedMemo, processedColor);
-          }
-
-          // 저장 성공 시 마지막 저장 값 업데이트
-          lastSavedValueRef.current = { memo: processedMemo, color: color };
-          setShowConflictWarning(false);
-        } catch (error) {
-          console.error("메모 자동 저장 실패:", error);
-        } finally {
-          setIsSaving(false);
-        }
-      }, 2000),
-    [onSave, onUpdate]
-  );
-
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      debouncedSave.cancel();
-    };
-  }, [debouncedSave]);
 
   // ✅ 변경사항 감지
   const hasChanges =
@@ -155,25 +123,18 @@ export function LineUpMemoEditor<T extends { id: string }>({
     localColor !== (memoColor || "");
   const hasExisting = hasExistingMemo ? hasExistingMemo(row) : !!memoValue;
 
-  // ✅ 값 변경 시 자동 저장 (Debounce)
+  // ✅ 값 변경 (저장은 버튼 클릭 시에만)
   const handleValueChange = (memo: string, color: string) => {
     setLocalMemoValue(memo);
     setLocalColor(color);
-
-    // 값이 있을 때만 자동 저장
-    if (memo.trim() || color) {
-      debouncedSave(row.id, memo, color, hasExisting);
-    }
   };
 
-  // ✅ 수동 저장
+  // ✅ 저장 버튼 클릭 시 저장
   const handleSave = async () => {
     if (!hasChanges || (!localMemoValue.trim() && !localColor)) {
       return;
     }
 
-    // Debounce 취소 (즉시 저장)
-    debouncedSave.cancel();
     setIsSaving(true);
 
     try {
