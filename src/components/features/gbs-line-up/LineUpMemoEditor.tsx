@@ -72,6 +72,7 @@ export function LineUpMemoEditor<T extends { id: string }>({
   const [localMemoValue, setLocalMemoValue] = useState(initialMemoValue);
   const [localColor, setLocalColor] = useState(initialColorValue);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // ✅ 버퍼: 편집 중 외부에서 들어온 변경사항 저장
   const [pendingExternalUpdate, setPendingExternalUpdate] = useState<{
@@ -129,6 +130,7 @@ export function LineUpMemoEditor<T extends { id: string }>({
   const debouncedSave = useMemo(
     () =>
       debounce(async (id: string, memo: string, color: string, isExisting: boolean) => {
+        setIsSaving(true);
         try {
           const processedColor = color === "" ? undefined : color;
           const processedMemo = memo.trim();
@@ -144,6 +146,8 @@ export function LineUpMemoEditor<T extends { id: string }>({
           setShowConflictWarning(false);
         } catch (error) {
           console.error("메모 자동 저장 실패:", error);
+        } finally {
+          setIsSaving(false);
         }
       }, 2000),
     [onSave, onUpdate]
@@ -181,6 +185,7 @@ export function LineUpMemoEditor<T extends { id: string }>({
 
     // Debounce 취소 (즉시 저장)
     debouncedSave.cancel();
+    setIsSaving(true);
 
     try {
       const processedColor = localColor === "" ? undefined : localColor;
@@ -197,6 +202,8 @@ export function LineUpMemoEditor<T extends { id: string }>({
       setShowConflictWarning(false);
     } catch (error) {
       console.error("메모 저장 실패:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -272,7 +279,7 @@ export function LineUpMemoEditor<T extends { id: string }>({
             value={localMemoValue}
             onChange={(e) => handleValueChange(e.target.value, localColor)}
             placeholder={placeholder}
-            disabled={loading}
+            disabled={isSaving}
             maxLength={maxLength}
             className={cn(
               "text-sm resize-none w-full transition-all",
@@ -336,7 +343,7 @@ export function LineUpMemoEditor<T extends { id: string }>({
               size="sm"
               variant="ghost"
               onClick={() => setShowDeleteDialog(true)}
-              disabled={loading}
+              disabled={isSaving}
               className="h-8 px-3 text-red-500 hover:text-red-700 hover:bg-red-50"
               aria-label="메모 삭제"
             >
@@ -350,11 +357,11 @@ export function LineUpMemoEditor<T extends { id: string }>({
               size="sm"
               variant="default"
               onClick={handleSave}
-              disabled={loading || !hasChanges || (!localMemoValue.trim() && !localColor)}
+              disabled={isSaving || !hasChanges || (!localMemoValue.trim() && !localColor)}
               className="h-8 px-3"
               aria-label="메모 저장"
             >
-              {loading ? (
+              {isSaving ? (
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
                 <>
@@ -368,7 +375,7 @@ export function LineUpMemoEditor<T extends { id: string }>({
               size="sm"
               variant="outline"
               onClick={handleCancel}
-              disabled={loading}
+              disabled={isSaving}
               className="h-8 px-3"
               aria-label="편집 취소"
             >
@@ -378,10 +385,6 @@ export function LineUpMemoEditor<T extends { id: string }>({
           </div>
         </div>
 
-        {/* ℹ️ 자동 저장 안내 */}
-        <p className="text-xs text-gray-500 text-center">
-          변경사항은 2초 후 자동 저장됩니다
-        </p>
       </div>
     );
   }
