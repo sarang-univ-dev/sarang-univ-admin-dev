@@ -2,8 +2,11 @@ import { Suspense } from "react";
 import {
   fetchGbsLineUpData,
   fetchRetreatSchedules,
+  fetchAccountStaffRegistrations,
 } from "@/lib/api/server-actions";
 import { GbsLineUpTable } from "@/components/features/gbs-line-up/GbsLineUpTableNew";
+import { PaymentSummary } from "@/components/PaymentSummary";
+import { RetreatScheduleSummary } from "@/components/RetreatScheduleSummary";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageProps {
@@ -30,13 +33,22 @@ export default async function GbsLineUpPage({ params }: PageProps) {
   const { retreatSlug } = await params;
 
   // ✅ 서버에서 병렬 데이터 페칭 (Promise.all)
-  const [lineups, schedules] = await Promise.all([
+  const [lineups, schedules, registrations] = await Promise.all([
     fetchGbsLineUpData(retreatSlug),
     fetchRetreatSchedules(retreatSlug),
+    fetchAccountStaffRegistrations(retreatSlug),
   ]);
 
   return (
     <div className="space-y-4 md:space-y-8">
+      {/* ✅ Server Component (정적 집계) - 부서별 신청 현황 */}
+      <PaymentSummary registrations={registrations} />
+
+      <RetreatScheduleSummary
+        registrations={registrations}
+        schedules={schedules}
+      />
+
       {/* ✅ Client Component (인터랙션 필요 - TanStack Table + SWR Polling) */}
       <Suspense fallback={<TableSkeleton />}>
         <GbsLineUpTable
