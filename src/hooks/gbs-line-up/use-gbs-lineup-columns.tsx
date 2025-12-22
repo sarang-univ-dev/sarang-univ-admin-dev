@@ -573,12 +573,19 @@ export function useGbsLineupColumns(
       })(),
 
       // GBS 배정하기 (✅ V2: 버퍼링 + Debounce 지원)
-      // ✅ accessor로 변경: TanStack Table이 gbsNumber 변경을 감지하여 Cell 리렌더링
+      // ✅ accessor를 isLeader 기반으로 변경: 리더/조원 필터링 지원
       columnHelper.accessor(
-        (row) => row.gbsNumber,
+        (row) => row.isLeader ? "리더" : "조원",
         {
           id: "gbsAssign",
-          header: "GBS 배정하기",
+          header: ({ column, table }) => (
+            <ColumnHeader
+              column={column}
+              table={table}
+              title="GBS 배정하기"
+              enableFiltering
+            />
+          ),
           cell: (info) => {
             const row = info.row.original;
 
@@ -598,6 +605,7 @@ export function useGbsLineupColumns(
               </div>
             );
           },
+          filterFn: "arrIncludesSome",
         }
       ),
 
