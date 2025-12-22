@@ -295,8 +295,8 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
 
         // ✅ 2. HTTP API 호출
         const response = await webAxios.post(
-          `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo`,
-          { userRetreatRegistrationId, memo: memo.trim(), color }
+          `/api/v1/retreat/${retreatSlug}/line-up/${userRetreatRegistrationId}/lineup-memo`,
+          { memo: memo.trim(), color }
         );
 
         // ✅ 3. 서버 응답으로 캐시 업데이트
@@ -370,7 +370,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
 
         // ✅ 2. HTTP API 호출
         const response = await webAxios.put(
-          `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo/${userRetreatRegistrationMemoId}`,
+          `/api/v1/retreat/${retreatSlug}/line-up/${userRetreatRegistrationMemoId}/lineup-memo`,
           { memo: memo.trim(), color }
         );
 
@@ -451,7 +451,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
 
               // ✅ 2. HTTP API 호출
               const response = await webAxios.delete(
-                `/api/v1/retreat/${retreatSlug}/line-up/lineup-memo/${userRetreatRegistrationMemoId}`
+                `/api/v1/retreat/${retreatSlug}/line-up/${userRetreatRegistrationMemoId}/lineup-memo`
               );
 
               // ✅ 3. 서버 응답으로 캐시 업데이트
