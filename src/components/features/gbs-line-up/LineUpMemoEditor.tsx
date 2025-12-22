@@ -3,16 +3,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Save, X, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { debounce } from "lodash";
@@ -71,7 +61,6 @@ export function LineUpMemoEditor<T extends { id: string }>({
   const [isEditing, setIsEditing] = useState(false);
   const [localMemoValue, setLocalMemoValue] = useState(initialMemoValue);
   const [localColor, setLocalColor] = useState(initialColorValue);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // ✅ 버퍼: 편집 중 외부에서 들어온 변경사항 저장
@@ -235,14 +224,10 @@ export function LineUpMemoEditor<T extends { id: string }>({
     }
   };
 
-  const handleDeleteConfirm = async () => {
-    try {
-      await onDelete(row.id);
-      setShowDeleteDialog(false);
-      setIsEditing(false);
-    } catch (error) {
-      console.error("메모 삭제 실패:", error);
-    }
+  // ✅ 삭제 처리 (확인 다이얼로그는 훅에서 처리)
+  const handleDelete = async () => {
+    setIsEditing(false);
+    await onDelete(row.id);
   };
 
   // ✅ 편집 모드 UI
@@ -342,7 +327,7 @@ export function LineUpMemoEditor<T extends { id: string }>({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setShowDeleteDialog(true)}
+              onClick={handleDelete}
               disabled={isSaving}
               className="h-8 px-3 text-red-500 hover:text-red-700 hover:bg-red-50"
               aria-label="메모 삭제"
@@ -391,53 +376,30 @@ export function LineUpMemoEditor<T extends { id: string }>({
 
   // ✅ 읽기 모드 UI
   return (
-    <>
-      <div
-        className="flex flex-col gap-1 p-2 min-w-[200px] max-w-full"
-        onClick={(e) => e.stopPropagation()}
+    <div
+      className="flex flex-col gap-1 p-2 min-w-[200px] max-w-full"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setLocalMemoValue(initialMemoValue);
+          setLocalColor(initialColorValue);
+          setIsEditing(true);
+        }}
+        style={{ backgroundColor: memoColor || "transparent" }}
+        className={cn(
+          "w-full text-left text-sm p-2 rounded min-h-[32px]",
+          "whitespace-pre-wrap break-words transition-colors",
+          "focus:outline-none focus:ring-2 focus:ring-primary",
+          memoValue
+            ? "text-gray-700 hover:bg-opacity-80 border border-transparent hover:border-gray-300"
+            : "text-gray-400 italic hover:bg-gray-100 border border-dashed border-gray-300 hover:border-gray-400"
+        )}
+        aria-label={memoValue ? "메모 수정하기" : "메모 추가하기"}
       >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setLocalMemoValue(initialMemoValue);
-            setLocalColor(initialColorValue);
-            setIsEditing(true);
-          }}
-          style={{ backgroundColor: memoColor || "transparent" }}
-          className={cn(
-            "w-full text-left text-sm p-2 rounded min-h-[32px]",
-            "whitespace-pre-wrap break-words transition-colors",
-            "focus:outline-none focus:ring-2 focus:ring-primary",
-            memoValue
-              ? "text-gray-700 hover:bg-opacity-80 border border-transparent hover:border-gray-300"
-              : "text-gray-400 italic hover:bg-gray-100 border border-dashed border-gray-300 hover:border-gray-400"
-          )}
-          aria-label={memoValue ? "메모 수정하기" : "메모 추가하기"}
-        >
-          {memoValue || "메모를 추가하려면 클릭하세요"}
-        </button>
-      </div>
-
-      {/* ✅ 삭제 확인 다이얼로그 */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>메모를 삭제하시겠습니까?</AlertDialogTitle>
-            <AlertDialogDescription>
-              이 작업은 되돌릴 수 없습니다. 메모가 영구적으로 삭제됩니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              삭제
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        {memoValue || "메모를 추가하려면 클릭하세요"}
+      </button>
+    </div>
   );
 }
