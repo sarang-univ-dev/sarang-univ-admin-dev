@@ -52,6 +52,7 @@ const RootLayoutProvider = ({ children }: Props) => {
         revalidateIfStale: true,
         revalidateOnFocus: false,
         revalidateOnReconnect: true,
+        revalidateOnMount: true, // 페이지 진입 시 항상 최신 데이터 fetch
         shouldRetryOnError: false,
       }}
     >
