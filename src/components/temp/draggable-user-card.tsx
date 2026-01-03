@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { User, Calendar } from "lucide-react";
+import { getKSTDay, getKSTMonth, getKSTDate } from "@/lib/utils/date-utils";
 
 type ScheduleType = "BREAKFAST" | "LUNCH" | "DINNER" | "SLEEP";
 
@@ -58,12 +59,12 @@ export function DraggableUserCardComponent({
   );
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const dayName = ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
+    // KST 기준 날짜 사용
+    const dayName = ["일", "월", "화", "수", "목", "금", "토"][getKSTDay(dateString)];
     return {
-      formatted: `${date.getMonth() + 1}/${date.getDate()}(${dayName})`,
+      formatted: `${getKSTMonth(dateString) + 1}/${getKSTDate(dateString)}(${dayName})`,
       dayName,
-      date: date.toISOString().split("T")[0],
+      date: dateString.split("T")[0],
     };
   };
 

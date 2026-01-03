@@ -18,6 +18,7 @@ import { Table } from "@tanstack/react-table";
 import { useIsMobile } from "@/hooks/use-media-query";
 import { SCHEDULE_TYPE_SHORT_LABELS } from "@/lib/constant/labels";
 import { TRetreatRegistrationSchedule } from "@/types";
+import { getKSTDay } from "@/lib/utils/date-utils";
 
 interface RetreatPaymentConfirmationTableToolbarProps {
   table: Table<any>;
@@ -133,8 +134,8 @@ export function RetreatPaymentConfirmationTableToolbar({
                       const scheduleId = parseInt(id.replace("schedule_", ""));
                       const schedule = schedules.find((s) => s.id === scheduleId);
                       if (schedule) {
-                        const date = new Date(schedule.time);
-                        const dayOfWeek = ["주", "월", "화", "수", "목", "금", "토"][date.getDay()];
+                        // KST 기준 요일 사용
+                        const dayOfWeek = ["주", "월", "화", "수", "목", "금", "토"][getKSTDay(schedule.time)];
                         const typeShort = SCHEDULE_TYPE_SHORT_LABELS[schedule.type] || schedule.type;
                         return `${dayOfWeek}${typeShort}`;
                       }

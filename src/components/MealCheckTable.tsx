@@ -27,6 +27,13 @@ import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
 import { useToastStore } from "@/store/toast-store";
+import {
+  getKSTDay,
+  getKSTMonth,
+  getKSTDate,
+  getKSTHours,
+  getKSTMinutes,
+} from "@/lib/utils/date-utils";
 import { TRetreatRegistrationSchedule, TRetreatShuttleBus } from "@/types";
 import { GenderBadge } from "@/components/Badge";
 
@@ -402,7 +409,7 @@ export function MealCheckTable({ retreatSlug }: MealCheckTableProps) {
     }
   };
 
-  const getFullDayName = (date: Date) => {
+  const getFullDayName = (dateInput: string | Date) => {
     const days = [
       "일요일",
       "월요일",
@@ -412,7 +419,8 @@ export function MealCheckTable({ retreatSlug }: MealCheckTableProps) {
       "금요일",
       "토요일",
     ];
-    return days[date.getDay()];
+    // KST 기준 요일 사용
+    return days[getKSTDay(dateInput)];
   };
 
   const getFullMealTypeName = (type: string) => {
@@ -431,11 +439,11 @@ export function MealCheckTable({ retreatSlug }: MealCheckTableProps) {
   };
 
   const formatMealSchedule = (schedule: MealSchedule) => {
-    const date = new Date(schedule.time);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hour = date.getHours();
-    const minute = date.getMinutes();
+    // KST 기준 날짜/시간 사용
+    const month = getKSTMonth(schedule.time) + 1;
+    const day = getKSTDate(schedule.time);
+    const hour = getKSTHours(schedule.time);
+    const minute = getKSTMinutes(schedule.time);
 
     const period = hour < 12 ? "오전" : "오후";
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
@@ -445,7 +453,7 @@ export function MealCheckTable({ retreatSlug }: MealCheckTableProps) {
     const alias = getRegisterScheduleAlias(schedule.time, schedule.type);
 
     // 전체 설명 (수요일 점심)
-    const dayName = getFullDayName(date);
+    const dayName = getFullDayName(schedule.time);
     const mealTypeName = getFullMealTypeName(schedule.type);
     const fullDescription = `${dayName} ${mealTypeName}`;
 

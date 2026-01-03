@@ -27,6 +27,13 @@ import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
 import { useToastStore } from "@/store/toast-store";
+import {
+  getKSTDay,
+  getKSTMonth,
+  getKSTDate,
+  getKSTHours,
+  getKSTMinutes,
+} from "@/lib/utils/date-utils";
 import { TRetreatRegistrationSchedule, TRetreatShuttleBus } from "@/types";
 import { GenderBadge } from "@/components/Badge";
 
@@ -407,7 +414,7 @@ export function ShuttleCheckTable({ retreatSlug }: ShuttleCheckTableProps) {
     }
   };
 
-  const getFullDayName = (date: Date) => {
+  const getFullDayName = (dateInput: string | Date) => {
     const days = [
       "일요일",
       "월요일",
@@ -417,22 +424,23 @@ export function ShuttleCheckTable({ retreatSlug }: ShuttleCheckTableProps) {
       "금요일",
       "토요일",
     ];
-    return days[date.getDay()];
+    // KST 기준 요일 사용
+    return days[getKSTDay(dateInput)];
   };
 
   const formatShuttleBusSchedule = (schedule: ShuttleBusSchedule) => {
-    const date = new Date(schedule.departureTime);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hour = date.getHours();
-    const minute = date.getMinutes();
+    // KST 기준 날짜/시간 사용
+    const month = getKSTMonth(schedule.departureTime) + 1;
+    const day = getKSTDate(schedule.departureTime);
+    const hour = getKSTHours(schedule.departureTime);
+    const minute = getKSTMinutes(schedule.departureTime);
 
     const period = hour < 12 ? "오전" : "오후";
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     const timeString = `${displayHour}:${minute.toString().padStart(2, "0")}`;
 
     // 전체 설명 (수요일 가는길)
-    const dayName = getFullDayName(date);
+    const dayName = getFullDayName(schedule.departureTime);
     const directionName = formatDirection(schedule.direction);
     const fullDescription = `${dayName} ${directionName}`;
 
