@@ -147,10 +147,17 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   // ✅ Wrapper 함수들 (컬럼 훅이 기대하는 시그니처에 맞춘 + WebSocket 지원)
   const handleSaveGbsNumber = useCallback(
     async (row: GBSLineupRow, value: string) => {
-      if (!value.trim() || row.isLeader) return;
+      if (row.isLeader) return;
+      // 빈 값이면 null로 설정 (GBS 배정 해제)
+      const trimmedValue = value.trim();
+      const gbsNumber = trimmedValue === '' ? null : parseInt(trimmedValue);
+      // NaN 체크 (숫자가 아닌 값 입력 시)
+      if (trimmedValue !== '' && isNaN(gbsNumber as number)) {
+        return;
+      }
       // WebSocket: saveGbsNumber(userRetreatRegistrationId, gbsNumber)
       // Polling: saveGbsNumber(id, gbsNumber)
-      await saveGbsNumber(parseInt(row.id), parseInt(value));
+      await saveGbsNumber(parseInt(row.id), gbsNumber);
     },
     [saveGbsNumber]
   );

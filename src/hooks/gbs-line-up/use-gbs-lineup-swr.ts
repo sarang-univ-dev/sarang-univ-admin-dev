@@ -244,7 +244,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
 
         addToast({
           title: '성공',
-          description: 'GBS 번호가 저장되었습니다.',
+          description: gbsNumber === null ? 'GBS 배정이 해제되었습니다.' : 'GBS 번호가 저장되었습니다.',
           variant: 'success',
         });
 

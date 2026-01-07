@@ -194,7 +194,14 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
 
   // GBS 번호 저장
   const handleSaveGbsNumber = useCallback(async (row: GBSLineupRow) => {
-    const newGbsNumber = gbsNumberInputs[row.id] ?? String(row.gbsNumber);
+    const rawValue = gbsNumberInputs[row.id] ?? String(row.gbsNumber ?? "");
+    const trimmedValue = rawValue.trim();
+    // 빈 값이면 null로 설정 (GBS 배정 해제)
+    const newGbsNumber = trimmedValue === "" ? null : parseInt(trimmedValue);
+    // NaN 체크 (숫자가 아닌 값 입력 시)
+    if (trimmedValue !== "" && isNaN(newGbsNumber as number)) {
+      return;
+    }
     setLoading(row.id, "gbsNumber", true);
 
     try {
@@ -206,22 +213,21 @@ export const useGBSLineup = (retreatSlug: string, registrations: any[], schedule
       setData(prev =>
         prev.map(r =>
           r.id === row.id
-            ? { ...r, gbsNumber: parseInt(newGbsNumber), gbsNumberError: false }
+            ? { ...r, gbsNumber: newGbsNumber, gbsNumberError: false }
             : r
         )
       );
 
       addToast({
         title: "성공",
-        description: "GBS가 배정되었습니다.",
+        description: newGbsNumber === null ? "GBS 배정이 해제되었습니다." : "GBS가 배정되었습니다.",
         variant: "success",
       });
 
       const updatedData = await mutate(lineupEndpoint);
 
-      if (updatedData) {
-        const targetGbsNumber = parseInt(newGbsNumber);
-        const gbsGroup = updatedData.filter((r: any) => r.gbsNumber === targetGbsNumber);
+      if (updatedData && newGbsNumber !== null) {
+        const gbsGroup = updatedData.filter((r: any) => r.gbsNumber === newGbsNumber);
 
         if (gbsGroup.length >= 7) {
           setTimeout(() => {
