@@ -218,8 +218,8 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
         );
 
         // ✅ 2. HTTP API 호출 (안정적인 mutation)
-        const response = await webAxios.put(
-          `/api/v1/retreat/${retreatSlug}/line-up/gbs-number`,
+        const response = await webAxios.post(
+          `/api/v1/retreat/${retreatSlug}/line-up/assign-gbs`,
           { userRetreatRegistrationId, gbsNumber }
         );
 
