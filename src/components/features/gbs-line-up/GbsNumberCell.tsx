@@ -77,8 +77,8 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
       debounce(async (rowData: GbsNumberCellRow, newValue: string) => {
         const trimmedValue = newValue.trim();
 
-        // 값이 비어있거나 변경되지 않았으면 저장 안 함
-        if (!trimmedValue || trimmedValue === lastSavedValueRef.current) {
+        // 변경되지 않았으면 저장 안 함
+        if (trimmedValue === lastSavedValueRef.current) {
           return;
         }
 
@@ -87,12 +87,14 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
           return;
         }
 
-        // 유효성 검사: 숫자만 확인
-        const numValue = parseInt(trimmedValue);
-        if (isNaN(numValue)) {
-          alert("숫자를 입력해주세요.");
-          setValue(lastSavedValueRef.current);
-          return;
+        // 유효성 검사: 빈 값이 아니면 숫자인지 확인
+        if (trimmedValue !== '') {
+          const numValue = parseInt(trimmedValue);
+          if (isNaN(numValue)) {
+            alert("숫자를 입력해주세요.");
+            setValue(lastSavedValueRef.current);
+            return;
+          }
         }
 
         try {
@@ -131,8 +133,8 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
     const newValue = e.target.value;
     setValue(newValue);
 
-    // 값이 있을 때만 자동 저장
-    if (newValue.trim()) {
+    // 값이 있거나, 빈 값이지만 기존에 GBS 번호가 있었으면 자동 저장 (배정 해제)
+    if (newValue.trim() || row.gbsNumber !== null) {
       debouncedSave(row, newValue);
     }
   };
@@ -144,9 +146,8 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
 
     const trimmedValue = value.trim();
 
-    // 값이 비어있거나 변경되지 않았으면 저장 안 함
-    if (!trimmedValue || trimmedValue === lastSavedValueRef.current) {
-      setValue(lastSavedValueRef.current);
+    // 변경되지 않았으면 저장 안 함
+    if (trimmedValue === lastSavedValueRef.current) {
       setPendingExternalUpdate(null);
       setShowConflictWarning(false);
       return;
@@ -158,12 +159,14 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
       return;
     }
 
-    // 유효성 검사
-    const numValue = parseInt(trimmedValue);
-    if (isNaN(numValue)) {
-      alert("숫자를 입력해주세요.");
-      setValue(lastSavedValueRef.current);
-      return;
+    // 유효성 검사: 빈 값이 아니면 숫자인지 확인
+    if (trimmedValue !== '') {
+      const numValue = parseInt(trimmedValue);
+      if (isNaN(numValue)) {
+        alert("숫자를 입력해주세요.");
+        setValue(lastSavedValueRef.current);
+        return;
+      }
     }
 
     try {
