@@ -692,25 +692,11 @@ function DormitoryAssignmentTableContent({
           if (groupMode !== "gbs" || !meta || meta.firstRowId !== row.id) {
             return <div className="px-2 py-1 whitespace-nowrap"></div>;
           }
-          const capacityStatus =
-            groupMode === "dormitory" ? dormitoryCapacityStatusMap.get(key) : null;
-          const capacityClassName =
-            capacityStatus === "over"
-              ? "text-red-600"
-              : capacityStatus === "warning"
-                ? "text-yellow-700"
-                : "";
-          const capacity = dormitoryCapacityMap.get(key);
-          const occupancy = dormitoryOccupancyMap.get(key) ?? 0;
-          const capacityHint =
-            groupMode === "dormitory" && capacity
-              ? `현재 ${occupancy}명 / 권장 ${capacity.optimalCapacity}명 / 최대 ${capacity.maxCapacity}명`
-              : undefined;
-          const summary = meta.summary ? ` · ${meta.summary}` : "";
+          // gbs 모드에서는 capacity 관련 표시 없음
           return (
             <div
-              className={`text-left px-2 py-1 whitespace-nowrap font-semibold ${capacityClassName}`}
-              title={capacityHint ? `${capacityHint}${summary}` : meta.summary}
+              className="text-left px-2 py-1 whitespace-nowrap font-semibold"
+              title={meta.summary}
             >
               {meta.label}
             </div>
