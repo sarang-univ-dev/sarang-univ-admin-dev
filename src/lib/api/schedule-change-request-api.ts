@@ -25,17 +25,20 @@ export const ScheduleChangeRequestAPI = {
    * @param retreatSlug - 수양회 slug
    * @param userRetreatRegistrationId - 신청 ID
    * @param afterScheduleIds - 변경 후 일정 ID 배열
+   * @param selectedPaymentScheduleId - 선택된 금액 기준 payment schedule ID
    */
   approveScheduleChange: async (
     retreatSlug: string,
     userRetreatRegistrationId: string,
-    afterScheduleIds: number[]
+    afterScheduleIds: number[],
+    selectedPaymentScheduleId?: number
   ): Promise<void> => {
     await webAxios.post(
       `/api/v1/retreat/${retreatSlug}/account/schedule-history`,
       {
         userRetreatRegistrationId,
         afterScheduleIds,
+        selectedPaymentScheduleId,
       }
     );
   },

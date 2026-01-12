@@ -42,6 +42,7 @@ interface ScheduleChangeModalProps {
     scheduleIds: number[];
     calculatedAmount: number;
     memo?: string; // memoMode === "editable"일 때만 전달
+    selectedPaymentScheduleId?: number; // 선택된 금액 기준 payment schedule
   }) => Promise<void>;
 
   // UI 커스터마이징
@@ -115,6 +116,9 @@ export function ScheduleChangeModal({
   const [scheduleIds, setScheduleIds] = useState(initialScheduleIds);
   const [calculatedAmount, setCalculatedAmount] = useState(originalAmount);
   const [memoContent, setMemoContent] = useState("");
+  const [selectedPaymentId, setSelectedPaymentId] = useState<number | undefined>(
+    payments.length > 0 ? payments[0].id : undefined
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -124,9 +128,10 @@ export function ScheduleChangeModal({
       setScheduleIds(initialScheduleIds);
       setCalculatedAmount(originalAmount);
       setMemoContent("");
+      setSelectedPaymentId(payments.length > 0 ? payments[0].id : undefined);
       setShowConfirm(false);
     }
-  }, [open, initialScheduleIds, originalAmount]);
+  }, [open, initialScheduleIds, originalAmount, payments]);
 
   // 최종 확인 핸들러
   const handleFinalConfirm = async () => {
@@ -136,6 +141,7 @@ export function ScheduleChangeModal({
         scheduleIds,
         calculatedAmount,
         ...(memoMode === "editable" && { memo: memoContent }),
+        selectedPaymentScheduleId: selectedPaymentId,
       });
 
       addToast({
@@ -181,6 +187,7 @@ export function ScheduleChangeModal({
             setScheduleIds(ids);
             setCalculatedAmount(amount);
           }}
+          onPaymentChange={setSelectedPaymentId}
           readOnly={isLoading || showConfirm}
         />
 

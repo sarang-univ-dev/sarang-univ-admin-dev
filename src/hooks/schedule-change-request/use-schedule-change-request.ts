@@ -98,14 +98,16 @@ export function useScheduleChangeRequest(
    */
   const approveScheduleChange = async (
     userRetreatRegistrationId: string,
-    afterScheduleIds: number[]
+    afterScheduleIds: number[],
+    selectedPaymentScheduleId?: number
   ) => {
     await updateCache(
       () =>
         ScheduleChangeRequestAPI.approveScheduleChange(
           retreatSlug,
           userRetreatRegistrationId,
-          afterScheduleIds
+          afterScheduleIds,
+          selectedPaymentScheduleId
         ),
       undefined,
       undefined // 토스트는 ScheduleChangeModal에서 표시

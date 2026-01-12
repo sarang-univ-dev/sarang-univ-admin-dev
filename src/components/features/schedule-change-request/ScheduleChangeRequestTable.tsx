@@ -123,9 +123,10 @@ export function ScheduleChangeRequestTable({
   const handleModalConfirm = async (data: {
     scheduleIds: number[];
     calculatedAmount: number;
+    selectedPaymentScheduleId?: number;
   }) => {
     if (!selectedRow) return;
-    await approveScheduleChange(selectedRow.id, data.scheduleIds);
+    await approveScheduleChange(selectedRow.id, data.scheduleIds, data.selectedPaymentScheduleId);
   };
 
   // 컬럼 훅으로 컬럼 정의 가져오기
