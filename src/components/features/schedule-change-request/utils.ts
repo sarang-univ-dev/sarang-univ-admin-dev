@@ -1,6 +1,5 @@
 import {
   TRetreatRegistrationSchedule,
-  TRetreatPaymentSchedule,
   IUserScheduleChangeRetreat,
 } from "@/types";
 import { ScheduleChangeRequestTableData } from "@/hooks/schedule-change-request/use-schedule-change-request-columns";
@@ -33,49 +32,6 @@ export function transformScheduleChangeRequestForTable(
     memoId: req.userRetreatRegistrationHistoryMemoId,
     scheduleIds: req.userRetreatRegistrationScheduleIds || [],
   }));
-}
-
-/**
- * 특정 날짜에 유효한 payment를 찾는 함수
- * @param payments - payment schedule 목록
- * @param referenceDate - 기준 날짜 (기본값: 현재 시각)
- */
-export function findCurrentPayment(
-  payments: TRetreatPaymentSchedule[],
-  referenceDate?: Date | string
-): TRetreatPaymentSchedule | null {
-  const currentDate = referenceDate ? new Date(referenceDate) : new Date();
-
-  if (payments.length === 0) {
-    return null;
-  }
-
-  // 현재 유효한 payment 찾기
-  const validPayment = payments.find(
-    (payment: TRetreatPaymentSchedule) =>
-      new Date(payment.startAt) <= currentDate &&
-      new Date(payment.endAt) >= currentDate
-  );
-
-  if (validPayment) {
-    return validPayment;
-  }
-
-  // 유효한 payment가 없는 경우
-  // 현재 이후 가장 이른 payment 찾기
-  return payments.reduce(
-    (earliest: TRetreatPaymentSchedule, current: TRetreatPaymentSchedule) => {
-      const currentEndDate = new Date(current.endAt);
-      const earliestEndDate = new Date(earliest.endAt);
-
-      // 현재 날짜 이후의 payment만 고려
-      if (currentEndDate < currentDate) return earliest;
-      if (earliestEndDate < currentDate) return current;
-
-      // 둘 다 현재 이후라면 더 이른 날짜의 payment 반환
-      return currentEndDate < earliestEndDate ? current : earliest;
-    }
-  );
 }
 
 /**
