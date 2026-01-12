@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
 import { calculateRegistrationPrice } from "@/utils/calculateRegistrationPrice";
-import { findCurrentPayment } from "@/components/features/schedule-change-request/utils";
 
 interface UseScheduleChangePriceOptions {
   userType: string;
@@ -11,6 +10,7 @@ interface UseScheduleChangePriceOptions {
   selectedScheduleIds: number[];
   originalAmount: number;
   retreatInfo?: any; // 선택사항
+  selectedPaymentId?: number; // 선택된 payment schedule ID
 }
 
 /**
@@ -41,6 +41,7 @@ export function useScheduleChangePrice({
   selectedScheduleIds,
   originalAmount,
   retreatInfo,
+  selectedPaymentId,
 }: UseScheduleChangePriceOptions) {
   const [calculatedPrice, setCalculatedPrice] = useState(originalAmount);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -53,14 +54,20 @@ export function useScheduleChangePrice({
       return;
     }
 
+    // 선택된 payment가 없으면 원래 금액 유지
+    if (!selectedPaymentId) {
+      setCalculatedPrice(originalAmount);
+      return;
+    }
+
     setIsCalculating(true);
     setError(null);
 
     try {
-      // 현재 유효한 payment 찾기
-      const currentPayment = findCurrentPayment(payments);
-      if (!currentPayment) {
-        throw new Error("현재 결제 정보를 찾을 수 없습니다.");
+      // 선택된 payment 찾기
+      const selectedPayment = payments.find((p) => p.id === selectedPaymentId);
+      if (!selectedPayment) {
+        throw new Error("선택된 결제 정보를 찾을 수 없습니다.");
       }
 
       // 사용할 스케줄 데이터 결정 (retreatInfo가 있으면 우선 사용)
@@ -70,7 +77,7 @@ export function useScheduleChangePrice({
       const newPrice = calculateRegistrationPrice(
         userType,
         schedulesToUse,
-        [currentPayment],
+        [selectedPayment],
         selectedScheduleIds,
         parseInt(grade)
       );
@@ -85,7 +92,7 @@ export function useScheduleChangePrice({
     } finally {
       setIsCalculating(false);
     }
-  }, [userType, grade, selectedScheduleIds, payments, originalAmount, schedules, retreatInfo]);
+  }, [userType, grade, selectedScheduleIds, payments, originalAmount, schedules, retreatInfo, selectedPaymentId]);
 
   return {
     calculatedPrice,

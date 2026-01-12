@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
 import { TypeBadge } from "@/components/Badge";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDate } from "@/utils/formatDate";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { formatDate, formatSimpleDate } from "@/utils/formatDate";
 import { cn } from "@/lib/utils";
 import { ScheduleSelectionTable } from "./ScheduleSelectionTable";
 import { useScheduleChangePrice } from "@/hooks/retreat/use-schedule-change-price";
@@ -33,6 +35,7 @@ interface ScheduleChangeFormContentProps {
 
   // 일정 변경 콜백
   onChange?: (scheduleIds: number[], calculatedAmount: number) => void;
+  onPaymentChange?: (paymentId: number) => void; // 선택된 payment 변경 콜백
   readOnly?: boolean;
 }
 
@@ -70,10 +73,14 @@ export function ScheduleChangeFormContent({
   memoMode = "readonly",
   onMemoChange,
   onChange,
+  onPaymentChange,
   readOnly = false,
 }: ScheduleChangeFormContentProps) {
   const [selectedScheduleIds, setSelectedScheduleIds] = useState(initialScheduleIds);
   const [memoContent, setMemoContent] = useState(memo?.content || "");
+  const [selectedPaymentId, setSelectedPaymentId] = useState<number | undefined>(
+    payments.length > 0 ? payments[0].id : undefined
+  );
 
   // 금액 계산 훅 사용
   const { calculatedPrice } = useScheduleChangePrice({
@@ -84,6 +91,7 @@ export function ScheduleChangeFormContent({
     selectedScheduleIds,
     originalAmount,
     retreatInfo,
+    selectedPaymentId,
   });
 
   // 일정 변경 시 부모에게 알림
@@ -97,6 +105,13 @@ export function ScheduleChangeFormContent({
       onMemoChange?.(memoContent);
     }
   }, [memoContent, memoMode, onMemoChange]);
+
+  // Payment 변경 시 부모에게 알림
+  useEffect(() => {
+    if (selectedPaymentId) {
+      onPaymentChange?.(selectedPaymentId);
+    }
+  }, [selectedPaymentId, onPaymentChange]);
 
   // 일정 토글 핸들러
   const handleScheduleChange = (scheduleId: number) => {
@@ -167,6 +182,34 @@ export function ScheduleChangeFormContent({
           disabled={readOnly}
         />
       </div>
+
+      {/* 금액 기준 선택 */}
+      {payments.length > 0 && (
+        <div className="border-t pt-4">
+          <h4 className="font-medium mb-3">금액 기준 선택</h4>
+          <RadioGroup
+            value={selectedPaymentId?.toString()}
+            onValueChange={(value) => setSelectedPaymentId(parseInt(value))}
+            disabled={readOnly}
+            className="space-y-2"
+          >
+            {payments.map((payment) => (
+              <div key={payment.id} className="flex items-center space-x-3">
+                <RadioGroupItem
+                  value={payment.id.toString()}
+                  id={`payment-${payment.id}`}
+                />
+                <Label
+                  htmlFor={`payment-${payment.id}`}
+                  className="text-sm cursor-pointer"
+                >
+                  {payment.name} ({formatSimpleDate(payment.startAt as unknown as string)} ~ {formatSimpleDate(payment.endAt as unknown as string)})
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+      )}
 
       {/* 금액 정보 */}
       <div className="space-y-2 border-t pt-4">

@@ -36,12 +36,15 @@ export function transformScheduleChangeRequestForTable(
 }
 
 /**
- * 현재 날짜에 유효한 payment를 찾는 함수
+ * 특정 날짜에 유효한 payment를 찾는 함수
+ * @param payments - payment schedule 목록
+ * @param referenceDate - 기준 날짜 (기본값: 현재 시각)
  */
 export function findCurrentPayment(
-  payments: TRetreatPaymentSchedule[]
+  payments: TRetreatPaymentSchedule[],
+  referenceDate?: Date | string
 ): TRetreatPaymentSchedule | null {
-  const currentDate = new Date();
+  const currentDate = referenceDate ? new Date(referenceDate) : new Date();
 
   if (payments.length === 0) {
     return null;
