@@ -70,13 +70,9 @@ export function useScheduleChangePrice({
         throw new Error("선택된 결제 정보를 찾을 수 없습니다.");
       }
 
-      // 사용할 스케줄 데이터 결정 (retreatInfo가 있으면 우선 사용)
-      const schedulesToUse = retreatInfo?.schedule || schedules;
-
       // 새로운 금액 계산
       const newPrice = calculateRegistrationPrice(
         userType,
-        schedulesToUse,
         [selectedPayment],
         selectedScheduleIds,
         parseInt(grade)
@@ -92,7 +88,7 @@ export function useScheduleChangePrice({
     } finally {
       setIsCalculating(false);
     }
-  }, [userType, grade, selectedScheduleIds, payments, originalAmount, schedules, retreatInfo, selectedPaymentId]);
+  }, [userType, grade, selectedScheduleIds, payments, originalAmount, selectedPaymentId]);
 
   return {
     calculatedPrice,

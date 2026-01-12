@@ -1,6 +1,4 @@
 import {
-  RetreatRegistrationScheduleType,
-  TRetreatRegistrationSchedule,
   TRetreatPaymentSchedule,
   UserRetreatRegistrationType
 } from "@/types";
@@ -8,7 +6,6 @@ import {
 /**
  * 행사 등록 가격 계산
  * @param userType - 사용자 타입
- * @param retreatSchedules - 수양회 식수 일정
  * @param retreatPaymentSchedules - 수양회 입급 일정
  * @param userRetreatRegistrationScheduleIds - 사용자가 신청한 수양회 식수 일정
  * @param userGradeNumber - 사용자 학년
@@ -16,7 +13,6 @@ import {
  */
 export function calculateRegistrationPrice(
   userType: UserRetreatRegistrationType | string | null,
-  retreatSchedules: TRetreatRegistrationSchedule[],
   retreatPaymentSchedules: TRetreatPaymentSchedule[],
   userRetreatRegistrationScheduleIds: number[],
   userGradeNumber?: number
@@ -59,40 +55,8 @@ export function calculateRegistrationPrice(
     }
   }
 
-  // 선택된 스케줄을 날짜별로 분류
-  const selectedSchedulesByDate: {
-    [date: string]: TRetreatRegistrationSchedule[];
-  } = {};
-
-  userRetreatRegistrationScheduleIds.forEach((id: number) => {
-    const schedule = retreatSchedules.find((s) => Number(s.id) === id);
-    if (schedule) {
-      // 날짜 기준으로 변환
-      const dateStr = new Date(schedule.time).toISOString().split("T")[0];
-
-      if (!selectedSchedulesByDate[dateStr]) {
-        selectedSchedulesByDate[dateStr] = [];
-      }
-      selectedSchedulesByDate[dateStr].push(schedule);
-    }
-  });
-
-  let eventCount = 0;
-
-  // 날짜별로 이벤트 수 계산
-  Object.values(selectedSchedulesByDate).forEach((schedules) => {
-    const types = schedules.map((s) => s.type);
-    const hasDinner = types.includes(RetreatRegistrationScheduleType.DINNER);
-    const hasSleep = types.includes(RetreatRegistrationScheduleType.SLEEP);
-
-    // 모든 이벤트 수를 추가
-    eventCount += types.length;
-
-    // DINNER와 SLEEP이 모두 있는 경우 1을 뺍니다
-    if (hasDinner && hasSleep) {
-      eventCount -= 1;
-    }
-  });
+  // 선택된 스케줄의 개수 계산
+  const eventCount = userRetreatRegistrationScheduleIds.length;
 
   // 가격 계산
   const calculatedPrice =
