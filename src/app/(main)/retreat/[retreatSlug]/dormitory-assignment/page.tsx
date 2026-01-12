@@ -7,7 +7,9 @@ import { DormitoryStaffTable } from "@/components/DormitoryStaffTable";
 import { TRetreatRegistrationSchedule } from "@/types";
 
 export default function DormitoryStaffPage() {
-  const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>([]);
+  const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(
+    []
+  );
 
   const params = useParams();
   const retreatSlug = params.retreatSlug as string;
@@ -29,4 +31,4 @@ export default function DormitoryStaffPage() {
       <DormitoryStaffTable retreatSlug={retreatSlug} schedules={schedules} />
     </div>
   );
-} 
+}
