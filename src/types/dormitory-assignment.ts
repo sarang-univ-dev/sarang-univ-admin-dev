@@ -7,6 +7,8 @@ export type DormitoryAssignmentPreview = {
     dormitoryId: number;
     dormitoryName: string;
     gbsNumber: number | null;
+    univGroupNumber: number;
+    gradeNumber: number;
     userName: string;
   }[];
   dormitorySummary: {

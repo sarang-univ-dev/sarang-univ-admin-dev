@@ -12,6 +12,7 @@ export interface IDormitoryStaffRegistration {
   phoneNumber: string;
   userRetreatRegistrationScheduleIds: number[];
   gbsNumber?: number | null;
+  gbsMemo?: string | null;
   dormitoryLocation?: string;
   dormitoryStaffMemo?: string; // 인원관리 간사 메모
   dormitoryStaffMemoId?: string; // 인원관리 간사 메모 ID

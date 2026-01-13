@@ -46,6 +46,7 @@ type ScheduleColumn = ReturnType<typeof generateScheduleColumns>[number];
 type PersonRow = {
   id: number;
   gbsNumber: number | null;
+  gbsMemo: string | null;
   department: string;
   grade: string;
   name: string;
@@ -245,6 +246,7 @@ function PersonSelectionTable({
               />
             </TableHead>
             <TableHead className="text-center">GBS</TableHead>
+            <TableHead className="text-center">GBS 메모</TableHead>
             <TableHead className="text-center">부서</TableHead>
             <TableHead className="text-center">학년</TableHead>
             <TableHead className="text-center">이름</TableHead>
@@ -277,6 +279,9 @@ function PersonSelectionTable({
                   ) : (
                     <Badge variant="outline">미배정</Badge>
                   )}
+                </TableCell>
+                <TableCell className="text-center">
+                  {row.gbsMemo ? row.gbsMemo : "-"}
                 </TableCell>
                 <TableCell className="text-center">{row.department}</TableCell>
                 <TableCell className="text-center">{row.grade}</TableCell>
@@ -397,6 +402,9 @@ function AssignmentPreviewTable({
       const aGbs = a.gbsNumber ?? Number.MAX_SAFE_INTEGER;
       const bGbs = b.gbsNumber ?? Number.MAX_SAFE_INTEGER;
       if (aGbs !== bGbs) return aGbs - bGbs;
+      if (a.gradeNumber !== b.gradeNumber) {
+        return b.gradeNumber - a.gradeNumber;
+      }
       return a.userName.localeCompare(b.userName, "ko");
     });
   }, [preview.previewAssignments]);
@@ -421,6 +429,8 @@ function AssignmentPreviewTable({
           <TableHeader>
             <TableRow>
               <TableHead className="text-center">GBS</TableHead>
+              <TableHead className="text-center">부서</TableHead>
+              <TableHead className="text-center">학년</TableHead>
               <TableHead className="text-center">이름</TableHead>
               <TableHead className="text-center">배정 숙소</TableHead>
             </TableRow>
@@ -430,6 +440,12 @@ function AssignmentPreviewTable({
               <TableRow key={assignment.userRetreatRegistrationId}>
                 <TableCell className="text-center">
                   {assignment.gbsNumber ?? "-"}
+                </TableCell>
+                <TableCell className="text-center">
+                  {assignment.univGroupNumber}부
+                </TableCell>
+                <TableCell className="text-center">
+                  {assignment.gradeNumber}학년
                 </TableCell>
                 <TableCell className="text-center">{assignment.userName}</TableCell>
                 <TableCell className="text-center">
@@ -714,6 +730,7 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
     return dormitoryStaff.map((registration) => ({
       id: registration.id,
       gbsNumber: registration.gbsNumber ?? null,
+      gbsMemo: registration.gbsMemo ?? null,
       department: `${registration.univGroupNumber}부`,
       grade: `${registration.gradeNumber}학년`,
       name: registration.name,
