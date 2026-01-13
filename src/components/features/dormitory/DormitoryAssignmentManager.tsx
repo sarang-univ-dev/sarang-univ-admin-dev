@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 import { useAllDormitories } from "@/hooks/use-available-dormitories";
 import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
@@ -66,6 +67,31 @@ type DormitoryRow = {
   remainingBySchedule: Record<string, number>;
 };
 
+type PreviewGroupMode = "gbs" | "dormitory";
+
+type PreviewDataRow = {
+  kind: "data";
+  id: number;
+  gbsNumber: number | null;
+  univGroupNumber: number;
+  gradeNumber: number;
+  userName: string;
+  dormitoryName: string;
+  scheduleMap: Record<string, boolean>;
+};
+
+type PreviewGroupRow = {
+  kind: "group";
+  id: string;
+  groupMode: PreviewGroupMode;
+  groupKey: string;
+  groupLabel: string;
+  scheduleCounts: Record<string, number>;
+  totalCount: number;
+};
+
+type PreviewTableRow = PreviewDataRow | PreviewGroupRow;
+
 const buildScheduleMap = (
   scheduleIds: number[],
   scheduleColumns: ScheduleColumn[]
@@ -86,6 +112,99 @@ const compareByGbs = (a: PersonRow, b: PersonRow) => {
   }
   if (a.gradeNumber !== b.gradeNumber) return b.gradeNumber - a.gradeNumber;
   return a.name.localeCompare(b.name, "ko");
+};
+
+const UNASSIGNED_LABEL = "미배정";
+
+const isPreviewGroupRow = (row: PreviewTableRow): row is PreviewGroupRow =>
+  row.kind === "group";
+
+const normalizeGroupKey = (value?: string | null) =>
+  normalizeDormitoryLocation(value) ?? UNASSIGNED_LABEL;
+
+const getPreviewGroupKey = (row: PreviewDataRow, groupMode: PreviewGroupMode) =>
+  groupMode === "gbs"
+    ? row.gbsNumber != null
+      ? String(row.gbsNumber)
+      : UNASSIGNED_LABEL
+    : normalizeGroupKey(row.dormitoryName);
+
+const getPreviewGroupLabel = (key: string, groupMode: PreviewGroupMode) =>
+  groupMode === "gbs"
+    ? key === UNASSIGNED_LABEL
+      ? "GBS 미배정"
+      : `GBS ${key}`
+    : key;
+
+const comparePreviewByGradeName = (a: PreviewDataRow, b: PreviewDataRow) => {
+  if (a.gradeNumber !== b.gradeNumber) return b.gradeNumber - a.gradeNumber;
+  return a.userName.localeCompare(b.userName, "ko");
+};
+
+const comparePreviewByGbs = (a: PreviewDataRow, b: PreviewDataRow) => {
+  if (a.gbsNumber == null && b.gbsNumber != null) return 1;
+  if (a.gbsNumber != null && b.gbsNumber == null) return -1;
+  if (a.gbsNumber != null && b.gbsNumber != null && a.gbsNumber !== b.gbsNumber) {
+    return a.gbsNumber - b.gbsNumber;
+  }
+  return comparePreviewByGradeName(a, b);
+};
+
+const sortPreviewKeys = (a: string, b: string, groupMode: PreviewGroupMode) => {
+  if (a === UNASSIGNED_LABEL) return 1;
+  if (b === UNASSIGNED_LABEL) return -1;
+  if (groupMode === "gbs") return Number(a) - Number(b);
+  return a.localeCompare(b, "ko");
+};
+
+const buildPreviewGroupedRows = (
+  rows: PreviewDataRow[],
+  groupMode: PreviewGroupMode,
+  scheduleColumns: ScheduleColumn[]
+) => {
+  const groups = new Map<string, PreviewDataRow[]>();
+  rows.forEach((row) => {
+    const key = getPreviewGroupKey(row, groupMode);
+    const groupRows = groups.get(key) ?? [];
+    groupRows.push(row);
+    groups.set(key, groupRows);
+  });
+
+  const sortedKeys = Array.from(groups.keys()).sort((a, b) =>
+    sortPreviewKeys(a, b, groupMode)
+  );
+
+  const result: PreviewTableRow[] = [];
+  sortedKeys.forEach((key) => {
+    const groupRows = groups.get(key) ?? [];
+    const sortedRows = [...groupRows].sort(
+      groupMode === "gbs" ? comparePreviewByGradeName : comparePreviewByGbs
+    );
+    const scheduleCounts: Record<string, number> = {};
+    scheduleColumns.forEach((schedule) => {
+      scheduleCounts[schedule.key] = 0;
+    });
+    groupRows.forEach((row) => {
+      scheduleColumns.forEach((schedule) => {
+        if (row.scheduleMap[schedule.key]) {
+          scheduleCounts[schedule.key] += 1;
+        }
+      });
+    });
+
+    result.push({
+      kind: "group",
+      id: `preview-group-${groupMode}-${key}`,
+      groupMode,
+      groupKey: key,
+      groupLabel: getPreviewGroupLabel(key, groupMode),
+      scheduleCounts,
+      totalCount: groupRows.length,
+    });
+    result.push(...sortedRows);
+  });
+
+  return result;
 };
 
 const resolveAssignmentStrategyLabel = (
@@ -394,20 +513,44 @@ function DormitorySelectionTable({
 
 function AssignmentPreviewTable({
   preview,
+  scheduleColumns,
+  scheduleMapById,
 }: {
   preview: DormitoryAssignmentPreview;
+  scheduleColumns: ScheduleColumn[];
+  scheduleMapById: Map<number, Record<string, boolean>>;
 }) {
-  const assignments = useMemo(() => {
-    return [...preview.previewAssignments].sort((a, b) => {
-      const aGbs = a.gbsNumber ?? Number.MAX_SAFE_INTEGER;
-      const bGbs = b.gbsNumber ?? Number.MAX_SAFE_INTEGER;
-      if (aGbs !== bGbs) return aGbs - bGbs;
-      if (a.gradeNumber !== b.gradeNumber) {
-        return b.gradeNumber - a.gradeNumber;
-      }
-      return a.userName.localeCompare(b.userName, "ko");
+  const [groupMode, setGroupMode] = useState<PreviewGroupMode>("gbs");
+
+  const emptyScheduleMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    scheduleColumns.forEach((schedule) => {
+      map[schedule.key] = false;
     });
-  }, [preview.previewAssignments]);
+    return map;
+  }, [scheduleColumns]);
+
+  const rows = useMemo<PreviewDataRow[]>(
+    () =>
+      preview.previewAssignments.map((assignment) => ({
+        kind: "data",
+        id: assignment.userRetreatRegistrationId,
+        gbsNumber: assignment.gbsNumber ?? null,
+        univGroupNumber: assignment.univGroupNumber,
+        gradeNumber: assignment.gradeNumber,
+        userName: assignment.userName,
+        dormitoryName: assignment.dormitoryName,
+        scheduleMap:
+          scheduleMapById.get(assignment.userRetreatRegistrationId) ??
+          emptyScheduleMap,
+      })),
+    [preview.previewAssignments, scheduleMapById, emptyScheduleMap]
+  );
+
+  const groupedRows = useMemo(
+    () => buildPreviewGroupedRows(rows, groupMode, scheduleColumns),
+    [groupMode, rows, scheduleColumns]
+  );
 
   return (
     <div className="space-y-4">
@@ -417,6 +560,22 @@ function AssignmentPreviewTable({
         <span>기준: {resolveCapacityBasisLabel(preview.capacityBasis)}</span>
         <span>·</span>
         <span>배정 가능: {preview.isAssignable ? "가능" : "불가"}</span>
+        <span>·</span>
+        <span>대상 {preview.previewAssignments.length}명</span>
+      </div>
+      <div className="flex justify-end">
+        <ToggleGroup
+          type="single"
+          value={groupMode}
+          onValueChange={(value) => {
+            if (value) setGroupMode(value as PreviewGroupMode);
+          }}
+          variant="outline"
+          size="sm"
+        >
+          <ToggleGroupItem value="gbs">GBS별</ToggleGroupItem>
+          <ToggleGroupItem value="dormitory">숙소별</ToggleGroupItem>
+        </ToggleGroup>
       </div>
       {!preview.isAssignable && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -428,31 +587,85 @@ function AssignmentPreviewTable({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="text-center">
+                {groupMode === "gbs" ? "GBS" : "숙소"}
+              </TableHead>
               <TableHead className="text-center">GBS</TableHead>
               <TableHead className="text-center">부서</TableHead>
               <TableHead className="text-center">학년</TableHead>
               <TableHead className="text-center">이름</TableHead>
               <TableHead className="text-center">배정 숙소</TableHead>
+              {scheduleColumns.map((schedule) => (
+                <TableHead key={schedule.key} className="text-center">
+                  {schedule.label}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {assignments.map((assignment) => (
-              <TableRow key={assignment.userRetreatRegistrationId}>
-                <TableCell className="text-center">
-                  {assignment.gbsNumber ?? "-"}
-                </TableCell>
-                <TableCell className="text-center">
-                  {assignment.univGroupNumber}부
-                </TableCell>
-                <TableCell className="text-center">
-                  {assignment.gradeNumber}학년
-                </TableCell>
-                <TableCell className="text-center">{assignment.userName}</TableCell>
-                <TableCell className="text-center">
-                  {assignment.dormitoryName}
-                </TableCell>
-              </TableRow>
-            ))}
+            {groupedRows.map((row) => {
+              if (isPreviewGroupRow(row)) {
+                return (
+                  <TableRow
+                    key={row.id}
+                    className="bg-muted/50 text-muted-foreground font-medium"
+                  >
+                    <TableCell className="text-left font-semibold">
+                      {row.groupLabel}
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        {row.totalCount}명
+                      </span>
+                    </TableCell>
+                    <TableCell />
+                    <TableCell />
+                    <TableCell />
+                    <TableCell />
+                    <TableCell />
+                    {scheduleColumns.map((schedule) => (
+                      <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
+                        {row.scheduleCounts[schedule.key] ?? 0}명
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              }
+
+              return (
+                <TableRow key={row.id}>
+                  <TableCell />
+                  <TableCell className="text-center">
+                    {row.gbsNumber != null ? (
+                      row.gbsNumber
+                    ) : (
+                      <Badge variant="outline">미배정</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {row.univGroupNumber}부
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {row.gradeNumber}학년
+                  </TableCell>
+                  <TableCell className="text-center">{row.userName}</TableCell>
+                  <TableCell className="text-center">
+                    {row.dormitoryName}
+                  </TableCell>
+                  {scheduleColumns.map((schedule) => (
+                    <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
+                      <Checkbox
+                        checked={row.scheduleMap[schedule.key]}
+                        disabled
+                        className={
+                          row.scheduleMap[schedule.key]
+                            ? schedule.bgColorClass
+                            : ""
+                        }
+                      />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -504,6 +717,13 @@ function GenderAssignmentPanel({
       ),
     [registrations, dormitories, scheduleColumns, scheduleIds]
   );
+  const scheduleMapById = useMemo(() => {
+    const map = new Map<number, Record<string, boolean>>();
+    registrations.forEach((registration) => {
+      map.set(registration.id, registration.scheduleMap);
+    });
+    return map;
+  }, [registrations]);
 
   const canPreview =
     selectedUserIds.size > 0 && selectedDormitoryIds.size > 0;
@@ -682,7 +902,11 @@ function GenderAssignmentPanel({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <AssignmentPreviewTable preview={previewData} />
+            <AssignmentPreviewTable
+              preview={previewData}
+              scheduleColumns={scheduleColumns}
+              scheduleMapById={scheduleMapById}
+            />
           </CardContent>
         </Card>
       )}
