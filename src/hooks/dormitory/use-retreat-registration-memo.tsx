@@ -2,8 +2,9 @@ import { useState, useCallback } from "react";
 import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import { useSWRConfig } from "swr";
 import { AxiosError } from "axios";
+import { KeyedMutator } from "swr";
+import { IDormitoryRetreatRegistration } from "./use-retreat-registration";
 
 /**
  * 숙소팀 일정변동 요청 메모 관리 훅
@@ -14,18 +15,16 @@ import { AxiosError } from "axios";
  * - 확인 다이얼로그 지원 (삭제 시)
  *
  * @param retreatSlug - 수양회 슬러그
+ * @param mutate - SWR mutate 함수 (useDormitoryRetreatRegistration에서 전달)
  * @returns 메모 관련 액션 함수들
  */
-export function useDormitoryRetreatRegistrationMemo(retreatSlug: string) {
+export function useDormitoryRetreatRegistrationMemo(
+  retreatSlug: string,
+  mutate: KeyedMutator<IDormitoryRetreatRegistration[]>
+) {
   const addToast = useToastStore((state) => state.add);
   const confirmDialog = useConfirmDialogStore();
-  const { mutate: globalMutate } = useSWRConfig();
   const [isMutating, setIsMutating] = useState(false);
-
-  // SWR 캐시 키
-  const cacheKey = retreatSlug
-    ? `/api/v1/retreat/${retreatSlug}/dormitory/user-retreat-dormitory-team-member`
-    : null;
 
   /**
    * 일정변동 요청 메모 저장 (신규)
@@ -45,9 +44,7 @@ export function useDormitoryRetreatRegistrationMemo(retreatSlug: string) {
         );
 
         // SWR 캐시 갱신
-        if (cacheKey) {
-          await globalMutate(cacheKey);
-        }
+        await mutate();
 
         addToast({
           title: "성공",
@@ -72,7 +69,7 @@ export function useDormitoryRetreatRegistrationMemo(retreatSlug: string) {
         setIsMutating(false);
       }
     },
-    [retreatSlug, cacheKey, globalMutate, addToast]
+    [retreatSlug, mutate, addToast]
   );
 
   /**
@@ -93,9 +90,7 @@ export function useDormitoryRetreatRegistrationMemo(retreatSlug: string) {
         );
 
         // SWR 캐시 갱신
-        if (cacheKey) {
-          await globalMutate(cacheKey);
-        }
+        await mutate();
 
         addToast({
           title: "성공",
@@ -120,7 +115,7 @@ export function useDormitoryRetreatRegistrationMemo(retreatSlug: string) {
         setIsMutating(false);
       }
     },
-    [retreatSlug, cacheKey, globalMutate, addToast]
+    [retreatSlug, mutate, addToast]
   );
 
   /**
@@ -143,9 +138,7 @@ export function useDormitoryRetreatRegistrationMemo(retreatSlug: string) {
             );
 
             // SWR 캐시 갱신
-            if (cacheKey) {
-              await globalMutate(cacheKey);
-            }
+            await mutate();
 
             addToast({
               title: "성공",
@@ -172,7 +165,7 @@ export function useDormitoryRetreatRegistrationMemo(retreatSlug: string) {
         },
       });
     },
-    [retreatSlug, cacheKey, globalMutate, addToast, confirmDialog]
+    [retreatSlug, mutate, addToast, confirmDialog]
   );
 
   return {

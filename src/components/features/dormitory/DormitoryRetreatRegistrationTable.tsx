@@ -85,7 +85,7 @@ export function DormitoryRetreatRegistrationTable({
   retreatSlug,
 }: DormitoryRetreatRegistrationTableProps) {
   // SWR로 데이터 페칭
-  const { registrations, isLoading, error } =
+  const { registrations, isLoading, error, mutate } =
     useDormitoryRetreatRegistration(retreatSlug);
 
   // TanStack Table State
@@ -96,8 +96,8 @@ export function DormitoryRetreatRegistrationTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
 
-  // 컬럼 훅으로 컬럼 정의 가져오기
-  const columns = useDormitoryRetreatRegistrationColumns(schedules, retreatSlug);
+  // 컬럼 훅으로 컬럼 정의 가져오기 (mutate 전달하여 캐시 갱신 가능하게)
+  const columns = useDormitoryRetreatRegistrationColumns(schedules, retreatSlug, mutate);
 
   // useMemo로 data 메모이제이션
   const data = useMemo(

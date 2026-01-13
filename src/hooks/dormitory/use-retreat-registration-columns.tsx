@@ -1,11 +1,15 @@
 import { useMemo } from "react";
 import { ColumnDef, createColumnHelper, FilterFn } from "@tanstack/react-table";
+import { KeyedMutator } from "swr";
 import { TRetreatRegistrationSchedule, Gender } from "@/types";
 import { GenderBadge } from "@/components/Badge";
 import { createRetreatScheduleColumns } from "@/hooks/retreat/use-retreat-schedule-columns";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { UnifiedColumnHeader } from "@/components/common/table/UnifiedColumnHeader";
-import { useDormitoryRetreatRegistrationMemo } from "./use-retreat-registration-memo";
+import {
+  useDormitoryRetreatRegistrationMemo,
+} from "./use-retreat-registration-memo";
+import { IDormitoryRetreatRegistration } from "./use-retreat-registration";
 
 /**
  * 숙소팀 수양회 신청 테이블 데이터 타입
@@ -53,15 +57,17 @@ const columnHelper = createColumnHelper<DormitoryRetreatRegistrationTableData>()
  *
  * @param schedules - 수양회 스케줄 목록 (동적 컬럼 생성에 사용)
  * @param retreatSlug - 수양회 슬러그 (액션에 필요)
+ * @param mutate - SWR mutate 함수 (캐시 갱신에 필요)
  * @returns TanStack Table columns
  */
 export function useDormitoryRetreatRegistrationColumns(
   schedules: TRetreatRegistrationSchedule[],
-  retreatSlug: string
+  retreatSlug: string,
+  mutate: KeyedMutator<IDormitoryRetreatRegistration[]>
 ) {
   // 메모 관련 액션 가져오기
   const { saveMemo, updateMemo, deleteMemo } =
-    useDormitoryRetreatRegistrationMemo(retreatSlug);
+    useDormitoryRetreatRegistrationMemo(retreatSlug, mutate);
 
   const columns = useMemo(() => {
     // 1. 왼쪽 정적 컬럼
