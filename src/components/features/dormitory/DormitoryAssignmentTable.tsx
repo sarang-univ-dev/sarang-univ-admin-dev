@@ -333,6 +333,7 @@ function DormitoryAssignmentTableToolbar({
   const [downloadState, setDownloadState] = useState({
     gbsLocation: false,
     gbsMealCount: false,
+    gbsDormitory: false,
   });
 
   const debouncedSetSearchTerm = useMemo(
@@ -377,7 +378,7 @@ function DormitoryAssignmentTableToolbar({
     url: string;
     fallbackFileName: string;
     successMessage: string;
-    stateKey: "gbsLocation" | "gbsMealCount";
+    stateKey: "gbsLocation" | "gbsMealCount" | "gbsDormitory";
   }) => {
     setDownloadState((prev) => ({ ...prev, [stateKey]: true }));
     try {
@@ -520,6 +521,26 @@ function DormitoryAssignmentTableToolbar({
             <Download className="h-4 w-4 mr-2" />
           )}
           수양회 GBS별 식수 엑셀 다운로드
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            downloadExcel({
+              url: `/api/v1/retreat/${retreatSlug}/dormitory/gbs-dormitory-excel`,
+              fallbackFileName: "GBS_숙소.xlsx",
+              successMessage: "GBS별 숙소 엑셀 파일이 다운로드되었습니다.",
+              stateKey: "gbsDormitory",
+            })
+          }
+          disabled={downloadState.gbsDormitory}
+        >
+          {downloadState.gbsDormitory ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+          ) : (
+            <Download className="h-4 w-4 mr-2" />
+          )}
+          수양회 GBS별 숙소 엑셀 다운로드
         </Button>
       </div>
     </div>
