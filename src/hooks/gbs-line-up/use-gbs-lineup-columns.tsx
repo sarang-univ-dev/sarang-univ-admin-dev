@@ -13,6 +13,7 @@ import { User, UserPlus, Shield, GraduationCap, Info } from "lucide-react";
 import { ColumnHeader } from "@/components/common/table/ColumnHeader";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import { Button } from "@/components/ui/button";
+import { gradeDescSortingFn, departmentSortingFn } from "@/utils/sorting";
 
 const columnHelper = createColumnHelper<GBSLineupRow>();
 
@@ -403,14 +404,7 @@ export function useGbsLineupColumns(
           );
         },
         filterFn: "arrIncludesSome",
-        // 숫자 정렬 (1부, 2부, 10부 순서로)
-        sortingFn: (rowA, rowB, columnId) => {
-          const a = rowA.getValue(columnId) as string;
-          const b = rowB.getValue(columnId) as string;
-          const numA = parseInt(a.replace(/[^0-9]/g, '')) || 0;
-          const numB = parseInt(b.replace(/[^0-9]/g, '')) || 0;
-          return numA - numB;
-        },
+        sortingFn: departmentSortingFn,
       }),
 
       // 성별
@@ -449,14 +443,7 @@ export function useGbsLineupColumns(
           );
         },
         filterFn: "arrIncludesSome",
-        // 숫자 정렬 (1학년, 2학년, 3학년 순서로)
-        sortingFn: (rowA, rowB, columnId) => {
-          const a = rowA.getValue(columnId) as string;
-          const b = rowB.getValue(columnId) as string;
-          const numA = parseInt(a.replace(/[^0-9]/g, '')) || 0;
-          const numB = parseInt(b.replace(/[^0-9]/g, '')) || 0;
-          return numA - numB;
-        },
+        sortingFn: gradeDescSortingFn,
       }),
 
       // 이름

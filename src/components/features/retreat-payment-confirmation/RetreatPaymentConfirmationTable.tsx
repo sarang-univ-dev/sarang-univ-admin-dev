@@ -20,6 +20,7 @@ import { Info } from "lucide-react";
 import { VirtualizedTable } from "@/components/common/table";
 import { ColumnHeader } from "@/components/common/table/ColumnHeader";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
+import { gradeDescSortingFn } from "@/utils/sorting";
 import {
   TRetreatRegistrationSchedule,
   UserRetreatRegistrationPaymentStatus,
@@ -173,16 +174,7 @@ export function RetreatPaymentConfirmationTable({
           </div>
         ),
         filterFn: "arrIncludesSome",
-        sortingFn: (rowA, rowB, columnId) => {
-          const gradeA = rowA.getValue(columnId) as string;
-          const gradeB = rowB.getValue(columnId) as string;
-
-          // 숫자 부분만 추출 (예: "1학년" -> 1, "10학년" -> 10)
-          const numA = parseInt(gradeA?.replace(/[^0-9]/g, '') || '0', 10);
-          const numB = parseInt(gradeB?.replace(/[^0-9]/g, '') || '0', 10);
-
-          return numA - numB;
-        },
+        sortingFn: gradeDescSortingFn,
       }),
       columnHelper.accessor("name", {
         id: "name",
