@@ -23,12 +23,24 @@ export const PAYMENT_STATUS_LABELS: Record<
   UserRetreatRegistrationPaymentStatus,
   string
 > = {
-  NEW_COMER_REQUEST: "새가족 요청",
-  SOLDIER_REQUEST: "군지체 요청",
-  PENDING: "대기중",
-  PAID: "입금완료",
-  REFUND_REQUEST: "환불 요청",
-  REFUNDED: "환불 완료",
+  NEW_COMER_REQUEST: "새가족 신청 요청",
+  SOLDIER_REQUEST: "군지체 신청 요청",
+  PENDING: "입금 확인 대기",
+  PAID: "입금 확인 완료",
+  REFUND_REQUEST: "환불 처리 대기",
+  REFUNDED: "환불 처리 완료",
+};
+
+/**
+ * 입금 현황 라벨 가져오기 헬퍼 함수
+ */
+export const getPaymentStatusLabel = (
+  status: UserRetreatRegistrationPaymentStatus | string
+): string => {
+  return (
+    PAYMENT_STATUS_LABELS[status as UserRetreatRegistrationPaymentStatus] ||
+    status
+  );
 };
 
 /**

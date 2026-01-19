@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MobileStatusBadge } from "@/components/common/retreat/mobile-badges";
+import { StatusBadge } from "@/components/common/retreat/badges";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { usePagination } from "@/hooks/use-pagination";
@@ -110,7 +110,7 @@ export function UnivGroupRetreatRegistrationMobileTable({
                 {/* 상태 Badge */}
                 <TableCell className="py-3">
                   <div className="flex justify-center">
-                    <MobileStatusBadge status={row.status} />
+                    <StatusBadge status={row.status} />
                   </div>
                 </TableCell>
 

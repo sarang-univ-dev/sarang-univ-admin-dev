@@ -28,6 +28,7 @@ import { UnivGroupBusRegistrationTableToolbar } from "./UnivGroupBusRegistration
 import { UnivGroupBusRegistrationDetailContent } from "./UnivGroupBusRegistrationDetailContent";
 import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
 import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
+import { getPaymentStatusLabel } from "@/lib/constant/labels";
 import { useIsMobile } from "@/hooks/use-media-query";
 
 interface UnivGroupBusRegistrationTableProps {
@@ -291,28 +292,16 @@ export function UnivGroupBusRegistrationTable({
     const endColumns = [
       columnHelper.accessor("shuttleBusPaymentStatus", {
         id: "status",
-        header: ({ column, table }) => {
-          const formatStatusValue = (value: string) => {
-            const statusMap: Record<string, string> = {
-              PENDING: "입금 확인 대기",
-              PAID: "입금 확인 완료",
-              REFUND_REQUEST: "환불 요청",
-              REFUNDED: "환불 완료",
-            };
-            return statusMap[value] || value;
-          };
-
-          return (
-            <ColumnHeader
-              column={column}
-              table={table}
-              title="입금 현황"
-              enableSorting
-              enableFiltering
-              formatFilterValue={formatStatusValue}
-            />
-          );
-        },
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="입금 현황"
+            enableSorting
+            enableFiltering
+            formatFilterValue={getPaymentStatusLabel}
+          />
+        ),
         cell: (info) => (
           <div className="flex justify-center">
             <StatusBadge status={info.getValue()} />
