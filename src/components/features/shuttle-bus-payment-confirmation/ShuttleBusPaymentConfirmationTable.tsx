@@ -22,7 +22,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
 import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
 import { TRetreatShuttleBus } from "@/types";
 import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
@@ -74,6 +76,23 @@ export function ShuttleBusPaymentConfirmationTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
 
+  // ✅ 색상이 포함된 스케줄 컬럼 정보 생성
+  const scheduleColumnsWithColor = useMemo(
+    () => generateShuttleBusScheduleColumns(schedules),
+    [schedules]
+  );
+
+  // ✅ 색상 매핑 헬퍼 함수
+  const getChipColorClass = (color: string) => {
+    const colorMap: Record<string, string> = {
+      rose: "border-rose-500 bg-rose-50 text-rose-700",
+      amber: "border-amber-500 bg-amber-50 text-amber-700",
+      teal: "border-teal-500 bg-teal-50 text-teal-700",
+      indigo: "border-indigo-500 bg-indigo-50 text-indigo-700",
+    };
+    return colorMap[color] || "border-gray-500 bg-gray-50 text-gray-700";
+  };
+
   // ✅ 컬럼 정의 (Timestamp 정보 제외)
   const columns = useMemo(() => {
     const staticColumns = [
@@ -104,31 +123,45 @@ export function ShuttleBusPaymentConfirmationTable({
           </button>
         ),
       }),
-    ];
+      // ✅ 신청 버스 컬럼 (chip/badge로 표시)
+      columnHelper.accessor("userRetreatShuttleBusRegistrationScheduleIds", {
+        id: "selected-buses",
+        header: "신청 버스",
+        cell: (info) => {
+          const selectedIds = info.getValue() || [];
+          const selectedSchedules = scheduleColumnsWithColor.filter((s) =>
+            selectedIds.includes(s.id)
+          );
 
-    // 동적 스케줄 컬럼
-    const scheduleColumns = schedules.map(
-      (schedule) =>
-        columnHelper.accessor(
-          (row) =>
-            row.userRetreatShuttleBusRegistrationScheduleIds?.includes(
-              schedule.id
-            ),
-          {
-            id: `schedule_${schedule.id}`,
-            header: () => (
-              <div className="text-xs whitespace-pre-line text-center">
-                {schedule.name}
+          if (selectedSchedules.length === 0) {
+            return (
+              <div className="text-center">
+                <span className="text-sm text-muted-foreground">-</span>
               </div>
-            ),
-            cell: (info) => (
-              <div className="flex justify-center">
-                <Checkbox checked={!!info.getValue()} disabled />
-              </div>
-            ),
+            );
           }
-        )
-    );
+
+          return (
+            <div className="flex justify-center py-1">
+              <div className="grid grid-cols-2 gap-1">
+                {selectedSchedules.map((schedule) => (
+                  <Badge
+                    key={schedule.id}
+                    variant="outline"
+                    className={cn(
+                      "text-xs whitespace-nowrap shrink-0 justify-center",
+                      getChipColorClass(schedule.color)
+                    )}
+                  >
+                    {schedule.label}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          );
+        },
+      }),
+    ];
 
     const endColumns = [
       columnHelper.accessor("price", {
@@ -155,8 +188,8 @@ export function ShuttleBusPaymentConfirmationTable({
       }),
     ];
 
-    return [...staticColumns, ...scheduleColumns, ...endColumns];
-  }, [schedules, retreatSlug, sidebar]);
+    return [...staticColumns, ...endColumns];
+  }, [scheduleColumnsWithColor, retreatSlug, sidebar]);
 
   // ✅ TanStack Table 초기화
   const table = useReactTable<IShuttleBusPaymentConfirmationRegistration>({
