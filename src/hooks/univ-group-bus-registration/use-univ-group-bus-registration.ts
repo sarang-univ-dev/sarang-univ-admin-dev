@@ -5,6 +5,7 @@ import { IUnivGroupBusRegistration } from "@/types/bus-registration";
 import { useToastStore } from "@/store/toast-store";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { AxiosError } from "axios";
+import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
 
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
@@ -162,6 +163,44 @@ export function useUnivGroupBusRegistration(
     });
   };
 
+  /**
+   * 부서 셔틀버스 신청 현황 엑셀 다운로드
+   */
+  const downloadExcel = async () => {
+    if (!retreatSlug) return;
+
+    setIsMutating(true);
+    try {
+      const blob = await ShuttleBusAPI.downloadUnivGroupExcel(retreatSlug);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `부서_셔틀버스_신청현황_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      addToast({
+        title: "성공",
+        description: "엑셀 파일이 다운로드되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "오류 발생",
+        description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   return {
     // 데이터
     data: data ?? [],
@@ -176,5 +215,6 @@ export function useUnivGroupBusRegistration(
     saveMemo,
     updateMemo,
     deleteMemo,
+    downloadExcel,
   };
 }

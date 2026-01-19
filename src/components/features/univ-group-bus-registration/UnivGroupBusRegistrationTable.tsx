@@ -61,6 +61,7 @@ export function UnivGroupBusRegistrationTable({
     saveMemo,
     updateMemo,
     deleteMemo,
+    downloadExcel,
     isMutating,
   } = useUnivGroupBusRegistration(retreatSlug, {
     initialData,
@@ -397,6 +398,8 @@ export function UnivGroupBusRegistrationTable({
           globalFilter={globalFilter}
           setGlobalFilter={setGlobalFilter}
           retreatSlug={retreatSlug}
+          onDownloadExcel={downloadExcel}
+          isDownloading={isMutating}
         />
 
         {/* ✅ 가상화 테이블 - 사이드바는 상세보기 버튼에서만 열림 */}

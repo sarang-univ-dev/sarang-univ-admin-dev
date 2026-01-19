@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect } from "react";
 import { Table } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import debounce from "lodash/debounce";
-import { useToastStore } from "@/store/toast-store";
 import { useIsMobile } from "@/hooks/use-media-query";
 
 interface UnivGroupBusRegistrationTableToolbarProps {
@@ -20,6 +19,8 @@ interface UnivGroupBusRegistrationTableToolbarProps {
   globalFilter: string;
   setGlobalFilter: (value: string) => void;
   retreatSlug: string;
+  onDownloadExcel: () => Promise<void>;
+  isDownloading: boolean;
 }
 
 /**
@@ -32,9 +33,9 @@ export function UnivGroupBusRegistrationTableToolbar({
   globalFilter,
   setGlobalFilter,
   retreatSlug,
+  onDownloadExcel,
+  isDownloading,
 }: UnivGroupBusRegistrationTableToolbarProps) {
-  const addToast = useToastStore((state) => state.add);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   // ✅ Lodash debounce를 useMemo로 메모이제이션
   const debouncedSetGlobalFilter = useMemo(
@@ -51,15 +52,6 @@ export function UnivGroupBusRegistrationTableToolbar({
       debouncedSetGlobalFilter.cancel();
     };
   }, [debouncedSetGlobalFilter]);
-
-  const handleExcelDownload = async () => {
-    // TODO: 엑셀 다운로드 API 구현 필요
-    addToast({
-      title: "알림",
-      description: "엑셀 다운로드 기능은 구현이 필요합니다.",
-      variant: "default",
-    });
-  };
 
   const isMobile = useIsMobile();
 
@@ -131,7 +123,7 @@ export function UnivGroupBusRegistrationTableToolbar({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleExcelDownload}
+            onClick={onDownloadExcel}
             disabled={isDownloading}
           >
             {isDownloading ? (
