@@ -520,6 +520,7 @@ export function useGbsLineupColumns(
       columnHelper.display({
         id: "type",
         header: "타입",
+        size: 85,
         cell: (info) => {
           const row = info.row.original;
           const gradeNumber = parseInt(row.grade.split("학년")[0]);

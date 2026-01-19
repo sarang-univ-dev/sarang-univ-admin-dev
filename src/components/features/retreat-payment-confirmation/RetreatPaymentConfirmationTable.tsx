@@ -221,6 +221,7 @@ export function RetreatPaymentConfirmationTable({
       columnHelper.accessor("type", {
         id: "type",
         header: "타입",
+        size: 85,
         cell: (info) => {
           const type = info.getValue();
           return (
