@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { Table as TanStackTable } from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -14,11 +15,65 @@ import { StatusBadge } from "@/components/common/retreat/badges";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { usePagination } from "@/hooks/use-pagination";
+import { MobileColumnHeader } from "@/components/common/table/MobileColumnHeader";
+import { MobileAllFiltersDrawer } from "@/components/common/table/MobileAllFiltersDrawer";
+import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
+import { gradeFilterSort } from "@/utils/sorting";
 
 interface UnivGroupRetreatRegistrationMobileTableProps {
   data: UnivGroupAdminStaffData[];
+  table: TanStackTable<UnivGroupAdminStaffData>;
   onRowClick: (row: UnivGroupAdminStaffData) => void;
 }
+
+/**
+ * 모바일 전체 필터 컬럼 설정
+ */
+const FILTER_COLUMNS = [
+  {
+    id: "gender",
+    title: "성별",
+    formatValue: (value: string) => (value === "MALE" ? "남" : "여"),
+  },
+  {
+    id: "grade",
+    title: "학년",
+    sortValues: gradeFilterSort,
+  },
+  {
+    id: "name",
+    title: "이름",
+  },
+  {
+    id: "phone",
+    title: "전화번호",
+  },
+  {
+    id: "currentLeaderName",
+    title: "부서 리더명",
+  },
+  {
+    id: "attendance",
+    title: "참석 현황",
+    formatValue: (value: boolean) => (value ? "전참" : "부분참"),
+  },
+  {
+    id: "status",
+    title: "입금 현황",
+    formatValue: (value: string) =>
+      PAYMENT_STATUS_LABELS[value as keyof typeof PAYMENT_STATUS_LABELS] ||
+      value,
+  },
+  {
+    id: "shuttleBus",
+    title: "셔틀버스",
+    formatValue: (value: boolean) => (value ? "신청함" : "신청 안함"),
+  },
+  {
+    id: "adminMemo",
+    title: "행정간사 메모",
+  },
+];
 
 const PAGE_SIZE = 10;
 
@@ -31,9 +86,11 @@ const PAGE_SIZE = 10;
  * - 가로 스크롤 없음
  * - 부서 정보는 DetailSidebar에서 확인 가능
  * - 페이지네이션 지원 (10개씩)
+ * - 필터/정렬 기능 지원 (헤더 아이콘 + Drawer)
  */
 export function UnivGroupRetreatRegistrationMobileTable({
   data,
+  table,
   onRowClick,
 }: UnivGroupRetreatRegistrationMobileTableProps) {
   // ✅ 공통 페이지네이션 훅 사용 (useCallback 내장)
@@ -65,20 +122,69 @@ export function UnivGroupRetreatRegistrationMobileTable({
     [onRowClick]
   );
 
+  // 컬럼 가져오기
+  const gradeColumn = table.getColumn("grade");
+  const nameColumn = table.getColumn("name");
+  const statusColumn = table.getColumn("status");
+
   return (
     <div className="space-y-3">
+      {/* 상단 필터 버튼 */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-muted-foreground">
+          {data.length}명
+        </span>
+        <MobileAllFiltersDrawer table={table} filterColumns={FILTER_COLUMNS} />
+      </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead className="w-[60px] font-semibold text-center text-xs whitespace-nowrap flex-shrink-0">
-                학년
+              <TableHead className="w-[60px] p-0 text-center">
+                {gradeColumn ? (
+                  <MobileColumnHeader
+                    column={gradeColumn}
+                    table={table}
+                    title="학년"
+                    enableSorting
+                    enableFiltering
+                    sortFilterValues={gradeFilterSort}
+                  />
+                ) : (
+                  <span className="font-semibold text-xs">학년</span>
+                )}
               </TableHead>
-              <TableHead className="w-[40%] font-semibold text-xs">
-                이름
+              <TableHead className="w-[40%] p-0">
+                {nameColumn ? (
+                  <MobileColumnHeader
+                    column={nameColumn}
+                    table={table}
+                    title="이름"
+                    enableSorting
+                    enableFiltering
+                  />
+                ) : (
+                  <span className="font-semibold text-xs">이름</span>
+                )}
               </TableHead>
-              <TableHead className="w-[35%] text-center font-semibold text-xs">
-                상태
+              <TableHead className="w-[35%] p-0 text-center">
+                {statusColumn ? (
+                  <MobileColumnHeader
+                    column={statusColumn}
+                    table={table}
+                    title="상태"
+                    enableSorting
+                    enableFiltering
+                    formatFilterValue={(value) =>
+                      PAYMENT_STATUS_LABELS[
+                        value as keyof typeof PAYMENT_STATUS_LABELS
+                      ] || value
+                    }
+                  />
+                ) : (
+                  <span className="font-semibold text-xs">상태</span>
+                )}
               </TableHead>
               <TableHead className="w-[15%] text-center font-semibold text-xs">
                 <span className="sr-only">상세</span>

@@ -164,6 +164,7 @@ export function UnivGroupRetreatRegistrationTable({
         <div className="md:hidden">
           <UnivGroupRetreatRegistrationMobileTable
             data={filteredData}
+            table={table}
             onRowClick={sidebar.open}
           />
         </div>

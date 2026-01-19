@@ -4,3 +4,5 @@ export { ColumnHeader } from "./ColumnHeader";
 export { UnifiedColumnHeader } from "./UnifiedColumnHeader";
 export { SortableHeader } from "./SortableHeader";
 export { FilterableHeader } from "./FilterableHeader";
+export { MobileColumnHeader } from "./MobileColumnHeader";
+export { MobileAllFiltersDrawer } from "./MobileAllFiltersDrawer";
