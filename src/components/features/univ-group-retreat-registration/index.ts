@@ -6,6 +6,7 @@ export { UnivGroupRetreatRegistrationTableToolbar } from "./UnivGroupRetreatRegi
 export { UnivGroupRetreatRegistrationTableActions } from "./UnivGroupRetreatRegistrationTableActions";
 export { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
 export { AttendanceBadge } from "./AttendanceBadge";
+export { QrDownloadButton } from "./QrDownloadButton";
 export { UnivGroupRetreatRegistrationDetailContent } from "./UnivGroupRetreatRegistrationDetailContent";
 
 // 유틸리티

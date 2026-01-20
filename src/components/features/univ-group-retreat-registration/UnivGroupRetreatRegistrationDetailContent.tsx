@@ -3,19 +3,11 @@ import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
+import { QrDownloadButton } from "./QrDownloadButton";
 import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
 import { formatDate } from "@/utils/formatDate";
 import { useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Download,
-  UserCircle,
-  CreditCard,
-  Calendar,
-  Info,
-  FileText
-} from "lucide-react";
-import { webAxios } from "@/lib/api/axios";
+import { UserCircle, CreditCard, Calendar, Info, FileText } from "lucide-react";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 
 interface UnivGroupRetreatRegistrationDetailContentProps {
@@ -49,34 +41,6 @@ export function UnivGroupRetreatRegistrationDetailContent({
       .filter((schedule) => data.schedules[`schedule_${schedule.id}`])
       .map((schedule) => schedule.id);
   }, [schedules, data.schedules]);
-
-  // QR 다운로드 핸들러
-  const handleDownloadQR = async () => {
-    try {
-      const response = await webAxios.get(
-        `/api/v1/retreat/${retreatSlug}/qr/${data.id}/download`,
-        { responseType: 'blob' }
-      );
-
-      // Blob에서 파일명 추출 (Content-Disposition 헤더에서)
-      const contentDisposition = response.headers['content-disposition'];
-      const fileName = contentDisposition
-        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
-        : `QR_${data.name}.png`;
-
-      // Blob을 다운로드
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('QR 다운로드 실패:', error);
-    }
-  };
 
   return (
     <>
@@ -201,14 +165,11 @@ export function UnivGroupRetreatRegistrationDetailContent({
           label="QR 코드"
           value={
             data.qrUrl ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDownloadQR}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                QR 다운로드
-              </Button>
+              <QrDownloadButton
+                retreatSlug={retreatSlug}
+                registrationId={data.id}
+                userName={data.name}
+              />
             ) : (
               <span className="text-sm text-gray-500">미생성</span>
             )
