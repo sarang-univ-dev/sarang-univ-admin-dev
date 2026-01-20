@@ -19,6 +19,8 @@ export enum PagePath {
   MEAL_CHECK = "/meal-check",
   DORMITORY_ASSIGNMENT = "/dormitory-assignment",
   SHUTTLE_CHECK = "/shuttle-check",
+  UNIV_GROUP_MINISTER_VIEW = "/univ-group-minister-view",
+  ADMIN_MINISTER_VIEW = "/admin-minister-view",
 }
 
 export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
@@ -61,5 +63,13 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
     PagePath.CONFIRM_BUS_PAYMENT,
     PagePath.BUS_SCHEDULE_HISTORY,
     PagePath.BUS_SCHEDULE_CHANGE,
+  ],
+
+  [UserRole.UNIV_GROUP_MINISTER]: [
+    PagePath.UNIV_GROUP_MINISTER_VIEW,
+  ],
+
+  [UserRole.ADMIN_MINISTER]: [
+    PagePath.ADMIN_MINISTER_VIEW,
   ],
 };
