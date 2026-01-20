@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Search } from "lucide-react";
 import debounce from "lodash/debounce";
 import { useToastStore } from "@/store/toast-store";
+import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
 
 interface ShuttleBusPaymentConfirmationTableToolbarProps {
   table: Table<any>;
@@ -46,12 +47,38 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
   }, [debouncedSetGlobalFilter]);
 
   const handleExcelDownload = async () => {
-    // TODO: 엑셀 다운로드 API 구현 필요
-    addToast({
-      title: "알림",
-      description: "엑셀 다운로드 기능은 구현이 필요합니다.",
-      variant: "default",
-    });
+    // TODO: 추후 다른 페이지로 이동 필요 - 현재는 임시로 입금 조회 페이지에 배치
+    setIsDownloading(true);
+    try {
+      const blob =
+        await ShuttleBusAPI.downloadAllUnivGroupPassengersExcel(retreatSlug);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `셔틀버스_부서별_탑승자_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      addToast({
+        title: "성공",
+        description: "엑셀 파일이 다운로드되었습니다.",
+        variant: "success"
+      });
+    } catch (error) {
+      addToast({
+        title: "오류",
+        description: "엑셀 다운로드 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
