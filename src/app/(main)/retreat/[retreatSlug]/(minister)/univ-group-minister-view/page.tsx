@@ -4,7 +4,10 @@ import {
   fetchRetreatSchedules,
 } from "@/lib/api/server-actions";
 import { PaymentSummary } from "@/components/features/retreat-payment-confirmation";
-import { MinisterViewTable } from "@/components/features/minister";
+import {
+  MinisterViewTable,
+  RegistrationStatisticsPanel,
+} from "@/components/features/minister";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageProps {
@@ -37,6 +40,13 @@ export default async function UnivGroupMinisterViewPage({ params }: PageProps) {
     <div className="space-y-4 md:space-y-8">
       {/* 입금 현황 요약 */}
       <PaymentSummary registrations={registrations} />
+
+      {/* 신청 현황 통계 그래프 */}
+      <RegistrationStatisticsPanel
+        registrations={registrations}
+        showDepartmentFilter={false}
+        title="부서 신청 현황 통계"
+      />
 
       {/* 조회 전용 테이블 */}
       <Suspense fallback={<TableSkeleton />}>

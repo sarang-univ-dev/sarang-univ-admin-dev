@@ -7,7 +7,10 @@ import {
   PaymentSummary,
   AccountStatus,
 } from "@/components/features/retreat-payment-confirmation";
-import { MinisterViewTable } from "@/components/features/minister";
+import {
+  MinisterViewTable,
+  RegistrationStatisticsPanel,
+} from "@/components/features/minister";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageProps {
@@ -43,6 +46,13 @@ export default async function AdminMinisterViewPage({ params }: PageProps) {
 
       {/* 계좌 현황 (행정 총괄 교역자에게만 표시) */}
       <AccountStatus registrations={registrations} />
+
+      {/* 신청 현황 통계 그래프 */}
+      <RegistrationStatisticsPanel
+        registrations={registrations}
+        showDepartmentFilter={true}
+        title="전체 신청 현황 통계"
+      />
 
       {/* 조회 전용 테이블 */}
       <Suspense fallback={<TableSkeleton />}>
