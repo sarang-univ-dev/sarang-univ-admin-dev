@@ -1,6 +1,6 @@
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { IUnivGroupBusRegistration } from "@/types/bus-registration";
-import { TRetreatShuttleBus } from "@/types";
+import { TRetreatShuttleBus, UserRetreatShuttleBusPaymentStatus } from "@/types";
 import { GenderBadge } from "@/components/Badge-bus";
 import { StatusBadge } from "@/components/Badge-bus";
 import { formatDate } from "@/utils/formatDate";
@@ -8,11 +8,13 @@ import { useMemo } from "react";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   UserCircle,
   Bus,
   Calendar,
   FileText,
+  Trash2,
 } from "lucide-react";
 
 interface ScheduleWithColor {
@@ -29,6 +31,7 @@ interface UnivGroupBusRegistrationDetailContentProps {
   onSaveMemo: (id: string, memo: string) => Promise<void>;
   onUpdateMemo: (id: string, memo: string) => Promise<void>;
   onDeleteMemo: (id: string) => Promise<void>;
+  onDeleteRegistration?: (id: string) => Promise<void>;
   isMutating: boolean;
 }
 
@@ -44,8 +47,12 @@ export function UnivGroupBusRegistrationDetailContent({
   onSaveMemo,
   onUpdateMemo,
   onDeleteMemo,
+  onDeleteRegistration,
   isMutating,
 }: UnivGroupBusRegistrationDetailContentProps) {
+  // 삭제 가능한 상태인지 확인 (PENDING만)
+  const isDeletable =
+    data.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PENDING;
   // 색상 매핑 헬퍼 함수
   const getScheduleColorClass = (color: string) => {
     const colorMap: Record<string, string> = {
@@ -182,6 +189,29 @@ export function UnivGroupBusRegistrationDetailContent({
           />
         </div>
       </InfoSection>
+
+      {/* 신청 삭제 버튼 - 삭제 가능한 상태에서만 표시 */}
+      {isDeletable && onDeleteRegistration && (
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => onDeleteRegistration(String(data.id))}
+            disabled={isMutating}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            {isMutating ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            <span>신청 삭제</span>
+          </Button>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            삭제된 신청은 복구할 수 없습니다.
+          </p>
+        </div>
+      )}
     </>
   );
 }

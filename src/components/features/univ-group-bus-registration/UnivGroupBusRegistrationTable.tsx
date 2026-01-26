@@ -62,6 +62,7 @@ export function UnivGroupBusRegistrationTable({
     updateMemo,
     deleteMemo,
     downloadExcel,
+    deleteRegistration,
     isMutating,
   } = useUnivGroupBusRegistration(retreatSlug, {
     initialData,
@@ -433,6 +434,10 @@ export function UnivGroupBusRegistrationTable({
             onSaveMemo={saveMemo}
             onUpdateMemo={updateMemo}
             onDeleteMemo={deleteMemo}
+            onDeleteRegistration={async (id) => {
+              await deleteRegistration(id);
+              sidebar.close();
+            }}
             isMutating={isMutating}
           />
         )}

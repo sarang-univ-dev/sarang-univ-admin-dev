@@ -64,6 +64,7 @@ export function UnivGroupRetreatRegistrationTable({
     saveAdminMemo,
     updateAdminMemo,
     deleteAdminMemo,
+    deleteRegistration,
     isMutating
   } = useUnivGroupRetreatRegistration(retreatSlug, {
     fallbackData: initialData,
@@ -208,6 +209,10 @@ export function UnivGroupRetreatRegistrationTable({
             onSaveAdminMemo={saveAdminMemo}
             onUpdateAdminMemo={updateAdminMemo}
             onDeleteAdminMemo={deleteAdminMemo}
+            onDeleteRegistration={async (id) => {
+              await deleteRegistration(id);
+              sidebar.close();
+            }}
             isMutating={isMutating}
           />
         )}

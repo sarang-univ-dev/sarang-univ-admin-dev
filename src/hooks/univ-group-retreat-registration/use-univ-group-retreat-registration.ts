@@ -599,6 +599,62 @@ export function useUnivGroupRetreatRegistration(
     });
   };
 
+  /**
+   * 수양회 신청 삭제
+   *
+   * @param registrationId - 신청 ID
+   */
+  const deleteRegistration = async (registrationId: string) => {
+    const numericId = Number(registrationId);
+
+    confirmDialog.show({
+      title: "신청 삭제",
+      description:
+        "정말로 수양회 신청을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+      onConfirm: async () => {
+        setIsMutating(true);
+        try {
+          // 1. Optimistic update: 즉시 UI에서 제거
+          const optimisticData = data?.filter((item) => item.id !== numericId);
+
+          if (optimisticData) {
+            await mutate(optimisticData, { revalidate: false });
+          }
+
+          // 2. API 호출
+          await UnivGroupRetreatRegistrationAPI.deleteRegistration(
+            retreatSlug,
+            registrationId
+          );
+
+          addToast({
+            title: "성공",
+            description: "수양회 신청이 성공적으로 삭제되었습니다.",
+            variant: "success",
+          });
+        } catch (error) {
+          // 에러 시 서버 데이터로 롤백
+          await mutate();
+
+          const message =
+            error instanceof AxiosError
+              ? error.response?.data?.message || "삭제 중 오류가 발생했습니다."
+              : "삭제 중 오류가 발생했습니다.";
+
+          addToast({
+            title: "오류 발생",
+            description: message,
+            variant: "destructive",
+          });
+
+          throw error;
+        } finally {
+          setIsMutating(false);
+        }
+      },
+    });
+  };
+
   return {
     // 데이터
     registrations: data ?? [],
@@ -620,5 +676,6 @@ export function useUnivGroupRetreatRegistration(
     saveAdminMemo,
     updateAdminMemo,
     deleteAdminMemo,
+    deleteRegistration,
   };
 }

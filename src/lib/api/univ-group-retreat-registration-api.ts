@@ -200,4 +200,19 @@ export const UnivGroupRetreatRegistrationAPI = {
       `/api/v1/retreat/${retreatSlug}/registration/${memoId}/memo`
     );
   },
+
+  /**
+   * 수양회 신청 삭제
+   *
+   * @param retreatSlug - 수양회 슬러그
+   * @param registrationId - 신청 ID
+   */
+  deleteRegistration: async (
+    retreatSlug: string,
+    registrationId: string
+  ): Promise<void> => {
+    await webAxios.delete(
+      `/api/v1/retreat/${retreatSlug}/registration/${registrationId}`
+    );
+  },
 };

@@ -7,8 +7,10 @@ import { QrDownloadButton } from "./QrDownloadButton";
 import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
 import { formatDate } from "@/utils/formatDate";
 import { useMemo } from "react";
-import { UserCircle, CreditCard, Calendar, Info, FileText } from "lucide-react";
+import { UserCircle, CreditCard, Calendar, Info, FileText, Trash2 } from "lucide-react";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
+import { Button } from "@/components/ui/button";
+import { UserRetreatRegistrationPaymentStatus } from "@/types";
 
 interface UnivGroupRetreatRegistrationDetailContentProps {
   data: UnivGroupAdminStaffData;
@@ -20,8 +22,16 @@ interface UnivGroupRetreatRegistrationDetailContentProps {
   onSaveAdminMemo: (id: string, memo: string) => Promise<unknown>;
   onUpdateAdminMemo: (memoId: number, memo: string) => Promise<unknown>;
   onDeleteAdminMemo: (memoId: number) => Promise<unknown>;
+  onDeleteRegistration?: (id: string) => Promise<void>;
   isMutating: boolean;
 }
+
+// 삭제 가능한 상태
+const DELETABLE_STATUSES = [
+  UserRetreatRegistrationPaymentStatus.PENDING,
+  UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST,
+  UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST,
+];
 
 export function UnivGroupRetreatRegistrationDetailContent({
   data,
@@ -33,8 +43,11 @@ export function UnivGroupRetreatRegistrationDetailContent({
   onSaveAdminMemo,
   onUpdateAdminMemo,
   onDeleteAdminMemo,
+  onDeleteRegistration,
   isMutating,
 }: UnivGroupRetreatRegistrationDetailContentProps) {
+  // 삭제 가능한 상태인지 확인
+  const isDeletable = DELETABLE_STATUSES.includes(data.status);
   // 선택된 스케줄 ID 추출
   const selectedScheduleIds = useMemo(() => {
     return schedules
@@ -176,6 +189,29 @@ export function UnivGroupRetreatRegistrationDetailContent({
           }
         />
       </InfoSection>
+
+      {/* 신청 삭제 버튼 - 삭제 가능한 상태에서만 표시 */}
+      {isDeletable && onDeleteRegistration && (
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => onDeleteRegistration(String(data.id))}
+            disabled={isMutating}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            {isMutating ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            <span>신청 삭제</span>
+          </Button>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            삭제된 신청은 복구할 수 없습니다.
+          </p>
+        </div>
+      )}
     </>
   );
 }
