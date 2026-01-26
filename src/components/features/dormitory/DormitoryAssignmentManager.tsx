@@ -24,6 +24,13 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { useAllDormitories } from "@/hooks/use-available-dormitories";
 import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
@@ -77,6 +84,8 @@ type PreviewDataRow = {
   gradeNumber: number;
   userName: string;
   dormitoryName: string;
+  dormitoryId: number;
+  originalDormitoryId: number;
   scheduleMap: Record<string, boolean>;
 };
 
@@ -273,6 +282,8 @@ const useDragSelection = <T extends number>(
   return { handlePointerDown, handlePointerEnter };
 };
 
+type CapacityBasis = "OPTIMAL" | "MAX";
+
 const buildDormitoryRows = (
   registrations: PersonRow[],
   dormitories: {
@@ -282,7 +293,8 @@ const buildDormitoryRows = (
     maxCapacity?: number;
   }[],
   scheduleColumns: ScheduleColumn[],
-  scheduleIds: Set<number>
+  scheduleIds: Set<number>,
+  capacityBasis: CapacityBasis = "MAX"
 ) => {
   const occupancyByDormitory = new Map<string, Map<number, number>>();
 
@@ -306,6 +318,8 @@ const buildDormitoryRows = (
   return dormitories
     .map((dormitory) => {
       const maxCapacity = dormitory.maxCapacity ?? dormitory.optimalCapacity;
+      const capacity =
+        capacityBasis === "OPTIMAL" ? dormitory.optimalCapacity : maxCapacity;
       const scheduleMap = occupancyByDormitory.get(
         normalizeDormitoryLocation(dormitory.name) ?? ""
       );
@@ -313,7 +327,7 @@ const buildDormitoryRows = (
 
       scheduleColumns.forEach((schedule) => {
         const occupied = scheduleMap?.get(schedule.id) ?? 0;
-        remainingBySchedule[schedule.key] = Math.max(maxCapacity - occupied, 0);
+        remainingBySchedule[schedule.key] = Math.max(capacity - occupied, 0);
       });
 
       return {
@@ -326,6 +340,67 @@ const buildDormitoryRows = (
     })
     .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 };
+
+function PersonSelectionSummary({
+  rows,
+  selectedIds,
+  scheduleColumns,
+}: {
+  rows: PersonRow[];
+  selectedIds: Set<number>;
+  scheduleColumns: ScheduleColumn[];
+}) {
+  const stats = useMemo(() => {
+    const totalCount = rows.length;
+    const selectedCount = selectedIds.size;
+    const scheduleCounts: Record<string, number> = {};
+    const selectedScheduleCounts: Record<string, number> = {};
+
+    scheduleColumns.forEach((schedule) => {
+      scheduleCounts[schedule.key] = 0;
+      selectedScheduleCounts[schedule.key] = 0;
+    });
+
+    rows.forEach((row) => {
+      scheduleColumns.forEach((schedule) => {
+        if (row.scheduleMap[schedule.key]) {
+          scheduleCounts[schedule.key] += 1;
+          if (selectedIds.has(row.id)) {
+            selectedScheduleCounts[schedule.key] += 1;
+          }
+        }
+      });
+    });
+
+    return { totalCount, selectedCount, scheduleCounts, selectedScheduleCounts };
+  }, [rows, selectedIds, scheduleColumns]);
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+      <span>
+        전체 <span className="font-medium text-foreground">{stats.totalCount}</span>명
+      </span>
+      <span>
+        선택 <span className="font-medium text-foreground">{stats.selectedCount}</span>명
+      </span>
+      <span className="text-muted-foreground/50">|</span>
+      {scheduleColumns.map((schedule) => (
+        <span key={schedule.key}>
+          {schedule.label}{" "}
+          <span className="font-medium text-foreground">
+            {stats.scheduleCounts[schedule.key]}
+          </span>
+          명
+          {stats.selectedCount > 0 && (
+            <span className="ml-1 text-muted-foreground">
+              (선택 {stats.selectedScheduleCounts[schedule.key]})
+            </span>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 function PersonSelectionTable({
   rows,
@@ -342,18 +417,55 @@ function PersonSelectionTable({
     setSelectedIds
   );
 
-  const allSelected = rows.length > 0 && rows.every((row) => selectedIds.has(row.id));
-  const someSelected = rows.some((row) => selectedIds.has(row.id));
+  const [scheduleFilter, setScheduleFilter] = useState<Set<number>>(new Set());
+
+  const toggleScheduleFilter = useCallback((scheduleId: number) => {
+    setScheduleFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(scheduleId)) {
+        next.delete(scheduleId);
+      } else {
+        next.add(scheduleId);
+      }
+      return next;
+    });
+  }, []);
+
+  const filteredRows = useMemo(() => {
+    if (scheduleFilter.size === 0) return rows;
+    return rows.filter((row) => {
+      return Array.from(scheduleFilter).some((scheduleId) => {
+        const scheduleColumn = scheduleColumns.find((s) => s.id === scheduleId);
+        return scheduleColumn && row.scheduleMap[scheduleColumn.key];
+      });
+    });
+  }, [rows, scheduleFilter, scheduleColumns]);
+
+  const allSelected =
+    filteredRows.length > 0 && filteredRows.every((row) => selectedIds.has(row.id));
+  const someSelected = filteredRows.some((row) => selectedIds.has(row.id));
 
   const toggleAll = (checked: boolean) => {
-    setSelectedIds(() => {
-      if (!checked) return new Set();
-      return new Set(rows.map((row) => row.id));
+    setSelectedIds((prev) => {
+      if (!checked) {
+        const next = new Set(prev);
+        filteredRows.forEach((row) => next.delete(row.id));
+        return next;
+      }
+      const next = new Set(prev);
+      filteredRows.forEach((row) => next.add(row.id));
+      return next;
     });
   };
 
   return (
-    <div className="overflow-auto rounded-md border">
+    <div className="space-y-4">
+      <PersonSelectionSummary
+        rows={filteredRows}
+        selectedIds={selectedIds}
+        scheduleColumns={scheduleColumns}
+      />
+      <div className="overflow-auto rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
@@ -371,13 +483,21 @@ function PersonSelectionTable({
             <TableHead className="text-center">이름</TableHead>
             {scheduleColumns.map((schedule) => (
               <TableHead key={schedule.key} className="text-center">
-                {schedule.label}
+                <div className="flex flex-col items-center gap-1">
+                  <span>{schedule.label}</span>
+                  <Checkbox
+                    checked={scheduleFilter.has(schedule.id)}
+                    onCheckedChange={() => toggleScheduleFilter(schedule.id)}
+                    aria-label={`${schedule.label} 필터`}
+                    className="h-3 w-3"
+                  />
+                </div>
               </TableHead>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => {
+          {filteredRows.map((row) => {
             const isSelected = selectedIds.has(row.id);
             return (
               <TableRow
@@ -421,6 +541,63 @@ function PersonSelectionTable({
           })}
         </TableBody>
       </Table>
+      </div>
+    </div>
+  );
+}
+
+function DormitorySelectionSummary({
+  rows,
+  selectedIds,
+  scheduleColumns,
+  capacityBasis,
+}: {
+  rows: DormitoryRow[];
+  selectedIds: Set<number>;
+  scheduleColumns: ScheduleColumn[];
+  capacityBasis: CapacityBasis;
+}) {
+  const stats = useMemo(() => {
+    const selectedRows = rows.filter((row) => selectedIds.has(row.id));
+    const totalBySchedule: Record<string, number> = {};
+
+    scheduleColumns.forEach((schedule) => {
+      totalBySchedule[schedule.key] = selectedRows.reduce(
+        (sum, row) => sum + row.remainingBySchedule[schedule.key],
+        0
+      );
+    });
+
+    return {
+      selectedCount: selectedRows.length,
+      totalBySchedule,
+    };
+  }, [rows, selectedIds, scheduleColumns]);
+
+  if (stats.selectedCount === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+      <span>
+        선택 숙소{" "}
+        <span className="font-medium text-foreground">{stats.selectedCount}</span>
+        곳
+      </span>
+      <span className="text-muted-foreground/50">|</span>
+      <span>
+        수용 가능 ({capacityBasis === "OPTIMAL" ? "정원 기준" : "최대 인원 기준"})
+      </span>
+      {scheduleColumns.map((schedule) => (
+        <span key={schedule.key}>
+          {schedule.label}{" "}
+          <span className="font-medium text-foreground">
+            {stats.totalBySchedule[schedule.key]}
+          </span>
+          명
+        </span>
+      ))}
     </div>
   );
 }
@@ -430,97 +607,167 @@ function DormitorySelectionTable({
   scheduleColumns,
   selectedIds,
   setSelectedIds,
+  capacityBasis,
+  setCapacityBasis,
 }: {
   rows: DormitoryRow[];
   scheduleColumns: ScheduleColumn[];
   selectedIds: Set<number>;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<number>>>;
+  capacityBasis: CapacityBasis;
+  setCapacityBasis: React.Dispatch<React.SetStateAction<CapacityBasis>>;
 }) {
   const { handlePointerDown, handlePointerEnter } = useDragSelection(
     setSelectedIds
   );
 
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
+
+  const filteredRows = useMemo(() => {
+    if (!showOnlyAvailable) return rows;
+    return rows.filter((row) => {
+      return scheduleColumns.some(
+        (schedule) => row.remainingBySchedule[schedule.key] > 0
+      );
+    });
+  }, [rows, showOnlyAvailable, scheduleColumns]);
+
   const allSelected =
-    rows.length > 0 && rows.every((row) => selectedIds.has(row.id));
-  const someSelected = rows.some((row) => selectedIds.has(row.id));
+    filteredRows.length > 0 && filteredRows.every((row) => selectedIds.has(row.id));
+  const someSelected = filteredRows.some((row) => selectedIds.has(row.id));
 
   const toggleAll = (checked: boolean) => {
-    setSelectedIds(() => {
-      if (!checked) return new Set();
-      return new Set(rows.map((row) => row.id));
+    setSelectedIds((prev) => {
+      if (!checked) {
+        const next = new Set(prev);
+        filteredRows.forEach((row) => next.delete(row.id));
+        return next;
+      }
+      const next = new Set(prev);
+      filteredRows.forEach((row) => next.add(row.id));
+      return next;
     });
   };
 
   return (
-    <div className="overflow-auto rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[48px] text-center">
-              <Checkbox
-                checked={allSelected ? true : someSelected ? "indeterminate" : false}
-                onCheckedChange={(value) => toggleAll(!!value)}
-                aria-label="모든 숙소 선택"
-              />
-            </TableHead>
-            <TableHead className="text-center">숙소</TableHead>
-            <TableHead className="text-center">정원</TableHead>
-            <TableHead className="text-center">최대 인원</TableHead>
-            {scheduleColumns.map((schedule) => (
-              <TableHead key={schedule.key} className="text-center">
-                {schedule.label}
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <ToggleGroup
+          type="single"
+          value={capacityBasis}
+          onValueChange={(value) => {
+            if (value) setCapacityBasis(value as CapacityBasis);
+          }}
+          variant="outline"
+          size="sm"
+        >
+          <ToggleGroupItem value="OPTIMAL">정원 기준</ToggleGroupItem>
+          <ToggleGroupItem value="MAX">최대 인원 기준</ToggleGroupItem>
+        </ToggleGroup>
+
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            checked={showOnlyAvailable}
+            onCheckedChange={(checked) => setShowOnlyAvailable(!!checked)}
+          />
+          <span>잔여 인원 있는 숙소만</span>
+        </label>
+      </div>
+
+      <DormitorySelectionSummary
+        rows={rows}
+        selectedIds={selectedIds}
+        scheduleColumns={scheduleColumns}
+        capacityBasis={capacityBasis}
+      />
+
+      <div className="overflow-auto rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[48px] text-center">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={(value) => toggleAll(!!value)}
+                  aria-label="모든 숙소 선택"
+                />
               </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => {
-            const isSelected = selectedIds.has(row.id);
-            return (
-              <TableRow
-                key={row.id}
-                data-state={isSelected ? "selected" : undefined}
-                className="cursor-pointer select-none"
-                onPointerDown={(event) =>
-                  handlePointerDown(row.id, isSelected, event)
-                }
-                onPointerEnter={() => handlePointerEnter(row.id)}
-              >
-                <TableCell className="text-center">
-                  <Checkbox
-                    checked={isSelected}
-                    aria-label={`${row.name} 선택`}
-                  />
-                </TableCell>
-                <TableCell className="text-center">{row.name}</TableCell>
-                <TableCell className="text-center">
-                  {row.optimalCapacity}
-                </TableCell>
-                <TableCell className="text-center">{row.maxCapacity}</TableCell>
-                {scheduleColumns.map((schedule) => (
-                  <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
-                    {row.remainingBySchedule[schedule.key]}
+              <TableHead className="text-center">숙소</TableHead>
+              <TableHead className="text-center">정원</TableHead>
+              <TableHead className="text-center">최대 인원</TableHead>
+              {scheduleColumns.map((schedule) => (
+                <TableHead key={schedule.key} className="text-center">
+                  {schedule.label}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredRows.map((row) => {
+              const isSelected = selectedIds.has(row.id);
+              return (
+                <TableRow
+                  key={row.id}
+                  data-state={isSelected ? "selected" : undefined}
+                  className="cursor-pointer select-none"
+                  onPointerDown={(event) =>
+                    handlePointerDown(row.id, isSelected, event)
+                  }
+                  onPointerEnter={() => handlePointerEnter(row.id)}
+                >
+                  <TableCell className="text-center">
+                    <Checkbox
+                      checked={isSelected}
+                      aria-label={`${row.name} 선택`}
+                    />
                   </TableCell>
-                ))}
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                  <TableCell className="text-center">{row.name}</TableCell>
+                  <TableCell className="text-center">
+                    {row.optimalCapacity}
+                  </TableCell>
+                  <TableCell className="text-center">{row.maxCapacity}</TableCell>
+                  {scheduleColumns.map((schedule) => (
+                    <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
+                      {row.remainingBySchedule[schedule.key]}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
+
+type DormitoryOption = {
+  id: number;
+  name: string;
+};
 
 function AssignmentPreviewTable({
   preview,
   scheduleColumns,
   scheduleMapById,
+  dormitories,
+  editedAssignments,
+  onAssignmentChange,
 }: {
   preview: DormitoryAssignmentPreview;
   scheduleColumns: ScheduleColumn[];
   scheduleMapById: Map<number, Record<string, boolean>>;
+  dormitories: DormitoryOption[];
+  editedAssignments: Map<number, number>;
+  onAssignmentChange: (userId: number, dormitoryId: number) => void;
 }) {
   const [groupMode, setGroupMode] = useState<PreviewGroupMode>("gbs");
+
+  const dormitoryMap = useMemo(() => {
+    const map = new Map<number, string>();
+    dormitories.forEach((d) => map.set(d.id, d.name));
+    return map;
+  }, [dormitories]);
 
   const emptyScheduleMap = useMemo(() => {
     const map: Record<string, boolean> = {};
@@ -532,25 +779,39 @@ function AssignmentPreviewTable({
 
   const rows = useMemo<PreviewDataRow[]>(
     () =>
-      preview.previewAssignments.map((assignment) => ({
-        kind: "data",
-        id: assignment.userRetreatRegistrationId,
-        gbsNumber: assignment.gbsNumber ?? null,
-        univGroupNumber: assignment.univGroupNumber,
-        gradeNumber: assignment.gradeNumber,
-        userName: assignment.userName,
-        dormitoryName: assignment.dormitoryName,
-        scheduleMap:
-          scheduleMapById.get(assignment.userRetreatRegistrationId) ??
-          emptyScheduleMap,
-      })),
-    [preview.previewAssignments, scheduleMapById, emptyScheduleMap]
+      preview.previewAssignments.map((assignment) => {
+        const editedDormitoryId = editedAssignments.get(
+          assignment.userRetreatRegistrationId
+        );
+        const dormitoryName =
+          editedDormitoryId != null
+            ? dormitoryMap.get(editedDormitoryId) ?? assignment.dormitoryName
+            : assignment.dormitoryName;
+
+        return {
+          kind: "data",
+          id: assignment.userRetreatRegistrationId,
+          gbsNumber: assignment.gbsNumber ?? null,
+          univGroupNumber: assignment.univGroupNumber,
+          gradeNumber: assignment.gradeNumber,
+          userName: assignment.userName,
+          dormitoryName,
+          dormitoryId: editedDormitoryId ?? assignment.dormitoryId,
+          originalDormitoryId: assignment.dormitoryId,
+          scheduleMap:
+            scheduleMapById.get(assignment.userRetreatRegistrationId) ??
+            emptyScheduleMap,
+        };
+      }),
+    [preview.previewAssignments, scheduleMapById, emptyScheduleMap, editedAssignments, dormitoryMap]
   );
 
   const groupedRows = useMemo(
     () => buildPreviewGroupedRows(rows, groupMode, scheduleColumns),
     [groupMode, rows, scheduleColumns]
   );
+
+  const editedCount = editedAssignments.size;
 
   return (
     <div className="space-y-4">
@@ -562,6 +823,14 @@ function AssignmentPreviewTable({
         <span>배정 가능: {preview.isAssignable ? "가능" : "불가"}</span>
         <span>·</span>
         <span>대상 {preview.previewAssignments.length}명</span>
+        {editedCount > 0 && (
+          <>
+            <span>·</span>
+            <span className="text-blue-600 font-medium">
+              수정됨 {editedCount}명
+            </span>
+          </>
+        )}
       </div>
       <div className="flex justify-end">
         <ToggleGroup
@@ -594,7 +863,7 @@ function AssignmentPreviewTable({
               <TableHead className="text-center">부서</TableHead>
               <TableHead className="text-center">학년</TableHead>
               <TableHead className="text-center">이름</TableHead>
-              <TableHead className="text-center">배정 숙소</TableHead>
+              <TableHead className="text-center min-w-[140px]">배정 숙소</TableHead>
               {scheduleColumns.map((schedule) => (
                 <TableHead key={schedule.key} className="text-center">
                   {schedule.label}
@@ -630,8 +899,15 @@ function AssignmentPreviewTable({
                 );
               }
 
+              const isEdited = editedAssignments.has(row.id);
+              const currentDormitoryId =
+                (row as PreviewDataRow & { dormitoryId?: number }).dormitoryId;
+
               return (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className={isEdited ? "bg-blue-50" : ""}
+                >
                   <TableCell />
                   <TableCell className="text-center">
                     {row.gbsNumber != null ? (
@@ -648,7 +924,26 @@ function AssignmentPreviewTable({
                   </TableCell>
                   <TableCell className="text-center">{row.userName}</TableCell>
                   <TableCell className="text-center">
-                    {row.dormitoryName}
+                    <Select
+                      value={String(currentDormitoryId)}
+                      onValueChange={(value) =>
+                        onAssignmentChange(row.id, Number(value))
+                      }
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dormitories.map((dormitory) => (
+                          <SelectItem
+                            key={dormitory.id}
+                            value={String(dormitory.id)}
+                          >
+                            {dormitory.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   {scheduleColumns.map((schedule) => (
                     <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
@@ -706,6 +1001,10 @@ function GenderAssignmentPanel({
   const [showPreview, setShowPreview] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [capacityBasis, setCapacityBasis] = useState<CapacityBasis>("MAX");
+  const [editedAssignments, setEditedAssignments] = useState<Map<number, number>>(
+    new Map()
+  );
 
   const dormitoryRows = useMemo(
     () =>
@@ -713,9 +1012,10 @@ function GenderAssignmentPanel({
         registrations,
         dormitories,
         scheduleColumns,
-        scheduleIds
+        scheduleIds,
+        capacityBasis
       ),
-    [registrations, dormitories, scheduleColumns, scheduleIds]
+    [registrations, dormitories, scheduleColumns, scheduleIds, capacityBasis]
   );
   const scheduleMapById = useMemo(() => {
     const map = new Map<number, Record<string, boolean>>();
@@ -731,7 +1031,29 @@ function GenderAssignmentPanel({
   useEffect(() => {
     setPreviewData(null);
     setShowPreview(false);
+    setEditedAssignments(new Map());
   }, [selectedUserIds, selectedDormitoryIds]);
+
+  const handleAssignmentChange = useCallback(
+    (userId: number, dormitoryId: number) => {
+      if (!previewData) return;
+      const originalAssignment = previewData.previewAssignments.find(
+        (a) => a.userRetreatRegistrationId === userId
+      );
+      if (!originalAssignment) return;
+
+      setEditedAssignments((prev) => {
+        const next = new Map(prev);
+        if (originalAssignment.dormitoryId === dormitoryId) {
+          next.delete(userId);
+        } else {
+          next.set(userId, dormitoryId);
+        }
+        return next;
+      });
+    },
+    [previewData]
+  );
 
   const handlePreview = async () => {
     if (!canPreview) {
@@ -793,14 +1115,16 @@ function GenderAssignmentPanel({
 
     setIsAssigning(true);
     try {
+      const assignments = previewData.previewAssignments.map((assignment) => ({
+        userRetreatRegistrationId: assignment.userRetreatRegistrationId,
+        dormitoryId:
+          editedAssignments.get(assignment.userRetreatRegistrationId) ??
+          assignment.dormitoryId,
+      }));
+
       await webAxios.post(
         `/api/v1/retreat/${retreatSlug}/dormitory/bulk-assign-dormitory`,
-        {
-          assignments: previewData.previewAssignments.map((assignment) => ({
-            userRetreatRegistrationId: assignment.userRetreatRegistrationId,
-            dormitoryId: assignment.dormitoryId,
-          })),
-        }
+        { assignments }
       );
 
       addToast({
@@ -818,6 +1142,7 @@ function GenderAssignmentPanel({
       setSelectedDormitoryIds(new Set());
       setPreviewData(null);
       setShowPreview(false);
+      setEditedAssignments(new Map());
     } catch (error) {
       const description =
         error instanceof AxiosError
@@ -840,7 +1165,9 @@ function GenderAssignmentPanel({
         <Card>
           <CardHeader>
             <CardTitle>인원 표</CardTitle>
-            <CardDescription>GBS별 보기 기준으로 정렬됩니다.</CardDescription>
+            <CardDescription>
+              숙소가 아직 배정되지 않은 인원만 조회됩니다. 행을 드래그하면 선택/해제할 수 있습니다.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <PersonSelectionTable
@@ -856,7 +1183,7 @@ function GenderAssignmentPanel({
           <CardHeader>
             <CardTitle>숙소 표</CardTitle>
             <CardDescription>
-              정원과 최대 인원 기준으로 숙박 일정별 잔여 인원을 확인합니다.
+              숙박 일정별 잔여 인원을 확인합니다. 행을 드래그하면 선택/해제할 수 있습니다.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -865,6 +1192,8 @@ function GenderAssignmentPanel({
               scheduleColumns={scheduleColumns}
               selectedIds={selectedDormitoryIds}
               setSelectedIds={setSelectedDormitoryIds}
+              capacityBasis={capacityBasis}
+              setCapacityBasis={setCapacityBasis}
             />
           </CardContent>
         </Card>
@@ -898,7 +1227,7 @@ function GenderAssignmentPanel({
           <CardHeader>
             <CardTitle>배정 결과 미리보기</CardTitle>
             <CardDescription>
-              선택한 인원과 숙소 기준으로 계산된 배정 결과입니다.
+              선택한 인원과 숙소 기준으로 계산된 배정 결과입니다. 숙소를 변경하려면 드롭다운에서 선택하세요.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -906,6 +1235,9 @@ function GenderAssignmentPanel({
               preview={previewData}
               scheduleColumns={scheduleColumns}
               scheduleMapById={scheduleMapById}
+              dormitories={dormitories}
+              editedAssignments={editedAssignments}
+              onAssignmentChange={handleAssignmentChange}
             />
           </CardContent>
         </Card>
@@ -973,7 +1305,11 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
   const maleRegistrations = useMemo(
     () =>
       registrations
-        .filter((registration) => registration.gender === Gender.MALE)
+        .filter(
+          (registration) =>
+            registration.gender === Gender.MALE &&
+            registration.dormitoryLocation === null
+        )
         .sort(compareByGbs),
     [registrations]
   );
@@ -981,7 +1317,11 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
   const femaleRegistrations = useMemo(
     () =>
       registrations
-        .filter((registration) => registration.gender === Gender.FEMALE)
+        .filter(
+          (registration) =>
+            registration.gender === Gender.FEMALE &&
+            registration.dormitoryLocation === null
+        )
         .sort(compareByGbs),
     [registrations]
   );
