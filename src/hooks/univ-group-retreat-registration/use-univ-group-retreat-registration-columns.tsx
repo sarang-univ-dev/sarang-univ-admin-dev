@@ -12,12 +12,26 @@ import { AttendanceBadge } from "@/components/features/univ-group-retreat-regist
 import { formatDate } from "@/utils/formatDate";
 import { useUnivGroupRetreatRegistration } from "./use-univ-group-retreat-registration";
 import { ColumnHeader } from "@/components/common/table/ColumnHeader";
+import { HelpTooltip } from "@/components/common/help";
 import {
   USER_RETREAT_TYPE_LABELS,
   PAYMENT_STATUS_LABELS,
 } from "@/lib/constant/labels";
+import { univGroupRetreatRegistrationHelp } from "@/lib/help";
 
 const columnHelper = createColumnHelper<UnivGroupAdminStaffData>();
+
+// 컬럼별 도움말 콘텐츠 맵핑
+const columnHelpMap = univGroupRetreatRegistrationHelp.columns.reduce(
+  (acc, col) => ({ ...acc, [col.columnId]: col }),
+  {} as Record<string, typeof univGroupRetreatRegistrationHelp.columns[0]>
+);
+
+// 결제 상태별 도움말 콘텐츠 맵핑
+const paymentStatusHelpMap = univGroupRetreatRegistrationHelp.badges.paymentStatus.reduce(
+  (acc, badge) => ({ ...acc, [badge.status]: badge }),
+  {} as Record<string, typeof univGroupRetreatRegistrationHelp.badges.paymentStatus[0]>
+);
 
 /**
  * 부서 수양회 신청 테이블 컬럼 훅
@@ -57,6 +71,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             enableSorting
             enableFiltering
             formatFilterValue={(value) => value === "MALE" ? "남" : "여"}
+            helpContent={columnHelpMap.gender}
           />
         ),
         cell: info => (
@@ -76,6 +91,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             title="학년"
             enableSorting
             enableFiltering
+            helpContent={columnHelpMap.grade}
           />
         ),
         cell: info => (
@@ -160,6 +176,7 @@ export function useUnivGroupRetreatRegistrationColumns(
           enableSorting
           enableFiltering
           formatFilterValue={(value) => value ? "전참" : "부분참"}
+          helpContent={columnHelpMap.attendance}
         />
       ),
       cell: info => (
@@ -188,17 +205,41 @@ export function useUnivGroupRetreatRegistrationColumns(
             formatFilterValue={(value) =>
               PAYMENT_STATUS_LABELS[value as keyof typeof PAYMENT_STATUS_LABELS] || value
             }
+            helpContent={columnHelpMap.status}
           />
         ),
-        cell: props => (
-          <div className="flex flex-col items-center gap-1 shrink-0 px-1">
-            <StatusBadge status={props.getValue()} />
-            <UnivGroupRetreatRegistrationTableActions
-              row={props.row.original}
-              retreatSlug={retreatSlug}
-            />
-          </div>
-        ),
+        cell: props => {
+          const status = props.getValue();
+          const helpInfo = paymentStatusHelpMap[status];
+
+          return (
+            <div className="flex flex-col items-center gap-1 shrink-0 px-1">
+              {helpInfo ? (
+                <HelpTooltip
+                  content={
+                    <div className="space-y-1">
+                      <p className="font-medium">{helpInfo.title}</p>
+                      <p className="text-muted-foreground">{helpInfo.description}</p>
+                      {helpInfo.action && (
+                        <p className="text-xs text-blue-600 mt-1">{helpInfo.action}</p>
+                      )}
+                    </div>
+                  }
+                >
+                  <span>
+                    <StatusBadge status={status} />
+                  </span>
+                </HelpTooltip>
+              ) : (
+                <StatusBadge status={status} />
+              )}
+              <UnivGroupRetreatRegistrationTableActions
+                row={props.row.original}
+                retreatSlug={retreatSlug}
+              />
+            </div>
+          );
+        },
         filterFn: "arrIncludesSome",
       }),
 
@@ -212,6 +253,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             enableSorting
             enableFiltering
             formatFilterValue={(value) => value ? "신청함" : "신청 안함"}
+            helpContent={columnHelpMap.shuttleBus}
           />
         ),
         cell: info => (
@@ -235,6 +277,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             title="행정간사 메모"
             enableSorting
             enableFiltering
+            helpContent={columnHelpMap.adminMemo}
           />
         ),
         cell: props => {

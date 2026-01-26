@@ -4,7 +4,7 @@ import {
   fetchRetreatSchedules,
 } from "@/lib/api/server-actions";
 import {
-  UnivGroupRetreatRegistrationTable,
+  UnivGroupRetreatRegistrationSection,
   PaymentSummary,
   RetreatScheduleSummary,
 } from "@/components/features/univ-group-retreat-registration";
@@ -44,9 +44,9 @@ export default async function UnivGroupRetreatRegistrationPage({ params }: PageP
         schedules={schedules}
       />
 
-      {/* ✅ Client Component (인터랙션 필요 - TanStack Table) */}
+      {/* ✅ Client Component (인터랙션 필요 - TanStack Table + Header) */}
       <Suspense fallback={<TableSkeleton />}>
-        <UnivGroupRetreatRegistrationTable
+        <UnivGroupRetreatRegistrationSection
           initialData={registrations}
           schedules={schedules}
           retreatSlug={retreatSlug}

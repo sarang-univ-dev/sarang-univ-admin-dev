@@ -14,6 +14,8 @@ import {
   DrawerFooter,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { ColumnHeaderHelp } from "@/components/common/help";
+import type { ColumnHelpContent } from "@/lib/help/types";
 
 interface MobileColumnHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -30,6 +32,10 @@ interface MobileColumnHeaderProps<TData> {
    * 필터 값을 정렬할 함수
    */
   sortFilterValues?: (a: any, b: any) => number;
+  /**
+   * 컬럼 도움말 콘텐츠
+   */
+  helpContent?: ColumnHelpContent;
 }
 
 /**
@@ -48,6 +54,7 @@ export function MobileColumnHeader<TData>({
   enableFiltering = false,
   formatFilterValue = (value) => String(value),
   sortFilterValues,
+  helpContent,
 }: MobileColumnHeaderProps<TData>) {
   const [open, setOpen] = useState(false);
 
@@ -190,8 +197,9 @@ export function MobileColumnHeader<TData>({
   // 기능이 없으면 일반 텍스트 반환
   if (!enableSorting && !enableFiltering) {
     return (
-      <div className="font-semibold text-center text-xs whitespace-nowrap">
-        {title}
+      <div className="flex items-center justify-center gap-1 font-semibold text-xs whitespace-nowrap">
+        <span>{title}</span>
+        {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
       </div>
     );
   }

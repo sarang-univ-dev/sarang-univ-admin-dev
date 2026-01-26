@@ -1,6 +1,12 @@
 // 메인 테이블
 export { UnivGroupRetreatRegistrationTable } from "./UnivGroupRetreatRegistrationTable";
 
+// 헤더
+export { UnivGroupRetreatRegistrationHeader } from "./UnivGroupRetreatRegistrationHeader";
+
+// 섹션 (Header + Table 조합)
+export { UnivGroupRetreatRegistrationSection } from "./UnivGroupRetreatRegistrationSection";
+
 // 서브 컴포넌트
 export { UnivGroupRetreatRegistrationTableToolbar } from "./UnivGroupRetreatRegistrationTableToolbar";
 export { UnivGroupRetreatRegistrationTableActions } from "./UnivGroupRetreatRegistrationTableActions";

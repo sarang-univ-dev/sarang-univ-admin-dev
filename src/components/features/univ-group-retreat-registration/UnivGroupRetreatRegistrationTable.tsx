@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -31,6 +31,10 @@ interface UnivGroupRetreatRegistrationTableProps {
   initialData: IUnivGroupAdminStaffRetreat[];
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
+  /**
+   * 필터링된 데이터 개수가 변경될 때 호출되는 콜백
+   */
+  onFilteredCountChange?: (count: number) => void;
 }
 
 /**
@@ -49,6 +53,7 @@ export function UnivGroupRetreatRegistrationTable({
   initialData,
   schedules,
   retreatSlug,
+  onFilteredCountChange,
 }: UnivGroupRetreatRegistrationTableProps) {
   // ✅ SWR로 실시간 데이터 동기화 (initialData를 fallback으로)
   const {
@@ -136,6 +141,11 @@ export function UnivGroupRetreatRegistrationTable({
   // ✅ 필터링된 데이터 (모바일 테이블과 공유)
   const filteredData = table.getRowModel().rows.map((row) => row.original);
 
+  // ✅ 필터링된 데이터 개수 변경 시 콜백 호출
+  useEffect(() => {
+    onFilteredCountChange?.(filteredData.length);
+  }, [filteredData.length, onFilteredCountChange]);
+
   // ✅ 사이드바에 표시할 최신 데이터 (SWR 캐시와 동기화)
   const currentSidebarData = sidebar.selectedItem
     ? data.find((item) => item.id === sidebar.selectedItem?.id) ?? sidebar.selectedItem
@@ -144,13 +154,6 @@ export function UnivGroupRetreatRegistrationTable({
   return (
     <>
       <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">부서 현황 및 입금 조회</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            부서 신청자 목록 ({filteredData.length}명)
-          </p>
-        </div>
-
         {/* 툴바 */}
         <UnivGroupRetreatRegistrationTableToolbar
           table={table}
