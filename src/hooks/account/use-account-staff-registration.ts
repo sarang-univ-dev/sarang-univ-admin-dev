@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import useSWR, { SWRConfiguration } from "swr";
 import { AccountStaffAPI } from "@/lib/api/account-api";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
@@ -50,67 +50,69 @@ export function useAccountStaffRegistration(
    * - 낙관적 업데이트 후 전체 refetch 없이 캐시만 업데이트
    * - 서버 API가 void를 반환하므로 낙관적 업데이트 결과를 유지
    * - 에러 발생 시 자동 롤백
+   * - useCallback으로 안정화 (deleteAccountMemo 등에서 dependency로 사용)
    *
    * @param action - 실행할 API 액션
    * @param optimisticUpdate - 낙관적 업데이트 함수 (단일 item 변경)
    * @param successMessage - 성공 메시지
    */
-  const updateCache = async (
-    action: () => Promise<void>,
-    optimisticUpdate?: (
-      data: IRetreatRegistration[]
-    ) => IRetreatRegistration[],
-    successMessage?: string
-  ) => {
-    setIsMutating(true);
-    try {
-      // Optimistic update가 있는 경우
-      if (optimisticUpdate && data) {
-        // ✅ 낙관적 업데이트 적용 (즉시 UI 반영)
-        const optimisticData = optimisticUpdate(data);
+  const updateCache = useCallback(
+    async (
+      action: () => Promise<void>,
+      optimisticUpdate?: (
+        data: IRetreatRegistration[]
+      ) => IRetreatRegistration[],
+      successMessage?: string
+    ) => {
+      setIsMutating(true);
+      try {
+        // Optimistic update가 있는 경우
+        if (optimisticUpdate) {
+          await mutate(
+            async (currentData) => {
+              await action();
+              // ✅ 전체 refetch 대신 낙관적 업데이트 결과 유지
+              return currentData ? optimisticUpdate(currentData) : undefined;
+            },
+            {
+              optimisticData: (currentData) =>
+                currentData ? optimisticUpdate(currentData) : [],
+              rollbackOnError: true,
+              revalidate: false, // ✅ 추가 API 호출 방지
+            }
+          );
+        } else {
+          // Optimistic update 없이 실행 후 revalidate
+          await action();
+          await mutate();
+        }
 
-        await mutate(
-          async () => {
-            await action();
-            // ✅ 전체 refetch 대신 낙관적 업데이트 결과 유지
-            return optimisticData;
-          },
-          {
-            optimisticData,
-            rollbackOnError: true,
-            revalidate: false, // ✅ 추가 API 호출 방지
-          }
-        );
-      } else {
-        // Optimistic update 없이 실행 후 revalidate
-        await action();
-        await mutate();
-      }
+        if (successMessage) {
+          addToast({
+            title: "성공",
+            description: successMessage,
+            variant: "success",
+          });
+        }
+      } catch (error) {
+        const message =
+          error instanceof AxiosError
+            ? error.response?.data?.message || "작업 중 오류가 발생했습니다."
+            : "작업 중 오류가 발생했습니다.";
 
-      if (successMessage) {
         addToast({
-          title: "성공",
-          description: successMessage,
-          variant: "success",
+          title: "오류 발생",
+          description: message,
+          variant: "destructive",
         });
+
+        throw error;
+      } finally {
+        setIsMutating(false);
       }
-    } catch (error) {
-      const message =
-        error instanceof AxiosError
-          ? error.response?.data?.message || "작업 중 오류가 발생했습니다."
-          : "작업 중 오류가 발생했습니다.";
-
-      addToast({
-        title: "오류 발생",
-        description: message,
-        variant: "destructive",
-      });
-
-      throw error;
-    } finally {
-      setIsMutating(false);
-    }
-  };
+    },
+    [mutate, addToast]
+  );
 
   /**
    * 간사 배정
@@ -196,161 +198,173 @@ export function useAccountStaffRegistration(
    * - Optimistic update로 즉시 memo 내용 반영
    * - 서버 응답에서 생성된 memoId를 캐시에 업데이트
    * - 이를 통해 다음 수정/삭제 시 정확한 memoId 사용 가능
+   * - useCallback으로 안정화 (columns hook에서 dependency로 사용)
    *
    * @param registrationId - 신청 ID
    * @param memo - 메모 내용
    */
-  const saveAccountMemo = async (registrationId: string, memo: string) => {
-    setIsMutating(true);
-    try {
-      // 1. Optimistic update: 즉시 UI 반영
-      const optimisticData = data?.map((item) =>
-        item.id === Number(registrationId)
-          ? { ...item, accountMemo: memo }
-          : item
-      );
+  const saveAccountMemo = useCallback(
+    async (registrationId: string, memo: string) => {
+      setIsMutating(true);
+      try {
+        // 1. Optimistic update: 즉시 UI 반영
+        await mutate(
+          (currentData) =>
+            currentData?.map((item) =>
+              item.id === Number(registrationId)
+                ? { ...item, accountMemo: memo }
+                : item
+            ),
+          { revalidate: false }
+        );
 
-      if (optimisticData) {
-        await mutate(optimisticData, { revalidate: false });
+        // 2. API 호출 및 서버 응답 받기
+        const createdMemo = await AccountStaffAPI.saveAccountMemo(
+          retreatSlug,
+          registrationId,
+          memo
+        );
+
+        // 3. 서버 응답으로 정확한 데이터 업데이트 (accountMemoId 포함)
+        await mutate(
+          (currentData) =>
+            currentData?.map((item) =>
+              item.id === Number(registrationId)
+                ? {
+                    ...item,
+                    accountMemo: createdMemo.memo,
+                    accountMemoId: createdMemo.id,
+                  }
+                : item
+            ),
+          { revalidate: false }
+        );
+
+        addToast({
+          title: "성공",
+          description: "메모가 성공적으로 저장되었습니다.",
+          variant: "success",
+        });
+      } catch (error) {
+        // 에러 시 서버 데이터로 롤백
+        await mutate();
+
+        const message =
+          error instanceof AxiosError
+            ? error.response?.data?.message || "작업 중 오류가 발생했습니다."
+            : "작업 중 오류가 발생했습니다.";
+
+        addToast({
+          title: "오류 발생",
+          description: message,
+          variant: "destructive",
+        });
+
+        throw error;
+      } finally {
+        setIsMutating(false);
       }
-
-      // 2. API 호출 및 서버 응답 받기
-      const createdMemo = await AccountStaffAPI.saveAccountMemo(
-        retreatSlug,
-        registrationId,
-        memo
-      );
-
-      // 3. 서버 응답으로 정확한 데이터 업데이트 (accountMemoId 포함)
-      await mutate(
-        (currentData) =>
-          currentData?.map((item) =>
-            item.id === Number(registrationId)
-              ? {
-                  ...item,
-                  accountMemo: createdMemo.memo,
-                  accountMemoId: createdMemo.id,
-                }
-              : item
-          ),
-        { revalidate: false }
-      );
-
-      addToast({
-        title: "성공",
-        description: "메모가 성공적으로 저장되었습니다.",
-        variant: "success",
-      });
-    } catch (error) {
-      // 에러 시 서버 데이터로 롤백
-      await mutate();
-
-      const message =
-        error instanceof AxiosError
-          ? error.response?.data?.message || "작업 중 오류가 발생했습니다."
-          : "작업 중 오류가 발생했습니다.";
-
-      addToast({
-        title: "오류 발생",
-        description: message,
-        variant: "destructive",
-      });
-
-      throw error;
-    } finally {
-      setIsMutating(false);
-    }
-  };
+    },
+    [retreatSlug, mutate, addToast]
+  );
 
   /**
    * 재정간사 메모 수정
    *
    * @description
    * Best Practice: 서버 응답으로 정확한 데이터를 캐시에 반영
+   * - useCallback으로 안정화 (columns hook에서 dependency로 사용)
    *
    * @param memoId - 메모 ID
    * @param memo - 수정할 메모 내용
    */
-  const updateAccountMemo = async (memoId: number, memo: string) => {
-    setIsMutating(true);
-    try {
-      // 1. Optimistic update: 즉시 UI 반영
-      const optimisticData = data?.map((item) =>
-        item.accountMemoId === memoId ? { ...item, accountMemo: memo } : item
-      );
+  const updateAccountMemo = useCallback(
+    async (memoId: number, memo: string) => {
+      setIsMutating(true);
+      try {
+        // 1. Optimistic update: 즉시 UI 반영
+        await mutate(
+          (currentData) =>
+            currentData?.map((item) =>
+              item.accountMemoId === memoId ? { ...item, accountMemo: memo } : item
+            ),
+          { revalidate: false }
+        );
 
-      if (optimisticData) {
-        await mutate(optimisticData, { revalidate: false });
+        // 2. API 호출 및 서버 응답 받기
+        const updatedMemo = await AccountStaffAPI.updateAccountMemo(
+          retreatSlug,
+          memoId,
+          memo
+        );
+
+        // 3. 서버 응답으로 정확한 데이터 업데이트
+        await mutate(
+          (currentData) =>
+            currentData?.map((item) =>
+              item.accountMemoId === memoId
+                ? { ...item, accountMemo: updatedMemo.memo }
+                : item
+            ),
+          { revalidate: false }
+        );
+
+        addToast({
+          title: "성공",
+          description: "메모가 성공적으로 수정되었습니다.",
+          variant: "success",
+        });
+      } catch (error) {
+        // 에러 시 서버 데이터로 롤백
+        await mutate();
+
+        const message =
+          error instanceof AxiosError
+            ? error.response?.data?.message || "작업 중 오류가 발생했습니다."
+            : "작업 중 오류가 발생했습니다.";
+
+        addToast({
+          title: "오류 발생",
+          description: message,
+          variant: "destructive",
+        });
+
+        throw error;
+      } finally {
+        setIsMutating(false);
       }
-
-      // 2. API 호출 및 서버 응답 받기
-      const updatedMemo = await AccountStaffAPI.updateAccountMemo(
-        retreatSlug,
-        memoId,
-        memo
-      );
-
-      // 3. 서버 응답으로 정확한 데이터 업데이트
-      await mutate(
-        (currentData) =>
-          currentData?.map((item) =>
-            item.accountMemoId === memoId
-              ? { ...item, accountMemo: updatedMemo.memo }
-              : item
-          ),
-        { revalidate: false }
-      );
-
-      addToast({
-        title: "성공",
-        description: "메모가 성공적으로 수정되었습니다.",
-        variant: "success",
-      });
-    } catch (error) {
-      // 에러 시 서버 데이터로 롤백
-      await mutate();
-
-      const message =
-        error instanceof AxiosError
-          ? error.response?.data?.message || "작업 중 오류가 발생했습니다."
-          : "작업 중 오류가 발생했습니다.";
-
-      addToast({
-        title: "오류 발생",
-        description: message,
-        variant: "destructive",
-      });
-
-      throw error;
-    } finally {
-      setIsMutating(false);
-    }
-  };
+    },
+    [retreatSlug, mutate, addToast]
+  );
 
   /**
    * 재정간사 메모 삭제
+   * - useCallback으로 안정화 (columns hook에서 dependency로 사용)
    *
    * @param memoId - 메모 ID
    */
-  const deleteAccountMemo = async (memoId: number) => {
-    confirmDialog.show({
-      title: "메모 삭제",
-      description: "정말로 메모를 삭제하시겠습니까?",
-      onConfirm: async () => {
-        await updateCache(
-          () => AccountStaffAPI.deleteAccountMemo(retreatSlug, memoId),
-          // ✅ Optimistic Update: 메모 삭제
-          (currentData) =>
-            currentData.map((item) =>
-              item.accountMemoId === memoId
-                ? { ...item, accountMemo: null, accountMemoId: null }
-                : item
-            ),
-          "메모가 성공적으로 삭제되었습니다."
-        );
-      },
-    });
-  };
+  const deleteAccountMemo = useCallback(
+    (memoId: number) => {
+      confirmDialog.show({
+        title: "메모 삭제",
+        description: "정말로 메모를 삭제하시겠습니까?",
+        onConfirm: async () => {
+          await updateCache(
+            () => AccountStaffAPI.deleteAccountMemo(retreatSlug, memoId),
+            // ✅ Optimistic Update: 메모 삭제
+            (currentData) =>
+              currentData.map((item) =>
+                item.accountMemoId === memoId
+                  ? { ...item, accountMemo: null, accountMemoId: null }
+                  : item
+              ),
+            "메모가 성공적으로 삭제되었습니다."
+          );
+        },
+      });
+    },
+    [retreatSlug, confirmDialog, updateCache]
+  );
 
   /**
    * 엑셀 다운로드

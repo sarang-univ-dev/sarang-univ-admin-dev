@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import useSWR, { SWRConfiguration } from "swr";
 import { UnivGroupRetreatRegistrationAPI } from "@/lib/api/univ-group-retreat-registration-api";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
@@ -406,68 +406,72 @@ export function useUnivGroupRetreatRegistration(
    * SWR Best Practice: mutate 콜백에서 currentData를 인자로 받아 사용
    * - 외부 closure(data)에 의존하지 않음
    * - optimisticData도 함수 형태로 현재 캐시 데이터를 받음
+   * - useCallback으로 안정화 (columns hook에서 dependency로 사용)
    */
-  const saveAdminMemo = async (registrationId: string, memo: string) => {
-    const numericId = Number(registrationId);
+  const saveAdminMemo = useCallback(
+    async (registrationId: string, memo: string) => {
+      const numericId = Number(registrationId);
 
-    try {
-      // mutate 콜백에서 currentData를 직접 인자로 받아 사용
-      const result = await mutate(
-        async (currentData) => {
-          // API 호출
-          const savedMemo = await UnivGroupRetreatRegistrationAPI.saveAdminMemo(
-            retreatSlug,
-            registrationId,
-            memo
-          );
+      try {
+        // mutate 콜백에서 currentData를 직접 인자로 받아 사용
+        const result = await mutate(
+          async (currentData) => {
+            // API 호출
+            const savedMemo = await UnivGroupRetreatRegistrationAPI.saveAdminMemo(
+              retreatSlug,
+              registrationId,
+              memo
+            );
 
-          // currentData가 없으면 revalidate로 fallback
-          if (!currentData) return undefined;
+            // currentData가 없으면 revalidate로 fallback
+            if (!currentData) return undefined;
 
-          // 실제 memoId로 업데이트된 데이터 반환
-          return currentData.map((item) =>
-            item.id === numericId
-              ? { ...item, adminMemo: savedMemo.memo, adminMemoId: savedMemo.id }
-              : item
-          );
-        },
-        {
-          // optimisticData를 함수로 전달하여 현재 캐시 데이터를 받음
-          optimisticData: (currentData) => {
-            if (!currentData) return [];
+            // 실제 memoId로 업데이트된 데이터 반환
             return currentData.map((item) =>
               item.id === numericId
-                ? { ...item, adminMemo: memo, adminMemoId: -1 }
+                ? { ...item, adminMemo: savedMemo.memo, adminMemoId: savedMemo.id }
                 : item
             );
           },
-          rollbackOnError: true,
-          revalidate: false,
-        }
-      );
+          {
+            // optimisticData를 함수로 전달하여 현재 캐시 데이터를 받음
+            optimisticData: (currentData) => {
+              if (!currentData) return [];
+              return currentData.map((item) =>
+                item.id === numericId
+                  ? { ...item, adminMemo: memo, adminMemoId: -1 }
+                  : item
+              );
+            },
+            rollbackOnError: true,
+            revalidate: false,
+          }
+        );
 
-      addToast({
-        title: "성공",
-        description: "메모가 성공적으로 저장되었습니다.",
-        variant: "success",
-      });
+        addToast({
+          title: "성공",
+          description: "메모가 성공적으로 저장되었습니다.",
+          variant: "success",
+        });
 
-      return result;
-    } catch (error) {
-      const message =
-        error instanceof AxiosError
-          ? error.response?.data?.message || "메모 저장 중 오류가 발생했습니다."
-          : "메모 저장 중 오류가 발생했습니다.";
+        return result;
+      } catch (error) {
+        const message =
+          error instanceof AxiosError
+            ? error.response?.data?.message || "메모 저장 중 오류가 발생했습니다."
+            : "메모 저장 중 오류가 발생했습니다.";
 
-      addToast({
-        title: "오류 발생",
-        description: message,
-        variant: "destructive",
-      });
+        addToast({
+          title: "오류 발생",
+          description: message,
+          variant: "destructive",
+        });
 
-      throw error;
-    }
-  };
+        throw error;
+      }
+    },
+    [retreatSlug, mutate, addToast]
+  );
 
   /**
    * 행정간사 메모 수정 (Optimistic Update)
@@ -477,61 +481,65 @@ export function useUnivGroupRetreatRegistration(
    *
    * @description
    * SWR Best Practice: mutate 콜백에서 currentData를 인자로 받아 사용
+   * - useCallback으로 안정화 (columns hook에서 dependency로 사용)
    */
-  const updateAdminMemo = async (memoId: number, memo: string) => {
-    try {
-      await mutate(
-        async (currentData) => {
-          // API 호출
-          const updatedMemo = await UnivGroupRetreatRegistrationAPI.updateAdminMemo(
-            retreatSlug,
-            memoId,
-            memo
-          );
+  const updateAdminMemo = useCallback(
+    async (memoId: number, memo: string) => {
+      try {
+        await mutate(
+          async (currentData) => {
+            // API 호출
+            const updatedMemo = await UnivGroupRetreatRegistrationAPI.updateAdminMemo(
+              retreatSlug,
+              memoId,
+              memo
+            );
 
-          // currentData가 없으면 revalidate로 fallback
-          if (!currentData) return undefined;
+            // currentData가 없으면 revalidate로 fallback
+            if (!currentData) return undefined;
 
-          // 서버 응답으로 최종 데이터 반환
-          return currentData.map((item) =>
-            item.adminMemoId === memoId
-              ? { ...item, adminMemo: updatedMemo.memo }
-              : item
-          );
-        },
-        {
-          // optimisticData를 함수로 전달하여 현재 캐시 데이터를 받음
-          optimisticData: (currentData) => {
-            if (!currentData) return [];
+            // 서버 응답으로 최종 데이터 반환
             return currentData.map((item) =>
-              item.adminMemoId === memoId ? { ...item, adminMemo: memo } : item
+              item.adminMemoId === memoId
+                ? { ...item, adminMemo: updatedMemo.memo }
+                : item
             );
           },
-          rollbackOnError: true,
-          revalidate: false,
-        }
-      );
+          {
+            // optimisticData를 함수로 전달하여 현재 캐시 데이터를 받음
+            optimisticData: (currentData) => {
+              if (!currentData) return [];
+              return currentData.map((item) =>
+                item.adminMemoId === memoId ? { ...item, adminMemo: memo } : item
+              );
+            },
+            rollbackOnError: true,
+            revalidate: false,
+          }
+        );
 
-      addToast({
-        title: "성공",
-        description: "메모가 성공적으로 수정되었습니다.",
-        variant: "success",
-      });
-    } catch (error) {
-      const message =
-        error instanceof AxiosError
-          ? error.response?.data?.message || "메모 수정 중 오류가 발생했습니다."
-          : "메모 수정 중 오류가 발생했습니다.";
+        addToast({
+          title: "성공",
+          description: "메모가 성공적으로 수정되었습니다.",
+          variant: "success",
+        });
+      } catch (error) {
+        const message =
+          error instanceof AxiosError
+            ? error.response?.data?.message || "메모 수정 중 오류가 발생했습니다."
+            : "메모 수정 중 오류가 발생했습니다.";
 
-      addToast({
-        title: "오류 발생",
-        description: message,
-        variant: "destructive",
-      });
+        addToast({
+          title: "오류 발생",
+          description: message,
+          variant: "destructive",
+        });
 
-      throw error;
-    }
-  };
+        throw error;
+      }
+    },
+    [retreatSlug, mutate, addToast]
+  );
 
   /**
    * 행정간사 메모 삭제 (Optimistic Update)
@@ -540,65 +548,69 @@ export function useUnivGroupRetreatRegistration(
    *
    * @description
    * SWR Best Practice: mutate 콜백에서 currentData를 인자로 받아 사용
+   * - useCallback으로 안정화 (columns hook에서 dependency로 사용)
    */
-  const deleteAdminMemo = async (memoId: number) => {
-    confirmDialog.show({
-      title: "메모 삭제",
-      description: "정말로 메모를 삭제하시겠습니까?",
-      onConfirm: async () => {
-        try {
-          await mutate(
-            async (currentData) => {
-              // API 호출
-              await UnivGroupRetreatRegistrationAPI.deleteAdminMemo(retreatSlug, memoId);
+  const deleteAdminMemo = useCallback(
+    (memoId: number) => {
+      confirmDialog.show({
+        title: "메모 삭제",
+        description: "정말로 메모를 삭제하시겠습니까?",
+        onConfirm: async () => {
+          try {
+            await mutate(
+              async (currentData) => {
+                // API 호출
+                await UnivGroupRetreatRegistrationAPI.deleteAdminMemo(retreatSlug, memoId);
 
-              // currentData가 없으면 revalidate로 fallback
-              if (!currentData) return undefined;
+                // currentData가 없으면 revalidate로 fallback
+                if (!currentData) return undefined;
 
-              // 삭제 후 데이터 반환
-              return currentData.map((item) =>
-                item.adminMemoId === memoId
-                  ? { ...item, adminMemo: null, adminMemoId: null }
-                  : item
-              );
-            },
-            {
-              // optimisticData를 함수로 전달하여 현재 캐시 데이터를 받음
-              optimisticData: (currentData) => {
-                if (!currentData) return [];
+                // 삭제 후 데이터 반환
                 return currentData.map((item) =>
                   item.adminMemoId === memoId
                     ? { ...item, adminMemo: null, adminMemoId: null }
                     : item
                 );
               },
-              rollbackOnError: true,
-              revalidate: false,
-            }
-          );
+              {
+                // optimisticData를 함수로 전달하여 현재 캐시 데이터를 받음
+                optimisticData: (currentData) => {
+                  if (!currentData) return [];
+                  return currentData.map((item) =>
+                    item.adminMemoId === memoId
+                      ? { ...item, adminMemo: null, adminMemoId: null }
+                      : item
+                  );
+                },
+                rollbackOnError: true,
+                revalidate: false,
+              }
+            );
 
-          addToast({
-            title: "성공",
-            description: "메모가 성공적으로 삭제되었습니다.",
-            variant: "success",
-          });
-        } catch (error) {
-          const message =
-            error instanceof AxiosError
-              ? error.response?.data?.message || "메모 삭제 중 오류가 발생했습니다."
-              : "메모 삭제 중 오류가 발생했습니다.";
+            addToast({
+              title: "성공",
+              description: "메모가 성공적으로 삭제되었습니다.",
+              variant: "success",
+            });
+          } catch (error) {
+            const message =
+              error instanceof AxiosError
+                ? error.response?.data?.message || "메모 삭제 중 오류가 발생했습니다."
+                : "메모 삭제 중 오류가 발생했습니다.";
 
-          addToast({
-            title: "오류 발생",
-            description: message,
-            variant: "destructive",
-          });
+            addToast({
+              title: "오류 발생",
+              description: message,
+              variant: "destructive",
+            });
 
-          throw error;
-        }
-      },
-    });
-  };
+            throw error;
+          }
+        },
+      });
+    },
+    [retreatSlug, mutate, addToast, confirmDialog]
+  );
 
   /**
    * 수양회 신청 삭제
