@@ -51,6 +51,8 @@ interface UnivGroupBusRegistrationDetailContentProps {
       currentLeaderName: string;
     }
   ) => Promise<void>;
+  onSaveOrUpdateAdminMemo: (id: string, memo: string) => Promise<void>;
+  onDeleteAdminMemo: (memoId: number) => Promise<void>;
   isMutating: boolean;
 }
 
@@ -69,6 +71,8 @@ export function UnivGroupBusRegistrationDetailContent({
   onDeleteMemo,
   onDeleteRegistration,
   onUpdateRegistrationInfo,
+  onSaveOrUpdateAdminMemo,
+  onDeleteAdminMemo,
   isMutating,
 }: UnivGroupBusRegistrationDetailContentProps) {
   // 수정 모달 상태
@@ -228,6 +232,32 @@ export function UnivGroupBusRegistrationDetailContent({
             }}
             hasExistingMemo={(row) => !!data.univGroupStaffShuttleBusHistoryMemo}
             placeholder="일정 변경 요청 메모를 입력하세요... (예: 수 정발 -> 수 부분참 7시)"
+          />
+        </div>
+      </InfoSection>
+
+      {/* 행정간사 메모 */}
+      <InfoSection title="행정간사 메모" icon={FileText}>
+        <div className="space-y-2">
+          <p className="text-xs text-gray-500">
+            * 본인이 작성한 메모만 수정/삭제 가능합니다
+          </p>
+          <MemoEditor
+            row={{ id: data.id.toString() }}
+            memoValue={data.adminMemo}
+            onSave={async (id, memo) => {
+              await onSaveOrUpdateAdminMemo(id, memo);
+            }}
+            onUpdate={async (id, memo) => {
+              await onSaveOrUpdateAdminMemo(id, memo);
+            }}
+            onDelete={async () => {
+              if (data.adminMemoId) {
+                await onDeleteAdminMemo(data.adminMemoId);
+              }
+            }}
+            hasExistingMemo={() => !!data.adminMemo}
+            placeholder="관리자 메모를 입력하세요"
           />
         </div>
       </InfoSection>

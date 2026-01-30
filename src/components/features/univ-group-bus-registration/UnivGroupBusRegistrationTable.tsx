@@ -71,6 +71,8 @@ export function UnivGroupBusRegistrationTable({
     downloadExcel,
     deleteRegistration,
     updateRegistrationInfo,
+    saveOrUpdateAdminMemo,
+    deleteAdminMemo,
     isMutating,
   } = useUnivGroupBusRegistration(retreatSlug, {
     initialData,
@@ -484,6 +486,8 @@ export function UnivGroupBusRegistrationTable({
               const { currentLeaderName, ...rest } = editData;
               await updateRegistrationInfo(id, rest);
             }}
+            onSaveOrUpdateAdminMemo={saveOrUpdateAdminMemo}
+            onDeleteAdminMemo={deleteAdminMemo}
             isMutating={isMutating}
           />
         )}

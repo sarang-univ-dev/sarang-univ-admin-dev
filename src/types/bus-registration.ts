@@ -39,4 +39,8 @@ export interface IUnivGroupBusRegistration {
   univGroupStaffShuttleBusHistoryMemo?: string | null;
   /** 현재 부서 리더 이름 (nullable) */
   currentLeaderName?: string | null;
+  /** 관리자 메모 내용 (nullable) */
+  adminMemo?: string | null;
+  /** 관리자 메모 ID - 삭제용 (nullable) */
+  adminMemoId?: number | null;
 }

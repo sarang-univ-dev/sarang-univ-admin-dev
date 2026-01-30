@@ -310,6 +310,47 @@ export function useUnivGroupBusRegistration(
     }
   };
 
+  /**
+   * 관리자 메모 생성 또는 수정
+   *
+   * @param id - 신청 ID
+   * @param memo - 메모 내용
+   */
+  const saveOrUpdateAdminMemo = async (id: string, memo: string) => {
+    if (!retreatSlug) return;
+
+    await updateCache(async () => {
+      const response = await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/memo`,
+        { memo }
+      );
+      return response.data?.univGroupShuttleBusRegistration;
+    }, "메모가 저장되었습니다.");
+  };
+
+  /**
+   * 관리자 메모 삭제
+   *
+   * @param memoId - 메모 ID
+   */
+  const deleteAdminMemo = async (memoId: number) => {
+    if (!retreatSlug) return;
+
+    confirmDialog.show({
+      title: "메모 삭제",
+      description: "정말로 메모를 삭제하시겠습니까?",
+      onConfirm: async () => {
+        await updateCache(async () => {
+          await webAxios.delete(
+            `/api/v1/retreat/${retreatSlug}/shuttle-bus/admin-memo/${memoId}`
+          );
+          // 삭제 후 전체 리페치
+          return undefined;
+        }, "메모가 삭제되었습니다.");
+      },
+    });
+  };
+
   return {
     // 데이터
     data: data ?? [],
@@ -327,5 +368,7 @@ export function useUnivGroupBusRegistration(
     downloadExcel,
     deleteRegistration,
     updateRegistrationInfo,
+    saveOrUpdateAdminMemo,
+    deleteAdminMemo,
   };
 }
