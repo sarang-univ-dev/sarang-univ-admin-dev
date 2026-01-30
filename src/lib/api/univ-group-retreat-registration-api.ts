@@ -1,5 +1,6 @@
 import { webAxios } from "@/lib/api/axios";
 import { IUnivGroupAdminStaffRetreat } from "@/types/univ-group-admin-staff";
+import { Gender } from "@/types";
 
 /**
  * 일정 변경 요청 메모 응답 타입
@@ -214,5 +215,31 @@ export const UnivGroupRetreatRegistrationAPI = {
     await webAxios.delete(
       `/api/v1/retreat/${retreatSlug}/registration/${registrationId}`
     );
+  },
+
+  /**
+   * 신청자 기본 정보 수정
+   *
+   * @param retreatSlug - 수양회 슬러그
+   * @param registrationId - 신청 ID
+   * @param data - 수정할 정보
+   * @returns 업데이트된 신청 정보
+   */
+  updateRegistrationInfo: async (
+    retreatSlug: string,
+    registrationId: string,
+    data: {
+      name: string;
+      phoneNumber: string;
+      gender: Gender;
+      gradeId: number;
+      currentLeaderName: string;
+    }
+  ): Promise<IUnivGroupAdminStaffRetreat> => {
+    const response = await webAxios.patch(
+      `/api/v1/retreat/${retreatSlug}/registration/${registrationId}/info`,
+      data
+    );
+    return response.data.userRetreatRegistration;
   },
 };

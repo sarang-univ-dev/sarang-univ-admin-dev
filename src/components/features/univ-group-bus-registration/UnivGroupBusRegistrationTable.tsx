@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -30,6 +30,13 @@ import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-side
 import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
 import { getPaymentStatusLabel } from "@/lib/constant/labels";
 import { useIsMobile } from "@/hooks/use-media-query";
+import { webAxios } from "@/lib/api/axios";
+
+interface Grade {
+  gradeId: number;
+  gradeName: string;
+  gradeNumber: number;
+}
 
 interface UnivGroupBusRegistrationTableProps {
   initialData: IUnivGroupBusRegistration[];
@@ -63,6 +70,7 @@ export function UnivGroupBusRegistrationTable({
     deleteMemo,
     downloadExcel,
     deleteRegistration,
+    updateRegistrationInfo,
     isMutating,
   } = useUnivGroupBusRegistration(retreatSlug, {
     initialData,
@@ -74,6 +82,38 @@ export function UnivGroupBusRegistrationTable({
 
   // ✅ 모바일 감지
   const isMobile = useIsMobile();
+
+  // ✅ 부서 학년 목록 (수정 모달용)
+  const [grades, setGrades] = useState<Grade[]>([]);
+
+  // ✅ 부서 학년 정보 가져오기
+  useEffect(() => {
+    const fetchGrades = async () => {
+      try {
+        const response = await webAxios.get(
+          `/api/v1/retreat/${retreatSlug}/info`
+        );
+        const retreatInfo = response.data.retreatInfo;
+
+        // 첫 번째 데이터의 부서 번호로 학년 목록 필터링
+        if (initialData.length > 0 && retreatInfo.univGroupAndGrade) {
+          const univGroupNumber = initialData[0].univGroupNumber;
+          const univGroup = retreatInfo.univGroupAndGrade.find(
+            (group: { univGroupNumber: number }) => group.univGroupNumber === univGroupNumber
+          );
+          if (univGroup) {
+            setGrades(univGroup.grades);
+          }
+        }
+      } catch (error) {
+        console.error("학년 정보 조회 중 오류 발생:", error);
+      }
+    };
+
+    if (retreatSlug && initialData.length > 0) {
+      fetchGrades();
+    }
+  }, [retreatSlug, initialData]);
 
   // ✅ TanStack Table State
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -431,12 +471,18 @@ export function UnivGroupBusRegistrationTable({
             data={data}
             schedules={schedules}
             scheduleColumnsWithColor={scheduleColumnsWithColor}
+            grades={grades}
             onSaveMemo={saveMemo}
             onUpdateMemo={updateMemo}
             onDeleteMemo={deleteMemo}
             onDeleteRegistration={async (id) => {
               await deleteRegistration(id);
               sidebar.close();
+            }}
+            onUpdateRegistrationInfo={async (id, editData) => {
+              // 셔틀버스는 currentLeaderName이 필요 없으므로 제거
+              const { currentLeaderName, ...rest } = editData;
+              await updateRegistrationInfo(id, rest);
             }}
             isMutating={isMutating}
           />

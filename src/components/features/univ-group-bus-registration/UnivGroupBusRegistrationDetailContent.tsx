@@ -1,10 +1,10 @@
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { IUnivGroupBusRegistration } from "@/types/bus-registration";
-import { TRetreatShuttleBus, UserRetreatShuttleBusPaymentStatus } from "@/types";
+import { TRetreatShuttleBus, UserRetreatShuttleBusPaymentStatus, Gender } from "@/types";
 import { GenderBadge } from "@/components/Badge-bus";
 import { StatusBadge } from "@/components/Badge-bus";
 import { formatDate } from "@/utils/formatDate";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,9 @@ import {
   Calendar,
   FileText,
   Trash2,
+  Pencil,
 } from "lucide-react";
+import { RegistrationEditModal } from "@/components/features/common/RegistrationEditModal";
 
 interface ScheduleWithColor {
   id: number;
@@ -24,14 +26,31 @@ interface ScheduleWithColor {
   bgColorClass: string;
 }
 
+interface Grade {
+  gradeId: number;
+  gradeName: string;
+  gradeNumber: number;
+}
+
 interface UnivGroupBusRegistrationDetailContentProps {
   data: IUnivGroupBusRegistration;
   schedules: TRetreatShuttleBus[];
   scheduleColumnsWithColor: ScheduleWithColor[];
+  grades: Grade[];
   onSaveMemo: (id: string, memo: string) => Promise<void>;
   onUpdateMemo: (id: string, memo: string) => Promise<void>;
   onDeleteMemo: (id: string) => Promise<void>;
   onDeleteRegistration?: (id: string) => Promise<void>;
+  onUpdateRegistrationInfo?: (
+    id: string,
+    data: {
+      name: string;
+      phoneNumber: string;
+      gender: Gender;
+      gradeId: number;
+      currentLeaderName: string;
+    }
+  ) => Promise<void>;
   isMutating: boolean;
 }
 
@@ -44,12 +63,17 @@ export function UnivGroupBusRegistrationDetailContent({
   data,
   schedules,
   scheduleColumnsWithColor,
+  grades,
   onSaveMemo,
   onUpdateMemo,
   onDeleteMemo,
   onDeleteRegistration,
+  onUpdateRegistrationInfo,
   isMutating,
 }: UnivGroupBusRegistrationDetailContentProps) {
+  // 수정 모달 상태
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   // 삭제 가능한 상태인지 확인 (PENDING만)
   const isDeletable =
     data.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PENDING;
@@ -94,7 +118,25 @@ export function UnivGroupBusRegistrationDetailContent({
   return (
     <>
       {/* 기본 정보 - 2컬럼 그리드 */}
-      <InfoSection title="기본 정보" icon={UserCircle} columns={2}>
+      <InfoSection
+        title="기본 정보"
+        icon={UserCircle}
+        columns={2}
+        action={
+          onUpdateRegistrationInfo && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditModalOpen(true)}
+              disabled={isMutating}
+              className="h-7 px-2"
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1" />
+              수정
+            </Button>
+          )
+        }
+      >
         <InfoItem label="이름" value={data.name} />
         <InfoItem label="부서" value={`${data.univGroupNumber}부`} />
         <InfoItem label="학년" value={`${data.gradeNumber}학년`} />
@@ -211,6 +253,27 @@ export function UnivGroupBusRegistrationDetailContent({
             삭제된 신청은 복구할 수 없습니다.
           </p>
         </div>
+      )}
+
+      {/* 수정 모달 - 셔틀버스는 currentLeaderName 필드가 없음 */}
+      {onUpdateRegistrationInfo && (
+        <RegistrationEditModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSave={async (editData) => {
+            await onUpdateRegistrationInfo(data.id.toString(), editData);
+          }}
+          initialData={{
+            name: data.name,
+            phoneNumber: data.userPhoneNumber,
+            gender: data.gender,
+            gradeNumber: data.gradeNumber,
+            currentLeaderName: "", // 셔틀버스에는 없음
+          }}
+          grades={grades}
+          isLoading={isMutating}
+          showCurrentLeaderName={false}
+        />
       )}
     </>
   );

@@ -5,6 +5,7 @@ import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import { IUnivGroupAdminStaffRetreat } from "@/types/univ-group-admin-staff";
 import { AxiosError } from "axios";
+import { Gender } from "@/types";
 
 /**
  * 부서 수양회 신청 데이터 및 액션 통합 훅
@@ -655,6 +656,59 @@ export function useUnivGroupRetreatRegistration(
     });
   };
 
+  /**
+   * 신청자 기본 정보 수정
+   *
+   * @param registrationId - 신청 ID
+   * @param data - 수정할 정보
+   */
+  const updateRegistrationInfo = async (
+    registrationId: string,
+    data: {
+      name: string;
+      phoneNumber: string;
+      gender: Gender;
+      gradeId: number;
+      currentLeaderName: string;
+    }
+  ) => {
+    const numericId = Number(registrationId);
+
+    setIsMutating(true);
+    try {
+      // 1. API 호출
+      await UnivGroupRetreatRegistrationAPI.updateRegistrationInfo(
+        retreatSlug,
+        registrationId,
+        data
+      );
+
+      // 2. 전체 데이터 리페치 (user_profile이 변경될 수 있으므로)
+      await mutate();
+
+      addToast({
+        title: "성공",
+        description: "신청자 정보가 성공적으로 수정되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      const message =
+        error instanceof AxiosError
+          ? error.response?.data?.message || "정보 수정 중 오류가 발생했습니다."
+          : "정보 수정 중 오류가 발생했습니다.";
+
+      addToast({
+        title: "오류 발생",
+        description: message,
+        variant: "destructive",
+      });
+
+      throw error;
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   return {
     // 데이터
     registrations: data ?? [],
@@ -677,5 +731,6 @@ export function useUnivGroupRetreatRegistration(
     updateAdminMemo,
     deleteAdminMemo,
     deleteRegistration,
+    updateRegistrationInfo,
   };
 }

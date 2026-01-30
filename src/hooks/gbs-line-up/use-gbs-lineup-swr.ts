@@ -9,6 +9,7 @@ import { useConfirmDialogStore } from '@/store/confirm-dialog-store';
 import type { UserRetreatGbsLineup } from '@/lib/socket/socket-events';
 import type { Socket } from 'socket.io-client';
 import type { ClientToServerEvents, ServerToClientEvents } from '@/lib/socket/socket-events';
+import type { Gender } from '@/types';
 
 /**
  * SWR + WebSocket 기반 GBS 라인업 데이터 훅
@@ -496,6 +497,55 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
     [swrKey, addToast, confirmDialog, retreatSlug, mutateSWR]
   );
 
+  /**
+   * 신청자 기본 정보 수정 (HTTP 기반)
+   *
+   * @description
+   * 라인업간사가 신청자의 기본 정보(이름, 전화번호, 성별, 학년, 현재 리더명)를 수정
+   * 수양회 신청 정보 수정 API 재사용
+   */
+  const updateRegistrationInfo = useCallback(
+    async (
+      userRetreatRegistrationId: string,
+      updateData: {
+        name: string;
+        phoneNumber: string;
+        gender: Gender;
+        gradeId: number;
+        currentLeaderName: string;
+      }
+    ) => {
+      setIsMutating(true);
+
+      try {
+        // HTTP API 호출
+        await webAxios.patch(
+          `/api/v1/retreat/${retreatSlug}/registration/${userRetreatRegistrationId}/info`,
+          updateData
+        );
+
+        // 전체 데이터 리페치 (user_profile이 변경될 수 있으므로)
+        await mutateSWR();
+
+        addToast({
+          title: '성공',
+          description: '신청자 정보가 성공적으로 수정되었습니다.',
+          variant: 'success',
+        });
+      } catch (error) {
+        addToast({
+          title: '오류',
+          description: '정보 수정에 실패했습니다.',
+          variant: 'destructive',
+        });
+        throw error;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [retreatSlug, addToast, mutateSWR]
+  );
+
   return {
     // 데이터
     data: data || [],
@@ -509,6 +559,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
     saveLineupMemo,
     updateLineupMemo,
     deleteLineupMemo,
+    updateRegistrationInfo,
 
     // SWR mutate (수동 리페칭)
     refresh: mutateSWR,

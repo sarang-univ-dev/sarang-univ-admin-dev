@@ -1,21 +1,29 @@
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
-import { TRetreatRegistrationSchedule } from "@/types";
+import { TRetreatRegistrationSchedule, Gender } from "@/types";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
 import { QrDownloadButton } from "./QrDownloadButton";
 import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
 import { formatDate } from "@/utils/formatDate";
-import { useMemo } from "react";
-import { UserCircle, CreditCard, Calendar, Info, FileText, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { UserCircle, CreditCard, Calendar, Info, FileText, Trash2, Pencil } from "lucide-react";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { Button } from "@/components/ui/button";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
+import { RegistrationEditModal } from "@/components/features/common/RegistrationEditModal";
+
+interface Grade {
+  gradeId: number;
+  gradeName: string;
+  gradeNumber: number;
+}
 
 interface UnivGroupRetreatRegistrationDetailContentProps {
   data: UnivGroupAdminStaffData;
   retreatSlug: string;
   schedules: TRetreatRegistrationSchedule[];
+  grades: Grade[];
   onSaveScheduleMemo: (id: string, memo: string) => Promise<void>;
   onUpdateScheduleMemo: (historyMemoId: number, memo: string) => Promise<void>;
   onDeleteScheduleMemo: (historyMemoId: number) => Promise<void>;
@@ -23,6 +31,16 @@ interface UnivGroupRetreatRegistrationDetailContentProps {
   onUpdateAdminMemo: (memoId: number, memo: string) => Promise<unknown>;
   onDeleteAdminMemo: (memoId: number) => Promise<unknown>;
   onDeleteRegistration?: (id: string) => Promise<void>;
+  onUpdateRegistrationInfo?: (
+    id: string,
+    data: {
+      name: string;
+      phoneNumber: string;
+      gender: Gender;
+      gradeId: number;
+      currentLeaderName: string;
+    }
+  ) => Promise<void>;
   isMutating: boolean;
 }
 
@@ -37,6 +55,7 @@ export function UnivGroupRetreatRegistrationDetailContent({
   data,
   retreatSlug,
   schedules,
+  grades,
   onSaveScheduleMemo,
   onUpdateScheduleMemo,
   onDeleteScheduleMemo,
@@ -44,8 +63,12 @@ export function UnivGroupRetreatRegistrationDetailContent({
   onUpdateAdminMemo,
   onDeleteAdminMemo,
   onDeleteRegistration,
+  onUpdateRegistrationInfo,
   isMutating,
 }: UnivGroupRetreatRegistrationDetailContentProps) {
+  // 수정 모달 상태
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   // 삭제 가능한 상태인지 확인
   const isDeletable = DELETABLE_STATUSES.includes(data.status);
   // 선택된 스케줄 ID 추출
@@ -55,10 +78,34 @@ export function UnivGroupRetreatRegistrationDetailContent({
       .map((schedule) => schedule.id);
   }, [schedules, data.schedules]);
 
+  // data.grade에서 gradeNumber 추출 (예: "1학년" -> 1)
+  const gradeNumber = useMemo(() => {
+    const match = data.grade.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 1;
+  }, [data.grade]);
+
   return (
     <>
       {/* 기본 정보 - 2컬럼 그리드 */}
-      <InfoSection title="기본 정보" icon={UserCircle} columns={2}>
+      <InfoSection
+        title="기본 정보"
+        icon={UserCircle}
+        columns={2}
+        action={
+          onUpdateRegistrationInfo && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditModalOpen(true)}
+              disabled={isMutating}
+              className="h-7 px-2"
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1" />
+              수정
+            </Button>
+          )
+        }
+      >
         <InfoItem label="이름" value={data.name} />
         <InfoItem label="부서" value={data.department} />
         <InfoItem label="학년" value={data.grade} />
@@ -211,6 +258,27 @@ export function UnivGroupRetreatRegistrationDetailContent({
             삭제된 신청은 복구할 수 없습니다.
           </p>
         </div>
+      )}
+
+      {/* 수정 모달 */}
+      {onUpdateRegistrationInfo && (
+        <RegistrationEditModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSave={async (editData) => {
+            await onUpdateRegistrationInfo(data.id, editData);
+          }}
+          initialData={{
+            name: data.name,
+            phoneNumber: data.phone,
+            gender: data.gender,
+            gradeNumber,
+            currentLeaderName: data.currentLeaderName || "",
+          }}
+          grades={grades}
+          isLoading={isMutating}
+          showCurrentLeaderName={true}
+        />
       )}
     </>
   );
