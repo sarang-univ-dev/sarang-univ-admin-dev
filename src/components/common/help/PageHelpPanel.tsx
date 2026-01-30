@@ -33,7 +33,11 @@ import {
   HelpDrawerDescription,
   HelpDrawerBody,
 } from "./HelpDrawer";
-import type { PageHelpContent, HelpSection } from "@/lib/help/types";
+import type { PageHelpContent, HelpSection, BadgeHelpContent } from "@/lib/help/types";
+import {
+  HelpExampleRenderer,
+  HelpSingleExample,
+} from "./HelpExampleRenderer";
 
 interface PageHelpPanelProps {
   content: PageHelpContent;
@@ -73,14 +77,25 @@ export function PageHelpPanel({
                 {section.description}
               </p>
               {section.items && section.items.length > 0 && (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {section.items.map((item, idx) => (
                     <li key={idx} className="text-sm">
-                      <span className="font-medium">{item.label}</span>
-                      <span className="text-muted-foreground">
-                        {" "}
-                        - {item.description}
-                      </span>
+                      <div>
+                        <span className="font-medium">{item.label}</span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          - {item.description}
+                        </span>
+                      </div>
+                      {/* 컴포넌트 예시 렌더링 */}
+                      {item.examples && item.examples.length > 0 && (
+                        <div className="mt-2 pl-2 py-2 bg-muted/30 rounded-md">
+                          <HelpExampleRenderer
+                            examples={item.examples}
+                            direction="horizontal"
+                          />
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -89,6 +104,58 @@ export function PageHelpPanel({
           </AccordionContent>
         </AccordionItem>
       ))}
+
+      {/* 상태 뱃지 섹션 */}
+      {content.badges && Object.keys(content.badges).length > 0 && (
+        <AccordionItem value="badges">
+          <AccordionTrigger className="text-sm font-medium">
+            상태 표시 안내
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-4">
+              {Object.entries(content.badges).map(([category, badges]) => (
+                <div key={category} className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {category === "paymentStatus"
+                      ? "입금 상태"
+                      : category === "attendance"
+                        ? "참석 현황"
+                        : category === "shuttleBus"
+                          ? "셔틀버스"
+                          : category}
+                  </h4>
+                  <ul className="space-y-2">
+                    {badges.map((badge: BadgeHelpContent, idx: number) => (
+                      <li
+                        key={idx}
+                        className="flex items-start gap-3 text-sm p-2 rounded-md bg-muted/20"
+                      >
+                        {/* 뱃지 프리뷰 */}
+                        {badge.preview && (
+                          <div className="flex-shrink-0 pt-0.5">
+                            <HelpSingleExample example={badge.preview} />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium">{badge.title}</div>
+                          <p className="text-muted-foreground text-xs mt-0.5">
+                            {badge.description}
+                          </p>
+                          {badge.action && (
+                            <p className="text-xs text-primary mt-1">
+                              {badge.action}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      )}
 
       {/* FAQ 섹션 */}
       {content.faqs && content.faqs.length > 0 && (
