@@ -57,7 +57,7 @@ export type TRetreat = {
   mainSpeaker: string;
   memo?: string;
   posterUrl?: string;
-  qrMetadata?: QRMetadata;
+  qrTemplateImageKey?: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -70,10 +70,6 @@ export type TRetreatUnivGroup = {
     admin_staff_phone_number?: string;
     deposit_account?: string;
     deposit_account_holder?: string;
-    new_comer_staff_name?: string;
-    new_comer_staff_phone_number?: string;
-    soldier_staff_name?: string;
-    soldier_staff_phone_number?: string;
     shuttle_bus_deposit_account?: string;
     shuttle_bus_deposit_account_holder?: string;
   };
@@ -169,7 +165,7 @@ export type TUserRetreatRole = {
   userId: number;
   email: string;
   retreatId: number;
-  role: UserRole;
+  role: RetreatAdminUserRole;
   createdAt: Date;
 };
 
@@ -263,6 +259,50 @@ export type TRetreatDormitory = {
   maxCapacity?: number;
   createdAt: Date;
 };
+
+export type TAdminUser = {
+  id: number;
+  univGroupId: number;
+  name: string;
+  email: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type TRetreatAdminRole = {
+  id: number;
+  name: string;
+  displayName: string;
+};
+
+export type TRetreatAdminUserRole = {
+  id: number;
+  adminUserId: number;
+  retreatAdminRoleId: number;
+  retreatId: number;
+  startDate: Date;
+  endDate?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type TRetreatAdminPermission = {
+  id: number;
+  pagePath: string;
+  label: string;
+  icon?: string;
+  displayOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type TRetreatAdminRolePermission = {
+  id: number;
+  retreatAdminRoleId: number;
+  retreatAdminPermissionId: number;
+  createdAt: Date;
+};
 // #endregion
 
 // #region Server Types
@@ -319,6 +359,7 @@ export enum UserRetreatRegistrationHistoryMemoType {
   DORMITORY_STAFF = "DORMITORY_STAFF" // 인원관리 간사
 }
 
+// @deprecated RetreatAdminUserRole을 사용하세요
 export enum UserRole {
   UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사
   UNIV_GROUP_ACCOUNT_MEMBER = "UNIV_GROUP_ACCOUNT_MEMBER", // 부서 재정 팀원
@@ -328,6 +369,21 @@ export enum UserRole {
   DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
   SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF", // 부분참 선탑 간사
   SHUTTLE_BUS_ACCOUNT_MEMBER = "SHUTTLE_BUS_ACCOUNT_MEMBER", // 총무 팀원
+  SHUTTLE_BUS_ACCOUNT_STAFF = "SHUTTLE_BUS_ACCOUNT_STAFF", // 버스 간사
+  UNIV_GROUP_MINISTER = "UNIV_GROUP_MINISTER", // 부서별 교역자
+  ADMIN_MINISTER = "ADMIN_MINISTER" // 행정 총괄 교역자
+}
+
+export enum RetreatAdminUserRole {
+  UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사
+  UNIV_GROUP_ACCOUNT_MEMBER = "UNIV_GROUP_ACCOUNT_MEMBER", // 부서 재정 팀원
+  ACCOUNT_STAFF = "ACCOUNT_STAFF", // 재정 간사
+  LINEUP_STAFF = "LINEUP_STAFF", // 라인업 간사
+  UNIV_GROUP_DORMITORY_MEMBER = "UNIV_GROUP_DORMITORY_MEMBER", // 부서 인원관리 팀원
+  DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
+  SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF", // 부분참 선탑 간사
+  SHUTTLE_BUS_ACCOUNT_MEMBER = "SHUTTLE_BUS_ACCOUNT_MEMBER", // 총무 팀원
+  SHUTTLE_BUS_ACCOUNT_STAFF = "SHUTTLE_BUS_ACCOUNT_STAFF", // 버스 간사
   UNIV_GROUP_MINISTER = "UNIV_GROUP_MINISTER", // 부서별 교역자
   ADMIN_MINISTER = "ADMIN_MINISTER" // 행정 총괄 교역자
 }
@@ -358,6 +414,21 @@ export enum UserRetreatShuttleBusRegistrationHistoryMemoType {
   UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사
   SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF" // 부분참 선탑 간사
 }
+
+// Sidebar related types
+export type MenuItem = {
+  path: string;
+  label: string;
+  href: string;
+  icon?: string;
+};
+
+export type RetreatWithMenus = {
+  id: number;
+  slug: string;
+  name: string;
+  menuItems: MenuItem[];
+};
 // #endregion
 
 // #region Module Re-exports

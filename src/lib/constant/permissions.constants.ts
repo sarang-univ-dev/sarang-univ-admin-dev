@@ -65,6 +65,8 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
     PagePath.BUS_SCHEDULE_CHANGE,
   ],
 
+  [UserRole.SHUTTLE_BUS_ACCOUNT_STAFF]: [],
+
   [UserRole.UNIV_GROUP_MINISTER]: [
     PagePath.UNIV_GROUP_MINISTER_VIEW,
   ],
