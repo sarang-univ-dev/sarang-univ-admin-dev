@@ -34,7 +34,7 @@ export function useModal<T = unknown>(initialState = false) {
   }, []);
 
   const toggle = useCallback(() => {
-    setIsOpen((prev) => !prev);
+    setIsOpen(prev => !prev);
   }, []);
 
   return { isOpen, data, open, close, toggle };

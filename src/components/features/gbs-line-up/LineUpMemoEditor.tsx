@@ -1,9 +1,10 @@
 "use client";
 
+import { Save, X, Trash2, AlertCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, X, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LineUpMemoEditorProps<T extends { id: string }> {
@@ -72,7 +73,10 @@ export function LineUpMemoEditor<T extends { id: string }>({
   const [showConflictWarning, setShowConflictWarning] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const lastSavedValueRef = useRef({ memo: initialMemoValue, color: initialColorValue });
+  const lastSavedValueRef = useRef({
+    memo: initialMemoValue,
+    color: initialColorValue,
+  });
 
   // ✅ 편집 모드 진입 시 자동 포커스
   useEffect(() => {
@@ -92,9 +96,9 @@ export function LineUpMemoEditor<T extends { id: string }>({
       // 외부 변경사항이 내가 저장한 값과 다르면 충돌 가능성
       const isExternalChange =
         (initialMemoValue !== lastSavedValueRef.current.memo ||
-        initialColorValue !== lastSavedValueRef.current.color) &&
+          initialColorValue !== lastSavedValueRef.current.color) &&
         (initialMemoValue !== localMemoValue ||
-        initialColorValue !== localColor);
+          initialColorValue !== localColor);
 
       if (isExternalChange) {
         setPendingExternalUpdate({
@@ -109,13 +113,15 @@ export function LineUpMemoEditor<T extends { id: string }>({
     // 편집 중이 아니면 즉시 동기화
     setLocalMemoValue(initialMemoValue);
     setLocalColor(initialColorValue);
-    lastSavedValueRef.current = { memo: initialMemoValue, color: initialColorValue };
+    lastSavedValueRef.current = {
+      memo: initialMemoValue,
+      color: initialColorValue,
+    };
     setPendingExternalUpdate(null);
     setShowConflictWarning(false);
     // 🔴 FIX: localMemoValue, localColor를 의존성에서 제거하여 무한 루프 방지
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMemoValue, initialColorValue, isEditing, row.id]);
-
 
   // ✅ 변경사항 감지
   const hasChanges =
@@ -196,14 +202,16 @@ export function LineUpMemoEditor<T extends { id: string }>({
     return (
       <div
         className="relative z-50 flex flex-col gap-2 p-2 min-w-[200px] max-w-full bg-white border border-gray-300 rounded-md shadow-lg"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         {/* ⚠️ 충돌 경고 */}
         {showConflictWarning && pendingExternalUpdate && (
           <div className="flex items-start gap-2 p-2 bg-yellow-50 border border-yellow-300 rounded text-sm">
             <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="font-medium text-yellow-800">다른 사용자가 수정했습니다</p>
+              <p className="font-medium text-yellow-800">
+                다른 사용자가 수정했습니다
+              </p>
               <p className="text-xs text-yellow-700 mt-1">
                 편집을 계속하거나, 최신 변경사항을 적용할 수 있습니다.
               </p>
@@ -223,16 +231,21 @@ export function LineUpMemoEditor<T extends { id: string }>({
           <Textarea
             ref={textareaRef}
             value={localMemoValue}
-            onChange={(e) => handleValueChange(e.target.value, localColor)}
+            onChange={e => handleValueChange(e.target.value, localColor)}
             placeholder={placeholder}
             disabled={isSaving}
             maxLength={maxLength}
             className={cn(
               "text-sm resize-none w-full transition-all",
               "focus:ring-2 focus:ring-primary",
-              maxLength && localMemoValue.length > maxLength * 0.9 && "border-yellow-500"
+              maxLength &&
+                localMemoValue.length > maxLength * 0.9 &&
+                "border-yellow-500"
             )}
-            rows={Math.max(3, Math.min(8, localMemoValue.split("\n").length + 1))}
+            rows={Math.max(
+              3,
+              Math.min(8, localMemoValue.split("\n").length + 1)
+            )}
             aria-label="메모 입력"
           />
           {maxLength && (
@@ -251,9 +264,11 @@ export function LineUpMemoEditor<T extends { id: string }>({
 
         {/* 🎨 색상 선택 팔레트 */}
         <div className="flex flex-wrap gap-1.5">
-          {colors.map((color) => {
-            const isTransparentSelected = color === "transparent" && (localColor === "" || !localColor);
-            const isColorSelected = color !== "transparent" && localColor === color;
+          {colors.map(color => {
+            const isTransparentSelected =
+              color === "transparent" && (localColor === "" || !localColor);
+            const isColorSelected =
+              color !== "transparent" && localColor === color;
             const isSelected = isTransparentSelected || isColorSelected;
 
             return (
@@ -268,7 +283,12 @@ export function LineUpMemoEditor<T extends { id: string }>({
                   "w-6 h-6 rounded-full transition-transform hover:scale-110",
                   color === "transparent" && "relative"
                 )}
-                onClick={() => handleValueChange(localMemoValue, color === "transparent" ? "" : color)}
+                onClick={() =>
+                  handleValueChange(
+                    localMemoValue,
+                    color === "transparent" ? "" : color
+                  )
+                }
                 aria-label={`배경색: ${color}`}
               >
                 {color === "transparent" && (
@@ -303,7 +323,11 @@ export function LineUpMemoEditor<T extends { id: string }>({
               size="sm"
               variant="default"
               onClick={handleSave}
-              disabled={isSaving || !hasChanges || (!localMemoValue.trim() && !localColor)}
+              disabled={
+                isSaving ||
+                !hasChanges ||
+                (!localMemoValue.trim() && !localColor)
+              }
               className="h-8 px-3"
               aria-label="메모 저장"
             >
@@ -330,7 +354,6 @@ export function LineUpMemoEditor<T extends { id: string }>({
             </Button>
           </div>
         </div>
-
       </div>
     );
   }
@@ -339,10 +362,10 @@ export function LineUpMemoEditor<T extends { id: string }>({
   return (
     <div
       className="flex flex-col gap-1 p-2 min-w-[200px] max-w-full"
-      onClick={(e) => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
     >
       <button
-        onClick={(e) => {
+        onClick={e => {
           e.stopPropagation();
           setLocalMemoValue(initialMemoValue);
           setLocalColor(initialColorValue);

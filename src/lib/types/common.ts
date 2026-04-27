@@ -1,4 +1,5 @@
 import { ComponentProps } from "react";
+
 import { UserRole } from "@/types";
 
 export interface IconProps extends ComponentProps<"svg"> {
@@ -28,16 +29,14 @@ export type TUser = {
 
 export type TUserRole = {
   UNIV_GROUP_ADMIN_STAFF: string;
-  UNIV_GROUP_ACCOUNT_MEMBER:string;
-  ACCOUNT_STAFF:string;
-  LINEUP_STAFF:string;
-  UNIV_GROUP_DORMITORY_MEMBER:string;
-  DORMITORY_STAFF:string;
-  SHUTTLE_BUS_BOARDING_STAFF:string;
-  SHUTTLE_BUS_ACCOUNT_MEMBER:string;
-}
-
-
+  UNIV_GROUP_ACCOUNT_MEMBER: string;
+  ACCOUNT_STAFF: string;
+  LINEUP_STAFF: string;
+  UNIV_GROUP_DORMITORY_MEMBER: string;
+  DORMITORY_STAFF: string;
+  SHUTTLE_BUS_BOARDING_STAFF: string;
+  SHUTTLE_BUS_ACCOUNT_MEMBER: string;
+};
 
 export interface UserRetreatMapping {
   id: number;

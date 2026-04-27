@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -12,16 +11,24 @@ import {
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
+import { useMemo, useState } from "react";
+
+import {
+  DetailSidebar,
+  useDetailSidebar,
+} from "@/components/common/detail-sidebar";
 import { VirtualizedTable } from "@/components/common/table";
-import { useAccountStaffColumns } from "@/hooks/account/use-account-staff-columns";
+import {
+  useAccountStaffColumns,
+  AccountStaffTableData,
+} from "@/hooks/account/use-account-staff-columns";
+import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
+import { TRetreatRegistrationSchedule } from "@/types";
+import { IRetreatRegistration } from "@/types/account";
+
+import { AccountStaffRegistrationDetailContent } from "./AccountStaffRegistrationDetailContent";
 import { AccountStaffRegistrationTableToolbar } from "./AccountStaffRegistrationTableToolbar";
 import { transformRegistrationsForTable } from "./utils";
-import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
-import { IRetreatRegistration } from "@/types/account";
-import { TRetreatRegistrationSchedule } from "@/types";
-import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
-import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
-import { AccountStaffRegistrationDetailContent } from "./AccountStaffRegistrationDetailContent";
 
 interface AccountStaffRegistrationTableProps {
   initialData: IRetreatRegistration[];
@@ -61,11 +68,7 @@ export function AccountStaffRegistrationTable({
   const [globalFilter, setGlobalFilter] = useState("");
 
   // ✅ 컬럼 훅으로 컬럼 정의 가져오기
-  const columns = useAccountStaffColumns(
-    schedules,
-    retreatSlug,
-    sidebar.open
-  );
+  const columns = useAccountStaffColumns(schedules, retreatSlug, sidebar.open);
 
   // ✅ useMemo로 data 메모이제이션
   const data = useMemo(
@@ -112,7 +115,7 @@ export function AccountStaffRegistrationTable({
         row.original.status,
       ];
 
-      return searchableFields.some((field) =>
+      return searchableFields.some(field =>
         field?.toLowerCase().includes(filterValue.toLowerCase())
       );
     },
@@ -123,14 +126,17 @@ export function AccountStaffRegistrationTable({
 
   // ✅ 사이드바에 표시할 최신 데이터 (SWR 캐시와 동기화)
   const currentSidebarData = sidebar.selectedItem
-    ? data.find((item) => item.id === sidebar.selectedItem?.id) || sidebar.selectedItem
+    ? data.find(item => item.id === sidebar.selectedItem?.id) ||
+      sidebar.selectedItem
     : null;
 
   return (
     <>
       <div className="space-y-4">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">재정 간사 조회</h2>
+          <h2 className="text-xl font-semibold tracking-tight">
+            재정 간사 조회
+          </h2>
           <p className="text-sm text-muted-foreground mt-1">
             대학부 전체 신청자 목록 ({filteredRowCount}명)
           </p>
@@ -151,9 +157,7 @@ export function AccountStaffRegistrationTable({
           overscan={10}
           className="max-h-[80vh]"
           emptyMessage={
-            globalFilter
-              ? "검색 결과가 없습니다."
-              : "표시할 데이터가 없습니다."
+            globalFilter ? "검색 결과가 없습니다." : "표시할 데이터가 없습니다."
           }
         />
       </div>
@@ -164,9 +168,9 @@ export function AccountStaffRegistrationTable({
         onOpenChange={sidebar.setIsOpen}
         data={currentSidebarData}
         title="신청자 상세 정보"
-        description={(data) => `${data.name} (${data.department}) 신청 내역`}
+        description={data => `${data.name} (${data.department}) 신청 내역`}
       >
-        {(data) => <AccountStaffRegistrationDetailContent data={data} />}
+        {data => <AccountStaffRegistrationDetailContent data={data} />}
       </DetailSidebar>
     </>
   );

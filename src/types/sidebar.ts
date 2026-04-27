@@ -4,19 +4,19 @@
  */
 
 export interface MenuItem {
-  path: string
-  label: string
-  href: string
-  icon?: string
+  path: string;
+  label: string;
+  href: string;
+  icon?: string;
 }
 
 export interface RetreatWithMenus {
-  id: number
-  slug: string
-  name: string
-  menuItems: MenuItem[]
+  id: number;
+  slug: string;
+  name: string;
+  menuItems: MenuItem[];
 }
 
 export interface RetreatsResponse {
-  retreats: RetreatWithMenus[]
+  retreats: RetreatWithMenus[];
 }

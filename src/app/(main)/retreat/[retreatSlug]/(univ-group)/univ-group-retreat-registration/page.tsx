@@ -1,14 +1,15 @@
 import { Suspense } from "react";
-import {
-  fetchUnivGroupAdminStaffData,
-  fetchRetreatSchedules,
-} from "@/lib/api/server-actions";
+
 import {
   UnivGroupRetreatRegistrationSection,
   PaymentSummary,
   RetreatScheduleSummary,
 } from "@/components/features/univ-group-retreat-registration";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  fetchUnivGroupAdminStaffData,
+  fetchRetreatSchedules,
+} from "@/lib/api/server-actions";
 
 interface PageProps {
   params: Promise<{
@@ -25,7 +26,9 @@ interface PageProps {
  * - TanStack Table 기반 테이블
  * - SWR로 실시간 데이터 동기화
  */
-export default async function UnivGroupRetreatRegistrationPage({ params }: PageProps) {
+export default async function UnivGroupRetreatRegistrationPage({
+  params,
+}: PageProps) {
   const { retreatSlug } = await params;
 
   // ✅ 서버에서 병렬 데이터 페칭 (Promise.all)

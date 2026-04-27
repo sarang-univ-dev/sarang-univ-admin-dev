@@ -1,8 +1,8 @@
+import { TRetreatRegistrationSchedule } from "@/types";
 import {
   IUnivGroupAdminStaffRetreat,
   UnivGroupAdminStaffData,
 } from "@/types/univ-group-admin-staff";
-import { TRetreatRegistrationSchedule } from "@/types";
 
 /**
  * API 응답 데이터를 TanStack Table 형식으로 변환
@@ -11,7 +11,7 @@ export function transformUnivGroupAdminStaffData(
   registrations: IUnivGroupAdminStaffRetreat[],
   schedules: TRetreatRegistrationSchedule[]
 ): UnivGroupAdminStaffData[] {
-  return registrations.map((reg) => {
+  return registrations.map(reg => {
     const userScheduleIds = reg.userRetreatRegistrationScheduleIds || [];
     const totalScheduleCount = schedules.length;
     const hasFullAttendance =

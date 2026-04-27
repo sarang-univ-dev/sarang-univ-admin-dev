@@ -1,7 +1,8 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+
+import { Input } from "@/components/ui/input";
 
 interface ScheduleChangeRequestTableToolbarProps {
   globalFilter: string;
@@ -26,7 +27,7 @@ export function ScheduleChangeRequestTableToolbar({
           placeholder="검색 (이름, 부서, 학년, 타입, 처리자, 메모 등)..."
           className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
           value={globalFilter ?? ""}
-          onChange={(e) => setGlobalFilter(e.target.value)}
+          onChange={e => setGlobalFilter(e.target.value)}
         />
       </div>
     </div>

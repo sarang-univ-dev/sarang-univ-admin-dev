@@ -1,9 +1,16 @@
 "use client";
 
-import { useRef, memo, useCallback } from "react";
 import { Table as TanStackTable, flexRender, Row } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { TableHeader, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
+import { useRef, memo, useCallback } from "react";
+
+import {
+  TableHeader,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+} from "@/components/ui/table";
 
 interface VirtualizedTableProps<TData> {
   table: TanStackTable<TData>;
@@ -78,19 +85,28 @@ export function VirtualizedTable<TData>({
       : 0;
 
   return (
-    <div ref={tableContainerRef} className={`overflow-auto border rounded-lg ${className}`}>
+    <div
+      ref={tableContainerRef}
+      className={`overflow-auto border rounded-lg ${className}`}
+    >
       <table className="relative w-full caption-bottom text-sm">
         {/* 헤더 (Sticky) */}
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
-          {table.getHeaderGroups().map((headerGroup) => (
+          {table.getHeaderGroups().map(headerGroup => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers
-                .filter((header) => header.column.getIsVisible())
-                .map((header) => (
-                  <TableHead key={header.id} className="text-center bg-gray-100 whitespace-nowrap">
+                .filter(header => header.column.getIsVisible())
+                .map(header => (
+                  <TableHead
+                    key={header.id}
+                    className="text-center bg-gray-100 whitespace-nowrap"
+                  >
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                   </TableHead>
                 ))}
             </TableRow>
@@ -118,11 +134,14 @@ export function VirtualizedTable<TData>({
               )}
 
               {/* 보이는 행만 렌더링 */}
-              {virtualRows.map((virtualRow) => {
+              {virtualRows.map(virtualRow => {
                 const row = rows[virtualRow.index];
                 // ✅ visible cell IDs를 미리 계산하여 prop으로 전달
                 // memo 비교 함수에서 안정적으로 비교 가능
-                const visibleCellIds = row.getVisibleCells().map(c => c.id).join(',');
+                const visibleCellIds = row
+                  .getVisibleCells()
+                  .map(c => c.id)
+                  .join(",");
                 return (
                   <MemoizedTableRow
                     key={row.id}
@@ -178,10 +197,10 @@ function TableRowComponent<TData>({
   onRowClick,
   getRowClassName,
 }: MemoizedTableRowProps<TData>) {
-  const customClassName = getRowClassName?.(row.original) || '';
+  const customClassName = getRowClassName?.(row.original) || "";
   // customClassName에 이미 hover 클래스가 있으면 기본 hover를 적용하지 않음
-  const hasCustomHover = customClassName.includes('hover:');
-  const defaultHoverClass = hasCustomHover ? '' : 'hover:bg-gray-50';
+  const hasCustomHover = customClassName.includes("hover:");
+  const defaultHoverClass = hasCustomHover ? "" : "hover:bg-gray-50";
 
   return (
     <TableRow
@@ -189,7 +208,7 @@ function TableRowComponent<TData>({
       className={`group ${defaultHoverClass} transition-colors duration-150 ${customClassName}`}
       onClick={() => onRowClick?.(row.original)}
     >
-      {row.getVisibleCells().map((cell) => (
+      {row.getVisibleCells().map(cell => (
         <MemoizedTableCell key={cell.id} cell={cell} />
       ))}
     </TableRow>
@@ -223,7 +242,10 @@ function areTableRowPropsEqual<TData>(
 }
 
 // ✅ Best Practice: memo + type casting으로 제네릭 보존
-const MemoizedTableRow = memo(TableRowComponent, areTableRowPropsEqual) as typeof TableRowComponent;
+const MemoizedTableRow = memo(
+  TableRowComponent,
+  areTableRowPropsEqual
+) as typeof TableRowComponent;
 
 /**
  * React.memo로 메모이제이션된 TableCell
@@ -237,11 +259,7 @@ const MemoizedTableCell = memo(
   function TableCellComponent({ cell }: { cell: any }) {
     const content = flexRender(cell.column.columnDef.cell, cell.getContext());
 
-    return (
-      <TableCell>
-        {content}
-      </TableCell>
-    );
+    return <TableCell>{content}</TableCell>;
   },
   (prevProps, nextProps) => {
     // 1. Row ID 변경 체크 (Virtual Scrolling으로 다른 row가 같은 위치에 올 수 있음)

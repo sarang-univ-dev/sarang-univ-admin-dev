@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+
 import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
 import { calculateRegistrationPrice } from "@/utils/calculateRegistrationPrice";
 
@@ -65,7 +66,7 @@ export function useScheduleChangePrice({
 
     try {
       // 선택된 payment 찾기
-      const selectedPayment = payments.find((p) => p.id === selectedPaymentId);
+      const selectedPayment = payments.find(p => p.id === selectedPaymentId);
       if (!selectedPayment) {
         throw new Error("선택된 결제 정보를 찾을 수 없습니다.");
       }
@@ -88,7 +89,14 @@ export function useScheduleChangePrice({
     } finally {
       setIsCalculating(false);
     }
-  }, [userType, grade, selectedScheduleIds, payments, originalAmount, selectedPaymentId]);
+  }, [
+    userType,
+    grade,
+    selectedScheduleIds,
+    payments,
+    originalAmount,
+    selectedPaymentId,
+  ]);
 
   return {
     calculatedPrice,

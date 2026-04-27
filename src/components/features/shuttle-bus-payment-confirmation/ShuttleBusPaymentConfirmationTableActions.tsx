@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, Send, RotateCcw } from "lucide-react";
-import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
-import { UserRetreatShuttleBusPaymentStatus } from "@/types";
-import { useToastStore } from "@/store/toast-store";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import { webAxios } from "@/lib/api/axios";
-import { mutate } from "swr";
 import { AxiosError } from "axios";
+import { CheckCircle2, Send, RotateCcw } from "lucide-react";
+import { useState } from "react";
+import { mutate } from "swr";
+
+import { Button } from "@/components/ui/button";
+import { webAxios } from "@/lib/api/axios";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useToastStore } from "@/store/toast-store";
+import { UserRetreatShuttleBusPaymentStatus } from "@/types";
+import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
 
 interface ShuttleBusPaymentConfirmationTableActionsProps {
   registration: IShuttleBusPaymentConfirmationRegistration;
@@ -28,15 +29,17 @@ export function ShuttleBusPaymentConfirmationTableActions({
   retreatSlug,
   onOpenDetail,
 }: ShuttleBusPaymentConfirmationTableActionsProps) {
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const confirmDialog = useConfirmDialogStore();
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
+    {}
+  );
 
   const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/shuttle-bus/registrations`;
 
   // 로딩 상태 설정
   const setLoading = (action: string, isLoading: boolean) => {
-    setLoadingStates((prev) => ({
+    setLoadingStates(prev => ({
       ...prev,
       [`${registration.id}_${action}`]: isLoading,
     }));
@@ -164,7 +167,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
   switch (registration.shuttleBusPaymentStatus) {
     case UserRetreatShuttleBusPaymentStatus.PENDING:
       return (
-        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -198,7 +201,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
 
     case UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST:
       return (
-        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -217,10 +220,6 @@ export function ShuttleBusPaymentConfirmationTableActions({
       );
 
     default:
-      return (
-        <div className="text-center text-gray-400 text-sm">
-          -
-        </div>
-      );
+      return <div className="text-center text-gray-400 text-sm">-</div>;
   }
 }

@@ -1,4 +1,5 @@
 import useSWR from "swr";
+
 import { webAxios } from "@/lib/api/axios";
 import { TRetreatRegistrationSchedule } from "@/types";
 
@@ -11,9 +12,10 @@ import { TRetreatRegistrationSchedule } from "@/types";
 export function useRetreatSchedules(retreatSlug?: string) {
   return useSWR(
     retreatSlug ? `/api/v1/retreat/${retreatSlug}/info` : null,
-    async (url) => {
+    async url => {
       const response = await webAxios.get(url);
-      return response.data.retreatInfo.schedule as TRetreatRegistrationSchedule[];
+      return response.data.retreatInfo
+        .schedule as TRetreatRegistrationSchedule[];
     },
     {
       revalidateOnFocus: false,

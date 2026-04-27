@@ -1,10 +1,11 @@
 "use client";
 
 import { Draggable } from "@hello-pangea/dnd";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { User, Calendar } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { getKSTDay, getKSTMonth, getKSTDate } from "@/lib/utils/date-utils";
 
 type ScheduleType = "BREAKFAST" | "LUNCH" | "DINNER" | "SLEEP";
@@ -60,7 +61,9 @@ export function DraggableUserCardComponent({
 
   const formatDate = (dateString: string) => {
     // KST 기준 날짜 사용
-    const dayName = ["일", "월", "화", "수", "목", "금", "토"][getKSTDay(dateString)];
+    const dayName = ["일", "월", "화", "수", "목", "금", "토"][
+      getKSTDay(dateString)
+    ];
     return {
       formatted: `${getKSTMonth(dateString) + 1}/${getKSTDate(dateString)}(${dayName})`,
       dayName,

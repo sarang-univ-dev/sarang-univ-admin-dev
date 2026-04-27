@@ -1,6 +1,5 @@
 "use client";
 
-import { useToastStore } from "@/store/toast-store";
 import {
   ToastProvider,
   ToastViewport,
@@ -9,6 +8,7 @@ import {
   ToastDescription,
   ToastClose,
 } from "@/components/radix/toast";
+import { useToastStore } from "@/store/toast-store";
 
 const Toast = () => {
   const { toasts, remove } = useToastStore();

@@ -1,4 +1,5 @@
 import Axios from "axios";
+
 import config from "../constant/config";
 
 export const webAxios = Axios.create({
@@ -15,8 +16,8 @@ export const webAxios = Axios.create({
 
 // ✅ Response interceptor (401 에러 처리)
 webAxios.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const originalRequest = error.config;
 
     // 401 에러 && 아직 재시도 안 함

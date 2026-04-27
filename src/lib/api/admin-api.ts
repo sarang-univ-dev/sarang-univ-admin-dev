@@ -3,8 +3,9 @@
  * 서버의 /api/v1/admin/* 엔드포인트와 통신
  */
 
-import { webAxios } from './axios'
-import type { RetreatWithMenus, RetreatsResponse } from '@/types/sidebar'
+import type { RetreatWithMenus, RetreatsResponse } from "@/types/sidebar";
+
+import { webAxios } from "./axios";
 
 /**
  * 사용자가 접근 가능한 모든 retreat + 메뉴 목록 조회 (sidebar용)
@@ -16,8 +17,10 @@ import type { RetreatWithMenus, RetreatsResponse } from '@/types/sidebar'
  * // [{ id: 1, slug: '2025-winter', name: '2025 겨울수양회', menuItems: [...] }]
  */
 export async function getRetreatsWithMenus(): Promise<RetreatWithMenus[]> {
-  const response = await webAxios.get<RetreatsResponse>('/api/v1/admin/retreats')
-  return response.data.retreats
+  const response = await webAxios.get<RetreatsResponse>(
+    "/api/v1/admin/retreats"
+  );
+  return response.data.retreats;
 }
 
 /**
@@ -38,6 +41,6 @@ export async function checkPageAccess(
   const response = await webAxios.get<{ canAccess: boolean }>(
     `/api/v1/admin/retreats/${retreatId}/permissions`,
     { params: { pagePath } }
-  )
-  return response.data.canAccess
+  );
+  return response.data.canAccess;
 }

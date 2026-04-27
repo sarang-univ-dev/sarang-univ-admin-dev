@@ -1,6 +1,21 @@
 "use client";
 
+import { AxiosError } from "axios";
+import { Search, X, PenLine, Loader2, Check } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { mutate } from "swr";
+
+import { StatusBadge } from "@/components/Badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -9,32 +24,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Search, X, PenLine, Loader2, Check } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
-import { StatusBadge } from "@/components/Badge";
-import { generateShuttleBusScheduleColumns } from "../utils/bus-utils";
+import { IUserScheduleChangeShuttleBus } from "@/hooks/user-schedule-change-bus-request";
+import { webAxios } from "@/lib/api/axios";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useToastStore } from "@/store/toast-store";
 import {
   // TRetreatRegistrationSchedule,
   TRetreatShuttleBus,
   TRetreatPaymentSchedule,
 } from "@/types";
 import { formatDate, formatSimpleDate } from "@/utils/formatDate";
-import { IUserScheduleChangeShuttleBus } from "@/hooks/user-schedule-change-bus-request";
-import { webAxios } from "@/lib/api/axios";
-import { useToastStore } from "@/store/toast-store";
-import { mutate } from "swr";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import { AxiosError } from "axios";
+
+import { generateShuttleBusScheduleColumns } from "../utils/bus-utils";
 
 // 테이블에 필요한 데이터 변환 함수
 const transformScheduleChangeRequestForTable = (
@@ -304,196 +305,196 @@ export function ShuttleBusScheduleChangeRequestTable({
             ref={tableContainerRef}
           >
             <div className="overflow-auto flex-grow">
-                <Table className="w-full whitespace-nowrap relative">
-                  <TableHeader className="bg-gray-50 sticky top-0 z-10">
+              <Table className="w-full whitespace-nowrap relative">
+                <TableHeader className="bg-gray-50 sticky top-0 z-10">
+                  <TableRow>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      부서
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      학년
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap sticky left-0 bg-gray-50 z-20"
+                    >
+                      이름
+                    </TableHead>
+                    <TableHead
+                      colSpan={scheduleColumns.length}
+                      className="whitespace-nowrap"
+                    >
+                      <div className="text-center">신청 셔틀버스 일정</div>
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      금액
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      신청 시각
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      입금 현황
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      메모 작성자명
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      메모 작성 시각
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      메모 내용
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      메모 작성일
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-center whitespace-nowrap"
+                    >
+                      액션
+                    </TableHead>
+                  </TableRow>
+                  <TableRow>
+                    {scheduleColumns.map(scheduleCol => (
+                      <TableHead
+                        key={scheduleCol.key}
+                        className="p-2 text-center whitespace-pre-line"
+                      >
+                        <span className="text-xs">{scheduleCol.label}</span>
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.length === 0 ? (
                     <TableRow>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
+                      <TableCell
+                        colSpan={11 + scheduleColumns.length}
+                        className="text-center py-8 text-gray-500"
                       >
-                        부서
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        학년
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap sticky left-0 bg-gray-50 z-20"
-                      >
-                        이름
-                      </TableHead>
-                      <TableHead
-                        colSpan={scheduleColumns.length}
-                        className="whitespace-nowrap"
-                      >
-                        <div className="text-center">신청 셔틀버스 일정</div>
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        금액
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        신청 시각
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        입금 현황
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        메모 작성자명
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        메모 작성 시각
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        메모 내용
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        메모 작성일
-                      </TableHead>
-                      <TableHead
-                        rowSpan={2}
-                        className="text-center whitespace-nowrap"
-                      >
-                        액션
-                      </TableHead>
+                        데이터가 없습니다
+                      </TableCell>
                     </TableRow>
-                    <TableRow>
-                      {scheduleColumns.map(scheduleCol => (
-                        <TableHead
-                          key={scheduleCol.key}
-                          className="p-2 text-center whitespace-pre-line"
-                        >
-                          <span className="text-xs">{scheduleCol.label}</span>
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredData.length === 0 ? (
-                      <TableRow>
+                  ) : (
+                    filteredData.map(row => (
+                      <TableRow
+                        key={row.id}
+                        className="group hover:bg-gray-50 transition-colors duration-150"
+                      >
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.department}
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.grade}
+                        </TableCell>
+                        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center whitespace-nowrap">
+                          {row.name}
+                        </TableCell>
+                        {scheduleColumns.map(col => (
+                          <TableCell
+                            key={`${row.id}-${col.key}`}
+                            className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
+                          >
+                            <Checkbox
+                              checked={row.schedule[col.key]}
+                              disabled
+                              className={
+                                row.schedule[col.key] ? col.bgColorClass : ""
+                              }
+                            />
+                          </TableCell>
+                        ))}
+                        <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.amount.toLocaleString()}원
+                        </TableCell>
+                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.createdAt ? formatDate(row.createdAt) : "-"}
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          <StatusBadge status={row.status} />
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {row.issuerName || "-"}
+                        </TableCell>
+                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {formatDate(row.paymentConfirmedAt)}
+                        </TableCell>
                         <TableCell
-                          colSpan={11 + scheduleColumns.length}
-                          className="text-center py-8 text-gray-500"
+                          className="group-hover:bg-gray-50 text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
+                          title={row.memo}
                         >
-                          데이터가 없습니다
+                          {row.memo || "-"}
+                        </TableCell>
+                        <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          {formatDate(row.memoCreatedAt)}
+                        </TableCell>
+                        <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
+                          <div className="flex flex-col space-y-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleProcessSchedule(row)}
+                              disabled={isLoading(row.id, "confirm")}
+                              className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
+                            >
+                              {isLoading(row.id, "confirm") ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <PenLine className="h-3.5 w-3.5" />
+                              )}
+                              <span>일정 처리</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleResolveScheduleChange(row)}
+                              disabled={isLoading(row.id, "resolve")}
+                              className="flex items-center gap-1.5 hover:bg-green-600 hover:text-white transition-colors"
+                            >
+                              {isLoading(row.id, "resolve") ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Check className="h-3.5 w-3.5" />
+                              )}
+                              <span>처리 완료</span>
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      filteredData.map(row => (
-                        <TableRow
-                          key={row.id}
-                          className="group hover:bg-gray-50 transition-colors duration-150"
-                        >
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.department}
-                          </TableCell>
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.grade}
-                          </TableCell>
-                          <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center whitespace-nowrap">
-                            {row.name}
-                          </TableCell>
-                          {scheduleColumns.map(col => (
-                            <TableCell
-                              key={`${row.id}-${col.key}`}
-                              className="p-2 text-center group-hover:bg-gray-50 whitespace-nowrap"
-                            >
-                              <Checkbox
-                                checked={row.schedule[col.key]}
-                                disabled
-                                className={
-                                  row.schedule[col.key] ? col.bgColorClass : ""
-                                }
-                              />
-                            </TableCell>
-                          ))}
-                          <TableCell className="font-medium group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.amount.toLocaleString()}원
-                          </TableCell>
-                          <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.createdAt ? formatDate(row.createdAt) : "-"}
-                          </TableCell>
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            <StatusBadge status={row.status} />
-                          </TableCell>
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {row.issuerName || "-"}
-                          </TableCell>
-                          <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {formatDate(row.paymentConfirmedAt)}
-                          </TableCell>
-                          <TableCell
-                            className="group-hover:bg-gray-50 text-center min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words px-3 py-2.5"
-                            title={row.memo}
-                          >
-                            {row.memo || "-"}
-                          </TableCell>
-                          <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            {formatDate(row.memoCreatedAt)}
-                          </TableCell>
-                          <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                            <div className="flex flex-col space-y-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleProcessSchedule(row)}
-                                disabled={isLoading(row.id, "confirm")}
-                                className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
-                              >
-                                {isLoading(row.id, "confirm") ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <PenLine className="h-3.5 w-3.5" />
-                                )}
-                                <span>일정 처리</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleResolveScheduleChange(row)}
-                                disabled={isLoading(row.id, "resolve")}
-                                className="flex items-center gap-1.5 hover:bg-green-600 hover:text-white transition-colors"
-                              >
-                                {isLoading(row.id, "resolve") ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <Check className="h-3.5 w-3.5" />
-                                )}
-                                <span>처리 완료</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </div>
+        </div>
       </CardContent>
 
       {isModalOpen && selectedRow && (

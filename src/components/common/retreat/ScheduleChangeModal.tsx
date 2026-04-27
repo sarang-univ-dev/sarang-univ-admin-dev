@@ -1,6 +1,8 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,10 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
-import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
-import { ScheduleChangeFormContent } from "./ScheduleChangeFormContent";
 import { useToastStore } from "@/store/toast-store";
+import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
+
+import { ScheduleChangeFormContent } from "./ScheduleChangeFormContent";
 
 interface ScheduleChangeModalProps {
   open: boolean;
@@ -112,13 +114,13 @@ export function ScheduleChangeModal({
   confirmButtonText = "일정 변동 처리 완료",
   title = "일정 변경 처리",
 }: ScheduleChangeModalProps) {
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const [scheduleIds, setScheduleIds] = useState(initialScheduleIds);
   const [calculatedAmount, setCalculatedAmount] = useState(originalAmount);
   const [memoContent, setMemoContent] = useState("");
-  const [selectedPaymentId, setSelectedPaymentId] = useState<number | undefined>(
-    payments.length > 0 ? payments[0].id : undefined
-  );
+  const [selectedPaymentId, setSelectedPaymentId] = useState<
+    number | undefined
+  >(payments.length > 0 ? payments[0].id : undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -207,7 +209,9 @@ export function ScheduleChangeModal({
                   취소
                 </Button>
                 <Button onClick={handleFinalConfirm} disabled={isLoading}>
-                  {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {isLoading && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
                   확인
                 </Button>
               </div>

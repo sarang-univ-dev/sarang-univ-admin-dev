@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
 import { Table } from "@tanstack/react-table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Download, Search } from "lucide-react";
 import debounce from "lodash/debounce";
+import { Download, Search } from "lucide-react";
+import { useMemo, useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToastStore } from "@/store/toast-store";
 import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
 
@@ -27,7 +28,7 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
   setGlobalFilter,
   retreatSlug,
 }: ShuttleBusPaymentConfirmationTableToolbarProps) {
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const [isDownloading, setIsDownloading] = useState(false);
 
   // ✅ Lodash debounce를 useMemo로 메모이제이션
@@ -89,7 +90,7 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
         <Input
           placeholder="통합 검색 (이름, 부서, 학년 등)..."
           defaultValue={globalFilter ?? ""}
-          onChange={(e) => debouncedSetGlobalFilter(e.target.value)}
+          onChange={e => debouncedSetGlobalFilter(e.target.value)}
           className="pl-8 text-sm"
         />
       </div>

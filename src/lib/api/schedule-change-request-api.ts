@@ -1,5 +1,6 @@
-import { webAxios } from "./axios";
 import { IUserScheduleChangeRetreat } from "@/types";
+
+import { webAxios } from "./axios";
 
 /**
  * Schedule Change Request API

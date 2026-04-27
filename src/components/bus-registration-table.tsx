@@ -1,18 +1,13 @@
 "use client";
 
-import { TableHeader } from "@/components/ui/table";
-
-import { useState, useEffect, useRef } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { AxiosError } from "axios";
 import { Download, CheckCircle2, RotateCcw, Send } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import useSWR, { mutate } from "swr";
+
+import { GenderBadge, StatusBadge } from "@/components/Badge";
+import { SearchBar } from "@/components/RegistrationTableSearchBar";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -20,24 +15,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TableHeader ,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "@/components/ui/table";
 
-import { GenderBadge, StatusBadge } from "@/components/Badge";
-import { SearchBar } from "@/components/RegistrationTableSearchBar";
-import {
-  generateShuttleBusScheduleColumns,
-  transformRegistrationsForTable,
-} from "../utils/bus-utils";
 import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
+import { webAxios } from "@/lib/api/axios";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useToastStore } from "@/store/toast-store";
 import {
   TRetreatShuttleBus,
   UserRetreatShuttleBusPaymentStatus,
 } from "@/types";
 import { formatDate } from "@/utils/formatDate";
-import useSWR, { mutate } from "swr";
-import { useToastStore } from "@/store/toast-store";
-import { webAxios } from "@/lib/api/axios";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import { AxiosError } from "axios";
+
+import {
+  generateShuttleBusScheduleColumns,
+  transformRegistrationsForTable,
+} from "../utils/bus-utils";
 
 export function RegistrationTable({
   registrations = [],

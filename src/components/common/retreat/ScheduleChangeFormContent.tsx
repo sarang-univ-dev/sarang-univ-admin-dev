@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
+
 import { TypeBadge } from "@/components/Badge";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { formatDate, formatSimpleDate } from "@/utils/formatDate";
-import { cn } from "@/lib/utils";
-import { ScheduleSelectionTable } from "./ScheduleSelectionTable";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import { useScheduleChangePrice } from "@/hooks/retreat/use-schedule-change-price";
+import { cn } from "@/lib/utils";
+import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
+import { formatDate, formatSimpleDate } from "@/utils/formatDate";
+
+import { ScheduleSelectionTable } from "./ScheduleSelectionTable";
 
 interface ScheduleChangeFormContentProps {
   userData: {
@@ -76,11 +78,12 @@ export function ScheduleChangeFormContent({
   onPaymentChange,
   readOnly = false,
 }: ScheduleChangeFormContentProps) {
-  const [selectedScheduleIds, setSelectedScheduleIds] = useState(initialScheduleIds);
+  const [selectedScheduleIds, setSelectedScheduleIds] =
+    useState(initialScheduleIds);
   const [memoContent, setMemoContent] = useState(memo?.content || "");
-  const [selectedPaymentId, setSelectedPaymentId] = useState<number | undefined>(
-    payments.length > 0 ? payments[0].id : undefined
-  );
+  const [selectedPaymentId, setSelectedPaymentId] = useState<
+    number | undefined
+  >(payments.length > 0 ? payments[0].id : undefined);
 
   // 금액 계산 훅 사용
   const { calculatedPrice } = useScheduleChangePrice({
@@ -115,9 +118,9 @@ export function ScheduleChangeFormContent({
 
   // 일정 토글 핸들러
   const handleScheduleChange = (scheduleId: number) => {
-    setSelectedScheduleIds((prev) =>
+    setSelectedScheduleIds(prev =>
       prev.includes(scheduleId)
-        ? prev.filter((id) => id !== scheduleId)
+        ? prev.filter(id => id !== scheduleId)
         : [...prev, scheduleId]
     );
   };
@@ -163,7 +166,7 @@ export function ScheduleChangeFormContent({
           ) : (
             <Textarea
               value={memoContent}
-              onChange={(e) => setMemoContent(e.target.value)}
+              onChange={e => setMemoContent(e.target.value)}
               placeholder="일정 변경 사유를 입력하세요..."
               className="text-sm"
               rows={4}
@@ -189,11 +192,11 @@ export function ScheduleChangeFormContent({
           <h4 className="font-medium mb-3">금액 기준 선택</h4>
           <RadioGroup
             value={selectedPaymentId?.toString()}
-            onValueChange={(value) => setSelectedPaymentId(parseInt(value))}
+            onValueChange={value => setSelectedPaymentId(parseInt(value))}
             disabled={readOnly}
             className="space-y-2"
           >
-            {payments.map((payment) => (
+            {payments.map(payment => (
               <div key={payment.id} className="flex items-center space-x-3">
                 <RadioGroupItem
                   value={payment.id.toString()}
@@ -203,7 +206,9 @@ export function ScheduleChangeFormContent({
                   htmlFor={`payment-${payment.id}`}
                   className="text-sm cursor-pointer"
                 >
-                  {payment.name} ({formatSimpleDate(payment.startAt as unknown as string)} ~ {formatSimpleDate(payment.endAt as unknown as string)})
+                  {payment.name} (
+                  {formatSimpleDate(payment.startAt as unknown as string)} ~{" "}
+                  {formatSimpleDate(payment.endAt as unknown as string)})
                 </Label>
               </div>
             ))}

@@ -92,11 +92,11 @@ export function usePagination<T>(
 
   // ✅ useCallback으로 함수 메모이제이션
   const goToNextPage = useCallback(() => {
-    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
   }, [totalPages]);
 
   const goToPrevPage = useCallback(() => {
-    setCurrentPage((prev) => Math.max(0, prev - 1));
+    setCurrentPage(prev => Math.max(0, prev - 1));
   }, []);
 
   const goToPage = useCallback(

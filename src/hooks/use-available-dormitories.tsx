@@ -1,6 +1,7 @@
-import useSWR, { mutate } from "swr";
-import { webAxios } from "@/lib/api/axios";
 import { useState } from "react";
+import useSWR, { mutate } from "swr";
+
+import { webAxios } from "@/lib/api/axios";
 import { Gender } from "@/types";
 
 export type TRetreatDormitory = {
@@ -19,7 +20,10 @@ const fetcher = async (url: string) => {
   return response.data.availableDormitories;
 };
 
-export const useAvailableDormitories = (retreatSlug: string, gender: Gender) => {
+export const useAvailableDormitories = (
+  retreatSlug: string,
+  gender: Gender
+) => {
   const endpoint = retreatSlug
     ? `/api/v1/retreat/${retreatSlug}/dormitory/available-dormitories-by-gender?gender=${gender}`
     : null;
@@ -58,10 +62,16 @@ export const useAssignDormitory = (retreatSlug: string) => {
       );
 
       // 관련 데이터들을 다시 fetch
-      mutate(key => typeof key === 'string' && key.includes('available-dormitories'));
-      mutate(key => typeof key === 'string' && key.includes('user-dormitory-list'));
-      mutate(key => typeof key === 'string' && key.includes('user-lineups'));
-      mutate(key => typeof key === 'string' && key.includes('staff-registrations'));
+      mutate(
+        key => typeof key === "string" && key.includes("available-dormitories")
+      );
+      mutate(
+        key => typeof key === "string" && key.includes("user-dormitory-list")
+      );
+      mutate(key => typeof key === "string" && key.includes("user-lineups"));
+      mutate(
+        key => typeof key === "string" && key.includes("staff-registrations")
+      );
 
       return response.data;
     } finally {
@@ -70,4 +80,4 @@ export const useAssignDormitory = (retreatSlug: string) => {
   };
 
   return { mutateAsync, isPending };
-}; 
+};

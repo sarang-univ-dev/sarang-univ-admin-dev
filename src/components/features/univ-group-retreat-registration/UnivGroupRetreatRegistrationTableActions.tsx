@@ -1,10 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { CheckSquare, XSquare, RotateCcw } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
-import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
+import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 
 interface UnivGroupRetreatRegistrationTableActionsProps {
   row: UnivGroupAdminStaffData;
@@ -35,7 +36,7 @@ export function UnivGroupRetreatRegistrationTableActions({
 
     case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
       return (
-        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-center" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -55,7 +56,7 @@ export function UnivGroupRetreatRegistrationTableActions({
 
     case UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST:
       return (
-        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -89,7 +90,7 @@ export function UnivGroupRetreatRegistrationTableActions({
 
     case UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST:
       return (
-        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import {
   ColumnDef,
   Table,
@@ -9,30 +8,40 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { AxiosError } from "axios";
 import debounce from "lodash/debounce";
 import { Download, Search, Settings } from "lucide-react";
-import { AxiosError } from "axios";
+import { useEffect, useMemo, useState } from "react";
 
 import { VirtualizedTable } from "@/components/common/table";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/custom-checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/custom-checkbox";
-
-import { webAxios } from "@/lib/api/axios";
-import { useToastStore } from "@/store/toast-store";
 import { useAllDormitories } from "@/hooks/use-available-dormitories";
 import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
 import { useRetreatSchedules } from "@/hooks/use-retreat-schedules";
-import { Gender, RetreatRegistrationScheduleType, TRetreatRegistrationSchedule } from "@/types";
+import { webAxios } from "@/lib/api/axios";
+import { useToastStore } from "@/store/toast-store";
+import {
+  Gender,
+  RetreatRegistrationScheduleType,
+  TRetreatRegistrationSchedule,
+} from "@/types";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 const UNASSIGNED_LABEL = "미배정";
@@ -108,7 +117,7 @@ const buildDormitoryCapacityMap = (
   }[]
 ) => {
   const map = new Map<string, DormitoryCapacityInfo>();
-  dormitories.forEach((dormitory) => {
+  dormitories.forEach(dormitory => {
     const key = normalizeDormitoryLocation(dormitory.name);
     if (key === UNASSIGNED_LABEL) return;
     map.set(key, {
@@ -164,23 +173,23 @@ const compareGbsRows = (a: DormitoryDataRow, b: DormitoryDataRow) => {
 
 const buildDormitorySummary = (rows: DormitoryDataRow[]) => {
   const counts = new Map<string, number>();
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const key = normalizeDormitoryLocation(row.dormitoryLocation);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   });
   const keys = Array.from(counts.keys()).sort(sortDormitoryKeys);
-  return keys.map((key) => `${key} ${counts.get(key)}명`).join(" / ");
+  return keys.map(key => `${key} ${counts.get(key)}명`).join(" / ");
 };
 
 const buildGbsSummary = (rows: DormitoryDataRow[]) => {
   const counts = new Map<string, number>();
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const key = getGbsKey(row.gbsNumber);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   });
   const keys = Array.from(counts.keys()).sort(sortGbsKeys);
   return keys
-    .map((key) => {
+    .map(key => {
       const label = key === UNASSIGNED_LABEL ? "GBS 미배정" : `GBS ${key}`;
       return `${label} ${counts.get(key)}명`;
     })
@@ -193,7 +202,7 @@ const buildGroupedRows = (
   groupMeta: Map<string, DormitoryGroupMeta>
 ) => {
   const groups = new Map<string, DormitoryDataRow[]>();
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const key = getGroupKey(row, groupMode);
     const existing = groups.get(key) ?? [];
     existing.push(row);
@@ -206,7 +215,7 @@ const buildGroupedRows = (
 
   const result: DormitoryTableRow[] = [];
 
-  sortedKeys.forEach((key) => {
+  sortedKeys.forEach(key => {
     const groupRows = groups.get(key) ?? [];
     const sortedRows = [...groupRows].sort(
       groupMode === "gbs" ? compareGbsRows : compareDormitoryRows
@@ -246,9 +255,11 @@ const buildScheduleMap = (
   registration: { userRetreatRegistrationScheduleIds?: number[] },
   sleepSchedules: TRetreatRegistrationSchedule[]
 ) => {
-  const selected = new Set(registration.userRetreatRegistrationScheduleIds ?? []);
+  const selected = new Set(
+    registration.userRetreatRegistrationScheduleIds ?? []
+  );
   const scheduleMap: Record<string, boolean> = {};
-  sleepSchedules.forEach((schedule) => {
+  sleepSchedules.forEach(schedule => {
     scheduleMap[`schedule_${schedule.id}`] = selected.has(schedule.id);
   });
   return scheduleMap;
@@ -260,7 +271,7 @@ const buildGroupMeta = (
   scheduleColumnsInfo: ReturnType<typeof generateScheduleColumns>
 ) => {
   const groups = new Map<string, DormitoryDataRow[]>();
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const key = getGroupKey(row, groupMode);
     const existing = groups.get(key) ?? [];
     existing.push(row);
@@ -275,7 +286,7 @@ const buildGroupMeta = (
         ? buildDormitorySummary(groupRows)
         : buildGbsSummary(groupRows);
     const scheduleCounts: Record<string, number> = {};
-    scheduleColumnsInfo.forEach((scheduleInfo) => {
+    scheduleColumnsInfo.forEach(scheduleInfo => {
       const count = groupRows.reduce((acc, row) => {
         const scheduleKey = `schedule_${scheduleInfo.id}`;
         return acc + (row.schedules[scheduleKey] ? 1 : 0);
@@ -329,7 +340,7 @@ function DormitoryAssignmentTableToolbar({
   groupMode: GroupMode;
   setGroupMode: (value: GroupMode) => void;
 }) {
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const [downloadState, setDownloadState] = useState({
     gbsLocation: false,
     gbsMealCount: false,
@@ -355,9 +366,7 @@ function DormitoryAssignmentTableToolbar({
     fallback: string
   ) => {
     if (!contentDisposition) return fallback;
-    const encodedMatch = contentDisposition.match(
-      /filename\*=UTF-8''([^;]+)/i
-    );
+    const encodedMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
     if (encodedMatch?.[1]) {
       try {
         return decodeURIComponent(encodedMatch[1]);
@@ -380,7 +389,7 @@ function DormitoryAssignmentTableToolbar({
     successMessage: string;
     stateKey: "gbsLocation" | "gbsMealCount" | "gbsDormitory";
   }) => {
-    setDownloadState((prev) => ({ ...prev, [stateKey]: true }));
+    setDownloadState(prev => ({ ...prev, [stateKey]: true }));
     try {
       const response = await webAxios.get(url, { responseType: "blob" });
       const contentDisposition = response.headers["content-disposition"];
@@ -412,7 +421,8 @@ function DormitoryAssignmentTableToolbar({
           const errorData = JSON.parse(text);
           errorMessage = errorData.message || errorData.error || errorMessage;
         } catch {
-          errorMessage = `서버 오류: ${error.response?.status ?? ""} ${error.response?.statusText ?? ""}`.trim();
+          errorMessage =
+            `서버 오류: ${error.response?.status ?? ""} ${error.response?.statusText ?? ""}`.trim();
         }
       }
 
@@ -422,7 +432,7 @@ function DormitoryAssignmentTableToolbar({
         variant: "destructive",
       });
     } finally {
-      setDownloadState((prev) => ({ ...prev, [stateKey]: false }));
+      setDownloadState(prev => ({ ...prev, [stateKey]: false }));
     }
   };
 
@@ -433,7 +443,7 @@ function DormitoryAssignmentTableToolbar({
         <Input
           placeholder="이름/부서/학년/GBS/숙소 검색..."
           defaultValue={searchTerm}
-          onChange={(event) => debouncedSetSearchTerm(event.target.value)}
+          onChange={event => debouncedSetSearchTerm(event.target.value)}
           className="pl-8"
         />
       </div>
@@ -442,7 +452,7 @@ function DormitoryAssignmentTableToolbar({
         <ToggleGroup
           type="single"
           value={groupMode}
-          onValueChange={(value) => {
+          onValueChange={value => {
             if (value) setGroupMode(value as GroupMode);
           }}
           variant="outline"
@@ -455,8 +465,7 @@ function DormitoryAssignmentTableToolbar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              열 설정
+              <Settings className="h-4 w-4 mr-2" />열 설정
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[200px]">
@@ -471,7 +480,7 @@ function DormitoryAssignmentTableToolbar({
                   <DropdownMenuCheckboxItem
                     key={column.id}
                     checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
+                    onCheckedChange={value =>
                       column.toggleVisibility(Boolean(value))
                     }
                   >
@@ -575,17 +584,17 @@ function DormitoryAssignmentTableContent({
     const countsBySchedule = new Map<string, Record<string, number>>();
     if (scheduleColumnsInfo.length === 0) {
       const totals = new Map<string, number>();
-      registrations.forEach((row) => {
+      registrations.forEach(row => {
         const key = normalizeDormitoryLocation(row.dormitoryLocation);
         totals.set(key, (totals.get(key) ?? 0) + 1);
       });
       return totals;
     }
 
-    registrations.forEach((row) => {
+    registrations.forEach(row => {
       const key = normalizeDormitoryLocation(row.dormitoryLocation);
       const scheduleCounts = countsBySchedule.get(key) ?? {};
-      scheduleColumnsInfo.forEach((scheduleInfo) => {
+      scheduleColumnsInfo.forEach(scheduleInfo => {
         const scheduleKey = `schedule_${scheduleInfo.id}`;
         if (row.schedules[scheduleKey]) {
           scheduleCounts[scheduleInfo.key] =
@@ -619,7 +628,7 @@ function DormitoryAssignmentTableContent({
   const filteredRows = useMemo(() => {
     if (!searchTerm.trim()) return registrations;
     const query = searchTerm.trim().toLowerCase();
-    return registrations.filter((row) => {
+    return registrations.filter(row => {
       return (
         row.name.toLowerCase().includes(query) ||
         row.department.toLowerCase().includes(query) ||
@@ -648,7 +657,7 @@ function DormitoryAssignmentTableContent({
       meta.set(key, { ...value });
     });
     if (groupMode === "gbs") {
-      groupedRows.forEach((row) => {
+      groupedRows.forEach(row => {
         if (isGroupRow(row)) return;
         const key = getGroupKey(row, groupMode);
         const entry = meta.get(key);
@@ -669,7 +678,7 @@ function DormitoryAssignmentTableContent({
             {groupMode === "gbs" ? "GBS" : "숙소"}
           </div>
         ),
-        cell: (info) => {
+        cell: info => {
           const row = info.row.original;
           if (isGroupRow(row)) {
             const capacityStatus =
@@ -696,7 +705,9 @@ function DormitoryAssignmentTableContent({
             return (
               <div
                 className={`text-left px-2 py-1 whitespace-nowrap font-semibold ${capacityClassName}`}
-                title={capacityHint ? `${capacityHint}${summary}` : row.groupSummary}
+                title={
+                  capacityHint ? `${capacityHint}${summary}` : row.groupSummary
+                }
               >
                 {row.groupLabel}
                 {capacityDisplay && (
@@ -729,7 +740,7 @@ function DormitoryAssignmentTableContent({
       columnHelper.accessor("department", {
         id: "department",
         header: () => <div className="text-center text-sm">부서</div>,
-        cell: (info) => {
+        cell: info => {
           const row = info.row.original;
           if (isGroupRow(row)) return null;
           return (
@@ -743,7 +754,7 @@ function DormitoryAssignmentTableContent({
       columnHelper.accessor("grade", {
         id: "grade",
         header: () => <div className="text-center text-sm">학년</div>,
-        cell: (info) => {
+        cell: info => {
           const row = info.row.original;
           if (isGroupRow(row)) return null;
           return (
@@ -757,7 +768,7 @@ function DormitoryAssignmentTableContent({
       columnHelper.accessor("name", {
         id: "name",
         header: () => <div className="text-center text-sm">이름</div>,
-        cell: (info) => {
+        cell: info => {
           const row = info.row.original;
           if (isGroupRow(row)) return null;
           return (
@@ -775,7 +786,7 @@ function DormitoryAssignmentTableContent({
       columnHelper.accessor("gbsNumber", {
         id: "gbsNumber",
         header: () => <div className="text-center text-sm">GBS 번호</div>,
-        cell: (info) => {
+        cell: info => {
           const row = info.row.original;
           if (isGroupRow(row)) return null;
           const value = info.getValue();
@@ -790,7 +801,7 @@ function DormitoryAssignmentTableContent({
       columnHelper.accessor("dormitoryLocation", {
         id: "dormitoryLocation",
         header: () => <div className="text-center text-sm">숙소</div>,
-        cell: (info) => {
+        cell: info => {
           const row = info.row.original;
           if (isGroupRow(row)) return null;
           const value = info.getValue();
@@ -804,9 +815,9 @@ function DormitoryAssignmentTableContent({
       }),
     ];
 
-    const scheduleColumns = scheduleColumnsInfo.map((scheduleInfo) =>
+    const scheduleColumns = scheduleColumnsInfo.map(scheduleInfo =>
       columnHelper.accessor(
-        (row) =>
+        row =>
           row.kind === "data"
             ? row.schedules[`schedule_${scheduleInfo.id}`]
             : false,
@@ -817,7 +828,7 @@ function DormitoryAssignmentTableContent({
               {scheduleInfo.label}
             </div>
           ),
-          cell: (info) => {
+          cell: info => {
             const row = info.row.original;
             if (isGroupRow(row) && row.groupMode === "dormitory") {
               const count = row.scheduleCounts[scheduleInfo.key] ?? 0;
@@ -868,7 +879,7 @@ function DormitoryAssignmentTableContent({
     },
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) =>
+    getRowId: row =>
       `${groupMode}-${row.kind === "group" ? row.id : `row-${row.id}`}`,
   });
 
@@ -893,7 +904,7 @@ function DormitoryAssignmentTableContent({
             ? "검색 결과가 없습니다."
             : "표시할 데이터가 없습니다."
         }
-        getRowClassName={(row) => {
+        getRowClassName={row => {
           if (isGroupRow(row)) {
             return "bg-muted/50 text-muted-foreground font-medium";
           }
@@ -915,16 +926,15 @@ export function DormitoryAssignmentTable({
 }: {
   retreatSlug: string;
 }) {
-  const { data: dormitoryStaff = [], isLoading, error } =
-    useDormitoryStaff(retreatSlug);
   const {
-    data: maleDormitories,
-    error: maleDormitoryError,
-  } = useAllDormitories(retreatSlug, Gender.MALE);
-  const {
-    data: femaleDormitories,
-    error: femaleDormitoryError,
-  } = useAllDormitories(retreatSlug, Gender.FEMALE);
+    data: dormitoryStaff = [],
+    isLoading,
+    error,
+  } = useDormitoryStaff(retreatSlug);
+  const { data: maleDormitories, error: maleDormitoryError } =
+    useAllDormitories(retreatSlug, Gender.MALE);
+  const { data: femaleDormitories, error: femaleDormitoryError } =
+    useAllDormitories(retreatSlug, Gender.FEMALE);
   const {
     data: schedules = [],
     isLoading: isSchedulesLoading,
@@ -934,14 +944,14 @@ export function DormitoryAssignmentTable({
   const sleepSchedules = useMemo(
     () =>
       schedules.filter(
-        (schedule) => schedule.type === RetreatRegistrationScheduleType.SLEEP
+        schedule => schedule.type === RetreatRegistrationScheduleType.SLEEP
       ),
     [schedules]
   );
 
   const rows = useMemo<DormitoryDataRow[]>(() => {
     if (!dormitoryStaff.length) return [];
-    return dormitoryStaff.map((registration) => ({
+    return dormitoryStaff.map(registration => ({
       kind: "data",
       id: registration.id,
       department: `${registration.univGroupNumber}부`,
@@ -1007,7 +1017,7 @@ export function DormitoryAssignmentTable({
 
           <TabsContent value="male" className="mt-6">
             <DormitoryAssignmentTableContent
-              registrations={rows.filter((row) => row.gender === Gender.MALE)}
+              registrations={rows.filter(row => row.gender === Gender.MALE)}
               sleepSchedules={sleepSchedules}
               retreatSlug={retreatSlug}
               searchTerm={searchTerm}
@@ -1020,7 +1030,7 @@ export function DormitoryAssignmentTable({
 
           <TabsContent value="female" className="mt-6">
             <DormitoryAssignmentTableContent
-              registrations={rows.filter((row) => row.gender === Gender.FEMALE)}
+              registrations={rows.filter(row => row.gender === Gender.FEMALE)}
               sleepSchedules={sleepSchedules}
               retreatSlug={retreatSlug}
               searchTerm={searchTerm}

@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+
+import { GenderBadge } from "@/components/Badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -9,10 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -21,12 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { webAxios } from "@/lib/api/axios";
-import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
-import { generateScheduleColumns } from "@/utils/retreat-utils";
-import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
-import { useToastStore } from "@/store/toast-store";
 import {
   getKSTDay,
   getKSTMonth,
@@ -34,8 +32,11 @@ import {
   getKSTHours,
   getKSTMinutes,
 } from "@/lib/utils/date-utils";
+import { useToastStore } from "@/store/toast-store";
 import { TRetreatRegistrationSchedule, TRetreatShuttleBus } from "@/types";
-import { GenderBadge } from "@/components/Badge";
+import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
+import { getRegisterScheduleAlias } from "@/utils/getRetreatScheduleAlias";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 interface ShuttleBusSchedule {
   id: number;

@@ -1,7 +1,8 @@
 "use client";
 
-import UserAPI from "@/lib/api/user";
 import useSWR from "swr";
+
+import UserAPI from "@/lib/api/user";
 
 export const useRetreatSlug = () => {
   const {

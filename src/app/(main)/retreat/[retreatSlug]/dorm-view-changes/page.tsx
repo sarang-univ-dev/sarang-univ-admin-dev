@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useUserScheduleChangeDormitory } from "@/hooks/user-schedule-change-dormitory-request";
-import { RetreatScheduleChangeHistoryTable } from "@/components/DormStaffRetreatScheduleChangeHistoryTable";
 import { useParams } from "next/navigation";
-import {
-  TRetreatRegistrationSchedule,
-  TRetreatUnivGroup,
-} from "@/types";
-import { webAxios } from "@/lib/api/axios";
+import { useEffect, useState } from "react";
 
-export default function ScheduleChangeHistoryForDorm(){
+import { RetreatScheduleChangeHistoryTable } from "@/components/DormStaffRetreatScheduleChangeHistoryTable";
+import { useUserScheduleChangeDormitory } from "@/hooks/user-schedule-change-dormitory-request";
+import { webAxios } from "@/lib/api/axios";
+import { TRetreatRegistrationSchedule, TRetreatUnivGroup } from "@/types";
+
+export default function ScheduleChangeHistoryForDorm() {
   const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(
     []
   );
@@ -18,7 +16,8 @@ export default function ScheduleChangeHistoryForDorm(){
   const params = useParams();
   const retreatSlug = params.retreatSlug as string;
 
-  const { data, isLoading, error, mutate } = useUserScheduleChangeDormitory(retreatSlug);
+  const { data, isLoading, error, mutate } =
+    useUserScheduleChangeDormitory(retreatSlug);
 
   useEffect(() => {
     const fetchSchedules = async () => {

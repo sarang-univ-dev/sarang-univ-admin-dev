@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -12,16 +11,10 @@ import {
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
+import { Search } from "lucide-react";
+import { useMemo, useState } from "react";
+
 import { VirtualizedTable } from "@/components/common/table";
-import {
-  useDormitoryRetreatRegistrationColumns,
-  DormitoryRetreatRegistrationTableData,
-} from "@/hooks/dormitory/use-retreat-registration-columns";
-import {
-  useDormitoryRetreatRegistration,
-  IDormitoryRetreatRegistration,
-} from "@/hooks/dormitory/use-retreat-registration";
-import { TRetreatRegistrationSchedule } from "@/types";
 import {
   Card,
   CardContent,
@@ -30,7 +23,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import {
+  useDormitoryRetreatRegistration,
+  IDormitoryRetreatRegistration,
+} from "@/hooks/dormitory/use-retreat-registration";
+import {
+  useDormitoryRetreatRegistrationColumns,
+  DormitoryRetreatRegistrationTableData,
+} from "@/hooks/dormitory/use-retreat-registration-columns";
+import { TRetreatRegistrationSchedule } from "@/types";
 
 interface DormitoryRetreatRegistrationTableProps {
   schedules: TRetreatRegistrationSchedule[];
@@ -44,10 +45,10 @@ function transformRegistrationsForTable(
   registrations: IDormitoryRetreatRegistration[],
   schedules: TRetreatRegistrationSchedule[]
 ): DormitoryRetreatRegistrationTableData[] {
-  return registrations.map((registration) => {
+  return registrations.map(registration => {
     // 스케줄 정보 변환
     const scheduleData: Record<string, boolean> = {};
-    schedules.forEach((schedule) => {
+    schedules.forEach(schedule => {
       scheduleData[`schedule_${schedule.id}`] =
         registration.userRetreatRegistrationScheduleIds?.includes(
           schedule.id
@@ -97,7 +98,11 @@ export function DormitoryRetreatRegistrationTable({
   const [globalFilter, setGlobalFilter] = useState("");
 
   // 컬럼 훅으로 컬럼 정의 가져오기 (mutate 전달하여 캐시 갱신 가능하게)
-  const columns = useDormitoryRetreatRegistrationColumns(schedules, retreatSlug, mutate);
+  const columns = useDormitoryRetreatRegistrationColumns(
+    schedules,
+    retreatSlug,
+    mutate
+  );
 
   // useMemo로 data 메모이제이션
   const data = useMemo(
@@ -144,7 +149,7 @@ export function DormitoryRetreatRegistrationTable({
         row.original.scheduleChangeRequestMemo,
       ];
 
-      return searchableFields.some((field) =>
+      return searchableFields.some(field =>
         field?.toLowerCase().includes(filterValue.toLowerCase())
       );
     },
@@ -198,8 +203,8 @@ export function DormitoryRetreatRegistrationTable({
           숙소팀 수양회 신청 관리
         </CardTitle>
         <CardDescription>
-          숙소팀이 수양회 신청자 목록을 조회하고 일정변동 요청 메모를
-          작성할 수 있습니다. ({filteredRowCount}명)
+          숙소팀이 수양회 신청자 목록을 조회하고 일정변동 요청 메모를 작성할 수
+          있습니다. ({filteredRowCount}명)
         </CardDescription>
       </CardHeader>
       <CardContent className="px-4 pt-4">
@@ -211,7 +216,7 @@ export function DormitoryRetreatRegistrationTable({
               placeholder="GBS번호, 부서, 학년, 이름, 숙소, 메모로 검색..."
               className="pl-8 pr-4 py-2"
               value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
+              onChange={e => setGlobalFilter(e.target.value)}
             />
           </div>
 

@@ -1,10 +1,17 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertTriangle, Home, RotateCcw } from "lucide-react"
-import Link from "next/link"
+import { AlertTriangle, Home, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { useEffect } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 /**
  * Error Page - Client Component
@@ -14,13 +21,13 @@ export default function ErrorPage({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
     // 에러를 로깅 서비스에 전송할 수 있습니다
-    console.error("Error occurred:", error)
-  }, [error])
+    console.error("Error occurred:", error);
+  }, [error]);
 
   return (
     <div className="flex min-h-[calc(100vh-200px)] items-center justify-center p-4">
@@ -60,10 +67,7 @@ export default function ErrorPage({
           </div>
 
           <div className="flex flex-col gap-2 pt-4">
-            <Button
-              onClick={reset}
-              className="w-full"
-            >
+            <Button onClick={reset} className="w-full">
               <RotateCcw className="mr-2 h-4 w-4" />
               다시 시도
             </Button>
@@ -83,5 +87,5 @@ export default function ErrorPage({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

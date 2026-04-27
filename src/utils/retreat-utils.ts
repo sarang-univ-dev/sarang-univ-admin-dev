@@ -1,3 +1,5 @@
+import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
+import { getKSTDay, getKSTDateString } from "@/lib/utils/date-utils";
 import {
   Gender,
   UserRetreatRegistrationType,
@@ -5,8 +7,6 @@ import {
   UserRetreatRegistrationPaymentStatus,
   TRetreatRegistrationSchedule,
 } from "@/types";
-import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
-import { getKSTDay, getKSTDateString } from "@/lib/utils/date-utils";
 // 날짜와 타입에 따라 식수 이름을 결정하는 함수
 export function getScheduleLabel(
   time: Date | string,

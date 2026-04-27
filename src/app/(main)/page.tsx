@@ -1,15 +1,22 @@
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getRetreatsWithMenusServer } from "@/lib/api/server-admin-api"
-import { getIconComponent } from "@/lib/utils/icon-map"
-import { Calendar } from "lucide-react"
+import { Calendar } from "lucide-react";
+import Link from "next/link";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { getRetreatsWithMenusServer } from "@/lib/api/server-admin-api";
+import { getIconComponent } from "@/lib/utils/icon-map";
 
 /**
  * Admin Home Page - Server Component
  * 수련회 목록과 주요 기능들을 대시보드 형태로 표시
  */
 export default async function HomePage() {
-  const retreats = await getRetreatsWithMenusServer()
+  const retreats = await getRetreatsWithMenusServer();
 
   return (
     <div className="space-y-6">
@@ -26,9 +33,7 @@ export default async function HomePage() {
       {/* 수양회 목록 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            수양회 목록
-          </h2>
+          <h2 className="text-2xl font-semibold tracking-tight">수양회 목록</h2>
         </div>
 
         {retreats.length === 0 ? (
@@ -44,12 +49,13 @@ export default async function HomePage() {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {retreats.map((retreat) => (
-              <Card key={retreat.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            {retreats.map(retreat => (
+              <Card
+                key={retreat.id}
+                className="overflow-hidden hover:shadow-lg transition-shadow"
+              >
                 <CardHeader>
-                  <CardTitle className="text-lg">
-                    {retreat.name}
-                  </CardTitle>
+                  <CardTitle className="text-lg">{retreat.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
                   {retreat.menuItems && retreat.menuItems.length > 0 ? (
@@ -58,18 +64,20 @@ export default async function HomePage() {
                         사용 가능한 메뉴
                       </p>
                       <div className="grid gap-2">
-                        {retreat.menuItems.slice(0, 4).map((menu) => {
-                          const Icon = getIconComponent(menu.icon)
+                        {retreat.menuItems.slice(0, 4).map(menu => {
+                          const Icon = getIconComponent(menu.icon);
                           return (
                             <Link
                               key={menu.path}
                               href={`/retreat/${retreat.slug}${menu.path}`}
                               className="flex items-center gap-2 rounded-lg border p-2 text-sm hover:bg-accent transition-colors"
                             >
-                              {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+                              {Icon && (
+                                <Icon className="h-4 w-4 text-muted-foreground" />
+                              )}
                               <span className="truncate">{menu.label}</span>
                             </Link>
-                          )
+                          );
                         })}
                         {retreat.menuItems.length > 4 && (
                           <p className="text-xs text-muted-foreground text-center pt-1">
@@ -100,10 +108,15 @@ export default async function HomePage() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>• 각 수양회 카드를 클릭하여 상세 메뉴로 이동할 수 있습니다</p>
-          <p>• 사이드바의 메뉴를 통해 등록, 결제, 일정 관리 등을 수행할 수 있습니다</p>
-          <p>• 문제가 발생하면 관리자(박희서 간사 010-5478-1099)에게 문의해주세요</p>
+          <p>
+            • 사이드바의 메뉴를 통해 등록, 결제, 일정 관리 등을 수행할 수
+            있습니다
+          </p>
+          <p>
+            • 문제가 발생하면 관리자(박희서 간사 010-5478-1099)에게 문의해주세요
+          </p>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

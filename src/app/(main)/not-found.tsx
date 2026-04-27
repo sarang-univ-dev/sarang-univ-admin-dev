@@ -1,7 +1,14 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileQuestion, Home, ArrowLeft } from "lucide-react"
+import { FileQuestion, Home, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 /**
  * 404 Not Found Page
@@ -15,7 +22,9 @@ export default function NotFound() {
           <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
             <FileQuestion className="h-10 w-10 text-muted-foreground" />
           </div>
-          <CardTitle className="text-2xl">404 - 페이지를 찾을 수 없습니다</CardTitle>
+          <CardTitle className="text-2xl">
+            404 - 페이지를 찾을 수 없습니다
+          </CardTitle>
           <CardDescription className="text-base">
             요청하신 페이지가 존재하지 않거나 이동되었습니다
           </CardDescription>
@@ -53,5 +62,5 @@ export default function NotFound() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

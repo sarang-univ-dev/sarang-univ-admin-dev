@@ -1,25 +1,30 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
 import {
   SidebarGroupLabel,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from "@/components/ui/sidebar"
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
-import type { RetreatWithMenus } from "@/types/sidebar"
-import { cn } from "@/lib/utils"
-import { getIconComponent } from "@/lib/utils/icon-map"
+} from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
+import { getIconComponent } from "@/lib/utils/icon-map";
+import type { RetreatWithMenus } from "@/types/sidebar";
 
 interface RetreatGroupProps {
-  retreat: RetreatWithMenus
-  isActive: boolean
-  currentPath: string
+  retreat: RetreatWithMenus;
+  isActive: boolean;
+  currentPath: string;
 }
 
 export default function RetreatGroup({
@@ -27,8 +32,8 @@ export default function RetreatGroup({
   isActive,
   currentPath,
 }: RetreatGroupProps) {
-  const [isOpen, setIsOpen] = useState(isActive)
-  const router = useRouter()
+  const [isOpen, setIsOpen] = useState(isActive);
+  const router = useRouter();
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -46,32 +51,29 @@ export default function RetreatGroup({
       <CollapsibleContent>
         <SidebarGroupContent>
           <SidebarMenu>
-            {retreat.menuItems.map((item) => {
-              const isCurrentPage = currentPath === item.href
-              const Icon = getIconComponent(item.icon)
+            {retreat.menuItems.map(item => {
+              const isCurrentPage = currentPath === item.href;
+              const Icon = getIconComponent(item.icon);
 
               const handleClick = (e: React.MouseEvent) => {
-                e.preventDefault()
-                router.push(item.href)
-              }
+                e.preventDefault();
+                router.push(item.href);
+              };
 
               return (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={isCurrentPage}>
-                    <Link
-                      href={item.href}
-                      onClick={handleClick}
-                    >
+                    <Link href={item.href} onClick={handleClick}>
                       {Icon && <Icon className="h-4 w-4" />}
                       <span>{item.label}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )
+              );
             })}
           </SidebarMenu>
         </SidebarGroupContent>
       </CollapsibleContent>
     </Collapsible>
-  )
+  );
 }

@@ -17,8 +17,8 @@ interface GbsLineUpSummaryProps {
 export function GbsLineUpSummary({ lineups }: GbsLineUpSummaryProps) {
   const stats = {
     total: lineups.length,
-    assigned: lineups.filter((l) => l.gbsNumber != null).length,
-    unassigned: lineups.filter((l) => l.gbsNumber == null).length,
+    assigned: lineups.filter(l => l.gbsNumber != null).length,
+    unassigned: lineups.filter(l => l.gbsNumber == null).length,
   };
 
   return (

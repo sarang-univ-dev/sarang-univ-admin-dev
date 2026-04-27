@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { useUIStore } from "@/store/ui-store";
+
 import { MediaQueryKey } from "@/lib/constants/breakpoints";
+import { useUIStore } from "@/store/ui-store";
 
 /**
  * SSR-safe 미디어 쿼리 훅
@@ -29,8 +30,8 @@ export function useMediaQuery(
   key?: MediaQueryKey | string
 ): boolean {
   const storeKey = key ?? query;
-  const matches = useUIStore((state) => state.mediaQueries[storeKey] ?? false);
-  const setMediaQuery = useUIStore((state) => state.setMediaQuery);
+  const matches = useUIStore(state => state.mediaQueries[storeKey] ?? false);
+  const setMediaQuery = useUIStore(state => state.setMediaQuery);
 
   useEffect(() => {
     // SSR 환경 체크

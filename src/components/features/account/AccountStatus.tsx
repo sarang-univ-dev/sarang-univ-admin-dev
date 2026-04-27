@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { SummaryTable } from "@/components/SummaryTable";
-import {
-  UserRetreatRegistrationPaymentStatus,
-} from "@/types";
-import { IRetreatRegistration } from "@/types/account";
+
 import { StatusBadge } from "@/components/Badge";
+import { SummaryTable } from "@/components/SummaryTable";
+import { UserRetreatRegistrationPaymentStatus } from "@/types";
+import { IRetreatRegistration } from "@/types/account";
 
 interface AccountStatusProps {
   registrations?: IRetreatRegistration[];
@@ -36,19 +35,19 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
   const departmentStats = useMemo<DepartmentStat[]>(() => {
     // 부서 ID를 모아서 유니크 배열로 만들기
     const departments = [
-      ...new Set(registrations.map((reg) => reg.univGroupNumber)),
+      ...new Set(registrations.map(reg => reg.univGroupNumber)),
     ].sort((a, b) => a - b); // 부서 번호 순으로 정렬
 
     // 각 부서별 통계 계산
-    const stats: DepartmentStat[] = departments.map((deptId) => {
+    const stats: DepartmentStat[] = departments.map(deptId => {
       const deptRegistrations = registrations.filter(
-        (reg) => reg.univGroupNumber === deptId
+        reg => reg.univGroupNumber === deptId
       );
 
       // 예상 입금 금액: 입금 대기중(PENDING)인 항목의 금액 합계
       const expectedIncome = deptRegistrations
         .filter(
-          (reg) =>
+          reg =>
             reg.paymentStatus === UserRetreatRegistrationPaymentStatus.PENDING
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
@@ -56,14 +55,14 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       // 실제 입금 금액: 입금 완료(PAID)인 항목의 금액 합계
       const actualIncome = deptRegistrations
         .filter(
-          (reg) => reg.paymentStatus === UserRetreatRegistrationPaymentStatus.PAID
+          reg => reg.paymentStatus === UserRetreatRegistrationPaymentStatus.PAID
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
       // 예상 출금 금액: 환불 요청(REFUND_REQUEST)인 항목의 금액 합계
       const expectedRefund = deptRegistrations
         .filter(
-          (reg) =>
+          reg =>
             reg.paymentStatus ===
             UserRetreatRegistrationPaymentStatus.REFUND_REQUEST
         )
@@ -72,7 +71,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       // 실제 출금 금액: 환불 완료(REFUNDED)인 항목의 금액 합계
       const actualRefund = deptRegistrations
         .filter(
-          (reg) =>
+          reg =>
             reg.paymentStatus === UserRetreatRegistrationPaymentStatus.REFUNDED
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
@@ -132,12 +131,8 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
     return (
       <div className="space-y-3 md:space-y-4">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">
-            계좌 현황
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            입출금 요약 표
-          </p>
+          <h2 className="text-xl font-semibold tracking-tight">계좌 현황</h2>
+          <p className="text-sm text-muted-foreground mt-1">입출금 요약 표</p>
         </div>
         <div className="p-6 md:p-8 text-center text-gray-500 text-sm">
           표시할 데이터가 없습니다.
@@ -168,7 +163,9 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       id: "expectedRefund",
       header: (
         <div className="flex justify-center">
-          <StatusBadge status={UserRetreatRegistrationPaymentStatus.REFUND_REQUEST} />
+          <StatusBadge
+            status={UserRetreatRegistrationPaymentStatus.REFUND_REQUEST}
+          />
         </div>
       ),
     },
@@ -185,9 +182,13 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       header: (
         <div className="flex flex-col items-center gap-1">
           <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 shrink-0">
-            <span className="text-xs font-medium text-blue-700 whitespace-nowrap">현재 계좌</span>
+            <span className="text-xs font-medium text-blue-700 whitespace-nowrap">
+              현재 계좌
+            </span>
           </div>
-          <span className="text-[10px] text-gray-500 text-center whitespace-nowrap">(입금완료 - 환불완료)</span>
+          <span className="text-[10px] text-gray-500 text-center whitespace-nowrap">
+            (입금완료 - 환불완료)
+          </span>
         </div>
       ),
     },
@@ -196,23 +197,29 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       header: (
         <div className="flex flex-col items-center gap-1">
           <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200 shrink-0">
-            <span className="text-xs font-medium text-purple-700 whitespace-nowrap">예상 계좌</span>
+            <span className="text-xs font-medium text-purple-700 whitespace-nowrap">
+              예상 계좌
+            </span>
           </div>
-          <span className="text-[10px] text-gray-500 text-center whitespace-nowrap">(입금대기 + 입금완료 - 환불대기 - 환불완료)</span>
+          <span className="text-[10px] text-gray-500 text-center whitespace-nowrap">
+            (입금대기 + 입금완료 - 환불대기 - 환불완료)
+          </span>
         </div>
       ),
     },
   ];
 
   // SummaryTable rows 생성
-  const rows = departmentStats.map((dept) => ({
+  const rows = departmentStats.map(dept => ({
     id: dept.univGroupNumber.toString(),
     label: dept.name,
     cells: {
       expectedIncome: (
         <div className="text-center">
           {dept.univGroupNumber === "all" ? (
-            <span className="font-semibold">{dept.expectedIncome.toLocaleString()}원</span>
+            <span className="font-semibold">
+              {dept.expectedIncome.toLocaleString()}원
+            </span>
           ) : (
             <span>{dept.expectedIncome.toLocaleString()}원</span>
           )}
@@ -221,7 +228,9 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       actualIncome: (
         <div className="text-center">
           {dept.univGroupNumber === "all" ? (
-            <span className="font-semibold">{dept.actualIncome.toLocaleString()}원</span>
+            <span className="font-semibold">
+              {dept.actualIncome.toLocaleString()}원
+            </span>
           ) : (
             <span>{dept.actualIncome.toLocaleString()}원</span>
           )}
@@ -230,7 +239,9 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       expectedRefund: (
         <div className="text-center">
           {dept.univGroupNumber === "all" ? (
-            <span className="font-semibold">{dept.expectedRefund.toLocaleString()}원</span>
+            <span className="font-semibold">
+              {dept.expectedRefund.toLocaleString()}원
+            </span>
           ) : (
             <span>{dept.expectedRefund.toLocaleString()}원</span>
           )}
@@ -239,7 +250,9 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       actualRefund: (
         <div className="text-center">
           {dept.univGroupNumber === "all" ? (
-            <span className="font-semibold">{dept.actualRefund.toLocaleString()}원</span>
+            <span className="font-semibold">
+              {dept.actualRefund.toLocaleString()}원
+            </span>
           ) : (
             <span>{dept.actualRefund.toLocaleString()}원</span>
           )}
@@ -248,18 +261,26 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       currentBalance: (
         <div className="text-center">
           {dept.univGroupNumber === "all" ? (
-            <span className="font-bold text-blue-700">{dept.currentBalance.toLocaleString()}원</span>
+            <span className="font-bold text-blue-700">
+              {dept.currentBalance.toLocaleString()}원
+            </span>
           ) : (
-            <span className="font-semibold text-blue-600">{dept.currentBalance.toLocaleString()}원</span>
+            <span className="font-semibold text-blue-600">
+              {dept.currentBalance.toLocaleString()}원
+            </span>
           )}
         </div>
       ),
       expectedFutureBalance: (
         <div className="text-center">
           {dept.univGroupNumber === "all" ? (
-            <span className="font-bold text-purple-700">{dept.expectedFutureBalance.toLocaleString()}원</span>
+            <span className="font-bold text-purple-700">
+              {dept.expectedFutureBalance.toLocaleString()}원
+            </span>
           ) : (
-            <span className="font-semibold text-purple-600">{dept.expectedFutureBalance.toLocaleString()}원</span>
+            <span className="font-semibold text-purple-600">
+              {dept.expectedFutureBalance.toLocaleString()}원
+            </span>
           )}
         </div>
       ),

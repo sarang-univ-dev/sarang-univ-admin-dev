@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { DayGroup, FormattedRow } from "@/types/retreat-schedule";
+
 import { DepartmentHeader } from "@/components/common/retreat/DepartmentHeader";
 import { ScheduleTable } from "@/components/common/retreat/ScheduleTable";
 import {
@@ -10,6 +10,7 @@ import {
   extractSortedDates,
   formatDate,
 } from "@/lib/utils/schedule-utils";
+import { DayGroup, FormattedRow } from "@/types/retreat-schedule";
 
 interface RetreatScheduleSummaryMobileAccordionProps {
   formattedRows: FormattedRow[];
@@ -42,7 +43,7 @@ export function RetreatScheduleSummaryMobileAccordion({
 
   return (
     <div className="space-y-3">
-      {formattedRows.map((row) => {
+      {formattedRows.map(row => {
         const fullCount = row.fullParticipationCount ?? 0;
         const partialCount = row.partialParticipationCount ?? 0;
         const totalCount = row.totalCount ?? 0;

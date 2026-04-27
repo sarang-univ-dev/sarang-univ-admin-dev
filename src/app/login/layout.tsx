@@ -1,8 +1,8 @@
 // File: src/app/login/layout.tsx
 import type { Metadata } from "next";
 
-import Toast from "@/components/common/layout/Toast";
 import ConfirmModal from "@/components/common/layout/ConfirmModal";
+import Toast from "@/components/common/layout/Toast";
 
 export const metadata: Metadata = {
   title: "로그인 - 사랑의교회 대학부",

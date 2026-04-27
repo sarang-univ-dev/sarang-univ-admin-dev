@@ -1,10 +1,11 @@
+import { AxiosError } from "axios";
 import { useState } from "react";
 import useSWR, { SWRConfiguration } from "swr";
-import { useToastStore } from "@/store/toast-store";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+
 import { ScheduleChangeRequestAPI } from "@/lib/api/schedule-change-request-api";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useToastStore } from "@/store/toast-store";
 import { IUserScheduleChangeRetreat } from "@/types";
-import { AxiosError } from "axios";
 
 /**
  * 일정 변경 요청 통합 훅
@@ -20,7 +21,7 @@ export function useScheduleChangeRequest(
   retreatSlug: string,
   options?: SWRConfiguration<IUserScheduleChangeRetreat[], Error>
 ) {
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const confirmDialog = useConfirmDialogStore();
   const [isMutating, setIsMutating] = useState(false);
 
@@ -42,7 +43,9 @@ export function useScheduleChangeRequest(
    */
   const updateCache = async (
     action: () => Promise<void>,
-    optimisticUpdate?: (currentData: IUserScheduleChangeRetreat[] | undefined) => IUserScheduleChangeRetreat[],
+    optimisticUpdate?: (
+      currentData: IUserScheduleChangeRetreat[] | undefined
+    ) => IUserScheduleChangeRetreat[],
     successMessage?: string
   ) => {
     setIsMutating(true);
@@ -76,8 +79,8 @@ export function useScheduleChangeRequest(
           error instanceof AxiosError
             ? error.response?.data?.message || error.message
             : error instanceof Error
-            ? error.message
-            : "작업 중 오류가 발생했습니다.",
+              ? error.message
+              : "작업 중 오류가 발생했습니다.",
         variant: "destructive",
       });
 

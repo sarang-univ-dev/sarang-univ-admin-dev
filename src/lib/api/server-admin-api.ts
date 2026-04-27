@@ -3,9 +3,10 @@
  * Server Component에서 사용하기 위한 fetch 기반 API
  */
 
-import { cookies } from "next/headers"
-import type { RetreatWithMenus, RetreatsResponse } from "@/types/sidebar"
-import config from "@/lib/constant/config"
+import { cookies } from "next/headers";
+
+import config from "@/lib/constant/config";
+import type { RetreatWithMenus, RetreatsResponse } from "@/types/sidebar";
 
 /**
  * 사용자가 접근 가능한 모든 retreat + 메뉴 목록 조회 (Server Component용)
@@ -17,13 +18,15 @@ import config from "@/lib/constant/config"
  * // app/layout.tsx (Server Component)
  * const retreats = await getRetreatsWithMenusServer();
  */
-export async function getRetreatsWithMenusServer(): Promise<RetreatWithMenus[]> {
-  const cookieStore = await cookies()
-  const accessToken = cookieStore.get("accessToken")?.value
+export async function getRetreatsWithMenusServer(): Promise<
+  RetreatWithMenus[]
+> {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
 
   if (!accessToken) {
-    console.error("No access token found in cookies")
-    return []
+    console.error("No access token found in cookies");
+    return [];
   }
 
   try {
@@ -36,17 +39,19 @@ export async function getRetreatsWithMenusServer(): Promise<RetreatWithMenus[]> 
         "Content-Type": "application/json",
       },
       cache: "no-store",
-    })
+    });
 
     if (!response.ok) {
-      console.error(`Failed to fetch retreats: ${response.status} ${response.statusText}`)
-      return []
+      console.error(
+        `Failed to fetch retreats: ${response.status} ${response.statusText}`
+      );
+      return [];
     }
 
-    const data: RetreatsResponse = await response.json()
-    return data.retreats
+    const data: RetreatsResponse = await response.json();
+    return data.retreats;
   } catch (error) {
-    console.error("Error fetching retreats:", error)
-    return []
+    console.error("Error fetching retreats:", error);
+    return [];
   }
 }

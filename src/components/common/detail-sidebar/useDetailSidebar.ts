@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 export function useDetailSidebar<T>() {
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
@@ -20,13 +20,16 @@ export function useDetailSidebar<T>() {
     setTimeout(() => setSelectedItem(null), 300);
   }, []);
 
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      close();
-    } else {
-      setIsOpen(true);
-    }
-  }, [close]);
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        close();
+      } else {
+        setIsOpen(true);
+      }
+    },
+    [close]
+  );
 
   // 페이지 이동 시 사이드바 자동 닫기 (모바일 최적화)
   useEffect(() => {

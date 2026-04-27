@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
 import { debounce } from "lodash";
 import { AlertCircle, Check } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+
 import { cn } from "@/lib/utils";
 
 export interface GbsNumberCellRow {
@@ -37,10 +38,14 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
 }) => {
   const initialValue = row.gbsNumber?.toString() || "";
   const [value, setValue] = useState(initialValue);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
+    "idle"
+  );
 
   // ✅ 버퍼: 편집 중 외부에서 들어온 변경사항 저장
-  const [pendingExternalUpdate, setPendingExternalUpdate] = useState<string | null>(null);
+  const [pendingExternalUpdate, setPendingExternalUpdate] = useState<
+    string | null
+  >(null);
   const [showConflictWarning, setShowConflictWarning] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +73,7 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
     lastSavedValueRef.current = initialValue;
     setPendingExternalUpdate(null);
     setShowConflictWarning(false);
-    setSaveStatus('idle');
+    setSaveStatus("idle");
   }, [initialValue, value, row.id]);
 
   // ✅ Debounce 2초 자동 저장
@@ -88,7 +93,7 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
         }
 
         // 유효성 검사: 빈 값이 아니면 숫자인지 확인
-        if (trimmedValue !== '') {
+        if (trimmedValue !== "") {
           const numValue = parseInt(trimmedValue);
           if (isNaN(numValue)) {
             alert("숫자를 입력해주세요.");
@@ -100,21 +105,21 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
         try {
           await onSave(rowData, trimmedValue);
           lastSavedValueRef.current = trimmedValue;
-          setSaveStatus('success');
+          setSaveStatus("success");
           setShowConflictWarning(false);
 
           // 1초 후 성공 표시 제거
           setTimeout(() => {
-            setSaveStatus('idle');
+            setSaveStatus("idle");
           }, 1000);
         } catch (error) {
           console.error("GBS 번호 자동 저장 실패:", error);
-          setSaveStatus('error');
+          setSaveStatus("error");
           setValue(lastSavedValueRef.current);
 
           // 2초 후 에러 표시 제거
           setTimeout(() => {
-            setSaveStatus('idle');
+            setSaveStatus("idle");
           }, 2000);
         }
       }, 2000),
@@ -160,7 +165,7 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
     }
 
     // 유효성 검사: 빈 값이 아니면 숫자인지 확인
-    if (trimmedValue !== '') {
+    if (trimmedValue !== "") {
       const numValue = parseInt(trimmedValue);
       if (isNaN(numValue)) {
         alert("숫자를 입력해주세요.");
@@ -172,27 +177,27 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
     try {
       await onSave(row, trimmedValue);
       lastSavedValueRef.current = trimmedValue;
-      setSaveStatus('success');
+      setSaveStatus("success");
       setShowConflictWarning(false);
 
       setTimeout(() => {
-        setSaveStatus('idle');
+        setSaveStatus("idle");
       }, 1000);
     } catch (error) {
-      setSaveStatus('error');
+      setSaveStatus("error");
       setValue(lastSavedValueRef.current);
 
       setTimeout(() => {
-        setSaveStatus('idle');
+        setSaveStatus("idle");
       }, 2000);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.currentTarget.blur(); // Enter 키로 저장 트리거
     }
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       // 버퍼링된 외부 변경사항 적용 또는 원래 값으로 복원
       if (pendingExternalUpdate) {
         setValue(pendingExternalUpdate);
@@ -218,7 +223,7 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
   };
 
   return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
+    <div className="relative" onClick={e => e.stopPropagation()}>
       <input
         ref={inputRef}
         type="text"
@@ -226,7 +231,7 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
         onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        onClick={(e) => e.currentTarget.select()}
+        onClick={e => e.currentTarget.select()}
         disabled={isLoading || row.isLeader}
         className={cn(
           "rounded px-2 py-1 text-center w-36 transition-all",
@@ -235,19 +240,23 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
             : "border border-gray-300 bg-white font-normal text-gray-700",
           isLoading && "opacity-50 cursor-wait",
           row.isLeader && "cursor-not-allowed",
-          saveStatus === 'success' && "border-green-500 bg-green-50",
-          saveStatus === 'error' && "border-red-500 bg-red-50",
+          saveStatus === "success" && "border-green-500 bg-green-50",
+          saveStatus === "error" && "border-red-500 bg-red-50",
           showConflictWarning && "border-yellow-500 bg-yellow-50"
         )}
         placeholder={row.isLeader ? "리더" : "GBS 번호 입력"}
-        title={row.isLeader ? "리더는 GBS 번호를 변경할 수 없습니다" : "Enter로 저장, ESC로 취소"}
+        title={
+          row.isLeader
+            ? "리더는 GBS 번호를 변경할 수 없습니다"
+            : "Enter로 저장, ESC로 취소"
+        }
       />
 
       {/* ✅ 저장 상태 아이콘 */}
-      {saveStatus === 'success' && (
+      {saveStatus === "success" && (
         <Check className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
       )}
-      {saveStatus === 'error' && (
+      {saveStatus === "error" && (
         <AlertCircle className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
       )}
 
@@ -257,9 +266,12 @@ export const GbsNumberCell: React.FC<GbsNumberCellProps> = ({
           <div className="flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="font-medium text-yellow-800">다른 사용자가 수정했습니다</p>
+              <p className="font-medium text-yellow-800">
+                다른 사용자가 수정했습니다
+              </p>
               <p className="text-yellow-700 mt-1">
-                새 값: <span className="font-bold">{pendingExternalUpdate}</span>
+                새 값:{" "}
+                <span className="font-bold">{pendingExternalUpdate}</span>
               </p>
               <button
                 onClick={handleAcceptExternal}

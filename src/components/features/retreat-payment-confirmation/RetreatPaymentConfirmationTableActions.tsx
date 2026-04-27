@@ -1,7 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { CheckCircle2, Send, RotateCcw } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
 
@@ -30,7 +31,7 @@ export function RetreatPaymentConfirmationTableActions({
   switch (registration.paymentStatus) {
     case UserRetreatRegistrationPaymentStatus.PENDING:
       return (
-        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -64,7 +65,7 @@ export function RetreatPaymentConfirmationTableActions({
 
     case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
       return (
-        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"

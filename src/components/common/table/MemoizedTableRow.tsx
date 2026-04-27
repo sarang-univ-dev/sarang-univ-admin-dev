@@ -1,7 +1,8 @@
 "use client";
 
-import { memo } from "react";
 import { Row, flexRender } from "@tanstack/react-table";
+import { memo } from "react";
+
 import { TableRow, TableCell } from "@/components/ui/table";
 
 interface MemoizedTableRowProps<TData> {
@@ -45,7 +46,7 @@ export const MemoizedTableRow = memo(
         className={className}
         onClick={() => onRowClick?.(row.original)}
       >
-        {row.getVisibleCells().map((cell) => (
+        {row.getVisibleCells().map(cell => (
           <TableCell key={cell.id}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </TableCell>

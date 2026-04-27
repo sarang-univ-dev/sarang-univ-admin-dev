@@ -1,7 +1,28 @@
 "use client";
 
+import { AxiosError } from "axios";
+import { Search, Save, X, Trash2 } from "lucide-react";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -10,43 +31,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Search, Save, X, Trash2 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-
-import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
 import {
   useAvailableDormitories,
   useAssignDormitory,
   useAllDormitories,
 } from "@/hooks/use-available-dormitories";
-import { useToastStore } from "@/store/toast-store";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-
-import { COMPLETE_GROUP_ROW_COUNT } from "@/lib/constant/lineup.constant";
-import { generateScheduleColumns } from "@/utils/retreat-utils";
+import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
 import { webAxios } from "@/lib/api/axios";
-import { AxiosError } from "axios";
-
+import { COMPLETE_GROUP_ROW_COUNT } from "@/lib/constant/lineup.constant";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useToastStore } from "@/store/toast-store";
 import { UserRetreatRegistrationMemoType, Gender } from "@/types";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 // Simple debounce hook
 function useDebounce<T>(value: T, delay = 300): T {

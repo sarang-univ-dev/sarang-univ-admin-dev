@@ -1,7 +1,4 @@
-import {
-  TRetreatPaymentSchedule,
-  UserRetreatRegistrationType
-} from "@/types";
+import { TRetreatPaymentSchedule, UserRetreatRegistrationType } from "@/types";
 
 /**
  * 행사 등록 가격 계산
@@ -31,14 +28,16 @@ export function calculateRegistrationPrice(
     // NEW_COMER와 SOLDIER의 경우 가장 이른 결제 스케줄 사용
     applicablePaymentSchedule = retreatPaymentSchedules.reduce(
       (earliest, schedule) =>
-        new Date(schedule.startAt) < new Date(earliest.startAt) ? schedule : earliest,
+        new Date(schedule.startAt) < new Date(earliest.startAt)
+          ? schedule
+          : earliest,
       retreatPaymentSchedules[0]
     );
   } else {
     // 기본 결제 스케줄은 현재 날짜에 해당하는 스케줄로 설정
     const currentDate = new Date();
     const currentPaymentSchedules = retreatPaymentSchedules.filter(
-      (schedule) =>
+      schedule =>
         new Date(schedule.startAt) <= currentDate &&
         new Date(schedule.endAt) >= currentDate
     );
@@ -62,4 +61,4 @@ export function calculateRegistrationPrice(
   const calculatedPrice =
     eventCount * applicablePaymentSchedule.partialPricePerSchedule;
   return Math.min(calculatedPrice, applicablePaymentSchedule.totalPrice);
-} 
+}

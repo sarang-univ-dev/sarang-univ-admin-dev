@@ -1,10 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { CheckCircle2, RotateCcw } from "lucide-react";
-import { UserRetreatRegistrationPaymentStatus } from "@/types";
+
+import { Button } from "@/components/ui/button";
 import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
 import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
+import { UserRetreatRegistrationPaymentStatus } from "@/types";
 
 interface AccountStaffRegistrationTableActionsProps {
   row: AccountStaffTableData;
@@ -42,7 +43,7 @@ export function AccountStaffRegistrationTableActions({
   // 입금 대기 중 (PENDING)
   if (row.status === UserRetreatRegistrationPaymentStatus.PENDING) {
     return (
-      <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
         <Button
           size="sm"
           variant="outline"
@@ -78,7 +79,7 @@ export function AccountStaffRegistrationTableActions({
   // 입금 완료 (PAID)
   if (row.status === UserRetreatRegistrationPaymentStatus.PAID) {
     return (
-      <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
         <Button
           size="sm"
           variant="outline"

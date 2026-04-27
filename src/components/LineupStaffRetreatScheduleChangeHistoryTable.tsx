@@ -1,6 +1,22 @@
 "use client";
 
+import { TRetreatRegistrationSchedule } from "@/types";
+import { useToastStore } from "@/store/toast-store";
+import { AxiosError } from "axios";
+import { Search, CheckCircle2 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { GenderBadge } from "@/components/Badge";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -9,27 +25,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Search, CheckCircle2 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
-import { GenderBadge } from "@/components/Badge";
-import { generateScheduleColumns } from "../utils/retreat-utils";
-import { TRetreatRegistrationSchedule } from "@/types";
-import { formatDate } from "@/utils/formatDate";
-import { useToastStore } from "@/store/toast-store";
-import { AxiosError } from "axios";
 import { IUserScheduleChangeLineup } from "@/hooks/user-schedule-change-lineup-request";
 import { webAxios } from "@/lib/api/axios";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { formatDate } from "@/utils/formatDate";
+
+import { generateScheduleColumns } from "../utils/retreat-utils";
 
 const transformScheduleChangeRequestsForTable = (
   requests: IUserScheduleChangeLineup[],
@@ -39,7 +40,9 @@ const transformScheduleChangeRequestsForTable = (
 
   requests.forEach((request, index) => {
     // 현재 등록된 일정 처리
-    const currentScheduleIds = Array.isArray(request.userRetreatRegistrationScheduleIds)
+    const currentScheduleIds = Array.isArray(
+      request.userRetreatRegistrationScheduleIds
+    )
       ? request.userRetreatRegistrationScheduleIds
       : [];
 
@@ -186,21 +189,15 @@ export function RetreatScheduleChangeHistoryTable({
         </TableCell>
 
         {/* 학년 */}
-        <TableCell className="text-center px-3 py-2.5">
-          {row.grade}
-        </TableCell>
+        <TableCell className="text-center px-3 py-2.5">{row.grade}</TableCell>
 
         {/* 이름 */}
-        <TableCell
-          className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5"
-        >
+        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5">
           {row.name}
         </TableCell>
 
         {/* 현재 리더 */}
-        <TableCell
-          className="font-medium text-center px-3 py-2.5"
-        >
+        <TableCell className="font-medium text-center px-3 py-2.5">
           {row.currentLeader || "-"}
         </TableCell>
 
@@ -256,7 +253,7 @@ export function RetreatScheduleChangeHistoryTable({
       const response = await webAxios.post(
         `/api/v1/retreat/${retreatSlug}/line-up/schedule-history/resolve-memo`,
         {
-          userRetreatRegistrationHistoryMemoId: historyMemoId
+          userRetreatRegistrationHistoryMemoId: historyMemoId,
         }
       );
 
@@ -293,8 +290,7 @@ export function RetreatScheduleChangeHistoryTable({
   const handleResolveChange = (historyMemoId: number) => {
     confirmDialog.show({
       title: "일정 변경 요청 읽음 처리",
-      description:
-        "정말로 이 일정 변경 요청을 읽음 처리하시겠습니까?",
+      description: "정말로 이 일정 변경 요청을 읽음 처리하시겠습니까?",
       onConfirm: () => performResolveChange(historyMemoId),
     });
   };
@@ -312,24 +308,24 @@ export function RetreatScheduleChangeHistoryTable({
       );
     }
 
-    return(
+    return (
       <div className="flex flex-col gap-1">
         <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleResolveChange(row.historyMemoId)}
-            disabled={isLoading(row.historyMemoId?.toString(), "confirm")}
-            className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
-          >
-            {isLoading(row.historyMemoId?.toString(), "confirm") ? (
-              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : (
-              <CheckCircle2 className="h-3.5 w-3.5" />
-            )}
-            <span>읽음 처리</span>
-          </Button>
+          size="sm"
+          variant="outline"
+          onClick={() => handleResolveChange(row.historyMemoId)}
+          disabled={isLoading(row.historyMemoId?.toString(), "confirm")}
+          className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
+        >
+          {isLoading(row.historyMemoId?.toString(), "confirm") ? (
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          )}
+          <span>읽음 처리</span>
+        </Button>
       </div>
-    )
+    );
   };
 
   return (
@@ -359,105 +355,103 @@ export function RetreatScheduleChangeHistoryTable({
             ref={tableContainerRef}
           >
             <div className="max-h-[80vh] overflow-auto">
-                <Table className="min-w-full whitespace-nowrap relative text-sm">
-                  <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
-                    <TableRow>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>부서</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>성별</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>학년</span>
-                        </div>
-                      </TableHead>
+              <Table className="min-w-full whitespace-nowrap relative text-sm">
+                <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
+                  <TableRow>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>부서</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>성별</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>학년</span>
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="sticky left-0 bg-gray-100 z-20 px-3 py-2.5"
+                      rowSpan={2}
+                    >
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>이름</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>부서 리더</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>GBS</span>
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      colSpan={scheduleColumns.length}
+                      className="text-center px-3 py-2.5"
+                    >
+                      일정
+                    </TableHead>
+                    <TableHead className="px-6 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>변경 요청 메모</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-6 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>작성자</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-8 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>작성일시</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-6 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>라인업 처리자</span>
+                      </div>
+                    </TableHead>
+                  </TableRow>
+                  <TableRow>
+                    {scheduleColumns.map(scheduleCol => (
                       <TableHead
-                        className="sticky left-0 bg-gray-100 z-20 px-3 py-2.5"
-                        rowSpan={2}
+                        key={scheduleCol.key}
+                        className="p-2 text-center"
                       >
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>이름</span>
+                        <div className="flex items-center justify-center">
+                          <span className="text-xs whitespace-normal">
+                            {scheduleCol.label}
+                          </span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>부서 리더</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>GBS</span>
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        colSpan={scheduleColumns.length}
-                        className="text-center px-3 py-2.5"
-                      >
-                        일정
-                      </TableHead>
-                      <TableHead className="px-6 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>변경 요청 메모</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-6 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>작성자</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-8 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>작성일시</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-6 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>라인업 처리자</span>
-                        </div>
-                      </TableHead>
-                    </TableRow>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-gray-200">
+                  {filteredData.length === 0 && (
                     <TableRow>
-                      {scheduleColumns.map(scheduleCol => (
-                        <TableHead
-                          key={scheduleCol.key}
-                          className="p-2 text-center"
-                        >
-                          <div className="flex items-center justify-center">
-                            <span className="text-xs whitespace-normal">
-                              {scheduleCol.label}
-                            </span>
-                          </div>
-                        </TableHead>
-                      ))}
+                      <TableCell
+                        colSpan={11 + scheduleColumns.length}
+                        className="text-center py-10 text-gray-500"
+                      >
+                        {allData.length > 0
+                          ? "검색 결과가 없습니다."
+                          : "표시할 데이터가 없습니다."}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-gray-200">
-                    {filteredData.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={11 + scheduleColumns.length}
-                          className="text-center py-10 text-gray-500"
-                        >
-                          {allData.length > 0
-                            ? "검색 결과가 없습니다."
-                            : "표시할 데이터가 없습니다."}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    {filteredData.map((row, index) =>
-                      renderTableRow(row, index)
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                  )}
+                  {filteredData.map((row, index) => renderTableRow(row, index))}
+                </TableBody>
+              </Table>
             </div>
           </div>
+        </div>
       </CardContent>
     </Card>
   );

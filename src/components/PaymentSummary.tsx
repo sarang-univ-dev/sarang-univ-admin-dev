@@ -1,7 +1,11 @@
+import {
+  UserRetreatRegistrationPaymentStatus,
+  IUnivGroupAdminStaffRetreat,
+} from "@/types";
+
+import { StatusBadge } from "./Badge";
 import { SummaryTable } from "./SummaryTable";
 import { generateDepartmentStats } from "../utils/retreat-utils";
-import { StatusBadge } from "./Badge";
-import { UserRetreatRegistrationPaymentStatus, IUnivGroupAdminStaffRetreat } from "@/types";
 
 interface PaymentSummaryProps {
   registrations: IUnivGroupAdminStaffRetreat[];
@@ -15,11 +19,11 @@ interface PaymentSummaryProps {
  * - 정적 계산만 수행 (인터랙션 없음)
  * - JavaScript 번들 크기 감소
  */
-export function PaymentSummary({
-  registrations = [],
-}: PaymentSummaryProps) {
+export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
   // 부서 수 계산 (서버에서 한 번만 실행)
-  const uniqueDepartments = new Set(registrations.map(reg => reg.univGroupNumber)).size;
+  const uniqueDepartments = new Set(
+    registrations.map(reg => reg.univGroupNumber)
+  ).size;
 
   // StatusBadge 컴포넌트를 활용한 동적 컬럼 생성
   const columns = [
@@ -82,7 +86,9 @@ export function PaymentSummary({
       header: (
         <div className="flex justify-center">
           <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 shrink-0">
-            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">전체 인원</span>
+            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+              전체 인원
+            </span>
           </div>
         </div>
       ),
@@ -93,9 +99,10 @@ export function PaymentSummary({
   const allRows = generateDepartmentStats(registrations);
 
   // 부서가 1개인 경우 전체 행 제외
-  const rows = uniqueDepartments <= 1
-    ? allRows.filter(row => row.id !== "total")
-    : allRows;
+  const rows =
+    uniqueDepartments <= 1
+      ? allRows.filter(row => row.id !== "total")
+      : allRows;
 
   // 각 행을 변환하여 셀 생성
   const formattedRows = rows.map(row => {

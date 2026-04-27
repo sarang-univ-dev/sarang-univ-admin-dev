@@ -13,13 +13,13 @@ export const COMPLETE_GROUP_ROW_COUNT = 4;
 // ];
 
 export const MEMO_COLORS = [
-    "transparent",  // 무색
-    "#FECACA",  // Red
-    "#FED7AA",  // Orange
-    "#FEF08A",  // Yellow
-    "#BBF7D0",  // Green
-    "#BAE6FD",  // Sky
-    "#C7D2FE",  // Indigo
-    "#E9D5FF",  // Purple
-    "#E5E5E5",  // Neutral
+  "transparent", // 무색
+  "#FECACA", // Red
+  "#FED7AA", // Orange
+  "#FEF08A", // Yellow
+  "#BBF7D0", // Green
+  "#BAE6FD", // Sky
+  "#C7D2FE", // Indigo
+  "#E9D5FF", // Purple
+  "#E5E5E5", // Neutral
 ] as const;

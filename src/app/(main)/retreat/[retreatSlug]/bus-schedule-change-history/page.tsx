@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useUserScheduleChangeShuttleBusHistory } from "@/hooks/user-schedule-change-bus-history";
-import { ShuttleBusScheduleChangeHistoryTable } from "@/components/ShuttleBusScheduleChangeHistoryTable";
 import { useParams } from "next/navigation";
-import { TRetreatShuttleBus, TRetreatUnivGroup } from "@/types";
+import { useEffect, useState } from "react";
+
+import { ShuttleBusScheduleChangeHistoryTable } from "@/components/ShuttleBusScheduleChangeHistoryTable";
+import { useUserScheduleChangeShuttleBusHistory } from "@/hooks/user-schedule-change-bus-history";
 import { webAxios } from "@/lib/api/axios";
+import { TRetreatShuttleBus, TRetreatUnivGroup } from "@/types";
 
 export default function ScheduleChangeHistoryPage() {
   const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>([]);

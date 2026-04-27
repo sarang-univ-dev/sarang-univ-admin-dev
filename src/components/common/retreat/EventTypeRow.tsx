@@ -31,7 +31,7 @@ export function EventTypeRow({
         <Icon className="mr-2 h-4 w-4" />
         {config.label}
       </TableCell>
-      {dates.map((date) => {
+      {dates.map(date => {
         // 해당 날짜의 해당 이벤트 타입 스케줄 찾기
         const schedule = dateScheduleMap.get(date)?.get(eventType);
 

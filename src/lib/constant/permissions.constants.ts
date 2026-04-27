@@ -38,23 +38,22 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
   ],
 
   [UserRole.LINEUP_STAFF]: [
-    PagePath.GBS_LINE_UP, 
-    PagePath.GBS_LINE_UP_MANAGEMENT, 
-    PagePath.LINEUP_VIEW_CHANGES
+    PagePath.GBS_LINE_UP,
+    PagePath.GBS_LINE_UP_MANAGEMENT,
+    PagePath.LINEUP_VIEW_CHANGES,
   ],
 
   [UserRole.UNIV_GROUP_DORMITORY_MEMBER]: [
-    PagePath.DORMITORY_TEAM_MEMBER, 
+    PagePath.DORMITORY_TEAM_MEMBER,
     PagePath.MEAL_CHECK,
-    PagePath.SHUTTLE_CHECK
-    
+    PagePath.SHUTTLE_CHECK,
   ],
 
   [UserRole.DORMITORY_STAFF]: [
-    PagePath.ASSIGN_GBS_LOCATION, 
-    PagePath.DORM_VIEW_CHANGES, 
+    PagePath.ASSIGN_GBS_LOCATION,
+    PagePath.DORM_VIEW_CHANGES,
     PagePath.MEAL_CHECK,
-    PagePath.DORMITORY_ASSIGNMENT
+    PagePath.DORMITORY_ASSIGNMENT,
   ],
 
   [UserRole.SHUTTLE_BUS_BOARDING_STAFF]: [],

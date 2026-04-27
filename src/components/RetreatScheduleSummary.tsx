@@ -1,13 +1,14 @@
 import {
-  generateScheduleStats,
-  groupScheduleColumnsByDay,
-} from "../utils/retreat-utils";
-import {
   TRetreatRegistrationSchedule,
   UserRetreatRegistrationPaymentStatus,
   IUnivGroupAdminStaffRetreat,
 } from "@/types";
+
 import { RetreatScheduleSummaryClient } from "./RetreatScheduleSummaryClient";
+import {
+  generateScheduleStats,
+  groupScheduleColumnsByDay,
+} from "../utils/retreat-utils";
 
 interface RetreatScheduleSummaryProps {
   registrations: IUnivGroupAdminStaffRetreat[];
@@ -47,7 +48,9 @@ export function RetreatScheduleSummary({
   }
 
   // 부서 수 계산
-  const uniqueDepartments = new Set(registrations.map(reg => reg.univGroupNumber)).size;
+  const uniqueDepartments = new Set(
+    registrations.map(reg => reg.univGroupNumber)
+  ).size;
 
   // 요일별로 그룹화된 스케줄 컬럼
   const dayGroups = groupScheduleColumnsByDay(schedules);
@@ -59,19 +62,23 @@ export function RetreatScheduleSummary({
   const allRows = generateScheduleStats(registrations, schedules);
 
   // 부서가 1개인 경우 전체 행 제외
-  const rows = uniqueDepartments <= 1
-    ? allRows.filter(row => row.id !== "total")
-    : allRows;
+  const rows =
+    uniqueDepartments <= 1
+      ? allRows.filter(row => row.id !== "total")
+      : allRows;
 
   // 전참/부분참 계산
   const paidRegistrations = registrations.filter(
     reg => reg.paymentStatus === UserRetreatRegistrationPaymentStatus.PAID
   );
 
-  const participationStats: Record<string, { full: number; partial: number }> = {};
+  const participationStats: Record<string, { full: number; partial: number }> =
+    {};
 
   // 부서별 초기화
-  const departments = [...new Set(paidRegistrations.map(reg => reg.univGroupNumber))];
+  const departments = [
+    ...new Set(paidRegistrations.map(reg => reg.univGroupNumber)),
+  ];
   departments.forEach(dept => {
     participationStats[dept] = { full: 0, partial: 0 };
   });
@@ -80,7 +87,8 @@ export function RetreatScheduleSummary({
   const totalSchedules = schedules.length;
 
   paidRegistrations.forEach(reg => {
-    const userScheduleCount = reg.userRetreatRegistrationScheduleIds?.length || 0;
+    const userScheduleCount =
+      reg.userRetreatRegistrationScheduleIds?.length || 0;
 
     if (userScheduleCount === totalSchedules) {
       participationStats[reg.univGroupNumber].full++;
@@ -118,20 +126,20 @@ export function RetreatScheduleSummary({
       totalParticipants = departmentCounts[deptNumber] || 0;
     }
 
-      // 스케줄별 셀 생성
-      const scheduleCells: Record<string, JSX.Element> = {};
-      allScheduleColumns.forEach(column => {
-        const count = row.cells[column.key] || 0;
-        scheduleCells[column.key] = (
-          <div className="text-center">
-            {row.id === "total" ? (
-              <span className="font-semibold">{count}명</span>
-            ) : (
-              <span>{count}명</span>
-            )}
-          </div>
-        );
-      });
+    // 스케줄별 셀 생성
+    const scheduleCells: Record<string, JSX.Element> = {};
+    allScheduleColumns.forEach(column => {
+      const count = row.cells[column.key] || 0;
+      scheduleCells[column.key] = (
+        <div className="text-center">
+          {row.id === "total" ? (
+            <span className="font-semibold">{count}명</span>
+          ) : (
+            <span>{count}명</span>
+          )}
+        </div>
+      );
+    });
 
     // 전참/부분참 계산
     let fullParticipation = 0;
@@ -191,5 +199,10 @@ export function RetreatScheduleSummary({
   });
 
   // Client Component로 UI 위임
-  return <RetreatScheduleSummaryClient formattedRows={formattedRows} dayGroups={dayGroups} />;
+  return (
+    <RetreatScheduleSummaryClient
+      formattedRows={formattedRows}
+      dayGroups={dayGroups}
+    />
+  );
 }

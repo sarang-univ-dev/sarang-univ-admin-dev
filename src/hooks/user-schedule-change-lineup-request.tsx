@@ -1,9 +1,7 @@
 import useSWR from "swr";
+
 import { webAxios } from "@/lib/api/axios";
-import {
-  UserRetreatRegistrationType,
-  Gender,
-} from "@/types";
+import { UserRetreatRegistrationType, Gender } from "@/types";
 
 export interface IUserScheduleChangeLineup {
   id: number;
@@ -35,7 +33,10 @@ export function useUserScheduleChangeLineup(retreatSlug?: string) {
     ? `/api/v1/retreat/${retreatSlug}/line-up/schedule-change-request`
     : null;
 
-  const { data, error, isLoading, mutate } = useSWR<IUserScheduleChangeLineup[], Error>(endpoint, fetcher);
+  const { data, error, isLoading, mutate } = useSWR<
+    IUserScheduleChangeLineup[],
+    Error
+  >(endpoint, fetcher);
 
   return { data, error, isLoading, mutate };
-} 
+}

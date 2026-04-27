@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -12,19 +11,22 @@ import {
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
-import { VirtualizedTable } from "@/components/common/table";
+import { useMemo, useState, useEffect, useCallback } from "react";
+
 import { DetailSidebar } from "@/components/common/detail-sidebar";
+import { ScheduleChangeModal } from "@/components/common/retreat";
+import { VirtualizedTable } from "@/components/common/table";
 import { useScheduleChangeRequest } from "@/hooks/schedule-change-request/use-schedule-change-request";
 import {
   useScheduleChangeRequestColumns,
   ScheduleChangeRequestTableData,
 } from "@/hooks/schedule-change-request/use-schedule-change-request-columns";
-import { ScheduleChangeRequestTableToolbar } from "./ScheduleChangeRequestTableToolbar";
-import { ScheduleChangeRequestDetailContent } from "./ScheduleChangeRequestDetailContent";
-import { ScheduleChangeModal } from "@/components/common/retreat";
-import { transformScheduleChangeRequestForTable } from "./utils";
-import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
 import { webAxios } from "@/lib/api/axios";
+import { TRetreatRegistrationSchedule, TRetreatPaymentSchedule } from "@/types";
+
+import { ScheduleChangeRequestDetailContent } from "./ScheduleChangeRequestDetailContent";
+import { ScheduleChangeRequestTableToolbar } from "./ScheduleChangeRequestTableToolbar";
+import { transformScheduleChangeRequestForTable } from "./utils";
 
 interface ScheduleChangeRequestTableProps {
   initialData: any[];
@@ -126,7 +128,11 @@ export function ScheduleChangeRequestTable({
     selectedPaymentScheduleId?: number;
   }) => {
     if (!selectedRow) return;
-    await approveScheduleChange(selectedRow.id, data.scheduleIds, data.selectedPaymentScheduleId);
+    await approveScheduleChange(
+      selectedRow.id,
+      data.scheduleIds,
+      data.selectedPaymentScheduleId
+    );
   };
 
   // 컬럼 훅으로 컬럼 정의 가져오기
@@ -181,7 +187,7 @@ export function ScheduleChangeRequestTable({
         row.original.memo,
       ];
 
-      return searchableFields.some((field) =>
+      return searchableFields.some(field =>
         field?.toLowerCase().includes(filterValue.toLowerCase())
       );
     },
@@ -213,9 +219,7 @@ export function ScheduleChangeRequestTable({
           overscan={10}
           className="max-h-[70vh]"
           emptyMessage={
-            globalFilter
-              ? "검색 결과가 없습니다."
-              : "표시할 데이터가 없습니다."
+            globalFilter ? "검색 결과가 없습니다." : "표시할 데이터가 없습니다."
           }
         />
       </div>
@@ -227,7 +231,7 @@ export function ScheduleChangeRequestTable({
         data={sidebarData}
         title="상세 정보"
       >
-        {(data) => (
+        {data => (
           <ScheduleChangeRequestDetailContent
             data={data}
             schedules={schedules}

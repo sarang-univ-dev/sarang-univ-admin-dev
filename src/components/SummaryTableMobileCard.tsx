@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-import { UserRetreatRegistrationPaymentStatus } from "@/types";
 import {
   Shield,
   CheckCheck,
@@ -10,7 +8,10 @@ import {
   RefreshCcw,
   UserPlus,
 } from "lucide-react";
+import type React from "react";
+
 import { extractNumber } from "@/lib/utils/extract-number";
+import { UserRetreatRegistrationPaymentStatus } from "@/types";
 
 interface SummaryTableColumn {
   id: string;
@@ -39,7 +40,10 @@ const renderStatusBadgeWithCount = (
     case UserRetreatRegistrationPaymentStatus.PENDING:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-yellow-50 border border-yellow-200">
-          <Clock className="h-3.5 w-3.5 text-yellow-500 mr-1.5 flex-shrink-0" aria-hidden="true" />
+          <Clock
+            className="h-3.5 w-3.5 text-yellow-500 mr-1.5 flex-shrink-0"
+            aria-hidden="true"
+          />
           <span className="text-xs font-medium text-yellow-700 whitespace-nowrap">
             입금 확인 대기 <span className="font-bold">{count}</span>명
           </span>
@@ -48,7 +52,10 @@ const renderStatusBadgeWithCount = (
     case UserRetreatRegistrationPaymentStatus.PAID:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
-          <CheckCheck className="h-3.5 w-3.5 text-green-500 mr-1.5 flex-shrink-0" aria-hidden="true" />
+          <CheckCheck
+            className="h-3.5 w-3.5 text-green-500 mr-1.5 flex-shrink-0"
+            aria-hidden="true"
+          />
           <span className="text-xs font-medium text-green-700 whitespace-nowrap">
             입금 확인 완료 <span className="font-bold">{count}</span>명
           </span>
@@ -57,7 +64,10 @@ const renderStatusBadgeWithCount = (
     case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200">
-          <RefreshCcw className="h-3.5 w-3.5 text-blue-500 mr-1.5 flex-shrink-0" aria-hidden="true" />
+          <RefreshCcw
+            className="h-3.5 w-3.5 text-blue-500 mr-1.5 flex-shrink-0"
+            aria-hidden="true"
+          />
           <span className="text-xs font-medium text-blue-700 whitespace-nowrap">
             환불 처리 대기 <span className="font-bold">{count}</span>명
           </span>
@@ -66,7 +76,10 @@ const renderStatusBadgeWithCount = (
     case UserRetreatRegistrationPaymentStatus.REFUNDED:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200">
-          <RotateCcw className="h-3.5 w-3.5 text-purple-500 mr-1.5 flex-shrink-0" aria-hidden="true" />
+          <RotateCcw
+            className="h-3.5 w-3.5 text-purple-500 mr-1.5 flex-shrink-0"
+            aria-hidden="true"
+          />
           <span className="text-xs font-medium text-purple-700 whitespace-nowrap">
             환불 처리 완료 <span className="font-bold">{count}</span>명
           </span>
@@ -75,7 +88,10 @@ const renderStatusBadgeWithCount = (
     case UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-pink-50 border border-pink-200">
-          <UserPlus className="h-3.5 w-3.5 text-pink-500 mr-1.5 flex-shrink-0" aria-hidden="true" />
+          <UserPlus
+            className="h-3.5 w-3.5 text-pink-500 mr-1.5 flex-shrink-0"
+            aria-hidden="true"
+          />
           <span className="text-xs font-medium text-pink-700 whitespace-nowrap">
             새가족 신청 요청 <span className="font-bold">{count}</span>명
           </span>
@@ -84,7 +100,10 @@ const renderStatusBadgeWithCount = (
     case UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200">
-          <Shield className="h-3.5 w-3.5 text-indigo-500 mr-1.5 flex-shrink-0" aria-hidden="true" />
+          <Shield
+            className="h-3.5 w-3.5 text-indigo-500 mr-1.5 flex-shrink-0"
+            aria-hidden="true"
+          />
           <span className="text-xs font-medium text-indigo-700 whitespace-nowrap">
             군지체 신청 요청 <span className="font-bold">{count}</span>명
           </span>
@@ -121,18 +140,21 @@ export function SummaryTableMobileCard({
 
   return (
     <div className="space-y-3">
-      {rows.map((row) => {
+      {rows.map(row => {
         return (
           <div key={row.id}>
             {/* 컬럼별 데이터를 상태 배지로 표시 */}
             <div className="grid grid-cols-2 gap-2">
-              {columns.map((column) => {
+              {columns.map(column => {
                 const cellValue = row.cells[column.id];
                 const count = extractNumber(cellValue);
                 const badge = renderStatusBadgeWithCount(column.id, count);
 
                 return (
-                  <div key={`${row.id}-${column.id}`} className="flex justify-center">
+                  <div
+                    key={`${row.id}-${column.id}`}
+                    className="flex justify-center"
+                  >
                     {badge}
                   </div>
                 );

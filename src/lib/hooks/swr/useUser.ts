@@ -1,7 +1,8 @@
 "use client";
 
-import AuthAPI from "../../api/auth";
 import useSWR from "swr";
+
+import AuthAPI from "../../api/auth";
 
 const useUser = () => {
   const { data, error, mutate, isLoading } = useSWR(

@@ -1,5 +1,9 @@
 "use client";
 
+import { Sunrise, Sun, Sunset, Bed } from "lucide-react";
+
+import { getRetreatDatesForDisplay } from "@/components/features/schedule-change-request/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -8,11 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Sunrise, Sun, Sunset, Bed } from "lucide-react";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { formatSimpleDate } from "@/utils/formatDate";
-import { getRetreatDatesForDisplay } from "@/components/features/schedule-change-request/utils";
 
 // 이벤트 타입을 한글로 매핑
 const EVENT_TYPE_MAP: Record<string, string> = {
@@ -83,7 +84,7 @@ export function ScheduleSelectionTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {["BREAKFAST", "LUNCH", "DINNER", "SLEEP"].map((eventType) => (
+          {["BREAKFAST", "LUNCH", "DINNER", "SLEEP"].map(eventType => (
             <TableRow key={eventType}>
               <TableCell className="flex items-center justify-start whitespace-nowrap sm:px-2 px-1">
                 {EVENT_ICON_MAP[eventType]}
@@ -91,7 +92,7 @@ export function ScheduleSelectionTable({
               </TableCell>
               {retreatDatesForDisplay.map((date: string) => {
                 const event = schedules.find(
-                  (s) =>
+                  s =>
                     new Date(s.time).toLocaleDateString("ko-KR") ===
                       new Date(date).toLocaleDateString("ko-KR") &&
                     s.type === eventType

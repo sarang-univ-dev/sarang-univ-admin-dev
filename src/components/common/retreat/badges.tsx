@@ -1,8 +1,4 @@
 import {
-  UserRetreatRegistrationPaymentStatus,
-  UserRetreatRegistrationType,
-} from "@/types";
-import {
   Shield,
   User,
   CheckCheck,
@@ -12,6 +8,11 @@ import {
   UserPlus,
 } from "lucide-react";
 import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
+
+import {
+  UserRetreatRegistrationPaymentStatus,
+  UserRetreatRegistrationType,
+} from "@/types";
 
 /**
  * 입금 상태에 따른 배지 컴포넌트
@@ -96,21 +97,27 @@ export const TypeBadge = ({ type }: { type: UserRetreatRegistrationType }) => {
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-pink-50 border border-pink-200">
           <UserPlus className="h-3.5 w-3.5 text-pink-500 mr-1.5 flex-shrink-0" />
-          <span className="text-xs font-medium text-pink-700 whitespace-nowrap">새가족</span>
+          <span className="text-xs font-medium text-pink-700 whitespace-nowrap">
+            새가족
+          </span>
         </div>
       );
     case UserRetreatRegistrationType.SOLDIER:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200">
           <Shield className="h-3.5 w-3.5 text-indigo-500 mr-1.5 flex-shrink-0" />
-          <span className="text-xs font-medium text-indigo-700 whitespace-nowrap">군지체</span>
+          <span className="text-xs font-medium text-indigo-700 whitespace-nowrap">
+            군지체
+          </span>
         </div>
       );
     case UserRetreatRegistrationType.STAFF:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
           <User className="h-3.5 w-3.5 text-gray-500 mr-1.5 flex-shrink-0" />
-          <span className="text-xs font-medium text-gray-700 whitespace-nowrap">간사</span>
+          <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+            간사
+          </span>
         </div>
       );
     default:

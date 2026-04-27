@@ -1,4 +1,5 @@
 import { create } from "zustand";
+
 import { MediaQueryKey } from "@/lib/constants/breakpoints";
 
 interface UIStore {
@@ -20,20 +21,20 @@ interface UIStore {
   setMediaQueries: (queries: Record<string, boolean>) => void;
 }
 
-export const useUIStore = create<UIStore>((set) => ({
+export const useUIStore = create<UIStore>(set => ({
   // 초기값: 모든 쿼리를 false (SSR 시 desktop 기본)
   mediaQueries: {},
 
   setMediaQuery: (key, matches) =>
-    set((state) => ({
+    set(state => ({
       mediaQueries: {
         ...state.mediaQueries,
         [key]: matches,
       },
     })),
 
-  setMediaQueries: (queries) =>
-    set((state) => ({
+  setMediaQueries: queries =>
+    set(state => ({
       mediaQueries: {
         ...state.mediaQueries,
         ...queries,
@@ -45,7 +46,7 @@ export const useUIStore = create<UIStore>((set) => ({
  * 특정 미디어 쿼리 상태를 가져오는 헬퍼 훅
  */
 export function useMediaQueryStore(key: MediaQueryKey | string): boolean {
-  return useUIStore((state) => state.mediaQueries[key] ?? false);
+  return useUIStore(state => state.mediaQueries[key] ?? false);
 }
 
 /**

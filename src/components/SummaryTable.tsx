@@ -1,8 +1,11 @@
 "use client";
 
+import html2canvas from "html2canvas";
+import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import type React from "react";
-
 import { useState, useRef } from "react";
+
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -11,10 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Download, ChevronDown, ChevronUp } from "lucide-react";
-import html2canvas from "html2canvas";
 import { useIsMobile } from "@/hooks/use-media-query";
+
 import { SummaryTableMobileCard } from "./SummaryTableMobileCard";
 
 interface SummaryTableColumn {
@@ -97,9 +98,7 @@ export function SummaryTable({
         <div className="flex-1 min-w-0">
           <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
           {description && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {description}
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -166,7 +165,10 @@ export function SummaryTable({
                       </span>
                     </TableCell>
                     {columns.map(column => (
-                      <TableCell key={`${row.id}-${column.id}`} className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 whitespace-nowrap">
+                      <TableCell
+                        key={`${row.id}-${column.id}`}
+                        className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 whitespace-nowrap"
+                      >
                         {row.cells[column.id] || "-"}
                       </TableCell>
                     ))}

@@ -1,3 +1,6 @@
+import { CreditCard } from "lucide-react";
+import { useMemo } from "react";
+
 import {
   Card,
   CardContent,
@@ -14,13 +17,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreditCard } from "lucide-react";
+import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
 import {
   TUserRetreatShuttleBusRegistration,
   UserRetreatShuttleBusPaymentStatus,
 } from "@/types";
-import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
-import { useMemo } from "react";
+
 import { StatusBadge } from "./Badge-bus";
 
 interface AccountStatusProps {
@@ -45,14 +47,17 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       const expectedIncome = deptRegistrations
         .filter(
           reg =>
-            reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PENDING
+            reg.shuttleBusPaymentStatus ===
+            UserRetreatShuttleBusPaymentStatus.PENDING
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
       // 실제 입금 금액: 입금 완료(PAID)인 항목의 금액 합계
       const actualIncome = deptRegistrations
         .filter(
-          reg => reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
+          reg =>
+            reg.shuttleBusPaymentStatus ===
+            UserRetreatShuttleBusPaymentStatus.PAID
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
@@ -69,7 +74,8 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       const actualRefund = deptRegistrations
         .filter(
           reg =>
-            reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.REFUNDED
+            reg.shuttleBusPaymentStatus ===
+            UserRetreatShuttleBusPaymentStatus.REFUNDED
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
