@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "sudo node server.mjs",
-    "dev:http": "next dev -p 3000",
+    "dev": "node server.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
