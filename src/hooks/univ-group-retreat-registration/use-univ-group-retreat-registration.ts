@@ -551,7 +551,7 @@ export function useUnivGroupRetreatRegistration(
    * - useCallback으로 안정화 (columns hook에서 dependency로 사용)
    */
   const deleteAdminMemo = useCallback(
-    (memoId: number) => {
+    async (memoId: number) => {
       confirmDialog.show({
         title: "메모 삭제",
         description: "정말로 메모를 삭제하시겠습니까?",

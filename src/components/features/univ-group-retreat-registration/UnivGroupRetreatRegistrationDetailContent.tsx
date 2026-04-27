@@ -1,3 +1,5 @@
+"use client";
+
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { TRetreatRegistrationSchedule, Gender } from "@/types";

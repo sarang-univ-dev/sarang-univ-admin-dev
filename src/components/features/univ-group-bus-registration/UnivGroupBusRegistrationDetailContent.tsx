@@ -1,3 +1,5 @@
+"use client";
+
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { IUnivGroupBusRegistration } from "@/types/bus-registration";
 import { TRetreatShuttleBus, UserRetreatShuttleBusPaymentStatus, Gender } from "@/types";
