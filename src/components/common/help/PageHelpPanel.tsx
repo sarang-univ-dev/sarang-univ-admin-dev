@@ -1,9 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Maximize2, Minimize2, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-media-query";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
@@ -25,14 +22,6 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import {
-  HelpDrawer,
-  HelpDrawerContent,
-  HelpDrawerHeader,
-  HelpDrawerTitle,
-  HelpDrawerDescription,
-  HelpDrawerBody,
-} from "./HelpDrawer";
 import type { PageHelpContent, HelpSection, BadgeHelpContent } from "@/lib/help/types";
 import {
   HelpExampleRenderer,
@@ -45,13 +34,11 @@ interface PageHelpPanelProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type ViewMode = "drawer" | "modal";
-
 /**
  * 페이지 도움말 패널 컴포넌트
  *
  * @description
- * - 데스크톱: HelpDrawer (non-modal, snapPoints) 또는 Dialog (modal)
+ * - 데스크톱: Dialog
  * - 모바일: 전체화면 Sheet
  * - Accordion으로 섹션 콘텐츠 렌더링
  */
@@ -61,7 +48,6 @@ export function PageHelpPanel({
   onOpenChange,
 }: PageHelpPanelProps) {
   const isMobile = useIsMobile();
-  const [viewMode, setViewMode] = useState<ViewMode>("drawer");
 
   // 섹션 콘텐츠 렌더링
   const renderSectionContent = () => (
@@ -184,12 +170,12 @@ export function PageHelpPanel({
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[90vh] flex flex-col">
+        <SheetContent side="bottom" className="flex h-[90vh] flex-col overflow-hidden">
           <SheetHeader className="flex-shrink-0">
             <SheetTitle>{content.title}</SheetTitle>
             <SheetDescription>{content.description}</SheetDescription>
           </SheetHeader>
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="min-h-0 flex-1 pr-4">
             <div className="py-4">{renderSectionContent()}</div>
           </ScrollArea>
         </SheetContent>
@@ -197,77 +183,17 @@ export function PageHelpPanel({
     );
   }
 
-  // 데스크톱: Modal 모드
-  if (viewMode === "modal") {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0 flex flex-row items-start justify-between">
-            <div className="flex-1">
-              <DialogTitle>{content.title}</DialogTitle>
-              <DialogDescription>{content.description}</DialogDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 mr-6"
-              onClick={() => setViewMode("drawer")}
-            >
-              <Minimize2 className="h-4 w-4" />
-              <span className="sr-only">축소</span>
-            </Button>
-          </DialogHeader>
-          <ScrollArea className="flex-1 pr-4">
-            <div className="py-4">{renderSectionContent()}</div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  // 데스크톱: HelpDrawer 모드 (non-modal, snapPoints)
   return (
-    <HelpDrawer
-      open={open}
-      onOpenChange={onOpenChange}
-      modal={false}
-      snapPoints={[0.25, 0.5, 0.75]}
-    >
-      <HelpDrawerContent modal={false}>
-        <HelpDrawerHeader className="flex flex-row items-center justify-between pr-4">
-          <div className="flex-1">
-            <HelpDrawerTitle>{content.title}</HelpDrawerTitle>
-            <HelpDrawerDescription className="mt-1">
-              {content.description}
-            </HelpDrawerDescription>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setViewMode("modal")}
-            >
-              <Maximize2 className="h-4 w-4" />
-              <span className="sr-only">전체 보기</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">닫기</span>
-            </Button>
-          </div>
-        </HelpDrawerHeader>
-        <HelpDrawerBody className="max-h-[60vh]">
-          <ScrollArea className="h-full pr-4">
-            {renderSectionContent()}
-          </ScrollArea>
-        </HelpDrawerBody>
-      </HelpDrawerContent>
-    </HelpDrawer>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex h-[80vh] max-w-3xl flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0 pr-8">
+          <DialogTitle>{content.title}</DialogTitle>
+          <DialogDescription>{content.description}</DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="min-h-0 flex-1 pr-4">
+          <div className="py-4">{renderSectionContent()}</div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 }
