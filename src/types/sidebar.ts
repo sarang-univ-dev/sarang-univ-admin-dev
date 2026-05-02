@@ -17,6 +17,7 @@ export interface RetreatWithMenus {
   menuItems: MenuItem[];
 }
 
-export interface RetreatsResponse {
+export interface AdminNavigationResponse {
+  globalMenuItems: MenuItem[];
   retreats: RetreatWithMenus[];
 }

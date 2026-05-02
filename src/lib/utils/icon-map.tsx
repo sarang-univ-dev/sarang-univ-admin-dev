@@ -17,6 +17,9 @@ import {
   Calendar,
   CalendarDays,
   Bus,
+  Plus,
+  List,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +46,9 @@ export const iconMap: Record<string, LucideIcon> = {
   Calendar,
   CalendarDays,
   Bus,
+  Plus,
+  List,
+  GraduationCap,
   BusIcon: Bus, // BusIcon은 Bus와 동일하게 처리
 };
 

@@ -9,7 +9,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { getRetreatsWithMenusServer } from "@/lib/api/server-admin-api";
+import { getAdminNavigationServer } from "@/lib/api/server-admin-api";
 
 /**
  * Main Layout - Server Component
@@ -21,7 +21,7 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   // 서버에서 데이터 fetch (권한 계산 완료된 데이터)
-  const retreats = await getRetreatsWithMenusServer();
+  const navigation = await getAdminNavigationServer();
 
   // 서버에서 사이드바 상태 cookie 읽기
   const cookieStore = await cookies();
@@ -38,7 +38,7 @@ export default async function MainLayout({
       <SidebarProvider defaultOpen={defaultOpen}>
         <div className="flex min-h-screen w-full">
           {/* 새로운 사이드바 (shadcn UI) */}
-          <AppSidebar retreats={retreats} />
+          <AppSidebar navigation={navigation} />
 
           <div className="flex flex-1 flex-col min-w-0">
             <SidebarInset>
