@@ -182,16 +182,16 @@ export default function GradeManagementClient({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">부서/학년 관리</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">부서/학년 관리</h1>
+        <p className="text-sm text-muted-foreground">
           모든 부서의 신청 가능 학년을 관리합니다. 삭제 대신 비활성화합니다.{" "}
           비활성화되는 경우 신청폼 학년 목록에서 나오지 않습니다.
         </p>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-3 xl:grid-cols-2">
         {univGroups.map(group => {
           const draft = drafts[group.id] ?? { name: "", number: 1 };
           const isCreating = creatingGroupIds.includes(group.id);
@@ -201,11 +201,11 @@ export default function GradeManagementClient({
 
           return (
             <Card key={group.id}>
-              <CardHeader>
-                <CardTitle>
+              <CardHeader className="p-4 pb-3">
+                <CardTitle className="text-base">
                   {group.number}부 {group.name}
                 </CardTitle>
-                <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                   <span>학년 {group.grades.length}개</span>
                   <Button
                     type="button"
@@ -219,10 +219,10 @@ export default function GradeManagementClient({
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
+              <CardContent className="space-y-3 p-4 pt-0">
+                <div className="space-y-1">
                   {group.grades.length === 0 ? (
-                    <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                    <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
                       등록된 학년이 없습니다.
                     </p>
                   ) : (
@@ -238,11 +238,12 @@ export default function GradeManagementClient({
                       return (
                         <div
                           key={grade.id}
-                          className="grid gap-3 rounded-md border p-3 md:grid-cols-[100px_1fr_auto_auto]"
+                          className="grid gap-2 rounded-md px-2 py-2 hover:bg-muted/40 md:grid-cols-[72px_1fr_auto_auto] md:items-end"
                         >
-                          <div className="space-y-2">
-                            <Label>학년</Label>
+                          <div className="space-y-1">
+                            <Label className="text-xs">학년</Label>
                             <Input
+                              className="h-8"
                               type="number"
                               min={1}
                               max={20}
@@ -255,9 +256,10 @@ export default function GradeManagementClient({
                               }
                             />
                           </div>
-                          <div className="space-y-2">
-                            <Label>학년명</Label>
+                          <div className="space-y-1">
+                            <Label className="text-xs">학년명</Label>
                             <Input
+                              className="h-8"
                               value={grade.name}
                               onChange={event =>
                                 updateLocalGrade({
@@ -267,7 +269,7 @@ export default function GradeManagementClient({
                               }
                             />
                           </div>
-                          <div className="flex items-end gap-2 pb-2">
+                          <div className="flex h-8 items-center gap-2">
                             <Switch
                               checked={grade.isActive}
                               onCheckedChange={checked =>
@@ -281,9 +283,10 @@ export default function GradeManagementClient({
                               {grade.isActive ? "활성" : "비활성"}
                             </span>
                           </div>
-                          <div className="flex items-end">
+                          <div className="flex items-center">
                             <Button
                               type="button"
+                              size="sm"
                               onClick={() => saveGrade(grade)}
                               disabled={isSaving || !hasChanges}
                             >
@@ -299,11 +302,12 @@ export default function GradeManagementClient({
 
                 <form
                   onSubmit={event => createGroupGrade(event, group.id)}
-                  className="grid gap-3 rounded-md bg-muted/40 p-3 md:grid-cols-[100px_1fr_auto]"
+                  className="grid gap-2 rounded-md bg-muted/40 p-2 md:grid-cols-[72px_1fr_auto] md:items-end"
                 >
-                  <div className="space-y-2">
-                    <Label>학년</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">학년</Label>
                     <Input
+                      className="h-8"
                       type="number"
                       min={1}
                       max={20}
@@ -319,9 +323,10 @@ export default function GradeManagementClient({
                       }
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>학년명</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">학년명</Label>
                     <Input
+                      className="h-8"
                       value={draft.name}
                       onChange={event =>
                         setDrafts(current => ({
@@ -335,8 +340,8 @@ export default function GradeManagementClient({
                       placeholder="1학년"
                     />
                   </div>
-                  <div className="flex items-end">
-                    <Button type="submit" disabled={isCreating}>
+                  <div className="flex items-center">
+                    <Button type="submit" size="sm" disabled={isCreating}>
                       <Plus className="h-4 w-4" />
                       {isCreating ? "추가 중" : "추가"}
                     </Button>
