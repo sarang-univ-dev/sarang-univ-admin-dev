@@ -4,19 +4,27 @@ import { Plus, Save, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, ReactNode, useEffect, useState } from "react";
 
-import { createRetreat, getUnivGroups, uploadRetreatAsset } from "@/lib/api/admin-api";
+import {
+  createRetreat,
+  getUnivGroups,
+  uploadRetreatAsset,
+} from "@/lib/api/admin-api";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToastStore } from "@/store/toast-store";
-import type { AdminUnivGroup, CreateRetreatRequest } from "@/types/retreat-create";
+import type {
+  AdminUnivGroup,
+  CreateRetreatRequest,
+} from "@/types/retreat-create";
 
 type RegistrationScheduleInput =
   CreateRetreatRequest["registrationSchedules"][number] & { id: number };
-type PaymentScheduleInput =
-  CreateRetreatRequest["paymentSchedules"][number] & { id: number };
+type PaymentScheduleInput = CreateRetreatRequest["paymentSchedules"][number] & {
+  id: number;
+};
 type ShuttleBusInput = CreateRetreatRequest["shuttleBuses"][number] & {
   id: number;
 };
@@ -80,7 +88,9 @@ export default function CreateRetreatForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [origin, setOrigin] = useState("");
   const [univGroups, setUnivGroups] = useState<AdminUnivGroup[]>([]);
-  const [selectedUnivGroupIds, setSelectedUnivGroupIds] = useState<number[]>([]);
+  const [selectedUnivGroupIds, setSelectedUnivGroupIds] = useState<number[]>(
+    []
+  );
   const [posterImage, setPosterImage] = useState<File | null>(null);
   const [qrImage, setQrImage] = useState<File | null>(null);
   const [retreat, setRetreat] = useState({
@@ -230,8 +240,9 @@ export default function CreateRetreatForm() {
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">수양회 추가</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          공개 페이지 정보, 대상 부서, 신청/결제/셔틀 운영 기준을 순서대로 입력합니다.
-          생성 후 제한되는 항목은 각 섹션에서 바로 확인할 수 있습니다.
+          공개 페이지 정보, 대상 부서, 신청/결제/셔틀 운영 기준을 순서대로
+          입력합니다. 생성 후 제한되는 항목은 각 섹션에서 바로 확인할 수
+          있습니다.
         </p>
       </div>
 
@@ -257,14 +268,18 @@ export default function CreateRetreatForm() {
               required
             />
             <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-              미리보기: {origin ? `${origin}${retreatPathPreview}` : retreatPathPreview}
+              미리보기:{" "}
+              {origin ? `${origin}${retreatPathPreview}` : retreatPathPreview}
             </p>
           </Field>
           <Field label="수양회 주제">
             <Input
               value={retreat.name}
               onChange={event =>
-                setRetreat(current => ({ ...current, name: event.target.value }))
+                setRetreat(current => ({
+                  ...current,
+                  name: event.target.value,
+                }))
               }
               required
             />
@@ -309,7 +324,10 @@ export default function CreateRetreatForm() {
             <Textarea
               value={retreat.memo}
               onChange={event =>
-                setRetreat(current => ({ ...current, memo: event.target.value }))
+                setRetreat(current => ({
+                  ...current,
+                  memo: event.target.value,
+                }))
               }
             />
           </Field>
@@ -339,7 +357,9 @@ export default function CreateRetreatForm() {
           </Button>
         </div>
         {univGroups.length === 0 ? (
-          <p className="text-sm text-muted-foreground">부서 목록을 불러오는 중입니다.</p>
+          <p className="text-sm text-muted-foreground">
+            부서 목록을 불러오는 중입니다.
+          </p>
         ) : (
           <div className="space-y-3">
             {univGroups.map(group => {
@@ -373,14 +393,16 @@ export default function CreateRetreatForm() {
       <section className="space-y-5 border-b py-8">
         <SectionHeader
           title="이미지"
-          description="포스터와 QR 템플릿 이미지를 업로드합니다. QR 템플릿은 1080 x 1920 픽셀만 사용할 수 있습니다."
+          description="포스터와 QR 템플릿 이미지를 업로드합니다. 포스터와 QR 템플릿은 추후에도 추가할 수 있으나, QR 템플릿 추가 전에 신청한 내역에는 QR이 발급되지 않습니다. QR 템플릿은 1080 x 1920 픽셀만 사용할 수 있습니다."
         />
         <div className="space-y-5">
           <Field label="포스터 이미지">
             <Input
               type="file"
               accept="image/*"
-              onChange={event => setPosterImage(event.target.files?.[0] ?? null)}
+              onChange={event =>
+                setPosterImage(event.target.files?.[0] ?? null)
+              }
             />
           </Field>
           <Field label="QR 템플릿 이미지">
@@ -404,7 +426,10 @@ export default function CreateRetreatForm() {
       <ShuttleBusSection buses={shuttleBuses} onChange={setShuttleBuses} />
 
       <div className="flex justify-end py-8">
-        <Button type="submit" disabled={isSubmitting || selectedUnivGroupIds.length === 0}>
+        <Button
+          type="submit"
+          disabled={isSubmitting || selectedUnivGroupIds.length === 0}
+        >
           {isSubmitting ? (
             <>
               <Upload className="h-4 w-4" />
@@ -478,7 +503,10 @@ function ScheduleSection({
           variant="outline"
           className="h-10"
           onClick={() =>
-            onChange([...schedules, { id: createId(), date: "", type: "DINNER" }])
+            onChange([
+              ...schedules,
+              { id: createId(), date: "", type: "DINNER" },
+            ])
           }
         >
           <Plus className="h-4 w-4" />
@@ -487,10 +515,7 @@ function ScheduleSection({
       </div>
       <div className="space-y-3">
         {schedules.map(schedule => (
-          <div
-            key={schedule.id}
-            className="space-y-3 rounded-md border p-4"
-          >
+          <div key={schedule.id} className="space-y-3 rounded-md border p-4">
             <Field label="일정 시간">
               <Input
                 type="datetime-local"
@@ -516,7 +541,8 @@ function ScheduleSection({
                       item.id === schedule.id
                         ? {
                             ...item,
-                            type: event.target.value as RegistrationScheduleInput["type"],
+                            type: event.target
+                              .value as RegistrationScheduleInput["type"],
                           }
                         : item
                     )
@@ -631,7 +657,9 @@ function PaymentSection({
                         item.id === schedule.id
                           ? {
                               ...item,
-                              partialPricePerSchedule: Number(event.target.value),
+                              partialPricePerSchedule: Number(
+                                event.target.value
+                              ),
                             }
                           : item
                       )
@@ -754,7 +782,8 @@ function ShuttleBusSection({
                         item.id === bus.id
                           ? {
                               ...item,
-                              direction: event.target.value as ShuttleBusInput["direction"],
+                              direction: event.target
+                                .value as ShuttleBusInput["direction"],
                             }
                           : item
                       )
@@ -821,7 +850,9 @@ function ShuttleBusSection({
               <div className="flex justify-end">
                 <RemoveButton
                   disabled={buses.length === 1}
-                  onClick={() => onChange(buses.filter(item => item.id !== bus.id))}
+                  onClick={() =>
+                    onChange(buses.filter(item => item.id !== bus.id))
+                  }
                 />
               </div>
             </div>

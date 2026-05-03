@@ -93,7 +93,10 @@ export default function RetreatEditForm({ retreat }: RetreatEditFormProps) {
       <Card>
         <CardHeader>
           <CardTitle>{retreat.name}</CardTitle>
-          <CardDescription>{retreat.slug}</CardDescription>
+          <CardDescription>
+            {retreat.slug} · 포스터와 QR 템플릿은 추후에도 추가할 수 있으나, QR
+            템플릿 추가 전에 신청한 내역에는 QR이 발급되지 않습니다.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <Field label="이름">
