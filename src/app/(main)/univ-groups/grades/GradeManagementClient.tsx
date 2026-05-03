@@ -1,16 +1,10 @@
 "use client";
 
-import { Plus, Save } from "lucide-react";
+import { ArrowUp, Plus, Save } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -53,6 +47,16 @@ export default function GradeManagementClient({
 }: GradeManagementClientProps) {
   const addToast = useToastStore(state => state.add);
   const [univGroups, setUnivGroups] = useState(initialUnivGroups);
+  const [savedGrades, setSavedGrades] = useState<Record<number, AdminGrade>>(
+    () =>
+      initialUnivGroups.reduce<Record<number, AdminGrade>>((grades, group) => {
+        group.grades.forEach(grade => {
+          grades[grade.id] = grade;
+        });
+
+        return grades;
+      }, {})
+  );
   const [drafts, setDrafts] = useState<Record<number, GradeDraft>>({});
   const [savingGradeIds, setSavingGradeIds] = useState<number[]>([]);
   const [creatingGroupIds, setCreatingGroupIds] = useState<number[]>([]);
@@ -87,6 +91,24 @@ export default function GradeManagementClient({
     );
   };
 
+  const promoteGroupGrades = (univGroupId: number) => {
+    setUnivGroups(current =>
+      current.map(group =>
+        group.id === univGroupId
+          ? {
+              ...group,
+              grades: group.grades
+                .map(grade => ({
+                  ...grade,
+                  number: grade.number + 1,
+                }))
+                .sort((a, b) => a.number - b.number),
+            }
+          : group
+      )
+    );
+  };
+
   const saveGrade = async (grade: AdminGrade) => {
     setSavingGradeIds(current => [...current, grade.id]);
 
@@ -97,6 +119,10 @@ export default function GradeManagementClient({
         isActive: grade.isActive,
       });
       updateLocalGrade(updated);
+      setSavedGrades(current => ({
+        ...current,
+        [updated.id]: updated,
+      }));
       addToast({
         title: "학년 정보를 저장했습니다.",
         variant: "success",
@@ -121,7 +147,7 @@ export default function GradeManagementClient({
 
     if (!draft?.name || !draft.number) {
       addToast({
-        title: "학년명과 번호를 입력해주세요.",
+        title: "학년명과 학년을 입력해주세요.",
         variant: "warning",
       });
       return;
@@ -132,6 +158,10 @@ export default function GradeManagementClient({
     try {
       const grade = await createGrade(univGroupId, draft);
       appendLocalGrade(grade);
+      setSavedGrades(current => ({
+        ...current,
+        [grade.id]: grade,
+      }));
       setDrafts(current => ({
         ...current,
         [univGroupId]: { name: "", number: 1 },
@@ -156,7 +186,8 @@ export default function GradeManagementClient({
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">부서/학년 관리</h1>
         <p className="text-muted-foreground">
-          모든 부서의 신청 가능 학년을 관리합니다. 삭제 대신 비활성화합니다.
+          모든 부서의 신청 가능 학년을 관리합니다. 삭제 대신 비활성화합니다.{" "}
+          비활성화되는 경우 신청폼 학년 목록에서 나오지 않습니다.
         </p>
       </div>
 
@@ -164,6 +195,9 @@ export default function GradeManagementClient({
         {univGroups.map(group => {
           const draft = drafts[group.id] ?? { name: "", number: 1 };
           const isCreating = creatingGroupIds.includes(group.id);
+          const canPromote =
+            group.grades.length > 0 &&
+            group.grades.every(grade => grade.number < 20);
 
           return (
             <Card key={group.id}>
@@ -171,7 +205,19 @@ export default function GradeManagementClient({
                 <CardTitle>
                   {group.number}부 {group.name}
                 </CardTitle>
-                <CardDescription>학년 {group.grades.length}개</CardDescription>
+                <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                  <span>학년 {group.grades.length}개</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => promoteGroupGrades(group.id)}
+                    disabled={!canPromote}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                    학년 하나씩 올리기
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
@@ -182,6 +228,12 @@ export default function GradeManagementClient({
                   ) : (
                     group.grades.map(grade => {
                       const isSaving = savingGradeIds.includes(grade.id);
+                      const savedGrade = savedGrades[grade.id];
+                      const hasChanges =
+                        !!savedGrade &&
+                        (grade.name !== savedGrade.name ||
+                          grade.number !== savedGrade.number ||
+                          grade.isActive !== savedGrade.isActive);
 
                       return (
                         <div
@@ -189,7 +241,7 @@ export default function GradeManagementClient({
                           className="grid gap-3 rounded-md border p-3 md:grid-cols-[100px_1fr_auto_auto]"
                         >
                           <div className="space-y-2">
-                            <Label>번호</Label>
+                            <Label>학년</Label>
                             <Input
                               type="number"
                               min={1}
@@ -233,7 +285,7 @@ export default function GradeManagementClient({
                             <Button
                               type="button"
                               onClick={() => saveGrade(grade)}
-                              disabled={isSaving}
+                              disabled={isSaving || !hasChanges}
                             >
                               <Save className="h-4 w-4" />
                               {isSaving ? "저장 중" : "저장"}
@@ -250,7 +302,7 @@ export default function GradeManagementClient({
                   className="grid gap-3 rounded-md bg-muted/40 p-3 md:grid-cols-[100px_1fr_auto]"
                 >
                   <div className="space-y-2">
-                    <Label>번호</Label>
+                    <Label>학년</Label>
                     <Input
                       type="number"
                       min={1}
