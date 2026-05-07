@@ -45,6 +45,26 @@ export const ScheduleChangeRequestAPI = {
   },
 
   /**
+   * 신청 취소 처리
+   * @param retreatSlug - 수양회 slug
+   * @param userRetreatRegistrationId - 신청 ID
+   * @param refundRequired - 환불 필요 여부
+   */
+  cancelRegistration: async (
+    retreatSlug: string,
+    userRetreatRegistrationId: string,
+    refundRequired: boolean
+  ): Promise<void> => {
+    await webAxios.post(
+      `/api/v1/retreat/${retreatSlug}/account/cancel-registration`,
+      {
+        userRetreatRegistrationId,
+        refundRequired,
+      }
+    );
+  },
+
+  /**
    * 일정 변경 처리 완료
    * @param retreatSlug - 수양회 slug
    * @param userRetreatRegistrationHistoryMemoId - 메모 ID

@@ -16,6 +16,7 @@ export interface IRetreatRegistration {
   phoneNumber: string;
   userRetreatRegistrationScheduleIds: number[];
   price: number;
+  refundAmount?: number;
   userType: UserRetreatRegistrationType | null;
   paymentStatus: UserRetreatRegistrationPaymentStatus;
   createdAt: string;

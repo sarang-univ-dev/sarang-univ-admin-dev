@@ -18,7 +18,7 @@ interface AccountStaffRegistrationTableActionsProps {
  * @description
  * - 입금 현황(paymentStatus)에 따라 다른 액션 버튼 표시
  * - PENDING: 입금 확인 완료, 간사 배정
- * - PAID: 환불 처리
+ * - REFUND_REQUEST: 환불 처리 완료
  * - 그 외: 액션 없음
  */
 export function AccountStaffRegistrationTableActions({
@@ -76,8 +76,8 @@ export function AccountStaffRegistrationTableActions({
     );
   }
 
-  // 입금 완료 (PAID)
-  if (row.status === UserRetreatRegistrationPaymentStatus.PAID) {
+  // 환불 요청 (REFUND_REQUEST)
+  if (row.status === UserRetreatRegistrationPaymentStatus.REFUND_REQUEST) {
     return (
       <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
         <Button
@@ -92,7 +92,7 @@ export function AccountStaffRegistrationTableActions({
           ) : (
             <RotateCcw className="h-3.5 w-3.5" />
           )}
-          <span>환불 처리</span>
+          <span>환불 처리 완료</span>
         </Button>
       </div>
     );

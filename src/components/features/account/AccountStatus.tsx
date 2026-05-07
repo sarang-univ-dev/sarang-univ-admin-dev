@@ -52,29 +52,43 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
-      // 실제 입금 금액: 입금 완료(PAID)인 항목의 금액 합계
-      const actualIncome = deptRegistrations
-        .filter(
-          reg => reg.paymentStatus === UserRetreatRegistrationPaymentStatus.PAID
-        )
-        .reduce((sum, reg) => sum + (reg.price || 0), 0);
+      // 실제 입금 금액: 현재 계좌에 들어온 금액
+      const actualIncome = deptRegistrations.reduce((sum, reg) => {
+        switch (reg.paymentStatus) {
+          case UserRetreatRegistrationPaymentStatus.PAID:
+          case UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING:
+          case UserRetreatRegistrationPaymentStatus.CANCELED:
+            return sum + (reg.price || 0);
+          case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
+          case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
+          case UserRetreatRegistrationPaymentStatus.REFUNDED:
+            return sum + (reg.refundAmount || reg.price || 0);
+          default:
+            return sum;
+        }
+      }, 0);
 
-      // 예상 출금 금액: 환불 요청(REFUND_REQUEST)인 항목의 금액 합계
-      const expectedRefund = deptRegistrations
-        .filter(
-          reg =>
-            reg.paymentStatus ===
-            UserRetreatRegistrationPaymentStatus.REFUND_REQUEST
-        )
-        .reduce((sum, reg) => sum + (reg.price || 0), 0);
+      // 예상 출금 금액: 환불 대기/처리 중인 금액
+      const expectedRefund = deptRegistrations.reduce((sum, reg) => {
+        switch (reg.paymentStatus) {
+          case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
+          case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
+            return sum + (reg.refundAmount || reg.price || 0);
+          default:
+            return sum;
+        }
+      }, 0);
 
-      // 실제 출금 금액: 환불 완료(REFUNDED)인 항목의 금액 합계
-      const actualRefund = deptRegistrations
-        .filter(
-          reg =>
-            reg.paymentStatus === UserRetreatRegistrationPaymentStatus.REFUNDED
-        )
-        .reduce((sum, reg) => sum + (reg.price || 0), 0);
+      // 실제 출금 금액: 환불 완료된 금액
+      const actualRefund = deptRegistrations.reduce((sum, reg) => {
+        if (
+          reg.paymentStatus === UserRetreatRegistrationPaymentStatus.REFUNDED
+        ) {
+          return sum + (reg.refundAmount || reg.price || 0);
+        }
+
+        return sum;
+      }, 0);
 
       // 현재 계좌 현황: 실제 입금액 - 실제 출금액
       const currentBalance = actualIncome - actualRefund;
@@ -164,7 +178,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       header: (
         <div className="flex justify-center">
           <StatusBadge
-            status={UserRetreatRegistrationPaymentStatus.REFUND_REQUEST}
+            status={UserRetreatRegistrationPaymentStatus.REFUND_ONGOING}
           />
         </div>
       ),

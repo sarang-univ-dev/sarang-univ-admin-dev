@@ -86,9 +86,12 @@ export function generateDepartmentStats(registrations: any[]) {
     cells: {
       waiting: 0,
       confirmed: 0,
+      cancel_ongoing: 0,
+      canceled: 0,
       new_family_request: 0,
       military_request: 0,
       refund_requested: 0,
+      refund_ongoing: 0,
       refund_completed: 0,
     },
   }));
@@ -107,6 +110,12 @@ export function generateDepartmentStats(registrations: any[]) {
       case UserRetreatRegistrationPaymentStatus.PAID:
         stats[deptIndex].cells.confirmed++;
         break;
+      case UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING:
+        stats[deptIndex].cells.cancel_ongoing++;
+        break;
+      case UserRetreatRegistrationPaymentStatus.CANCELED:
+        stats[deptIndex].cells.canceled++;
+        break;
       case UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST:
         stats[deptIndex].cells.new_family_request++;
         break;
@@ -115,6 +124,9 @@ export function generateDepartmentStats(registrations: any[]) {
         break;
       case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
         stats[deptIndex].cells.refund_requested++;
+        break;
+      case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
+        stats[deptIndex].cells.refund_ongoing++;
         break;
       case UserRetreatRegistrationPaymentStatus.REFUNDED:
         stats[deptIndex].cells.refund_completed++;
@@ -129,6 +141,11 @@ export function generateDepartmentStats(registrations: any[]) {
     cells: {
       waiting: stats.reduce((sum, dept) => sum + dept.cells.waiting, 0),
       confirmed: stats.reduce((sum, dept) => sum + dept.cells.confirmed, 0),
+      cancel_ongoing: stats.reduce(
+        (sum, dept) => sum + dept.cells.cancel_ongoing,
+        0
+      ),
+      canceled: stats.reduce((sum, dept) => sum + dept.cells.canceled, 0),
       new_family_request: stats.reduce(
         (sum, dept) => sum + dept.cells.new_family_request,
         0
@@ -139,6 +156,10 @@ export function generateDepartmentStats(registrations: any[]) {
       ),
       refund_requested: stats.reduce(
         (sum, dept) => sum + dept.cells.refund_requested,
+        0
+      ),
+      refund_ongoing: stats.reduce(
+        (sum, dept) => sum + dept.cells.refund_ongoing,
         0
       ),
       refund_completed: stats.reduce(

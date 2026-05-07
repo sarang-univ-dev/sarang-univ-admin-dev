@@ -117,6 +117,22 @@ export function useScheduleChangeRequest(
     );
   };
 
+  const cancelRegistration = async (
+    userRetreatRegistrationId: string,
+    refundRequired: boolean
+  ) => {
+    await updateCache(
+      () =>
+        ScheduleChangeRequestAPI.cancelRegistration(
+          retreatSlug,
+          userRetreatRegistrationId,
+          refundRequired
+        ),
+      undefined,
+      undefined
+    );
+  };
+
   /**
    * 일정 변경 처리 완료
    */
@@ -152,6 +168,7 @@ export function useScheduleChangeRequest(
 
     // 액션
     approveScheduleChange,
+    cancelRegistration,
     resolveScheduleChange,
   };
 }

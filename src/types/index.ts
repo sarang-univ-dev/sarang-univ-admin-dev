@@ -340,7 +340,10 @@ export enum UserRetreatRegistrationPaymentStatus {
   SOLDIER_REQUEST = "SOLDIER_REQUEST", // 군지체 신청 요청
   PENDING = "PENDING", // 입금 확인 대기
   PAID = "PAID", // 입금 확인 완료
+  CANCEL_ONGOING = "CANCEL_ONGOING", // 취소 처리 중
+  CANCELED = "CANCELED", // 취소 완료
   REFUND_REQUEST = "REFUND_REQUEST", // 환불 요청
+  REFUND_ONGOING = "REFUND_ONGOING", // 환불 처리 중
   REFUNDED = "REFUNDED" // 환불 완료
 }
 

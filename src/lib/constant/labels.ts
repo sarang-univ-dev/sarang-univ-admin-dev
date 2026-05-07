@@ -27,7 +27,10 @@ export const PAYMENT_STATUS_LABELS: Record<
   SOLDIER_REQUEST: "군지체 신청 요청",
   PENDING: "입금 확인 대기",
   PAID: "입금 확인 완료",
+  CANCEL_ONGOING: "취소 처리 중",
+  CANCELED: "취소 완료",
   REFUND_REQUEST: "환불 처리 대기",
+  REFUND_ONGOING: "환불 처리 중",
   REFUNDED: "환불 처리 완료",
 };
 

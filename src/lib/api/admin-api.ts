@@ -32,7 +32,7 @@ import { webAxios } from "./axios";
  * // [{ id: 1, slug: '2025-winter', name: '2025 겨울수양회', menuItems: [...] }]
  */
 export async function getRetreatsWithMenus(): Promise<RetreatWithMenus[]> {
-  const response = await webAxios.get<AdminNavigationResponse>(
+  const response = await webAxios.get<{ retreats: RetreatWithMenus[] }>(
     "/api/v1/admin/retreats"
   );
   return response.data.retreats;
@@ -40,7 +40,7 @@ export async function getRetreatsWithMenus(): Promise<RetreatWithMenus[]> {
 
 export async function getAdminNavigation(): Promise<AdminNavigationResponse> {
   const response = await webAxios.get<AdminNavigationResponse>(
-    "/api/v1/admin/retreats"
+    "/api/v1/admin/navigation"
   );
   return response.data;
 }

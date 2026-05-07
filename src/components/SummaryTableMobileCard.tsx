@@ -7,6 +7,7 @@ import {
   RotateCcw,
   RefreshCcw,
   UserPlus,
+  XCircle,
 } from "lucide-react";
 import type React from "react";
 
@@ -62,6 +63,7 @@ const renderStatusBadgeWithCount = (
         </div>
       );
     case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
+    case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200">
           <RefreshCcw
@@ -69,7 +71,34 @@ const renderStatusBadgeWithCount = (
             aria-hidden="true"
           />
           <span className="text-xs font-medium text-blue-700 whitespace-nowrap">
-            환불 처리 대기 <span className="font-bold">{count}</span>명
+            {status === UserRetreatRegistrationPaymentStatus.REFUND_ONGOING
+              ? "환불 처리 중"
+              : "환불 처리 대기"}{" "}
+            <span className="font-bold">{count}</span>명
+          </span>
+        </div>
+      );
+    case UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING:
+      return (
+        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200">
+          <Clock
+            className="h-3.5 w-3.5 text-orange-500 mr-1.5 flex-shrink-0"
+            aria-hidden="true"
+          />
+          <span className="text-xs font-medium text-orange-700 whitespace-nowrap">
+            취소 처리 중 <span className="font-bold">{count}</span>명
+          </span>
+        </div>
+      );
+    case UserRetreatRegistrationPaymentStatus.CANCELED:
+      return (
+        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
+          <XCircle
+            className="h-3.5 w-3.5 text-gray-500 mr-1.5 flex-shrink-0"
+            aria-hidden="true"
+          />
+          <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+            취소 완료 <span className="font-bold">{count}</span>명
           </span>
         </div>
       );

@@ -9,6 +9,7 @@ import {
 export interface IUserScheduleChangeRetreat {
   userType: UserRetreatRegistrationType | null;
   price: number;
+  refundAmount?: number;
   paymentStatus: UserRetreatRegistrationPaymentStatus;
   paymentConfirmedAt: string | null;
   userName: string;

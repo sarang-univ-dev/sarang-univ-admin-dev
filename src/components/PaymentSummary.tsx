@@ -44,6 +44,26 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
       ),
     },
     {
+      id: UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING,
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge
+            status={UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING}
+          />
+        </div>
+      ),
+    },
+    {
+      id: UserRetreatRegistrationPaymentStatus.CANCELED,
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge
+            status={UserRetreatRegistrationPaymentStatus.CANCELED}
+          />
+        </div>
+      ),
+    },
+    {
       id: UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST,
       header: (
         <div className="flex justify-center">
@@ -69,6 +89,16 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
         <div className="flex justify-center">
           <StatusBadge
             status={UserRetreatRegistrationPaymentStatus.REFUND_REQUEST}
+          />
+        </div>
+      ),
+    },
+    {
+      id: UserRetreatRegistrationPaymentStatus.REFUND_ONGOING,
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge
+            status={UserRetreatRegistrationPaymentStatus.REFUND_ONGOING}
           />
         </div>
       ),
@@ -127,6 +157,18 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
               <span className="font-semibold">{row.cells.confirmed}명</span>
             </div>
           ),
+          [UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING]: (
+            <div className="text-center">
+              <span className="font-semibold">
+                {row.cells.cancel_ongoing}명
+              </span>
+            </div>
+          ),
+          [UserRetreatRegistrationPaymentStatus.CANCELED]: (
+            <div className="text-center">
+              <span className="font-semibold">{row.cells.canceled}명</span>
+            </div>
+          ),
           [UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST]: (
             <div className="text-center">
               <span className="font-semibold">
@@ -145,6 +187,13 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
             <div className="text-center">
               <span className="font-semibold">
                 {row.cells.refund_requested}명
+              </span>
+            </div>
+          ),
+          [UserRetreatRegistrationPaymentStatus.REFUND_ONGOING]: (
+            <div className="text-center">
+              <span className="font-semibold">
+                {row.cells.refund_ongoing}명
               </span>
             </div>
           ),
@@ -174,6 +223,12 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
         [UserRetreatRegistrationPaymentStatus.PAID]: (
           <div className="text-center">{row.cells.confirmed}명</div>
         ),
+        [UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING]: (
+          <div className="text-center">{row.cells.cancel_ongoing}명</div>
+        ),
+        [UserRetreatRegistrationPaymentStatus.CANCELED]: (
+          <div className="text-center">{row.cells.canceled}명</div>
+        ),
         [UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST]: (
           <div className="text-center">{row.cells.new_family_request}명</div>
         ),
@@ -182,6 +237,9 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
         ),
         [UserRetreatRegistrationPaymentStatus.REFUND_REQUEST]: (
           <div className="text-center">{row.cells.refund_requested}명</div>
+        ),
+        [UserRetreatRegistrationPaymentStatus.REFUND_ONGOING]: (
+          <div className="text-center">{row.cells.refund_ongoing}명</div>
         ),
         [UserRetreatRegistrationPaymentStatus.REFUNDED]: (
           <div className="text-center">{row.cells.refund_completed}명</div>

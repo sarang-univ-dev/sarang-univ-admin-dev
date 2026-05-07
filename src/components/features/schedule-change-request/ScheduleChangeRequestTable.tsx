@@ -58,6 +58,7 @@ export function ScheduleChangeRequestTable({
   const {
     scheduleChangeRequests,
     approveScheduleChange,
+    cancelRegistration,
     resolveScheduleChange,
   } = useScheduleChangeRequest(retreatSlug, {
     fallbackData: initialData,
@@ -126,8 +127,15 @@ export function ScheduleChangeRequestTable({
     scheduleIds: number[];
     calculatedAmount: number;
     selectedPaymentScheduleId?: number;
+    refundRequired?: boolean;
   }) => {
     if (!selectedRow) return;
+
+    if (data.scheduleIds.length === 0) {
+      await cancelRegistration(selectedRow.id, data.refundRequired ?? false);
+      return;
+    }
+
     await approveScheduleChange(
       selectedRow.id,
       data.scheduleIds,

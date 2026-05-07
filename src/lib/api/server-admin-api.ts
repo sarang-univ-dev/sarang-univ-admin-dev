@@ -33,7 +33,7 @@ export async function getAdminNavigationServer(): Promise<AdminNavigationRespons
 
   try {
     // 표준 fetch 사용 (HTTP localhost)
-    const response = await fetch(`${config.API_HOST}/api/v1/admin/retreats`, {
+    const response = await fetch(`${config.API_HOST}/api/v1/admin/navigation`, {
       method: "GET",
       headers: {
         Cookie: `accessToken=${accessToken}`,
