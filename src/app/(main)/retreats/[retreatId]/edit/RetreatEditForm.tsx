@@ -15,15 +15,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  createEmptyRetreatUnivGroupInformation,
+  RetreatUnivGroupOperationInfoFields,
+} from "@/components/features/retreat-management/RetreatUnivGroupOperationInfoFields";
 import { updateRetreat } from "@/lib/api/admin-api";
 import { useToastStore } from "@/store/toast-store";
 import type {
-  ManagedRetreat,
+  ManagedRetreatDetail,
+  RetreatUnivGroupInformation,
   UpdateRetreatRequest,
 } from "@/types/retreat-create";
 
 type RetreatEditFormProps = {
-  retreat: ManagedRetreat;
+  retreat: ManagedRetreatDetail;
 };
 
 function getErrorMessage(error: unknown) {
@@ -48,7 +53,7 @@ export default function RetreatEditForm({ retreat }: RetreatEditFormProps) {
   const router = useRouter();
   const addToast = useToastStore(state => state.add);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [form, setForm] = useState<UpdateRetreatRequest>({
+  const [form, setForm] = useState<Omit<UpdateRetreatRequest, "univGroups">>({
     name: retreat.name,
     location: retreat.location,
     mainVerse: retreat.mainVerse,
@@ -57,13 +62,46 @@ export default function RetreatEditForm({ retreat }: RetreatEditFormProps) {
     posterUrl: retreat.posterUrl || "",
     qrTemplateImageKey: retreat.qrTemplateImageKey || "",
   });
+  const [operationInfoByUnivGroupId, setOperationInfoByUnivGroupId] = useState<
+    Record<number, RetreatUnivGroupInformation>
+  >(() =>
+    Object.fromEntries(
+      retreat.univGroups.map(univGroup => [
+        univGroup.id,
+        univGroup.information ?? createEmptyRetreatUnivGroupInformation(),
+      ])
+    )
+  );
+
+  const updateOperationInfo = (
+    univGroupId: number,
+    field: keyof RetreatUnivGroupInformation,
+    value: string
+  ) => {
+    setOperationInfoByUnivGroupId(current => ({
+      ...current,
+      [univGroupId]: {
+        ...(current[univGroupId] ??
+          createEmptyRetreatUnivGroupInformation()),
+        [field]: value,
+      },
+    }));
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
 
     try {
-      await updateRetreat(retreat.id, form);
+      await updateRetreat(retreat.id, {
+        ...form,
+        univGroups: retreat.univGroups.map(univGroup => ({
+          univGroupId: univGroup.id,
+          information:
+            operationInfoByUnivGroupId[univGroup.id] ??
+            createEmptyRetreatUnivGroupInformation(),
+        })),
+      });
       addToast({
         title: "수양회 정보를 저장했습니다.",
         variant: "success",
@@ -174,6 +212,22 @@ export default function RetreatEditForm({ retreat }: RetreatEditFormProps) {
               }
             />
           </Field>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>부서별 운영 정보</CardTitle>
+          <CardDescription>
+            신청 완료 안내와 문자 발송에 사용되는 정보입니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RetreatUnivGroupOperationInfoFields
+            univGroups={retreat.univGroups}
+            informationByUnivGroupId={operationInfoByUnivGroupId}
+            onChange={updateOperationInfo}
+          />
         </CardContent>
       </Card>
 

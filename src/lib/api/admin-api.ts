@@ -10,6 +10,7 @@ import type {
   CreateGradeRequest,
   CreateRetreatRequest,
   ManagedRetreat,
+  ManagedRetreatDetail,
   RetreatAssetType,
   UpdateGradeRequest,
   UpdateRetreatRequest,
@@ -85,8 +86,8 @@ export async function getManagedRetreats(): Promise<ManagedRetreat[]> {
 
 export async function getManagedRetreat(
   retreatId: number
-): Promise<ManagedRetreat> {
-  const response = await webAxios.get<{ retreat: ManagedRetreat }>(
+): Promise<ManagedRetreatDetail> {
+  const response = await webAxios.get<{ retreat: ManagedRetreatDetail }>(
     `/api/v1/admin/retreats/${retreatId}/manage`
   );
 
@@ -96,8 +97,8 @@ export async function getManagedRetreat(
 export async function updateRetreat(
   retreatId: number,
   request: UpdateRetreatRequest
-): Promise<ManagedRetreat> {
-  const response = await webAxios.patch<{ retreat: ManagedRetreat }>(
+): Promise<ManagedRetreatDetail> {
+  const response = await webAxios.patch<{ retreat: ManagedRetreatDetail }>(
     `/api/v1/admin/retreats/${retreatId}`,
     request
   );

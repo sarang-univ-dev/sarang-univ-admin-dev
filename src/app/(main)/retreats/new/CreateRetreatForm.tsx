@@ -9,6 +9,10 @@ import {
   getUnivGroups,
   uploadRetreatAsset,
 } from "@/lib/api/admin-api";
+import {
+  createEmptyRetreatUnivGroupInformation,
+  RetreatUnivGroupOperationInfoFields,
+} from "@/components/features/retreat-management/RetreatUnivGroupOperationInfoFields";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -18,6 +22,7 @@ import { useToastStore } from "@/store/toast-store";
 import type {
   AdminUnivGroup,
   CreateRetreatRequest,
+  RetreatUnivGroupInformation,
 } from "@/types/retreat-create";
 
 type RegistrationScheduleInput =
@@ -91,6 +96,9 @@ export default function CreateRetreatForm() {
   const [selectedUnivGroupIds, setSelectedUnivGroupIds] = useState<number[]>(
     []
   );
+  const [operationInfoByUnivGroupId, setOperationInfoByUnivGroupId] = useState<
+    Record<number, RetreatUnivGroupInformation>
+  >({});
   const [posterImage, setPosterImage] = useState<File | null>(null);
   const [qrImage, setQrImage] = useState<File | null>(null);
   const [retreat, setRetreat] = useState({
@@ -128,7 +136,66 @@ export default function CreateRetreatForm() {
   ]);
   const allUnivGroupsSelected =
     univGroups.length > 0 && selectedUnivGroupIds.length === univGroups.length;
+  const selectedUnivGroups = univGroups.filter(group =>
+    selectedUnivGroupIds.includes(group.id)
+  );
   const retreatPathPreview = `/retreat/${retreat.slug || "영문-수양회-이름"}`;
+
+  const updateOperationInfo = (
+    univGroupId: number,
+    field: keyof RetreatUnivGroupInformation,
+    value: string
+  ) => {
+    setOperationInfoByUnivGroupId(current => ({
+      ...current,
+      [univGroupId]: {
+        ...(current[univGroupId] ??
+          createEmptyRetreatUnivGroupInformation()),
+        [field]: value,
+      },
+    }));
+  };
+
+  const applyFirstOperationInfoToAll = () => {
+    const firstUnivGroupId = selectedUnivGroupIds[0];
+    if (!firstUnivGroupId) return;
+
+    const firstOperationInfo =
+      operationInfoByUnivGroupId[firstUnivGroupId] ??
+      createEmptyRetreatUnivGroupInformation();
+
+    setOperationInfoByUnivGroupId(current => {
+      const next = { ...current };
+      selectedUnivGroupIds.forEach(univGroupId => {
+        next[univGroupId] = { ...firstOperationInfo };
+      });
+      return next;
+    });
+  };
+
+  const toggleUnivGroup = (univGroupId: number, checked: boolean) => {
+    setSelectedUnivGroupIds(current =>
+      checked
+        ? current.includes(univGroupId)
+          ? current
+          : [...current, univGroupId]
+        : current.filter(id => id !== univGroupId)
+    );
+
+    setOperationInfoByUnivGroupId(current => {
+      if (checked) {
+        return {
+          ...current,
+          [univGroupId]:
+            current[univGroupId] ?? createEmptyRetreatUnivGroupInformation(),
+        };
+      }
+
+      const next = { ...current };
+      delete next[univGroupId];
+      return next;
+    });
+  };
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -181,7 +248,12 @@ export default function CreateRetreatForm() {
           posterUrl,
           qrTemplateImageKey,
         },
-        univGroupIds: selectedUnivGroupIds,
+        univGroups: selectedUnivGroupIds.map(univGroupId => ({
+          univGroupId,
+          information:
+            operationInfoByUnivGroupId[univGroupId] ??
+            createEmptyRetreatUnivGroupInformation(),
+        })),
         registrationSchedules: registrationSchedules.map(
           ({ id, date, type }) => ({
             date: toIsoDateTime(date),
@@ -347,11 +419,25 @@ export default function CreateRetreatForm() {
             variant="outline"
             className="h-10"
             disabled={univGroups.length === 0}
-            onClick={() =>
-              setSelectedUnivGroupIds(
-                allUnivGroupsSelected ? [] : univGroups.map(group => group.id)
-              )
-            }
+            onClick={() => {
+              if (allUnivGroupsSelected) {
+                setSelectedUnivGroupIds([]);
+                setOperationInfoByUnivGroupId({});
+                return;
+              }
+
+              const allUnivGroupIds = univGroups.map(group => group.id);
+              setSelectedUnivGroupIds(allUnivGroupIds);
+              setOperationInfoByUnivGroupId(current => {
+                const next = { ...current };
+                allUnivGroupIds.forEach(univGroupId => {
+                  next[univGroupId] =
+                    next[univGroupId] ??
+                    createEmptyRetreatUnivGroupInformation();
+                });
+                return next;
+              });
+            }}
           >
             {allUnivGroupsSelected ? "전체 해제" : "전체 선택"}
           </Button>
@@ -373,11 +459,7 @@ export default function CreateRetreatForm() {
                   <Checkbox
                     checked={checked}
                     onCheckedChange={value =>
-                      setSelectedUnivGroupIds(current =>
-                        value
-                          ? [...current, group.id]
-                          : current.filter(id => id !== group.id)
-                      )
+                      toggleUnivGroup(group.id, Boolean(value))
                     }
                   />
                   <span className="font-medium">
@@ -388,6 +470,19 @@ export default function CreateRetreatForm() {
             })}
           </div>
         )}
+      </section>
+
+      <section className="space-y-5 border-b py-8">
+        <SectionHeader
+          title="부서별 운영 정보"
+          description="신청 완료 안내와 문자 발송에 사용되는 정보입니다."
+        />
+        <RetreatUnivGroupOperationInfoFields
+          univGroups={selectedUnivGroups}
+          informationByUnivGroupId={operationInfoByUnivGroupId}
+          onChange={updateOperationInfo}
+          onApplyFirstToAll={applyFirstOperationInfoToAll}
+        />
       </section>
 
       <section className="space-y-5 border-b py-8">

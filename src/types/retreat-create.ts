@@ -1,5 +1,19 @@
 export type RetreatAssetType = "POSTER" | "QR_TEMPLATE";
 
+export type RetreatUnivGroupInformation = {
+  adminStaffName: string;
+  adminStaffPhoneNumber: string;
+  depositAccount: string;
+  depositAccountHolder: string;
+  shuttleBusDepositAccount: string;
+  shuttleBusDepositAccountHolder: string;
+};
+
+export type RetreatUnivGroupRequest = {
+  univGroupId: number;
+  information: RetreatUnivGroupInformation;
+};
+
 export type CreateRetreatRequest = {
   retreat: {
     slug: string;
@@ -11,7 +25,7 @@ export type CreateRetreatRequest = {
     posterUrl?: string;
     qrTemplateImageKey?: string;
   };
-  univGroupIds: number[];
+  univGroups: RetreatUnivGroupRequest[];
   registrationSchedules: {
     date: string;
     type: "BREAKFAST" | "LUNCH" | "DINNER" | "SLEEP";
@@ -85,6 +99,12 @@ export type ManagedRetreat = {
   updatedAt: string;
 };
 
+export type ManagedRetreatDetail = ManagedRetreat & {
+  univGroups: (AdminUnivGroup & {
+    information: RetreatUnivGroupInformation;
+  })[];
+};
+
 export type UpdateRetreatRequest = {
   name: string;
   location: string;
@@ -93,4 +113,5 @@ export type UpdateRetreatRequest = {
   memo?: string;
   posterUrl?: string;
   qrTemplateImageKey?: string;
+  univGroups: RetreatUnivGroupRequest[];
 };

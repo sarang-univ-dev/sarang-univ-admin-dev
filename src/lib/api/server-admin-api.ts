@@ -9,6 +9,7 @@ import config from "@/lib/constant/config";
 import type {
   AdminUnivGroupWithGrades,
   ManagedRetreat,
+  ManagedRetreatDetail,
 } from "@/types/retreat-create";
 import type { AdminNavigationResponse } from "@/types/sidebar";
 
@@ -105,8 +106,8 @@ export async function getManagedRetreatsServer(): Promise<ManagedRetreat[]> {
 
 export async function getManagedRetreatServer(
   retreatId: number
-): Promise<ManagedRetreat | null> {
-  const data = await fetchAdminServer<{ retreat: ManagedRetreat | null }>(
+): Promise<ManagedRetreatDetail | null> {
+  const data = await fetchAdminServer<{ retreat: ManagedRetreatDetail | null }>(
     `/api/v1/admin/retreats/${retreatId}/manage`,
     { retreat: null }
   );
