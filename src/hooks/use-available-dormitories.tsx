@@ -61,17 +61,29 @@ export const useAssignDormitory = (retreatSlug: string) => {
         { dormitoryId: dormitoryId }
       );
 
-      // 관련 데이터들을 다시 fetch
-      mutate(
-        key => typeof key === "string" && key.includes("available-dormitories")
-      );
-      mutate(
-        key => typeof key === "string" && key.includes("user-dormitory-list")
-      );
-      mutate(key => typeof key === "string" && key.includes("user-lineups"));
-      mutate(
-        key => typeof key === "string" && key.includes("staff-registrations")
-      );
+      await Promise.all([
+        mutate(
+          key =>
+            typeof key === "string" && key.includes("available-dormitories"),
+          undefined,
+          { revalidate: true }
+        ),
+        mutate(
+          key => typeof key === "string" && key.includes("user-dormitory-list"),
+          undefined,
+          { revalidate: true }
+        ),
+        mutate(
+          key => typeof key === "string" && key.includes("user-lineups"),
+          undefined,
+          { revalidate: true }
+        ),
+        mutate(
+          key => typeof key === "string" && key.includes("staff-registrations"),
+          undefined,
+          { revalidate: true }
+        ),
+      ]);
 
       return response.data;
     } finally {
