@@ -14,7 +14,7 @@ export interface IDormitoryRetreatRegistration {
   name: string;
   userRetreatRegistrationScheduleIds: number[];
   gbsNumber?: number | null;
-  dormitoryLocation?: string;
+  dormitoryLocation?: string | null;
   dormitoryTeamMemberMemo?: string;
   isLeader: boolean;
 }
