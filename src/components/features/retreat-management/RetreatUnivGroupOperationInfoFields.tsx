@@ -1,8 +1,5 @@
 "use client";
 
-import { Copy } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type {
@@ -30,22 +27,22 @@ const operationInfoFields: {
   {
     key: "depositAccount",
     label: "수양회 입금 계좌",
-    placeholder: "은행 000-0000-0000",
+    placeholder: "3333-00-1234567 카카오뱅크",
   },
   {
     key: "depositAccountHolder",
     label: "수양회 입금주",
-    placeholder: "사랑의교회",
+    placeholder: "홍길동",
   },
   {
     key: "shuttleBusDepositAccount",
     label: "셔틀버스 입금 계좌",
-    placeholder: "은행 000-0000-0000",
+    placeholder: "3333-00-1234567 카카오뱅크",
   },
   {
     key: "shuttleBusDepositAccountHolder",
     label: "셔틀버스 입금주",
-    placeholder: "사랑의교회",
+    placeholder: "홍길동",
   },
 ];
 
@@ -64,7 +61,6 @@ export function RetreatUnivGroupOperationInfoFields({
   univGroups,
   informationByUnivGroupId,
   onChange,
-  onApplyFirstToAll,
 }: {
   univGroups: AdminUnivGroup[];
   informationByUnivGroupId: Record<number, RetreatUnivGroupInformation>;
@@ -73,7 +69,6 @@ export function RetreatUnivGroupOperationInfoFields({
     field: OperationInfoField,
     value: string
   ) => void;
-  onApplyFirstToAll?: () => void;
 }) {
   if (univGroups.length === 0) {
     return null;
@@ -81,14 +76,6 @@ export function RetreatUnivGroupOperationInfoFields({
 
   return (
     <div className="space-y-4">
-      {onApplyFirstToAll && univGroups.length > 1 && (
-        <div className="flex justify-end">
-          <Button type="button" variant="outline" onClick={onApplyFirstToAll}>
-            <Copy className="h-4 w-4" />첫 부서 정보 전체 적용
-          </Button>
-        </div>
-      )}
-
       {univGroups.map(univGroup => {
         const information =
           informationByUnivGroupId[univGroup.id] ??

@@ -70,6 +70,27 @@ export async function uploadRetreatAsset({
   return response.data;
 }
 
+export async function downloadRetreatAsset(
+  retreatId: number,
+  assetType: "poster" | "qr-template"
+): Promise<{ blob: Blob; fileName: string }> {
+  const response = await webAxios.get(
+    `/api/v1/admin/retreats/${retreatId}/assets/${assetType}`,
+    {
+      responseType: "blob",
+    }
+  );
+  const contentDisposition = response.headers["content-disposition"];
+  const utf8FileName = contentDisposition?.match(/filename\*=UTF-8''([^;]+)/);
+  const fileName = utf8FileName?.[1]
+    ? decodeURIComponent(utf8FileName[1])
+    : assetType === "poster"
+      ? "poster.png"
+      : "qr-template.png";
+
+  return { blob: response.data, fileName };
+}
+
 export async function createRetreat(request: CreateRetreatRequest) {
   const response = await webAxios.post("/api/v1/admin/retreats", request);
 

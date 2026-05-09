@@ -5,11 +5,6 @@ import { useRouter } from "next/navigation";
 import { FormEvent, ReactNode, useEffect, useState } from "react";
 
 import {
-  createRetreat,
-  getUnivGroups,
-  uploadRetreatAsset,
-} from "@/lib/api/admin-api";
-import {
   createEmptyRetreatUnivGroupInformation,
   RetreatUnivGroupOperationInfoFields,
 } from "@/components/features/retreat-management/RetreatUnivGroupOperationInfoFields";
@@ -18,6 +13,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  createRetreat,
+  getUnivGroups,
+  uploadRetreatAsset,
+} from "@/lib/api/admin-api";
 import { useToastStore } from "@/store/toast-store";
 import type {
   AdminUnivGroup,
@@ -48,9 +48,16 @@ const scheduleLabels = {
 };
 
 const shuttleDirectionLabels = {
-  FROM_CHURCH_TO_RETREAT: "교회에서 수양회 장소",
-  FROM_RETREAT_TO_CHURCH: "수양회 장소에서 교회",
+  FROM_CHURCH_TO_RETREAT: "교회 -> 수양회",
+  FROM_RETREAT_TO_CHURCH: "수양회 -> 교회",
 };
+
+const scheduleDefaultTimes = {
+  BREAKFAST: "08:00",
+  LUNCH: "12:00",
+  DINNER: "18:00",
+  SLEEP: "22:00",
+} satisfies Record<(typeof scheduleTypes)[number], string>;
 
 function createId() {
   return Date.now() + Math.floor(Math.random() * 1000);
@@ -65,8 +72,22 @@ function normalizeRetreatSlug(value: string) {
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/-+/g, "-");
+}
+
+function toDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function toTimeInputValue(value: string) {
+  return value.split("T")[1]?.slice(0, 5) || "";
+}
+
+function toScheduleDateTimeInputValue(date: Date, time: string) {
+  return `${toDateInputValue(date)}T${time}`;
 }
 
 function getErrorMessage(error: unknown) {
@@ -107,7 +128,6 @@ export default function CreateRetreatForm() {
     location: "",
     mainVerse: "",
     mainSpeaker: "",
-    memo: "",
   });
   const [registrationSchedules, setRegistrationSchedules] = useState<
     RegistrationScheduleInput[]
@@ -149,28 +169,10 @@ export default function CreateRetreatForm() {
     setOperationInfoByUnivGroupId(current => ({
       ...current,
       [univGroupId]: {
-        ...(current[univGroupId] ??
-          createEmptyRetreatUnivGroupInformation()),
+        ...(current[univGroupId] ?? createEmptyRetreatUnivGroupInformation()),
         [field]: value,
       },
     }));
-  };
-
-  const applyFirstOperationInfoToAll = () => {
-    const firstUnivGroupId = selectedUnivGroupIds[0];
-    if (!firstUnivGroupId) return;
-
-    const firstOperationInfo =
-      operationInfoByUnivGroupId[firstUnivGroupId] ??
-      createEmptyRetreatUnivGroupInformation();
-
-    setOperationInfoByUnivGroupId(current => {
-      const next = { ...current };
-      selectedUnivGroupIds.forEach(univGroupId => {
-        next[univGroupId] = { ...firstOperationInfo };
-      });
-      return next;
-    });
   };
 
   const toggleUnivGroup = (univGroupId: number, checked: boolean) => {
@@ -244,7 +246,7 @@ export default function CreateRetreatForm() {
       await createRetreat({
         retreat: {
           ...retreat,
-          memo: retreat.memo || undefined,
+          slug: retreat.slug.replace(/^-|-$/g, ""),
           posterUrl,
           qrTemplateImageKey,
         },
@@ -254,21 +256,12 @@ export default function CreateRetreatForm() {
             operationInfoByUnivGroupId[univGroupId] ??
             createEmptyRetreatUnivGroupInformation(),
         })),
-        registrationSchedules: registrationSchedules.map(
-          ({ id, date, type }) => ({
-            date: toIsoDateTime(date),
-            type,
-          })
-        ),
+        registrationSchedules: registrationSchedules.map(({ date, type }) => ({
+          date: toIsoDateTime(date),
+          type,
+        })),
         paymentSchedules: paymentSchedules.map(
-          ({
-            id,
-            name,
-            totalPrice,
-            partialPricePerSchedule,
-            startAt,
-            endAt,
-          }) => ({
+          ({ name, totalPrice, partialPricePerSchedule, startAt, endAt }) => ({
             name,
             totalPrice: Number(totalPrice),
             partialPricePerSchedule: Number(partialPricePerSchedule),
@@ -277,7 +270,7 @@ export default function CreateRetreatForm() {
           })
         ),
         shuttleBuses: shuttleBuses.map(
-          ({ id, name, direction, price, departureTime, arrivalTime }) => ({
+          ({ name, direction, price, departureTime, arrivalTime }) => ({
             name,
             direction,
             price: Number(price),
@@ -312,7 +305,7 @@ export default function CreateRetreatForm() {
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">수양회 추가</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          공개 페이지 정보, 대상 부서, 신청/결제/셔틀 운영 기준을 순서대로
+          신청 폼 정보, 대상 부서, 신청/결제/셔틀 운영 기준을 순서대로
           입력합니다. 생성 후 제한되는 항목은 각 섹션에서 바로 확인할 수
           있습니다.
         </p>
@@ -321,29 +314,9 @@ export default function CreateRetreatForm() {
       <section className="space-y-5 border-b py-8">
         <SectionHeader
           title="기본 정보"
-          description="수양회 공개 페이지에 표시되는 정보입니다."
+          description="수양회 신청 폼에 표시되는 정보입니다."
         />
         <div className="space-y-5">
-          <Field
-            label="영문 수양회 이름"
-            description="공개 페이지 주소에 사용됩니다. 생성 후 수정할 수 없습니다."
-          >
-            <Input
-              value={retreat.slug}
-              onChange={event =>
-                setRetreat(current => ({
-                  ...current,
-                  slug: normalizeRetreatSlug(event.target.value),
-                }))
-              }
-              placeholder="arise-shine"
-              required
-            />
-            <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-              미리보기:{" "}
-              {origin ? `${origin}${retreatPathPreview}` : retreatPathPreview}
-            </p>
-          </Field>
           <Field label="수양회 주제">
             <Input
               value={retreat.name}
@@ -381,7 +354,7 @@ export default function CreateRetreatForm() {
             />
           </Field>
           <Field label="수양회 주제 말씀">
-            <Input
+            <Textarea
               value={retreat.mainVerse}
               onChange={event =>
                 setRetreat(current => ({
@@ -392,16 +365,25 @@ export default function CreateRetreatForm() {
               required
             />
           </Field>
-          <Field label="신청폼 메모">
-            <Textarea
-              value={retreat.memo}
+          <Field
+            label="영문 수양회 이름"
+            description="신청 폼 주소에 사용됩니다. 영문 소문자, 숫자, 하이픈(-)을 사용할 수 있으며 생성 후 수정할 수 없습니다."
+          >
+            <Input
+              value={retreat.slug}
               onChange={event =>
                 setRetreat(current => ({
                   ...current,
-                  memo: event.target.value,
+                  slug: normalizeRetreatSlug(event.target.value),
                 }))
               }
+              placeholder="arise-shine"
+              required
             />
+            <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+              미리보기:{" "}
+              {origin ? `${origin}${retreatPathPreview}` : retreatPathPreview}
+            </p>
           </Field>
         </div>
       </section>
@@ -481,14 +463,13 @@ export default function CreateRetreatForm() {
           univGroups={selectedUnivGroups}
           informationByUnivGroupId={operationInfoByUnivGroupId}
           onChange={updateOperationInfo}
-          onApplyFirstToAll={applyFirstOperationInfoToAll}
         />
       </section>
 
       <section className="space-y-5 border-b py-8">
         <SectionHeader
           title="이미지"
-          description="포스터와 QR 템플릿 이미지를 업로드합니다. 포스터와 QR 템플릿은 추후에도 추가할 수 있으나, QR 템플릿 추가 전에 신청한 내역에는 QR이 발급되지 않습니다. QR 템플릿은 1080 x 1920 픽셀만 사용할 수 있습니다."
+          description="포스터는 신청 폼 상단 배경으로 사용됩니다. QR 템플릿은 입금 확인 후 신청자별 QR 이미지를 생성해 문자로 발송하는 데 사용되며, 템플릿 등록 전에 신청한 내역에는 QR이 발급되지 않습니다. QR 템플릿은 1080 x 1920 픽셀만 사용할 수 있습니다."
         />
         <div className="space-y-5">
           <Field label="포스터 이미지">
@@ -586,6 +567,87 @@ function ScheduleSection({
   schedules: RegistrationScheduleInput[];
   onChange: (schedules: RegistrationScheduleInput[]) => void;
 }) {
+  const [bulkStart, setBulkStart] = useState<RegistrationScheduleInput>({
+    id: createId(),
+    date: "",
+    type: "DINNER",
+  });
+  const [bulkEnd, setBulkEnd] = useState<RegistrationScheduleInput>({
+    id: createId(),
+    date: "",
+    type: "LUNCH",
+  });
+  const bulkStartDate = bulkStart.date ? new Date(bulkStart.date) : null;
+  const bulkEndDate = bulkEnd.date ? new Date(bulkEnd.date) : null;
+  const bulkStartDay = bulkStartDate ? toDateInputValue(bulkStartDate) : "";
+  const bulkEndDay = bulkEndDate ? toDateInputValue(bulkEndDate) : "";
+  const bulkStartTypeIndex = scheduleTypes.indexOf(bulkStart.type);
+  const bulkEndTypeIndex = scheduleTypes.indexOf(bulkEnd.type);
+  const canBulkAdd =
+    Boolean(bulkStart.date && bulkEnd.date) &&
+    (bulkStartDay < bulkEndDay ||
+      (bulkStartDay === bulkEndDay && bulkStartTypeIndex <= bulkEndTypeIndex));
+
+  const handleBulkAdd = () => {
+    if (!canBulkAdd || !bulkStartDate || !bulkEndDate) {
+      return;
+    }
+
+    const startDay = new Date(
+      bulkStartDate.getFullYear(),
+      bulkStartDate.getMonth(),
+      bulkStartDate.getDate()
+    );
+    const endDay = new Date(
+      bulkEndDate.getFullYear(),
+      bulkEndDate.getMonth(),
+      bulkEndDate.getDate()
+    );
+    const generatedSchedules: RegistrationScheduleInput[] = [];
+
+    for (
+      const currentDay = new Date(startDay);
+      currentDay <= endDay;
+      currentDay.setDate(currentDay.getDate() + 1)
+    ) {
+      const currentDayValue = toDateInputValue(currentDay);
+
+      scheduleTypes.forEach((type, typeIndex) => {
+        if (
+          currentDayValue === bulkStartDay &&
+          typeIndex < bulkStartTypeIndex
+        ) {
+          return;
+        }
+
+        if (currentDayValue === bulkEndDay && typeIndex > bulkEndTypeIndex) {
+          return;
+        }
+
+        const isStartBoundary =
+          currentDayValue === bulkStartDay && type === bulkStart.type;
+        const isEndBoundary =
+          currentDayValue === bulkEndDay && type === bulkEnd.type;
+        const time = isStartBoundary
+          ? toTimeInputValue(bulkStart.date) || scheduleDefaultTimes[type]
+          : isEndBoundary
+            ? toTimeInputValue(bulkEnd.date) || scheduleDefaultTimes[type]
+            : scheduleDefaultTimes[type];
+
+        generatedSchedules.push({
+          id: createId() + generatedSchedules.length,
+          date: toScheduleDateTimeInputValue(currentDay, time),
+          type,
+        });
+      });
+    }
+
+    onChange([
+      ...schedules.filter(schedule => schedule.date),
+      ...generatedSchedules,
+    ]);
+  };
+
   return (
     <section className="space-y-5 border-b py-8">
       <div className="flex items-start justify-between gap-4">
@@ -608,9 +670,91 @@ function ScheduleSection({
           추가
         </Button>
       </div>
+      <div className="rounded-md border bg-muted/30 p-4">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_10rem]">
+            <Field label="첫 일정 시간">
+              <Input
+                type="datetime-local"
+                value={bulkStart.date}
+                onChange={event =>
+                  setBulkStart(current => ({
+                    ...current,
+                    date: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="첫 일정 종류">
+              <select
+                value={bulkStart.type}
+                onChange={event =>
+                  setBulkStart(current => ({
+                    ...current,
+                    type: event.target
+                      .value as RegistrationScheduleInput["type"],
+                  }))
+                }
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                {scheduleTypes.map(type => (
+                  <option key={type} value={type}>
+                    {scheduleLabels[type]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_10rem]">
+            <Field label="마지막 일정 시간">
+              <Input
+                type="datetime-local"
+                value={bulkEnd.date}
+                onChange={event =>
+                  setBulkEnd(current => ({
+                    ...current,
+                    date: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="마지막 일정 종류">
+              <select
+                value={bulkEnd.type}
+                onChange={event =>
+                  setBulkEnd(current => ({
+                    ...current,
+                    type: event.target
+                      .value as RegistrationScheduleInput["type"],
+                  }))
+                }
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                {scheduleTypes.map(type => (
+                  <option key={type} value={type}>
+                    {scheduleLabels[type]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10"
+            disabled={!canBulkAdd}
+            onClick={handleBulkAdd}
+          >
+            일정 자동 채우기
+          </Button>
+        </div>
+      </div>
       <div className="space-y-3">
         {schedules.map(schedule => (
-          <div key={schedule.id} className="space-y-3 rounded-md border p-4">
+          <div
+            key={schedule.id}
+            className="grid gap-3 rounded-md border p-4 md:grid-cols-[minmax(0,1fr)_12rem_auto] md:items-end"
+          >
             <Field label="일정 시간">
               <Input
                 type="datetime-local"
@@ -652,7 +796,7 @@ function ScheduleSection({
                 ))}
               </select>
             </Field>
-            <div className="flex justify-end">
+            <div className="flex justify-end md:justify-start">
               <RemoveButton
                 disabled={schedules.length === 1}
                 onClick={() =>
@@ -707,95 +851,102 @@ function PaymentSection({
         {schedules.map(schedule => (
           <div key={schedule.id} className="space-y-3 rounded-md border p-3">
             <div className="space-y-3">
-              <Field label="결제 일정 이름">
-                <Input
-                  value={schedule.name}
-                  onChange={event =>
-                    onChange(
-                      schedules.map(item =>
-                        item.id === schedule.id
-                          ? { ...item, name: event.target.value }
-                          : item
+              <div className="grid gap-3 md:grid-cols-3">
+                <Field label="결제 일정 이름">
+                  <Input
+                    value={schedule.name}
+                    onChange={event =>
+                      onChange(
+                        schedules.map(item =>
+                          item.id === schedule.id
+                            ? { ...item, name: event.target.value }
+                            : item
+                        )
                       )
-                    )
-                  }
-                  placeholder="1차 등록"
-                  required
-                />
-              </Field>
-              <Field label="전참 가격">
-                <Input
-                  type="number"
-                  min={0}
-                  value={schedule.totalPrice}
-                  onChange={event =>
-                    onChange(
-                      schedules.map(item =>
-                        item.id === schedule.id
-                          ? { ...item, totalPrice: Number(event.target.value) }
-                          : item
+                    }
+                    placeholder="1차 등록"
+                    required
+                  />
+                </Field>
+                <Field label="전참 가격">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={schedule.totalPrice}
+                    onChange={event =>
+                      onChange(
+                        schedules.map(item =>
+                          item.id === schedule.id
+                            ? {
+                                ...item,
+                                totalPrice: Number(event.target.value),
+                              }
+                            : item
+                        )
                       )
-                    )
-                  }
-                  placeholder="150000"
-                  required
-                />
-              </Field>
-              <Field label="식수 당 부분참 가격">
-                <Input
-                  type="number"
-                  min={0}
-                  value={schedule.partialPricePerSchedule}
-                  onChange={event =>
-                    onChange(
-                      schedules.map(item =>
-                        item.id === schedule.id
-                          ? {
-                              ...item,
-                              partialPricePerSchedule: Number(
-                                event.target.value
-                              ),
-                            }
-                          : item
+                    }
+                    placeholder="150000"
+                    required
+                  />
+                </Field>
+                <Field label="식수 당 부분참 가격">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={schedule.partialPricePerSchedule}
+                    onChange={event =>
+                      onChange(
+                        schedules.map(item =>
+                          item.id === schedule.id
+                            ? {
+                                ...item,
+                                partialPricePerSchedule: Number(
+                                  event.target.value
+                                ),
+                              }
+                            : item
+                        )
                       )
-                    )
-                  }
-                  placeholder="10000"
-                  required
-                />
-              </Field>
-              <Field label="신청 시작 시간">
-                <Input
-                  type="datetime-local"
-                  value={schedule.startAt}
-                  onChange={event =>
-                    onChange(
-                      schedules.map(item =>
-                        item.id === schedule.id
-                          ? { ...item, startAt: event.target.value }
-                          : item
+                    }
+                    placeholder="10000"
+                    required
+                  />
+                </Field>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field label="신청 시작 시간">
+                  <Input
+                    type="datetime-local"
+                    value={schedule.startAt}
+                    onChange={event =>
+                      onChange(
+                        schedules.map(item =>
+                          item.id === schedule.id
+                            ? { ...item, startAt: event.target.value }
+                            : item
+                        )
                       )
-                    )
-                  }
-                  required
-                />
-              </Field>
-              <Field label="신청 종료 시간">
-                <Input
-                  type="datetime-local"
-                  value={schedule.endAt}
-                  onChange={event =>
-                    onChange(
-                      schedules.map(item =>
-                        item.id === schedule.id
-                          ? { ...item, endAt: event.target.value }
-                          : item
+                    }
+                    required
+                  />
+                </Field>
+                <Field label="신청 종료 시간">
+                  <Input
+                    type="datetime-local"
+                    value={schedule.endAt}
+                    onChange={event =>
+                      onChange(
+                        schedules.map(item =>
+                          item.id === schedule.id
+                            ? { ...item, endAt: event.target.value }
+                            : item
+                        )
                       )
-                    )
-                  }
-                  required
-                />
-              </Field>
+                    }
+                    required
+                  />
+                </Field>
+              </div>
               <div className="flex justify-end">
                 <RemoveButton
                   disabled={schedules.length === 1}
@@ -864,84 +1015,88 @@ function ShuttleBusSection({
                       )
                     )
                   }
-                  placeholder="교회 출발 1호차"
+                  placeholder="목요일 부분참, 수요일 정발"
                   required
                 />
               </Field>
-              <Field label="방향">
-                <select
-                  value={bus.direction}
-                  onChange={event =>
-                    onChange(
-                      buses.map(item =>
-                        item.id === bus.id
-                          ? {
-                              ...item,
-                              direction: event.target
-                                .value as ShuttleBusInput["direction"],
-                            }
-                          : item
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field label="방향">
+                  <select
+                    value={bus.direction}
+                    onChange={event =>
+                      onChange(
+                        buses.map(item =>
+                          item.id === bus.id
+                            ? {
+                                ...item,
+                                direction: event.target
+                                  .value as ShuttleBusInput["direction"],
+                              }
+                            : item
+                        )
                       )
-                    )
-                  }
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                >
-                  {shuttleDirections.map(direction => (
-                    <option key={direction} value={direction}>
-                      {shuttleDirectionLabels[direction]}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="셔틀버스 가격">
-                <Input
-                  type="number"
-                  min={0}
-                  value={bus.price}
-                  onChange={event =>
-                    onChange(
-                      buses.map(item =>
-                        item.id === bus.id
-                          ? { ...item, price: Number(event.target.value) }
-                          : item
+                    }
+                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  >
+                    {shuttleDirections.map(direction => (
+                      <option key={direction} value={direction}>
+                        {shuttleDirectionLabels[direction]}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="셔틀버스 가격">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={bus.price}
+                    onChange={event =>
+                      onChange(
+                        buses.map(item =>
+                          item.id === bus.id
+                            ? { ...item, price: Number(event.target.value) }
+                            : item
+                        )
                       )
-                    )
-                  }
-                  placeholder="10000"
-                  required
-                />
-              </Field>
-              <Field label="출발 시간">
-                <Input
-                  type="datetime-local"
-                  value={bus.departureTime}
-                  onChange={event =>
-                    onChange(
-                      buses.map(item =>
-                        item.id === bus.id
-                          ? { ...item, departureTime: event.target.value }
-                          : item
+                    }
+                    placeholder="10000"
+                    required
+                  />
+                </Field>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field label="출발 시간">
+                  <Input
+                    type="datetime-local"
+                    value={bus.departureTime}
+                    onChange={event =>
+                      onChange(
+                        buses.map(item =>
+                          item.id === bus.id
+                            ? { ...item, departureTime: event.target.value }
+                            : item
+                        )
                       )
-                    )
-                  }
-                  required
-                />
-              </Field>
-              <Field label="도착 시간">
-                <Input
-                  type="datetime-local"
-                  value={bus.arrivalTime || ""}
-                  onChange={event =>
-                    onChange(
-                      buses.map(item =>
-                        item.id === bus.id
-                          ? { ...item, arrivalTime: event.target.value }
-                          : item
+                    }
+                    required
+                  />
+                </Field>
+                <Field label="도착 시간">
+                  <Input
+                    type="datetime-local"
+                    value={bus.arrivalTime || ""}
+                    onChange={event =>
+                      onChange(
+                        buses.map(item =>
+                          item.id === bus.id
+                            ? { ...item, arrivalTime: event.target.value }
+                            : item
+                        )
                       )
-                    )
-                  }
-                />
-              </Field>
+                    }
+                  />
+                </Field>
+              </div>
               <div className="flex justify-end">
                 <RemoveButton
                   disabled={buses.length === 1}
