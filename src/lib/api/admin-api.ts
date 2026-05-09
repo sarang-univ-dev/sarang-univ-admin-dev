@@ -157,6 +157,16 @@ export async function createGrade(
   return response.data.grade;
 }
 
+export async function promoteUnivGroupGrades(
+  univGroupId: number
+): Promise<AdminGrade[]> {
+  const response = await webAxios.post<{ grades: AdminGrade[] }>(
+    `/api/v1/admin/univ-groups/${univGroupId}/grades/promote`
+  );
+
+  return response.data.grades;
+}
+
 export async function updateGrade(
   gradeId: number,
   request: UpdateGradeRequest
