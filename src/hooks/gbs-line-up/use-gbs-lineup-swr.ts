@@ -12,9 +12,37 @@ import type { ClientToServerEvents, ServerToClientEvents } from '@/lib/socket/so
 import type { Gender } from '@/types';
 
 type LineupMutationResponse = {
+  updatedLineups?: UserRetreatGbsLineup[];
   userRetreatGbsLineups?: UserRetreatGbsLineup[];
   [key: string]: unknown;
 };
+
+function getMutationLineups(responseData?: LineupMutationResponse) {
+  return responseData?.updatedLineups ?? responseData?.userRetreatGbsLineups;
+}
+
+function mergeLineupUpdates(
+  currentData: UserRetreatGbsLineup[] | undefined,
+  updatedLineups: UserRetreatGbsLineup[]
+) {
+  if (!currentData) return updatedLineups;
+
+  const updatedById = new Map(
+    updatedLineups.map((lineup) => [lineup.id, lineup])
+  );
+  const currentIds = new Set(currentData.map((lineup) => lineup.id));
+  const missingLineups = updatedLineups.filter(
+    (lineup) => !currentIds.has(lineup.id)
+  );
+
+  return [
+    ...currentData.map((lineup) => {
+      const updated = updatedById.get(lineup.id);
+      return updated ? { ...lineup, ...updated } : lineup;
+    }),
+    ...missingLineups,
+  ];
+}
 
 /**
  * SWR + WebSocket 기반 GBS 라인업 데이터 훅
@@ -131,11 +159,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
       mutateGlobal(
         swrKey,
         (currentData: UserRetreatGbsLineup[] | undefined) => {
-          if (!currentData) return currentData;
-
-          return currentData.map((item) =>
-            item.id === updated.id ? { ...item, ...updated } : item
-          );
+          return mergeLineupUpdates(currentData, [updated]);
         },
         { revalidate: false }
       );
@@ -208,8 +232,13 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
         async (currentData: UserRetreatGbsLineup[] | undefined) => {
           const response = await request();
           responseData = response.data;
+          const updatedLineups = getMutationLineups(responseData);
 
-          return responseData.userRetreatGbsLineups ?? currentData ?? [];
+          if (updatedLineups) {
+            return mergeLineupUpdates(currentData, updatedLineups);
+          }
+
+          return currentData ?? [];
         },
         {
           optimisticData,
@@ -218,7 +247,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
         }
       );
 
-      if (!responseData?.userRetreatGbsLineups) {
+      if (!getMutationLineups(responseData)) {
         await mutateSWR();
       }
 
