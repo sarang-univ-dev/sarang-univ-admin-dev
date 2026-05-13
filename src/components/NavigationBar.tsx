@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { ReactNode, useState, useEffect } from "react";
+
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -10,7 +12,6 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils/utils";
-import { ReactNode, useState, useEffect } from "react";
 
 const baseNavigationItems: {
   [key: string]: { link: string; subItems?: { name: string; link: string }[] };

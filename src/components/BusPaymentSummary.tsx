@@ -1,11 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
+
+import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
+import { UserRetreatShuttleBusPaymentStatus } from "@/types";
+
+import { StatusBadge } from "./Badge-bus";
 import { SummaryTable } from "./SummaryTable";
 import { generateDepartmentStats } from "../utils/bus-utils";
-import { StatusBadge } from "./Badge-bus";
-import { UserRetreatShuttleBusPaymentStatus } from "@/types";
-import { useMemo } from "react";
-import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
 
 export function PaymentSummary({
   registrations = [],
@@ -58,7 +60,9 @@ export function PaymentSummary({
       header: (
         <div className="flex justify-center">
           <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 shrink-0">
-            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">전체 인원</span>
+            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+              전체 인원
+            </span>
           </div>
         </div>
       ),

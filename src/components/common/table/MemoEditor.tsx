@@ -1,9 +1,10 @@
 "use client";
 
+import { Save, X, Trash2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, X, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MemoEditorProps<T extends { id: string }> {
@@ -117,22 +118,27 @@ export function MemoEditor<T extends { id: string }>({
     return (
       <div
         className="flex flex-col gap-1 p-2 min-w-[200px] max-w-full"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         <div className="relative">
           <Textarea
             ref={textareaRef}
             value={localMemoValue}
-            onChange={(e) => setLocalMemoValue(e.target.value)}
+            onChange={e => setLocalMemoValue(e.target.value)}
             placeholder={placeholder}
             disabled={isLoading}
             maxLength={maxLength}
             className={cn(
               "text-sm resize-none w-full transition-all",
               "focus:ring-2 focus:ring-primary",
-              maxLength && localMemoValue.length > maxLength * 0.9 && "border-yellow-500"
+              maxLength &&
+                localMemoValue.length > maxLength * 0.9 &&
+                "border-yellow-500"
             )}
-            rows={Math.max(3, Math.min(8, localMemoValue.split("\n").length + 1))}
+            rows={Math.max(
+              3,
+              Math.min(8, localMemoValue.split("\n").length + 1)
+            )}
             aria-label="메모 입력"
           />
           {/* ✅ 글자 수 카운터 (선택사항) */}
@@ -209,11 +215,11 @@ export function MemoEditor<T extends { id: string }>({
   return (
     <div
       className="flex flex-col gap-1 p-2 min-w-[200px] max-w-full"
-      onClick={(e) => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
     >
       {/* 메모 내용 또는 플레이스홀더 */}
       <button
-        onClick={(e) => {
+        onClick={e => {
           e.stopPropagation();
           setIsEditing(true);
           setLocalMemoValue(memoValue || "");

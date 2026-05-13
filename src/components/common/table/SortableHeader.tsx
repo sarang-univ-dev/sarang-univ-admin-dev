@@ -1,5 +1,6 @@
 import { Column } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 
 interface SortableHeaderProps<TData> {
@@ -45,7 +46,9 @@ export function SortableHeader<TData>({
   };
 
   return (
-    <div className={`flex items-center justify-center whitespace-nowrap ${className}`}>
+    <div
+      className={`flex items-center justify-center whitespace-nowrap ${className}`}
+    >
       <Button
         variant="ghost"
         onClick={handleSort}

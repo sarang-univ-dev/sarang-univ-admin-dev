@@ -1,7 +1,14 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShieldAlert, Home, ArrowLeft, Mail } from "lucide-react"
+import { ShieldAlert, Home, ArrowLeft, Mail } from "lucide-react";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 /**
  * 403 Unauthorized Page
@@ -33,8 +40,8 @@ export default function UnauthorizedPage() {
           <div className="rounded-lg bg-muted p-4">
             <p className="text-sm font-medium mb-2">권한이 필요하신가요?</p>
             <p className="text-xs text-muted-foreground">
-              관리자에게 문의하여 필요한 권한을 요청하세요.
-              수련회별로 권한이 다르게 설정될 수 있습니다.
+              관리자에게 문의하여 필요한 권한을 요청하세요. 수련회별로 권한이
+              다르게 설정될 수 있습니다.
             </p>
           </div>
 
@@ -61,5 +68,5 @@ export default function UnauthorizedPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

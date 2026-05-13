@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+
 import { MealCheckTable } from "@/components/MealCheckTable";
 
 export default function MealCheckPage() {
@@ -12,10 +13,8 @@ export default function MealCheckPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">식사 체크</h1>
       </div>
-      
-      <MealCheckTable 
-        retreatSlug={retreatSlug}
-      />
+
+      <MealCheckTable retreatSlug={retreatSlug} />
     </div>
   );
-} 
+}

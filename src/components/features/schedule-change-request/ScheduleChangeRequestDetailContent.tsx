@@ -1,16 +1,12 @@
+import { UserCircle, CreditCard, Calendar, FileText } from "lucide-react";
+import { useMemo } from "react";
+
+import { StatusBadge, TypeBadge } from "@/components/Badge";
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
+import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
 import { ScheduleChangeRequestTableData } from "@/hooks/schedule-change-request/use-schedule-change-request-columns";
 import { TRetreatRegistrationSchedule } from "@/types";
-import { StatusBadge, TypeBadge } from "@/components/Badge";
-import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
 import { formatDate } from "@/utils/formatDate";
-import { useMemo } from "react";
-import {
-  UserCircle,
-  CreditCard,
-  Calendar,
-  FileText,
-} from "lucide-react";
 
 interface ScheduleChangeRequestDetailContentProps {
   data: ScheduleChangeRequestTableData;
@@ -46,10 +42,7 @@ export function ScheduleChangeRequestDetailContent({
 
       {/* 신청 정보 */}
       <InfoSection title="신청 정보" icon={CreditCard}>
-        <InfoItem
-          label="금액"
-          value={`${data.amount?.toLocaleString()}원`}
-        />
+        <InfoItem label="금액" value={`${data.amount?.toLocaleString()}원`} />
         <InfoItem
           label="타입"
           value={data.type ? <TypeBadge type={data.type as any} /> : "-"}

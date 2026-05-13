@@ -1,16 +1,12 @@
+import { UserCircle, CreditCard, Calendar, Clock } from "lucide-react";
+import { useMemo } from "react";
+
+import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
+import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import { TRetreatRegistrationSchedule } from "@/types";
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
-import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
 import { formatDate } from "@/utils/formatDate";
-import { useMemo } from "react";
-import {
-  UserCircle,
-  CreditCard,
-  Calendar,
-  Clock,
-} from "lucide-react";
 
 interface RetreatPaymentConfirmationDetailContentProps {
   data: IUserRetreatRegistration;
@@ -70,10 +66,7 @@ export function RetreatPaymentConfirmationDetailContent({
           label="타입"
           value={data.userType ? <TypeBadge type={data.userType} /> : "-"}
         />
-        <InfoItem
-          label="금액"
-          value={`${data.price?.toLocaleString()}원`}
-        />
+        <InfoItem label="금액" value={`${data.price?.toLocaleString()}원`} />
         <InfoItem
           label="입금 현황"
           value={<StatusBadge status={data.paymentStatus} />}

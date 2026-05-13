@@ -1,6 +1,6 @@
-import { IRetreatRegistration } from "@/types/account";
-import { TRetreatRegistrationSchedule } from "@/types";
 import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
+import { TRetreatRegistrationSchedule } from "@/types";
+import { IRetreatRegistration } from "@/types/account";
 
 /**
  * IRetreatRegistration을 AccountStaffTableData로 변환하는 함수
@@ -13,10 +13,10 @@ export function transformRegistrationsForTable(
   registrations: IRetreatRegistration[],
   schedules: TRetreatRegistrationSchedule[]
 ): AccountStaffTableData[] {
-  return registrations.map((registration) => {
+  return registrations.map(registration => {
     // 스케줄 정보 변환
     const scheduleData: Record<string, boolean> = {};
-    schedules.forEach((schedule) => {
+    schedules.forEach(schedule => {
       scheduleData[`schedule_${schedule.id}`] =
         registration.userRetreatRegistrationScheduleIds?.includes(
           schedule.id

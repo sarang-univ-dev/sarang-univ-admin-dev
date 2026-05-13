@@ -1,18 +1,18 @@
 import {
-  Gender,
-  UserRetreatShuttleBusPaymentStatus,
-  UserRetreatRegistrationType,
-} from "@/types";
-import {
   Shield,
   User,
   CheckCheck,
   Clock,
   RotateCcw,
   RefreshCcw,
+  UserPlus,
 } from "lucide-react";
 
-import { UserPlus } from "lucide-react";
+import {
+  Gender,
+  UserRetreatShuttleBusPaymentStatus,
+  UserRetreatRegistrationType,
+} from "@/types";
 
 export const StatusBadge = ({
   status,

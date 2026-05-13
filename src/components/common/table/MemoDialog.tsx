@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
 
 interface MemoDialogProps {
   eventName: string;
@@ -92,7 +93,7 @@ export function MemoDialog({
           className="w-full border rounded-md p-2 min-h-[120px] focus:ring-2 focus:ring-primary focus:border-primary"
           placeholder={placeholder}
           value={memoText}
-          onChange={(e) => setMemoText(e.target.value)}
+          onChange={e => setMemoText(e.target.value)}
           disabled={loading}
         />
         <div className="flex justify-end gap-2 mt-4">

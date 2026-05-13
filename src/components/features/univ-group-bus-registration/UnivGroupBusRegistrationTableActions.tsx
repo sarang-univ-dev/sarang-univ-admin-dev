@@ -1,7 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { UserRetreatShuttleBusPaymentStatus } from "@/types";
 
 interface BusRegistrationRow {
@@ -24,19 +25,12 @@ export function UnivGroupBusRegistrationTableActions({
   onOpenMemo,
 }: UnivGroupBusRegistrationTableActionsProps) {
   // 메모가 이미 있거나 입금 완료 상태가 아니면 버튼 표시 안 함
-  if (
-    row.memo ||
-    row.status !== UserRetreatShuttleBusPaymentStatus.PAID
-  ) {
-    return (
-      <div className="text-center text-gray-400 text-sm">
-        -
-      </div>
-    );
+  if (row.memo || row.status !== UserRetreatShuttleBusPaymentStatus.PAID) {
+    return <div className="text-center text-gray-400 text-sm">-</div>;
   }
 
   return (
-    <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+    <div className="flex justify-center" onClick={e => e.stopPropagation()}>
       <Button
         size="sm"
         variant="outline"

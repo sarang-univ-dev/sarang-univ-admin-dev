@@ -1,6 +1,8 @@
 "use client";
 
+import { AlertCircle } from "lucide-react";
 import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
 
 export function AdminLoginOauth() {
   const [error, setError] = useState("");

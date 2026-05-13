@@ -1,8 +1,5 @@
 import { Suspense } from "react";
-import {
-  fetchAccountStaffRegistrations,
-  fetchRetreatSchedules,
-} from "@/lib/api/server-actions";
+
 import {
   AccountStaffRegistrationTable,
   PaymentSummary,
@@ -10,6 +7,10 @@ import {
   AccountStatus,
 } from "@/components/features/account";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  fetchAccountStaffRegistrations,
+  fetchRetreatSchedules,
+} from "@/lib/api/server-actions";
 
 interface PageProps {
   params: Promise<{

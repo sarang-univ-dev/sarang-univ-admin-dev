@@ -5,6 +5,8 @@ import { IUnivGroupBusRegistration } from "@/types/bus-registration";
 import { useToastStore } from "@/store/toast-store";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { AxiosError } from "axios";
+import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
+import { Gender } from "@/types";
 
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
@@ -162,6 +164,193 @@ export function useUnivGroupBusRegistration(
     });
   };
 
+  /**
+   * 부서 셔틀버스 신청 현황 엑셀 다운로드
+   */
+  const downloadExcel = async () => {
+    if (!retreatSlug) return;
+
+    setIsMutating(true);
+    try {
+      const blob = await ShuttleBusAPI.downloadUnivGroupExcel(retreatSlug);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `부서_셔틀버스_신청현황_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      addToast({
+        title: "성공",
+        description: "엑셀 파일이 다운로드되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "오류 발생",
+        description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  /**
+   * 셔틀버스 신청 삭제
+   *
+   * @param id - 신청 ID
+   */
+  const deleteRegistration = async (id: string) => {
+    if (!retreatSlug) return;
+
+    const numericId = Number(id);
+
+    confirmDialog.show({
+      title: "신청 삭제",
+      description:
+        "정말로 셔틀버스 신청을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+      onConfirm: async () => {
+        setIsMutating(true);
+        try {
+          // 1. Optimistic update: 즉시 UI에서 제거
+          const optimisticData = data?.filter((item) => item.id !== numericId);
+
+          if (optimisticData) {
+            await mutate(optimisticData, { revalidate: false });
+          }
+
+          // 2. API 호출
+          await webAxios.delete(
+            `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}`
+          );
+
+          addToast({
+            title: "성공",
+            description: "셔틀버스 신청이 성공적으로 삭제되었습니다.",
+            variant: "success",
+          });
+        } catch (error) {
+          // 에러 시 서버 데이터로 롤백
+          await mutate();
+
+          const message =
+            error instanceof AxiosError
+              ? error.response?.data?.message || "삭제 중 오류가 발생했습니다."
+              : "삭제 중 오류가 발생했습니다.";
+
+          addToast({
+            title: "오류 발생",
+            description: message,
+            variant: "destructive",
+          });
+
+          throw error;
+        } finally {
+          setIsMutating(false);
+        }
+      },
+    });
+  };
+
+  /**
+   * 신청자 기본 정보 수정
+   *
+   * @param id - 신청 ID
+   * @param updateData - 수정할 정보 (이름, 전화번호, 성별, 학년)
+   */
+  const updateRegistrationInfo = async (
+    id: string,
+    updateData: {
+      name: string;
+      phoneNumber: string;
+      gender: Gender;
+      gradeId: number;
+    }
+  ) => {
+    if (!retreatSlug) return;
+
+    setIsMutating(true);
+    try {
+      // API 호출
+      await webAxios.patch(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/info`,
+        updateData
+      );
+
+      // 전체 데이터 리페치 (user_profile이 변경될 수 있으므로)
+      await mutate();
+
+      addToast({
+        title: "성공",
+        description: "신청자 정보가 성공적으로 수정되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      const message =
+        error instanceof AxiosError
+          ? error.response?.data?.message || "정보 수정 중 오류가 발생했습니다."
+          : "정보 수정 중 오류가 발생했습니다.";
+
+      addToast({
+        title: "오류 발생",
+        description: message,
+        variant: "destructive",
+      });
+
+      throw error;
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  /**
+   * 관리자 메모 생성 또는 수정
+   *
+   * @param id - 신청 ID
+   * @param memo - 메모 내용
+   */
+  const saveOrUpdateAdminMemo = async (id: string, memo: string) => {
+    if (!retreatSlug) return;
+
+    await updateCache(async () => {
+      const response = await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/memo`,
+        { memo }
+      );
+      return response.data?.univGroupShuttleBusRegistration;
+    }, "메모가 저장되었습니다.");
+  };
+
+  /**
+   * 관리자 메모 삭제
+   *
+   * @param memoId - 메모 ID
+   */
+  const deleteAdminMemo = async (memoId: number) => {
+    if (!retreatSlug) return;
+
+    confirmDialog.show({
+      title: "메모 삭제",
+      description: "정말로 메모를 삭제하시겠습니까?",
+      onConfirm: async () => {
+        await updateCache(async () => {
+          await webAxios.delete(
+            `/api/v1/retreat/${retreatSlug}/shuttle-bus/admin-memo/${memoId}`
+          );
+          // 삭제 후 전체 리페치
+          return undefined;
+        }, "메모가 삭제되었습니다.");
+      },
+    });
+  };
+
   return {
     // 데이터
     data: data ?? [],
@@ -176,5 +365,10 @@ export function useUnivGroupBusRegistration(
     saveMemo,
     updateMemo,
     deleteMemo,
+    downloadExcel,
+    deleteRegistration,
+    updateRegistrationInfo,
+    saveOrUpdateAdminMemo,
+    deleteAdminMemo,
   };
 }

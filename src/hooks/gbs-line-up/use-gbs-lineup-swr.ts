@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import useSWR, { mutate } from 'swr';
+import useSWR, { mutate as mutateGlobal } from 'swr';
 import { getSocketClient } from '@/lib/socket/socket-client';
 import { webAxios } from '@/lib/api/axios';
 import { useToastStore } from '@/store/toast-store';
@@ -9,6 +9,40 @@ import { useConfirmDialogStore } from '@/store/confirm-dialog-store';
 import type { UserRetreatGbsLineup } from '@/lib/socket/socket-events';
 import type { Socket } from 'socket.io-client';
 import type { ClientToServerEvents, ServerToClientEvents } from '@/lib/socket/socket-events';
+import type { Gender } from '@/types';
+
+type LineupMutationResponse = {
+  updatedLineups?: UserRetreatGbsLineup[];
+  userRetreatGbsLineups?: UserRetreatGbsLineup[];
+  [key: string]: unknown;
+};
+
+function getMutationLineups(responseData?: LineupMutationResponse) {
+  return responseData?.updatedLineups ?? responseData?.userRetreatGbsLineups;
+}
+
+function mergeLineupUpdates(
+  currentData: UserRetreatGbsLineup[] | undefined,
+  updatedLineups: UserRetreatGbsLineup[]
+) {
+  if (!currentData) return updatedLineups;
+
+  const updatedById = new Map(
+    updatedLineups.map((lineup) => [lineup.id, lineup])
+  );
+  const currentIds = new Set(currentData.map((lineup) => lineup.id));
+  const missingLineups = updatedLineups.filter(
+    (lineup) => !currentIds.has(lineup.id)
+  );
+
+  return [
+    ...currentData.map((lineup) => {
+      const updated = updatedById.get(lineup.id);
+      return updated ? { ...lineup, ...updated } : lineup;
+    }),
+    ...missingLineups,
+  ];
+}
 
 /**
  * SWR + WebSocket 기반 GBS 라인업 데이터 훅
@@ -122,14 +156,10 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
       console.log('🔔 [useGbsLineupSwr] Received lineup update:', updated.id);
 
       // ✅ SWR 캐시 직접 업데이트 (즉각적인 반영)
-      mutate(
+      mutateGlobal(
         swrKey,
         (currentData: UserRetreatGbsLineup[] | undefined) => {
-          if (!currentData) return currentData;
-
-          return currentData.map((item) =>
-            item.id === updated.id ? { ...item, ...updated } : item
-          );
+          return mergeLineupUpdates(currentData, [updated]);
         },
         { revalidate: false }
       );
@@ -189,6 +219,43 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
   // Mutation 함수들 (✅ Best Practice: HTTP 기반, WebSocket은 실시간 수신만)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  const mutateLineups = useCallback(
+    async (
+      request: () => Promise<{ data: LineupMutationResponse }>,
+      optimisticData: (
+        currentData: UserRetreatGbsLineup[] | undefined
+      ) => UserRetreatGbsLineup[]
+    ) => {
+      let responseData: LineupMutationResponse | undefined;
+
+      await mutateSWR(
+        async (currentData: UserRetreatGbsLineup[] | undefined) => {
+          const response = await request();
+          responseData = response.data;
+          const updatedLineups = getMutationLineups(responseData);
+
+          if (updatedLineups) {
+            return mergeLineupUpdates(currentData, updatedLineups);
+          }
+
+          return currentData ?? [];
+        },
+        {
+          optimisticData,
+          rollbackOnError: true,
+          revalidate: false,
+        }
+      );
+
+      if (!getMutationLineups(responseData)) {
+        await mutateSWR();
+      }
+
+      return responseData;
+    },
+    [mutateSWR]
+  );
+
   /**
    * GBS 번호 저장 (HTTP 기반 + Optimistic Update)
    *
@@ -203,44 +270,19 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
       setIsMutating(true);
 
       try {
-        // ✅ 1. Optimistic Update (즉각적인 UI 반영)
-        await mutate(
-          swrKey,
-          (currentData: UserRetreatGbsLineup[] | undefined) => {
-            if (!currentData) return currentData;
-            return currentData.map((item) =>
+        const responseData = await mutateLineups(
+          () =>
+            webAxios.post(`/api/v1/retreat/${retreatSlug}/line-up/assign-gbs`, {
+              userRetreatRegistrationId,
+              gbsNumber,
+            }),
+          (currentData) =>
+            (currentData ?? []).map((item) =>
               item.id === userRetreatRegistrationId
                 ? { ...item, gbsNumber, updatedAt: new Date().toISOString() }
                 : item
-            );
-          },
-          { revalidate: false, rollbackOnError: true }
+            )
         );
-
-        // ✅ 2. HTTP API 호출 (안정적인 mutation)
-        const response = await webAxios.post(
-          `/api/v1/retreat/${retreatSlug}/line-up/assign-gbs`,
-          { userRetreatRegistrationId, gbsNumber }
-        );
-
-        // ✅ 3. 서버 응답으로 캐시 업데이트
-        if (response.data?.userRetreatGbsLineup) {
-          await mutate(
-            swrKey,
-            (currentData: UserRetreatGbsLineup[] | undefined) => {
-              if (!currentData) return currentData;
-              return currentData.map((item) =>
-                item.id === response.data.userRetreatGbsLineup.id
-                  ? { ...item, ...response.data.userRetreatGbsLineup }
-                  : item
-              );
-            },
-            { revalidate: false }
-          );
-        } else {
-          // 서버 응답에 데이터가 없으면 전체 revalidate
-          await mutateSWR();
-        }
 
         addToast({
           title: '성공',
@@ -248,9 +290,8 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
           variant: 'success',
         });
 
-        return response.data;
+        return responseData;
       } catch (error) {
-        // Optimistic Update 롤백은 rollbackOnError: true로 자동 처리
         addToast({
           title: '오류',
           description: 'GBS 번호 저장에 실패했습니다.',
@@ -261,7 +302,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
         setIsMutating(false);
       }
     },
-    [swrKey, addToast, retreatSlug, mutateSWR]
+    [addToast, mutateLineups, retreatSlug]
   );
 
   /**
@@ -272,50 +313,25 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
       setIsMutating(true);
 
       try {
-        // ✅ 1. Optimistic Update
-        if (swrKey) {
-          await mutate(
-            swrKey,
-            (currentData: UserRetreatGbsLineup[] | undefined) => {
-              if (!currentData) return currentData;
-              return currentData.map((item) =>
-                item.id === userRetreatRegistrationId
-                  ? {
-                      ...item,
-                      lineupMemo: memo.trim(),
-                      lineupMemocolor: color ?? '',
-                      updatedAt: new Date().toISOString(),
-                    }
-                  : item
-              );
-            },
-            { revalidate: false, rollbackOnError: true }
-          );
-        }
-
-        // ✅ 2. HTTP API 호출
-        const response = await webAxios.post(
-          `/api/v1/retreat/${retreatSlug}/line-up/${userRetreatRegistrationId}/lineup-memo`,
-          { memo: memo.trim(), color }
+        const trimmedMemo = memo.trim();
+        const responseData = await mutateLineups(
+          () =>
+            webAxios.post(
+              `/api/v1/retreat/${retreatSlug}/line-up/${userRetreatRegistrationId}/lineup-memo`,
+              { memo: trimmedMemo, color }
+            ),
+          (currentData) =>
+            (currentData ?? []).map((item) =>
+              item.id === userRetreatRegistrationId
+                ? {
+                    ...item,
+                    lineupMemo: trimmedMemo,
+                    lineupMemocolor: color ?? '',
+                    updatedAt: new Date().toISOString(),
+                  }
+                : item
+            )
         );
-
-        // ✅ 3. 서버 응답으로 캐시 업데이트
-        if (response.data?.userRetreatGbsLineup) {
-          await mutate(
-            swrKey,
-            (currentData: UserRetreatGbsLineup[] | undefined) => {
-              if (!currentData) return currentData;
-              return currentData.map((item) =>
-                item.id === response.data.userRetreatGbsLineup.id
-                  ? { ...item, ...response.data.userRetreatGbsLineup }
-                  : item
-              );
-            },
-            { revalidate: false }
-          );
-        } else {
-          await mutateSWR();
-        }
 
         addToast({
           title: '성공',
@@ -323,7 +339,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
           variant: 'success',
         });
 
-        return response.data;
+        return responseData;
       } catch (error) {
         addToast({
           title: '오류',
@@ -335,7 +351,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
         setIsMutating(false);
       }
     },
-    [swrKey, addToast, retreatSlug, mutateSWR]
+    [addToast, mutateLineups, retreatSlug]
   );
 
   /**
@@ -346,51 +362,26 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
       setIsMutating(true);
 
       try {
-        // ✅ 1. Optimistic Update
-        if (swrKey) {
-          await mutate(
-            swrKey,
-            (currentData: UserRetreatGbsLineup[] | undefined) => {
-              if (!currentData) return currentData;
-              return currentData.map((item) => {
-                if (item.lineupMemoId === userRetreatRegistrationMemoId) {
-                  return {
-                    ...item,
-                    lineupMemo: memo.trim(),
-                    lineupMemocolor: color ?? '',
-                    updatedAt: new Date().toISOString(),
-                  };
-                }
-                return item;
-              });
-            },
-            { revalidate: false, rollbackOnError: true }
-          );
-        }
-
-        // ✅ 2. HTTP API 호출
-        const response = await webAxios.put(
-          `/api/v1/retreat/${retreatSlug}/line-up/${userRetreatRegistrationMemoId}/lineup-memo`,
-          { memo: memo.trim(), color }
+        const trimmedMemo = memo.trim();
+        const responseData = await mutateLineups(
+          () =>
+            webAxios.put(
+              `/api/v1/retreat/${retreatSlug}/line-up/${userRetreatRegistrationMemoId}/lineup-memo`,
+              { memo: trimmedMemo, color }
+            ),
+          (currentData) =>
+            (currentData ?? []).map((item) => {
+              if (item.lineupMemoId === userRetreatRegistrationMemoId) {
+                return {
+                  ...item,
+                  lineupMemo: trimmedMemo,
+                  lineupMemocolor: color ?? '',
+                  updatedAt: new Date().toISOString(),
+                };
+              }
+              return item;
+            })
         );
-
-        // ✅ 3. 서버 응답으로 캐시 업데이트
-        if (response.data?.userRetreatGbsLineup) {
-          await mutate(
-            swrKey,
-            (currentData: UserRetreatGbsLineup[] | undefined) => {
-              if (!currentData) return currentData;
-              return currentData.map((item) =>
-                item.id === response.data.userRetreatGbsLineup.id
-                  ? { ...item, ...response.data.userRetreatGbsLineup }
-                  : item
-              );
-            },
-            { revalidate: false }
-          );
-        } else {
-          await mutateSWR();
-        }
 
         addToast({
           title: '성공',
@@ -398,7 +389,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
           variant: 'success',
         });
 
-        return response.data;
+        return responseData;
       } catch (error) {
         addToast({
           title: '오류',
@@ -410,7 +401,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
         setIsMutating(false);
       }
     },
-    [swrKey, addToast, retreatSlug, mutateSWR]
+    [addToast, mutateLineups, retreatSlug]
   );
 
   /**
@@ -430,51 +421,25 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
           setIsMutating(true);
 
           try {
-            // ✅ 1. Optimistic Update
-            if (swrKey) {
-              await mutate(
-                swrKey,
-                (currentData: UserRetreatGbsLineup[] | undefined) => {
-                  if (!currentData) return currentData;
-                  return currentData.map((item) => {
-                    if (item.lineupMemoId === userRetreatRegistrationMemoId) {
-                      return {
-                        ...item,
-                        lineupMemo: '',
-                        lineupMemocolor: '',
-                        lineupMemoId: null,
-                        updatedAt: new Date().toISOString(),
-                      };
-                    }
-                    return item;
-                  });
-                },
-                { revalidate: false, rollbackOnError: true }
-              );
-            }
-
-            // ✅ 2. HTTP API 호출
-            const response = await webAxios.delete(
-              `/api/v1/retreat/${retreatSlug}/line-up/${userRetreatRegistrationMemoId}/lineup-memo`
+            await mutateLineups(
+              () =>
+                webAxios.delete(
+                  `/api/v1/retreat/${retreatSlug}/line-up/${userRetreatRegistrationMemoId}/lineup-memo`
+                ),
+              (currentData) =>
+                (currentData ?? []).map((item) => {
+                  if (item.lineupMemoId === userRetreatRegistrationMemoId) {
+                    return {
+                      ...item,
+                      lineupMemo: '',
+                      lineupMemocolor: '',
+                      lineupMemoId: null,
+                      updatedAt: new Date().toISOString(),
+                    };
+                  }
+                  return item;
+                })
             );
-
-            // ✅ 3. 서버 응답으로 캐시 업데이트
-            if (response.data?.userRetreatGbsLineup) {
-              await mutate(
-                swrKey,
-                (currentData: UserRetreatGbsLineup[] | undefined) => {
-                  if (!currentData) return currentData;
-                  return currentData.map((item) =>
-                    item.id === response.data.userRetreatGbsLineup.id
-                      ? { ...item, ...response.data.userRetreatGbsLineup }
-                      : item
-                  );
-                },
-                { revalidate: false }
-              );
-            } else {
-              await mutateSWR();
-            }
 
             addToast({
               title: '성공',
@@ -493,7 +458,56 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
         },
       });
     },
-    [swrKey, addToast, confirmDialog, retreatSlug, mutateSWR]
+    [addToast, confirmDialog, mutateLineups, retreatSlug]
+  );
+
+  /**
+   * 신청자 기본 정보 수정 (HTTP 기반)
+   *
+   * @description
+   * 라인업간사가 신청자의 기본 정보(이름, 전화번호, 성별, 학년, 현재 리더명)를 수정
+   * 수양회 신청 정보 수정 API 재사용
+   */
+  const updateRegistrationInfo = useCallback(
+    async (
+      userRetreatRegistrationId: string,
+      updateData: {
+        name: string;
+        phoneNumber: string;
+        gender: Gender;
+        gradeId: number;
+        currentLeaderName: string;
+      }
+    ) => {
+      setIsMutating(true);
+
+      try {
+        // HTTP API 호출
+        await webAxios.patch(
+          `/api/v1/retreat/${retreatSlug}/registration/${userRetreatRegistrationId}/info`,
+          updateData
+        );
+
+        // 전체 데이터 리페치 (user_profile이 변경될 수 있으므로)
+        await mutateSWR();
+
+        addToast({
+          title: '성공',
+          description: '신청자 정보가 성공적으로 수정되었습니다.',
+          variant: 'success',
+        });
+      } catch (error) {
+        addToast({
+          title: '오류',
+          description: '정보 수정에 실패했습니다.',
+          variant: 'destructive',
+        });
+        throw error;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [retreatSlug, addToast, mutateSWR]
   );
 
   return {
@@ -509,6 +523,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
     saveLineupMemo,
     updateLineupMemo,
     deleteLineupMemo,
+    updateRegistrationInfo,
 
     // SWR mutate (수동 리페칭)
     refresh: mutateSWR,

@@ -1,24 +1,25 @@
 "use client";
 
+import { Table } from "@tanstack/react-table";
+import { debounce } from "lodash";
+import { Search, Download, Settings } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Download, Settings } from "lucide-react";
-import { debounce } from "lodash";
-import { webAxios } from "@/lib/api/axios";
-import { useToastStore } from "@/store/toast-store";
-import { formatDate } from "@/utils/formatDate";
-import { Table } from "@tanstack/react-table";
+import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-media-query";
+import { webAxios } from "@/lib/api/axios";
 import { SCHEDULE_TYPE_SHORT_LABELS } from "@/lib/constant/labels";
-import { TRetreatRegistrationSchedule } from "@/types";
 import { getKSTDay } from "@/lib/utils/date-utils";
+import { useToastStore } from "@/store/toast-store";
+import { TRetreatRegistrationSchedule } from "@/types";
+import { formatDate } from "@/utils/formatDate";
 
 interface RetreatPaymentConfirmationTableToolbarProps {
   table: Table<any>;
@@ -42,7 +43,7 @@ export function RetreatPaymentConfirmationTableToolbar({
   schedules = [],
 }: RetreatPaymentConfirmationTableToolbarProps) {
   const [isExporting, setIsExporting] = useState(false);
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const isMobile = useIsMobile();
 
   // ✅ Debounced search (useMemo로 안정적인 참조 유지)
@@ -101,12 +102,10 @@ export function RetreatPaymentConfirmationTableToolbar({
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder={
-            isMobile
-              ? "이름, 학년으로 검색..."
-              : "통합 검색 (이름, 학년)..."
+            isMobile ? "이름, 학년으로 검색..." : "통합 검색 (이름, 학년)..."
           }
           defaultValue={globalFilter ?? ""}
-          onChange={(e) => debouncedSetGlobalFilter(e.target.value)}
+          onChange={e => debouncedSetGlobalFilter(e.target.value)}
           className="pl-8 text-sm"
         />
       </div>
@@ -118,25 +117,34 @@ export function RetreatPaymentConfirmationTableToolbar({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                열 설정
+                <Settings className="h-4 w-4 mr-2" />열 설정
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[200px]">
               {table
                 .getAllLeafColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
+                .filter(column => column.getCanHide())
+                .map(column => {
                   // 컬럼 ID에서 표시 이름 추출
                   const getColumnName = (id: string) => {
                     // 스케줄 컬럼: schedule_${id} → "요일 앞글자 + 타입 앞글자" 형식
                     if (id.startsWith("schedule_")) {
                       const scheduleId = parseInt(id.replace("schedule_", ""));
-                      const schedule = schedules.find((s) => s.id === scheduleId);
+                      const schedule = schedules.find(s => s.id === scheduleId);
                       if (schedule) {
                         // KST 기준 요일 사용
-                        const dayOfWeek = ["주", "월", "화", "수", "목", "금", "토"][getKSTDay(schedule.time)];
-                        const typeShort = SCHEDULE_TYPE_SHORT_LABELS[schedule.type] || schedule.type;
+                        const dayOfWeek = [
+                          "주",
+                          "월",
+                          "화",
+                          "수",
+                          "목",
+                          "금",
+                          "토",
+                        ][getKSTDay(schedule.time)];
+                        const typeShort =
+                          SCHEDULE_TYPE_SHORT_LABELS[schedule.type] ||
+                          schedule.type;
                         return `${dayOfWeek}${typeShort}`;
                       }
                       return "스케줄";
@@ -156,8 +164,10 @@ export function RetreatPaymentConfirmationTableToolbar({
                     <DropdownMenuCheckboxItem
                       key={column.id}
                       checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                      onSelect={(event) => {
+                      onCheckedChange={value =>
+                        column.toggleVisibility(!!value)
+                      }
+                      onSelect={event => {
                         // 체크박스 클릭 시 드롭다운이 닫히지 않도록 방지
                         event.preventDefault();
                       }}

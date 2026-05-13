@@ -10,6 +10,7 @@ import {
   useDormitoryRetreatRegistrationMemo,
 } from "./use-retreat-registration-memo";
 import { IDormitoryRetreatRegistration } from "./use-retreat-registration";
+import { gradeDescSortingFn, gradeFilterSort } from "@/utils/sorting";
 
 /**
  * 숙소팀 수양회 신청 테이블 데이터 타입
@@ -148,12 +149,9 @@ export function useDormitoryRetreatRegistrationColumns(
             column={column}
             table={table}
             title="학년"
+            enableSorting
             enableFiltering
-            sortFilterValues={(a, b) => {
-              const numA = parseInt(String(a), 10);
-              const numB = parseInt(String(b), 10);
-              return numA - numB;
-            }}
+            sortFilterValues={gradeFilterSort}
           />
         ),
         cell: (info) => (
@@ -163,6 +161,7 @@ export function useDormitoryRetreatRegistrationColumns(
         ),
         filterFn: arrayIncludesFilterFn,
         enableColumnFilter: true,
+        sortingFn: gradeDescSortingFn,
         size: 70,
       }),
 

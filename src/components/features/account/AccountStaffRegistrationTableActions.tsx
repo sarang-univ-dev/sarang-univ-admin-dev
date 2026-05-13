@@ -1,10 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { CheckCircle2, RotateCcw } from "lucide-react";
-import { UserRetreatRegistrationPaymentStatus } from "@/types";
+
+import { Button } from "@/components/ui/button";
 import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
 import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
+import { UserRetreatRegistrationPaymentStatus } from "@/types";
 
 interface AccountStaffRegistrationTableActionsProps {
   row: AccountStaffTableData;
@@ -17,7 +18,7 @@ interface AccountStaffRegistrationTableActionsProps {
  * @description
  * - 입금 현황(paymentStatus)에 따라 다른 액션 버튼 표시
  * - PENDING: 입금 확인 완료, 간사 배정
- * - PAID: 환불 처리
+ * - REFUND_REQUEST: 환불 처리 완료
  * - 그 외: 액션 없음
  */
 export function AccountStaffRegistrationTableActions({
@@ -42,7 +43,7 @@ export function AccountStaffRegistrationTableActions({
   // 입금 대기 중 (PENDING)
   if (row.status === UserRetreatRegistrationPaymentStatus.PENDING) {
     return (
-      <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
         <Button
           size="sm"
           variant="outline"
@@ -75,10 +76,10 @@ export function AccountStaffRegistrationTableActions({
     );
   }
 
-  // 입금 완료 (PAID)
-  if (row.status === UserRetreatRegistrationPaymentStatus.PAID) {
+  // 환불 요청 (REFUND_REQUEST)
+  if (row.status === UserRetreatRegistrationPaymentStatus.REFUND_REQUEST) {
     return (
-      <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
         <Button
           size="sm"
           variant="outline"
@@ -91,7 +92,7 @@ export function AccountStaffRegistrationTableActions({
           ) : (
             <RotateCcw className="h-3.5 w-3.5" />
           )}
-          <span>환불 처리</span>
+          <span>환불 처리 완료</span>
         </Button>
       </div>
     );

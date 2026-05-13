@@ -1,6 +1,10 @@
 "use client";
 
+import html2canvas from "html2canvas";
+import { Download } from "lucide-react";
 import { useState, useRef, useMemo, useEffect } from "react";
+
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,15 +13,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
-import html2canvas from "html2canvas";
-import { groupScheduleColumnsByDay } from "../utils/bus-utils";
+import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
 import {
   TRetreatShuttleBus,
   UserRetreatShuttleBusPaymentStatus,
 } from "@/types";
-import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
+
+import { groupScheduleColumnsByDay } from "../utils/bus-utils";
 
 interface BusScheduleSummaryProps {
   registrations: IUserBusRegistration[];
@@ -146,17 +148,17 @@ export function BusScheduleSummary({
       // 부서별 총 인원수 계산
       let totalParticipants = 0;
 
-        if (row.id === "total") {
-          // 합계 행의 경우 모든 부서의 총 인원 합
-          totalParticipants = Object.values(calculateDepartmentTotals).reduce(
-            (sum: number, count: number) => sum + count,
-            0
-          );
-        } else {
-          // 개별 부서의 경우
-          const deptNumber = parseInt(row.id);
-          totalParticipants = calculateDepartmentTotals[deptNumber] || 0;
-        }
+      if (row.id === "total") {
+        // 합계 행의 경우 모든 부서의 총 인원 합
+        totalParticipants = Object.values(calculateDepartmentTotals).reduce(
+          (sum: number, count: number) => sum + count,
+          0
+        );
+      } else {
+        // 개별 부서의 경우
+        const deptNumber = parseInt(row.id);
+        totalParticipants = calculateDepartmentTotals[deptNumber] || 0;
+      }
 
       // 스케줄별 셀 생성
       const scheduleCells: Record<string, JSX.Element> = {};
@@ -229,8 +231,12 @@ export function BusScheduleSummary({
     <div className="space-y-3 md:space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">버스 인원 집계 표</h2>
-          <p className="text-sm text-muted-foreground mt-1">수양회 버스 인원 현황</p>
+          <h2 className="text-xl font-semibold tracking-tight">
+            버스 인원 집계 표
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            수양회 버스 인원 현황
+          </p>
         </div>
         <Button
           onClick={handleDownloadImage}

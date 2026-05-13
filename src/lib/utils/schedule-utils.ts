@@ -1,6 +1,17 @@
-import { DayGroup, DateScheduleMap, EventTypeMap } from "@/types/retreat-schedule";
 import { Sunrise, Sun, Sunset, Bed } from "lucide-react";
-import { getKSTDateString, getKSTMonth, getKSTDate, getKSTDay } from "./date-utils";
+
+import {
+  DayGroup,
+  DateScheduleMap,
+  EventTypeMap,
+} from "@/types/retreat-schedule";
+
+import {
+  getKSTDateString,
+  getKSTMonth,
+  getKSTDate,
+  getKSTDay,
+} from "./date-utils";
 
 /**
  * 이벤트 타입별 아이콘 및 레이블 매핑
@@ -21,8 +32,8 @@ export const EVENT_TYPE_MAP: EventTypeMap = {
 export function createDateScheduleMap(dayGroups: DayGroup[]): DateScheduleMap {
   const dateScheduleMap: DateScheduleMap = new Map();
 
-  dayGroups.forEach((group) => {
-    group.schedules.forEach((schedule) => {
+  dayGroups.forEach(group => {
+    group.schedules.forEach(schedule => {
       // KST 기준으로 날짜 키 생성
       const dateKey = getKSTDateString(schedule.time); // YYYY-MM-DD (KST 기준)
       const eventType = schedule.type;
@@ -57,6 +68,8 @@ export function formatDate(dateStr: string): string {
   // KST 기준으로 포맷
   const month = getKSTMonth(dateStr) + 1;
   const day = getKSTDate(dateStr);
-  const weekday = ["주일", "월", "화", "수", "목", "금", "토"][getKSTDay(dateStr)];
+  const weekday = ["주일", "월", "화", "수", "목", "금", "토"][
+    getKSTDay(dateStr)
+  ];
   return `${month}/${day}(${weekday})`;
 }

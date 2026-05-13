@@ -47,10 +47,9 @@ export const AccountStaffAPI = {
     retreatSlug: string,
     registrationId: string
   ): Promise<void> => {
-    await webAxios.post(
-      `/api/v1/retreat/${retreatSlug}/account/assign-staff`,
-      { userRetreatRegistrationId: registrationId }
-    );
+    await webAxios.post(`/api/v1/retreat/${retreatSlug}/account/assign-staff`, {
+      userRetreatRegistrationId: registrationId,
+    });
   },
 
   /**

@@ -1,6 +1,11 @@
 "use client";
 
+import html2canvas from "html2canvas";
+import { Download, ChevronDown } from "lucide-react";
 import { useState, useRef } from "react";
+
+import { StatusBadge } from "@/components/Badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,13 +14,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Download, ChevronDown } from "lucide-react";
-import html2canvas from "html2canvas";
+import { useIsMobile } from "@/hooks/use-media-query";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
 import { DayGroup, FormattedRow } from "@/types/retreat-schedule";
-import { StatusBadge } from "@/components/Badge";
-import { useIsMobile } from "@/hooks/use-media-query";
+
 import { RetreatScheduleSummaryMobileAccordion } from "./RetreatScheduleSummaryMobileAccordion";
 
 interface RetreatScheduleSummaryClientProps {

@@ -1,6 +1,7 @@
-import dynamic from "next/dynamic";
-import { Button } from "@/components/ui/button";
 import { ShieldAlert, ArrowLeft } from "lucide-react";
+import dynamic from "next/dynamic";
+
+import { Button } from "@/components/ui/button";
 
 function NotAuthorizedComponentInner() {
   const goBack = () => {

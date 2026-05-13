@@ -1,17 +1,18 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
 import { Table } from "@tanstack/react-table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import debounce from "lodash/debounce";
 import { Download, Search, Settings } from "lucide-react";
+import { useMemo, useEffect } from "react";
+
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import debounce from "lodash/debounce";
+import { Input } from "@/components/ui/input";
 import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
 
 interface AccountStaffRegistrationTableToolbarProps {
@@ -33,7 +34,8 @@ export function AccountStaffRegistrationTableToolbar({
   setGlobalFilter,
   retreatSlug,
 }: AccountStaffRegistrationTableToolbarProps) {
-  const { downloadExcel, isMutating } = useAccountStaffRegistration(retreatSlug);
+  const { downloadExcel, isMutating } =
+    useAccountStaffRegistration(retreatSlug);
 
   // ✅ Lodash debounce를 useMemo로 메모이제이션 (Best Practice)
   const debouncedSetGlobalFilter = useMemo(
@@ -59,7 +61,7 @@ export function AccountStaffRegistrationTableToolbar({
         <Input
           placeholder="통합 검색 (이름, 부서, 전화번호 등)..."
           defaultValue={globalFilter ?? ""}
-          onChange={(e) => debouncedSetGlobalFilter(e.target.value)}
+          onChange={e => debouncedSetGlobalFilter(e.target.value)}
           className="pl-8"
         />
       </div>
@@ -69,20 +71,21 @@ export function AccountStaffRegistrationTableToolbar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              열 설정
+              <Settings className="h-4 w-4 mr-2" />열 설정
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[200px]">
             {table
               .getAllLeafColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
+              .filter(column => column.getCanHide())
+              .map(column => {
                 // 컬럼 ID에서 표시 이름 추출
                 const getColumnName = (id: string) => {
                   // 스케줄 컬럼은 meta.label에서 실제 라벨을 가져옴
                   if (id.startsWith("schedule_")) {
-                    const meta = column.columnDef.meta as { label?: string } | undefined;
+                    const meta = column.columnDef.meta as
+                      | { label?: string }
+                      | undefined;
                     return meta?.label || id;
                   }
                   const names: Record<string, string> = {
@@ -104,7 +107,7 @@ export function AccountStaffRegistrationTableToolbar({
                   <DropdownMenuCheckboxItem
                     key={column.id}
                     checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    onCheckedChange={value => column.toggleVisibility(!!value)}
                   >
                     {getColumnName(column.id)}
                   </DropdownMenuCheckboxItem>

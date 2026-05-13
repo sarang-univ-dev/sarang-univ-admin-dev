@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useUserScheduleChangeLineup } from "@/hooks/user-schedule-change-lineup-request";
-import { RetreatScheduleChangeHistoryTable } from "@/components/LineupStaffRetreatScheduleChangeHistoryTable";
 import { useParams } from "next/navigation";
-import {
-  TRetreatRegistrationSchedule,
-  TRetreatUnivGroup,
-} from "@/types";
-import { webAxios } from "@/lib/api/axios";
+import { useEffect, useState } from "react";
 
-export default function ScheduleChangeHistoryForLineup(){
+import { RetreatScheduleChangeHistoryTable } from "@/components/LineupStaffRetreatScheduleChangeHistoryTable";
+import { useUserScheduleChangeLineup } from "@/hooks/user-schedule-change-lineup-request";
+import { webAxios } from "@/lib/api/axios";
+import { TRetreatRegistrationSchedule, TRetreatUnivGroup } from "@/types";
+
+export default function ScheduleChangeHistoryForLineup() {
   const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(
     []
   );
@@ -18,7 +16,8 @@ export default function ScheduleChangeHistoryForLineup(){
   const params = useParams();
   const retreatSlug = params.retreatSlug as string;
 
-  const { data, isLoading, error, mutate } = useUserScheduleChangeLineup(retreatSlug);
+  const { data, isLoading, error, mutate } =
+    useUserScheduleChangeLineup(retreatSlug);
 
   useEffect(() => {
     const fetchSchedules = async () => {

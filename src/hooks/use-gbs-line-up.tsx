@@ -47,12 +47,13 @@ export function useUserLineups(retreatSlug?: string) {
       endpoint,
       fetcher,
       {
-        // 2초마다 자동 리패치
-        refreshInterval: 2000,
+        // ❌ polling 제거 (refreshInterval 삭제)
         // 탭 포커스 복귀 시 리패치
         revalidateOnFocus: true,
         // 네트워크 재연결 시 리패치
         revalidateOnReconnect: true,
+        // 중복 요청 방지
+        dedupingInterval: 5000,
       }
   );
 }

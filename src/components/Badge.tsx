@@ -1,5 +1,6 @@
-import { Gender } from "@/types";
 import { User } from "lucide-react";
+
+import { Gender } from "@/types";
 
 /**
  * @deprecated StatusBadge와 TypeBadge는 @/components/common/retreat/badges로 이동되었습니다

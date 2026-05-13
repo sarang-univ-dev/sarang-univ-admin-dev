@@ -1,9 +1,7 @@
 import useSWR from "swr";
+
 import { webAxios } from "@/lib/api/axios";
-import {
-  UserRetreatRegistrationType,
-  Gender,
-} from "@/types";
+import { UserRetreatRegistrationType, Gender } from "@/types";
 
 export interface IUserScheduleChangeDormitory {
   id: number;
@@ -33,7 +31,10 @@ export function useUserScheduleChangeDormitory(retreatSlug?: string) {
     ? `/api/v1/retreat/${retreatSlug}/dormitory/schedule-change-request`
     : null;
 
-  const { data, error, isLoading, mutate } = useSWR<IUserScheduleChangeDormitory[], Error>(endpoint, fetcher);
+  const { data, error, isLoading, mutate } = useSWR<
+    IUserScheduleChangeDormitory[],
+    Error
+  >(endpoint, fetcher);
 
   return { data, error, isLoading, mutate };
-} 
+}

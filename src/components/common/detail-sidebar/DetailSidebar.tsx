@@ -1,6 +1,12 @@
 "use client";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils/utils";
 
 interface DetailSidebarProps<T> {
@@ -32,9 +38,7 @@ export function DetailSidebar<T>({
         side={side}
         className={cn(
           "overflow-y-auto",
-          side === "bottom"
-            ? "h-[90vh]"
-            : "!w-fit !max-w-[95vw] min-w-[300px]",
+          side === "bottom" ? "h-[90vh]" : "!w-fit !max-w-[95vw] min-w-[300px]",
           className
         )}
       >
@@ -42,15 +46,13 @@ export function DetailSidebar<T>({
           <SheetTitle>{title}</SheetTitle>
           {description && (
             <SheetDescription>
-              {typeof description === 'function'
+              {typeof description === "function"
                 ? description(data)
                 : description}
             </SheetDescription>
           )}
         </SheetHeader>
-        <div className="mt-6 space-y-6">
-          {children(data)}
-        </div>
+        <div className="mt-6 space-y-6">{children(data)}</div>
       </SheetContent>
     </Sheet>
   );

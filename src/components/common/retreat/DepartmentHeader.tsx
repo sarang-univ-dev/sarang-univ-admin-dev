@@ -20,9 +20,7 @@ export function DepartmentHeader({
     <div className="mb-2 flex flex-wrap items-center gap-2">
       <span
         className={`inline-flex px-2.5 py-1 rounded-md font-semibold text-sm whitespace-nowrap shrink-0 ${
-          isTotal
-            ? "bg-gray-200 text-gray-800"
-            : "bg-gray-100 text-gray-700"
+          isTotal ? "bg-gray-200 text-gray-800" : "bg-gray-100 text-gray-700"
         }`}
       >
         {label}

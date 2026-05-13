@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect, useMemo, CSSProperties } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,9 +7,15 @@ import {
   flexRender,
   Column,
 } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { AxiosError } from "axios";
 import { Download, CheckCircle2, RotateCcw, Send } from "lucide-react";
+import { useState, useEffect, useMemo, CSSProperties } from "react";
+import { mutate } from "swr";
+
+import { GenderBadge } from "@/components/Badge";
+import { StatusBadge, TypeBadge } from "@/components/common/retreat";
+import { SearchBar } from "@/components/RegistrationTableSearchBar";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -18,16 +23,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-import { GenderBadge } from "@/components/Badge";
-import { StatusBadge, TypeBadge } from "@/components/common/retreat";
-import { SearchBar } from "@/components/RegistrationTableSearchBar";
-
-import {
-  generateScheduleColumns,
-  transformRegistrationsForTable,
-} from "../utils/retreat-utils";
+import { Checkbox } from "@/components/ui/checkbox";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
+import { webAxios } from "@/lib/api/axios";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useToastStore } from "@/store/toast-store";
 import {
   TRetreatRegistrationSchedule,
   UserRetreatRegistrationPaymentStatus,
@@ -35,11 +35,11 @@ import {
   Gender,
 } from "@/types";
 import { formatDate } from "@/utils/formatDate";
-import { mutate } from "swr";
-import { useToastStore } from "@/store/toast-store";
-import { webAxios } from "@/lib/api/axios";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import { AxiosError } from "axios";
+
+import {
+  generateScheduleColumns,
+  transformRegistrationsForTable,
+} from "../utils/retreat-utils";
 
 // TanStack Table용 타입 정의
 type RegistrationTableRow = {
@@ -64,17 +64,21 @@ const getCommonPinningStyles = (
 ): CSSProperties => {
   const isPinned = column.getIsPinned();
   const isLastLeftPinnedColumn =
-    isPinned === 'left' && column.getIsLastColumn('left');
+    isPinned === "left" && column.getIsLastColumn("left");
 
   return {
     boxShadow: isLastLeftPinnedColumn
-      ? '-4px 0 4px -4px rgba(0, 0, 0, 0.1) inset'
+      ? "-4px 0 4px -4px rgba(0, 0, 0, 0.1) inset"
       : undefined,
-    left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
-    position: isPinned ? 'sticky' : 'relative',
+    left: isPinned === "left" ? `${column.getStart("left")}px` : undefined,
+    position: isPinned ? "sticky" : "relative",
     zIndex: isPinned ? 1 : 0,
-    backgroundColor: isPinned ? (isHeader ? 'rgb(249 250 251)' : 'white') : undefined,
-    whiteSpace: 'nowrap',
+    backgroundColor: isPinned
+      ? isHeader
+        ? "rgb(249 250 251)"
+        : "white"
+      : undefined,
+    whiteSpace: "nowrap",
   };
 };
 
@@ -90,14 +94,19 @@ export function RegistrationTable({
   const addToast = useToastStore(state => state.add);
   const [data, setData] = useState<RegistrationTableRow[]>([]);
   const [filteredData, setFilteredData] = useState<RegistrationTableRow[]>([]);
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
+    {}
+  );
   const confirmDialog = useConfirmDialogStore();
 
   // API 엔드포인트
   const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/user-retreat-registration`;
 
   // 일정 컬럼 생성
-  const scheduleColumns = useMemo(() => generateScheduleColumns(schedules), [schedules]);
+  const scheduleColumns = useMemo(
+    () => generateScheduleColumns(schedules),
+    [schedules]
+  );
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
@@ -155,8 +164,8 @@ export function RegistrationTable({
           error instanceof AxiosError
             ? error.response?.data?.message || error.message
             : error instanceof Error
-            ? error.message
-            : "입금 확인 처리 중 오류가 발생했습니다.",
+              ? error.message
+              : "입금 확인 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -167,7 +176,8 @@ export function RegistrationTable({
   const handleConfirmPayment = (id: string) => {
     confirmDialog.show({
       title: "입금 확인",
-      description: "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
+      description:
+        "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
       onConfirm: () => performConfirmPayment(id),
     });
   };
@@ -193,8 +203,8 @@ export function RegistrationTable({
           error instanceof AxiosError
             ? error.response?.data?.message || error.message
             : error instanceof Error
-            ? error.message
-            : "환불 처리 중 오류가 발생했습니다.",
+              ? error.message
+              : "환불 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -224,8 +234,8 @@ export function RegistrationTable({
           error instanceof AxiosError
             ? error.response?.data?.message || error.message
             : error instanceof Error
-            ? error.message
-            : "메시지 전송 중 오류가 발생했습니다.",
+              ? error.message
+              : "메시지 전송 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -237,7 +247,8 @@ export function RegistrationTable({
     if (messageType === "payment_request") {
       confirmDialog.show({
         title: "입금 요청",
-        description: "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",
+        description:
+          "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",
         onConfirm: () => performSendMessage(id, messageType),
       });
     }
@@ -307,15 +318,17 @@ export function RegistrationTable({
   const columns = useMemo<ColumnDef<RegistrationTableRow>[]>(() => {
     const baseColumns: ColumnDef<RegistrationTableRow>[] = [
       {
-        id: 'department',
-        header: '부서',
-        accessorKey: 'department',
-        cell: ({ getValue }) => <div className="text-center">{getValue() as string}</div>,
+        id: "department",
+        header: "부서",
+        accessorKey: "department",
+        cell: ({ getValue }) => (
+          <div className="text-center">{getValue() as string}</div>
+        ),
       },
       {
-        id: 'gender',
-        header: '성별',
-        accessorKey: 'gender',
+        id: "gender",
+        header: "성별",
+        accessorKey: "gender",
         cell: ({ getValue }) => (
           <div className="text-center">
             <GenderBadge gender={getValue() as Gender} />
@@ -323,40 +336,45 @@ export function RegistrationTable({
         ),
       },
       {
-        id: 'grade',
-        header: '학년',
-        accessorKey: 'grade',
-        cell: ({ getValue }) => <div className="text-center">{getValue() as string}</div>,
+        id: "grade",
+        header: "학년",
+        accessorKey: "grade",
+        cell: ({ getValue }) => (
+          <div className="text-center">{getValue() as string}</div>
+        ),
       },
       {
-        id: 'name',
-        header: '이름',
-        accessorKey: 'name',
-        cell: ({ getValue }) => <div className="font-medium text-center">{getValue() as string}</div>,
+        id: "name",
+        header: "이름",
+        accessorKey: "name",
+        cell: ({ getValue }) => (
+          <div className="font-medium text-center">{getValue() as string}</div>
+        ),
       },
     ];
 
     // 일정 컬럼 동적 추가
-    const dynamicScheduleColumns: ColumnDef<RegistrationTableRow>[] = scheduleColumns.map(col => ({
-      id: col.key,
-      header: col.label,
-      accessorFn: (row) => row.schedule[col.key],
-      cell: ({ getValue }) => (
-        <div className="flex justify-center">
-          <Checkbox
-            checked={getValue() as boolean}
-            disabled
-            className={getValue() ? col.bgColorClass : ""}
-          />
-        </div>
-      ),
-    }));
+    const dynamicScheduleColumns: ColumnDef<RegistrationTableRow>[] =
+      scheduleColumns.map(col => ({
+        id: col.key,
+        header: col.label,
+        accessorFn: row => row.schedule[col.key],
+        cell: ({ getValue }) => (
+          <div className="flex justify-center">
+            <Checkbox
+              checked={getValue() as boolean}
+              disabled
+              className={getValue() ? col.bgColorClass : ""}
+            />
+          </div>
+        ),
+      }));
 
     const endColumns: ColumnDef<RegistrationTableRow>[] = [
       {
-        id: 'type',
-        header: '타입',
-        accessorKey: 'type',
+        id: "type",
+        header: "타입",
+        accessorKey: "type",
         cell: ({ getValue }) => {
           const type = getValue() as UserRetreatRegistrationType | null;
           return (
@@ -367,17 +385,19 @@ export function RegistrationTable({
         },
       },
       {
-        id: 'amount',
-        header: '금액',
-        accessorKey: 'amount',
+        id: "amount",
+        header: "금액",
+        accessorKey: "amount",
         cell: ({ getValue }) => (
-          <div className="font-medium text-center">{(getValue() as number).toLocaleString()}원</div>
+          <div className="font-medium text-center">
+            {(getValue() as number).toLocaleString()}원
+          </div>
         ),
       },
       {
-        id: 'createdAt',
-        header: '신청 시각',
-        accessorKey: 'createdAt',
+        id: "createdAt",
+        header: "신청 시각",
+        accessorKey: "createdAt",
         cell: ({ getValue }) => {
           const createdAt = getValue() as string | null;
           return (
@@ -388,32 +408,36 @@ export function RegistrationTable({
         },
       },
       {
-        id: 'status',
-        header: '입금 현황',
-        accessorKey: 'status',
+        id: "status",
+        header: "입금 현황",
+        accessorKey: "status",
         cell: ({ getValue }) => (
           <div className="text-center">
-            <StatusBadge status={getValue() as UserRetreatRegistrationPaymentStatus} />
+            <StatusBadge
+              status={getValue() as UserRetreatRegistrationPaymentStatus}
+            />
           </div>
         ),
       },
       {
-        id: 'actions',
-        header: '액션',
+        id: "actions",
+        header: "액션",
         cell: ({ row }) => (
           <div className="text-center">{getActionButtons(row.original)}</div>
         ),
       },
       {
-        id: 'confirmedBy',
-        header: '처리자명',
-        accessorKey: 'confirmedBy',
-        cell: ({ getValue }) => <div className="text-center">{getValue() as string || "-"}</div>,
+        id: "confirmedBy",
+        header: "처리자명",
+        accessorKey: "confirmedBy",
+        cell: ({ getValue }) => (
+          <div className="text-center">{(getValue() as string) || "-"}</div>
+        ),
       },
       {
-        id: 'paymentConfirmedAt',
-        header: '처리 시각',
-        accessorKey: 'paymentConfirmedAt',
+        id: "paymentConfirmedAt",
+        header: "처리 시각",
+        accessorKey: "paymentConfirmedAt",
         cell: ({ getValue }) => {
           const paymentConfirmedAt = getValue() as string | null;
           return (
@@ -435,7 +459,7 @@ export function RegistrationTable({
     getCoreRowModel: getCoreRowModel(),
     initialState: {
       columnPinning: {
-        left: ['name'], // 이름 컬럼을 왼쪽에 고정
+        left: ["name"], // 이름 컬럼을 왼쪽에 고정
       },
     },
   });
@@ -456,13 +480,18 @@ export function RegistrationTable({
               try {
                 const response = await webAxios.get(
                   `/api/v1/retreat/${retreatSlug}/registration/download-univ-group-registration-excel`,
-                  { responseType: 'blob' }
+                  { responseType: "blob" }
                 );
 
-                const url = window.URL.createObjectURL(new Blob([response.data]));
-                const link = document.createElement('a');
+                const url = window.URL.createObjectURL(
+                  new Blob([response.data])
+                );
+                const link = document.createElement("a");
                 link.href = url;
-                link.setAttribute('download', `수양회_신청현황_${formatDate(new Date().toISOString())}.xlsx`);
+                link.setAttribute(
+                  "download",
+                  `수양회_신청현황_${formatDate(new Date().toISOString())}.xlsx`
+                );
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
@@ -503,12 +532,12 @@ export function RegistrationTable({
             <div className="overflow-y-auto max-h-[80vh]">
               <table
                 className="w-auto relative text-sm caption-bottom"
-                style={{ borderCollapse: 'separate', borderSpacing: 0 }}
+                style={{ borderCollapse: "separate", borderSpacing: 0 }}
               >
                 <thead className="sticky top-0 z-20">
-                  {table.getHeaderGroups().map((headerGroup) => (
+                  {table.getHeaderGroups().map(headerGroup => (
                     <tr key={headerGroup.id} className="border-b">
-                      {headerGroup.headers.map((header) => (
+                      {headerGroup.headers.map(header => (
                         <th
                           key={header.id}
                           colSpan={header.colSpan}
@@ -529,17 +558,17 @@ export function RegistrationTable({
                   ))}
                 </thead>
                 <tbody>
-                  {table.getRowModel().rows.map((row) => (
+                  {table.getRowModel().rows.map(row => (
                     <tr
                       key={row.id}
                       className="border-b transition-colors hover:bg-gray-50"
                     >
-                      {row.getVisibleCells().map((cell) => {
+                      {row.getVisibleCells().map(cell => {
                         const isPinned = cell.column.getIsPinned();
                         return (
                           <td
                             key={cell.id}
-                            className={`p-4 align-middle ${isPinned ? 'bg-white' : 'bg-white'}`}
+                            className={`p-4 align-middle ${isPinned ? "bg-white" : "bg-white"}`}
                             style={{
                               ...getCommonPinningStyles(cell.column, false),
                             }}

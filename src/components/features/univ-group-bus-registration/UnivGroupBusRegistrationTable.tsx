@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -28,7 +28,15 @@ import { UnivGroupBusRegistrationTableToolbar } from "./UnivGroupBusRegistration
 import { UnivGroupBusRegistrationDetailContent } from "./UnivGroupBusRegistrationDetailContent";
 import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
 import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
+import { getPaymentStatusLabel } from "@/lib/constant/labels";
 import { useIsMobile } from "@/hooks/use-media-query";
+import { webAxios } from "@/lib/api/axios";
+
+interface Grade {
+  gradeId: number;
+  gradeName: string;
+  gradeNumber: number;
+}
 
 interface UnivGroupBusRegistrationTableProps {
   initialData: IUnivGroupBusRegistration[];
@@ -60,6 +68,11 @@ export function UnivGroupBusRegistrationTable({
     saveMemo,
     updateMemo,
     deleteMemo,
+    downloadExcel,
+    deleteRegistration,
+    updateRegistrationInfo,
+    saveOrUpdateAdminMemo,
+    deleteAdminMemo,
     isMutating,
   } = useUnivGroupBusRegistration(retreatSlug, {
     initialData,
@@ -71,6 +84,38 @@ export function UnivGroupBusRegistrationTable({
 
   // ✅ 모바일 감지
   const isMobile = useIsMobile();
+
+  // ✅ 부서 학년 목록 (수정 모달용)
+  const [grades, setGrades] = useState<Grade[]>([]);
+
+  // ✅ 부서 학년 정보 가져오기
+  useEffect(() => {
+    const fetchGrades = async () => {
+      try {
+        const response = await webAxios.get(
+          `/api/v1/retreat/${retreatSlug}/info`
+        );
+        const retreatInfo = response.data.retreatInfo;
+
+        // 첫 번째 데이터의 부서 번호로 학년 목록 필터링
+        if (initialData.length > 0 && retreatInfo.univGroupAndGrade) {
+          const univGroupNumber = initialData[0].univGroupNumber;
+          const univGroup = retreatInfo.univGroupAndGrade.find(
+            (group: { univGroupNumber: number }) => group.univGroupNumber === univGroupNumber
+          );
+          if (univGroup) {
+            setGrades(univGroup.grades);
+          }
+        }
+      } catch (error) {
+        console.error("학년 정보 조회 중 오류 발생:", error);
+      }
+    };
+
+    if (retreatSlug && initialData.length > 0) {
+      fetchGrades();
+    }
+  }, [retreatSlug, initialData]);
 
   // ✅ TanStack Table State
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -291,28 +336,16 @@ export function UnivGroupBusRegistrationTable({
     const endColumns = [
       columnHelper.accessor("shuttleBusPaymentStatus", {
         id: "status",
-        header: ({ column, table }) => {
-          const formatStatusValue = (value: string) => {
-            const statusMap: Record<string, string> = {
-              PENDING: "입금 확인 대기",
-              PAID: "입금 확인 완료",
-              REFUND_REQUEST: "환불 요청",
-              REFUNDED: "환불 완료",
-            };
-            return statusMap[value] || value;
-          };
-
-          return (
-            <ColumnHeader
-              column={column}
-              table={table}
-              title="입금 현황"
-              enableSorting
-              enableFiltering
-              formatFilterValue={formatStatusValue}
-            />
-          );
-        },
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="입금 현황"
+            enableSorting
+            enableFiltering
+            formatFilterValue={getPaymentStatusLabel}
+          />
+        ),
         cell: (info) => (
           <div className="flex justify-center">
             <StatusBadge status={info.getValue()} />
@@ -408,6 +441,8 @@ export function UnivGroupBusRegistrationTable({
           globalFilter={globalFilter}
           setGlobalFilter={setGlobalFilter}
           retreatSlug={retreatSlug}
+          onDownloadExcel={downloadExcel}
+          isDownloading={isMutating}
         />
 
         {/* ✅ 가상화 테이블 - 사이드바는 상세보기 버튼에서만 열림 */}
@@ -438,9 +473,21 @@ export function UnivGroupBusRegistrationTable({
             data={data}
             schedules={schedules}
             scheduleColumnsWithColor={scheduleColumnsWithColor}
+            grades={grades}
             onSaveMemo={saveMemo}
             onUpdateMemo={updateMemo}
             onDeleteMemo={deleteMemo}
+            onDeleteRegistration={async (id) => {
+              await deleteRegistration(id);
+              sidebar.close();
+            }}
+            onUpdateRegistrationInfo={async (id, editData) => {
+              // 셔틀버스는 currentLeaderName이 필요 없으므로 제거
+              const { currentLeaderName, ...rest } = editData;
+              await updateRegistrationInfo(id, rest);
+            }}
+            onSaveOrUpdateAdminMemo={saveOrUpdateAdminMemo}
+            onDeleteAdminMemo={deleteAdminMemo}
             isMutating={isMutating}
           />
         )}

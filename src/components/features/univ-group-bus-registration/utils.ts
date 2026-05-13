@@ -12,7 +12,7 @@ export function transformBusRegistrationsForTable(
   registrations: IUnivGroupBusRegistration[],
   schedules: TRetreatShuttleBus[]
 ) {
-  return registrations.map((reg) => ({
+  return registrations.map(reg => ({
     id: reg.id.toString(),
     department: `${reg.univGroupNumber}부`,
     gender: reg.gender,

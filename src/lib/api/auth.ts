@@ -1,6 +1,7 @@
-import { IAuth, TUser } from "../types/common";
-import { webAxios } from "./axios";
 import qs from "qs";
+
+import { webAxios } from "./axios";
+import { IAuth, TUser } from "../types/common";
 
 const AuthAPI = {
   getUser: async (): Promise<TUser | null> => {

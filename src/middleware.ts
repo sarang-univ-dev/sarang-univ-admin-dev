@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
   // 정적 자산 / public 경로는 그대로 통과
   if (
     STATIC_ASSET_REGEX.test(pathname) ||
-    PUBLIC_PATHS.some((path) => pathname.startsWith(path))
+    PUBLIC_PATHS.some(path => pathname.startsWith(path))
   ) {
     return NextResponse.next();
   }

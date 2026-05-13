@@ -17,8 +17,11 @@ import {
   Calendar,
   CalendarDays,
   Bus,
+  Plus,
+  List,
+  GraduationCap,
   type LucideIcon,
-} from "lucide-react"
+} from "lucide-react";
 
 /**
  * lucide-react 아이콘 이름과 컴포넌트 매핑
@@ -43,8 +46,11 @@ export const iconMap: Record<string, LucideIcon> = {
   Calendar,
   CalendarDays,
   Bus,
+  Plus,
+  List,
+  GraduationCap,
   BusIcon: Bus, // BusIcon은 Bus와 동일하게 처리
-}
+};
 
 /**
  * 아이콘 이름(문자열)을 받아 해당하는 lucide-react 아이콘 컴포넌트를 반환
@@ -56,6 +62,6 @@ export const iconMap: Record<string, LucideIcon> = {
  * if (Icon) return <Icon className="h-4 w-4" />
  */
 export function getIconComponent(iconName?: string): LucideIcon | undefined {
-  if (!iconName) return undefined
-  return iconMap[iconName]
+  if (!iconName) return undefined;
+  return iconMap[iconName];
 }

@@ -1,8 +1,9 @@
 import useSWR from "swr";
+
 import { webAxios } from "@/lib/api/axios";
 import {
   // UserRetreatRegistrationType, >> 새가족, 군인, ...
-  UserRetreatShuttleBusPaymentStatus // UserRetreatRegistrationPaymentStatus,
+  UserRetreatShuttleBusPaymentStatus, // UserRetreatRegistrationPaymentStatus,
 } from "@/types";
 
 export interface IUserScheduleChangeShuttleBus {
@@ -30,7 +31,6 @@ export function useUserScheduleChangeShuttleBus(retreatSlug?: string) {
   const endpoint = retreatSlug
     ? `/api/v1/retreat/${retreatSlug}/shuttle-bus/bus-registration-change-request`
     : null;
-  
-  return useSWR<IUserScheduleChangeShuttleBus[], Error>(endpoint, fetcher);
 
+  return useSWR<IUserScheduleChangeShuttleBus[], Error>(endpoint, fetcher);
 }

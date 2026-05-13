@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { debounce } from "lodash";
+import { Search } from "lucide-react";
+import { useState, useRef } from "react";
+
+import { Input } from "@/components/ui/input";
 
 interface SearchBarProps {
   onSearch: (results: any[], searchTerm: string) => void;

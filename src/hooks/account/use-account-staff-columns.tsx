@@ -11,6 +11,7 @@ import { useAccountStaffRegistration } from "./use-account-staff-registration";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { AccountStaffRegistrationTableActions } from "@/components/features/account/AccountStaffRegistrationTableActions";
 import { UnifiedColumnHeader } from "@/components/common/table/UnifiedColumnHeader";
+import { gradeDescSortingFn, gradeFilterSort } from "@/utils/sorting";
 
 // 테이블 데이터 타입 정의 (filterFn보다 먼저 정의)
 export interface AccountStaffTableData {
@@ -134,7 +135,9 @@ export function useAccountStaffColumns(
             column={column}
             table={table}
             title="학년"
+            enableSorting
             enableFiltering
+            sortFilterValues={gradeFilterSort}
           />
         ),
         cell: (info) => (
@@ -144,6 +147,7 @@ export function useAccountStaffColumns(
         ),
         filterFn: arrayIncludesFilterFn,
         enableColumnFilter: true,
+        sortingFn: gradeDescSortingFn,
         size: 70,
       }),
 
@@ -254,6 +258,10 @@ export function useAccountStaffColumns(
                 PENDING: "입금 대기",
                 PAYMENT_REQUESTED: "입금 요청",
                 CONFIRMED: "입금 확인",
+                CANCEL_ONGOING: "취소 처리 중",
+                CANCELED: "취소 완료",
+                REFUND_REQUEST: "환불 대기",
+                REFUND_ONGOING: "환불 처리 중",
                 REFUNDED: "환불 완료",
                 CANCELLED: "취소",
               };

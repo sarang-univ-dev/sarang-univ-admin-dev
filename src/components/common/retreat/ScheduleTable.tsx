@@ -10,6 +10,7 @@ import {
   DateScheduleMap,
   FormattedRow,
 } from "@/types/retreat-schedule";
+
 import { EventTypeRow } from "./EventTypeRow";
 
 interface ScheduleTableProps {
@@ -38,7 +39,7 @@ export function ScheduleTable({
             <TableHead className="text-center whitespace-nowrap px-2 sm:px-4">
               일정
             </TableHead>
-            {dates.map((date) => (
+            {dates.map(date => (
               <TableHead
                 key={date}
                 className="text-center whitespace-nowrap px-2 sm:px-4"

@@ -1,15 +1,16 @@
-import { useState, useMemo } from "react";
 import { Column, Table } from "@tanstack/react-table";
 import { Filter, Check, Search } from "lucide-react";
+import { useState, useMemo } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
 
 interface FilterableHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -50,7 +51,7 @@ export function FilterableHeader<TData>({
   column,
   table,
   title,
-  formatValue = (value) => String(value),
+  formatValue = value => String(value),
   sortFilterValues,
 }: FilterableHeaderProps<TData>) {
   const [open, setOpen] = useState(false);
@@ -64,7 +65,7 @@ export function FilterableHeader<TData>({
     const valuesSet = new Set<any>();
     let hasEmptyValue = false;
 
-    table.getPreFilteredRowModel().rows.forEach((row) => {
+    table.getPreFilteredRowModel().rows.forEach(row => {
       const value = row.getValue(column.id);
 
       // ✅ 배열 값 처리 (예: 버스 신청 - 여러 버스를 선택한 경우)
@@ -88,7 +89,7 @@ export function FilterableHeader<TData>({
         return sortFilterValues(a, b);
       }
       // 기본 정렬
-      if (typeof a === 'number' && typeof b === 'number') {
+      if (typeof a === "number" && typeof b === "number") {
         return a - b;
       }
       return String(a).localeCompare(String(b));
@@ -107,8 +108,9 @@ export function FilterableHeader<TData>({
     if (!searchTerm) return uniqueValues;
 
     const lowerSearchTerm = searchTerm.toLowerCase();
-    return uniqueValues.filter((value) => {
-      const displayValue = value === "__EMPTY__" ? "값 없음" : formatValue(value);
+    return uniqueValues.filter(value => {
+      const displayValue =
+        value === "__EMPTY__" ? "값 없음" : formatValue(value);
       return displayValue.toLowerCase().includes(lowerSearchTerm);
     });
   }, [uniqueValues, searchTerm, formatValue]);
@@ -121,14 +123,14 @@ export function FilterableHeader<TData>({
   // 전체 선택 (현재 필터링된 값들만)
   const handleSelectAll = () => {
     const newSet = new Set(selectedValues);
-    filteredValues.forEach((value) => newSet.add(value));
+    filteredValues.forEach(value => newSet.add(value));
     setSelectedValues(newSet);
   };
 
   // 전체 해제 (현재 필터링된 값들만)
   const handleClearAll = () => {
     const newSet = new Set(selectedValues);
-    filteredValues.forEach((value) => newSet.delete(value));
+    filteredValues.forEach(value => newSet.delete(value));
     setSelectedValues(newSet);
   };
 
@@ -146,7 +148,9 @@ export function FilterableHeader<TData>({
   // 필터 적용
   const handleApply = () => {
     const values = Array.from(selectedValues);
-    column.setFilterValue(values.length === uniqueValues.length ? undefined : values);
+    column.setFilterValue(
+      values.length === uniqueValues.length ? undefined : values
+    );
     setOpen(false);
   };
 
@@ -160,13 +164,16 @@ export function FilterableHeader<TData>({
   // Popover 열릴 때 현재 필터 값으로 초기화
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      setSelectedValues(new Set(filterValue.length > 0 ? filterValue : uniqueValues));
+      setSelectedValues(
+        new Set(filterValue.length > 0 ? filterValue : uniqueValues)
+      );
       setSearchTerm(""); // 검색어 초기화
     }
     setOpen(isOpen);
   };
 
-  const isFiltered = filterValue.length > 0 && filterValue.length < uniqueValues.length;
+  const isFiltered =
+    filterValue.length > 0 && filterValue.length < uniqueValues.length;
   const filteredCount = filterValue.length;
 
   return (
@@ -209,7 +216,7 @@ export function FilterableHeader<TData>({
                 type="text"
                 placeholder="검색..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-8 h-8 text-sm"
               />
             </div>
@@ -243,7 +250,7 @@ export function FilterableHeader<TData>({
                   검색 결과가 없습니다.
                 </div>
               ) : (
-                filteredValues.map((value) => {
+                filteredValues.map(value => {
                   const isSelected = selectedValues.has(value);
                   return (
                     <div
@@ -259,7 +266,9 @@ export function FilterableHeader<TData>({
                       <span className="text-sm flex-1 cursor-pointer">
                         {value === "__EMPTY__" ? "값 없음" : formatValue(value)}
                       </span>
-                      {isSelected && <Check className="h-3 w-3 text-blue-600" />}
+                      {isSelected && (
+                        <Check className="h-3 w-3 text-blue-600" />
+                      )}
                     </div>
                   );
                 })

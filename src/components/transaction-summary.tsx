@@ -1,5 +1,18 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export function TransactionSummary() {
   return (
@@ -27,11 +40,13 @@ export function TransactionSummary() {
             </TableRow>
             <TableRow>
               <TableCell>순 입금액</TableCell>
-              <TableCell className="text-right font-bold">13,640,000원</TableCell>
+              <TableCell className="text-right font-bold">
+                13,640,000원
+              </TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }

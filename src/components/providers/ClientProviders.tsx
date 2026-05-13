@@ -1,12 +1,13 @@
-"use client"
+"use client";
 
-import React from "react"
-import { SWRConfig } from "swr"
-import Toast from "@/components/common/layout/Toast"
-import ConfirmModal from "@/components/common/layout/ConfirmModal"
+import React from "react";
+import { SWRConfig } from "swr";
+
+import ConfirmModal from "@/components/common/layout/ConfirmModal";
+import Toast from "@/components/common/layout/Toast";
 
 interface ClientProvidersProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 /**
@@ -31,5 +32,5 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
       <Toast />
       <ConfirmModal />
     </SWRConfig>
-  )
+  );
 }

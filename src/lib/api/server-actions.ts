@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+
 import config from "@/lib/constant/config";
 
 const API_BASE_URL = config.API_HOST;
@@ -311,4 +312,3 @@ export async function fetchAccountPaymentConfirmationRegistrations(
   const data = await response.json();
   return data.userRetreatRegistrations;
 }
-

@@ -19,6 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { ColumnHeaderHelp } from "@/components/common/help";
+import type { ColumnHelpContent } from "@/lib/help/types";
 
 interface UnifiedColumnHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -46,6 +48,10 @@ interface UnifiedColumnHeaderProps<TData> {
    * 정렬/필터 없이 제목만 표시
    */
   titleOnly?: boolean;
+  /**
+   * 컬럼 도움말 콘텐츠
+   */
+  helpContent?: ColumnHelpContent;
 }
 
 /**
@@ -88,6 +94,7 @@ export function UnifiedColumnHeader<TData>({
   formatFilterValue = (value) => String(value),
   sortFilterValues,
   titleOnly = false,
+  helpContent,
 }: UnifiedColumnHeaderProps<TData>) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,8 +102,9 @@ export function UnifiedColumnHeader<TData>({
   // 제목만 표시
   if (titleOnly || (!enableSorting && !enableFiltering)) {
     return (
-      <div className="text-center text-sm whitespace-nowrap px-2">
-        {title}
+      <div className="flex items-center justify-center gap-1 text-sm whitespace-nowrap px-2">
+        <span>{title}</span>
+        {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
       </div>
     );
   }
@@ -250,6 +258,7 @@ export function UnifiedColumnHeader<TData>({
   return (
     <div className="flex items-center justify-center gap-1 whitespace-nowrap">
       <span className="text-sm">{title}</span>
+      {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
 
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>

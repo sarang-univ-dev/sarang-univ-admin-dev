@@ -1,8 +1,11 @@
 import useSWR from "swr";
+
 import { webAxios } from "@/lib/api/axios";
-import { Gender } from "@/types";
-import { UserRetreatRegistrationType } from "@/types";
-import { UserRetreatRegistrationPaymentStatus } from "@/types";
+import {
+  Gender,
+  UserRetreatRegistrationType,
+  UserRetreatRegistrationPaymentStatus,
+} from "@/types";
 
 export interface IUserScheduleChangeShuttleBusHistory {
   userRetreatShuttleBusRegistrationId: number;

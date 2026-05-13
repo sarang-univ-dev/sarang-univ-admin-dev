@@ -1,7 +1,28 @@
 "use client";
 
+import { AxiosError } from "axios";
+import { Search, Save, X, Trash2 } from "lucide-react";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -10,43 +31,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Search, Save, X, Trash2 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-
-import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
 import {
   useAvailableDormitories,
   useAssignDormitory,
   useAllDormitories,
 } from "@/hooks/use-available-dormitories";
-import { useToastStore } from "@/store/toast-store";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-
-import { COMPLETE_GROUP_ROW_COUNT } from "@/lib/constant/lineup.constant";
-import { generateScheduleColumns } from "@/utils/retreat-utils";
+import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
 import { webAxios } from "@/lib/api/axios";
-import { AxiosError } from "axios";
-
+import { COMPLETE_GROUP_ROW_COUNT } from "@/lib/constant/lineup.constant";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useToastStore } from "@/store/toast-store";
 import { UserRetreatRegistrationMemoType, Gender } from "@/types";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 // Simple debounce hook
 function useDebounce<T>(value: T, delay = 300): T {
@@ -389,18 +387,40 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
         if (!memo) return;
         setLoading(id, "memo", true);
         try {
-          await webAxios.post(
-            `/api/v1/retreat/${retreatSlug}/dormitory/${id}/dormitory-memo`,
-            { memo }
+          await mutate(
+            async currentData => {
+              const response = await webAxios.post(
+                `/api/v1/retreat/${retreatSlug}/dormitory/${id}/dormitory-memo`,
+                { memo }
+              );
+              const dormitoryStaffMemo = response.data.dormitoryStaffMemo;
+
+              return (currentData ?? []).map(user =>
+                user.id === id
+                  ? {
+                      ...user,
+                      dormitoryStaffMemo: dormitoryStaffMemo.memo,
+                      dormitoryStaffMemoId: String(dormitoryStaffMemo.id),
+                    }
+                  : user
+              );
+            },
+            {
+              optimisticData: currentData =>
+                (currentData ?? []).map(user =>
+                  user.id === id ? { ...user, dormitoryStaffMemo: memo } : user
+                ),
+              rollbackOnError: true,
+              revalidate: false,
+            }
           );
+          setEditingMemo(p => ({ ...p, [id]: false }));
+          setMemoValues(p => ({ ...p, [id]: "" }));
           addToast({
             title: "성공",
             description: "메모가 저장되었습니다.",
             variant: "success",
           });
-          setEditingMemo(p => ({ ...p, [id]: false }));
-          setMemoValues(p => ({ ...p, [id]: "" }));
-          mutate();
         } catch (e) {
           addToast({
             title: "오류",
@@ -418,15 +438,42 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
       async (id: number, memoId: string) => {
         setLoading(id, "delete_memo", true);
         try {
-          await webAxios.delete(
-            `/api/v1/retreat/${retreatSlug}/dormitory/${memoId}/dormitory-memo`
+          await mutate(
+            async currentData => {
+              await webAxios.delete(
+                `/api/v1/retreat/${retreatSlug}/dormitory/${memoId}/dormitory-memo`
+              );
+
+              return (currentData ?? []).map(user =>
+                user.id === id
+                  ? {
+                      ...user,
+                      dormitoryStaffMemo: undefined,
+                      dormitoryStaffMemoId: undefined,
+                    }
+                  : user
+              );
+            },
+            {
+              optimisticData: currentData =>
+                (currentData ?? []).map(user =>
+                  user.id === id
+                    ? {
+                        ...user,
+                        dormitoryStaffMemo: undefined,
+                        dormitoryStaffMemoId: undefined,
+                      }
+                    : user
+                ),
+              rollbackOnError: true,
+              revalidate: false,
+            }
           );
           addToast({
             title: "성공",
             description: "메모가 삭제되었습니다.",
             variant: "success",
           });
-          mutate();
         } catch {
           addToast({
             title: "오류",
@@ -459,7 +506,6 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
             userRetreatRegistrationId: userId,
             dormitoryId: dormId,
           });
-          mutate();
           addToast({
             title: dormId == null ? "취소됨" : "성공",
             description:
@@ -477,7 +523,7 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
           });
         }
       },
-      [assignDormitory, addToast, mutate]
+      [assignDormitory, addToast]
     );
 
     const getDormitoryOptionsForUser = useCallback(

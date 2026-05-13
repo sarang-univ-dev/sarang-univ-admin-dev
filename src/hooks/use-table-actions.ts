@@ -1,7 +1,8 @@
+import { AxiosError } from "axios";
 import { useState } from "react";
 import { mutate } from "swr";
+
 import { useToastStore } from "@/store/toast-store";
-import { AxiosError } from "axios";
 
 interface UseTableActionsOptions {
   endpoint: string;
@@ -19,7 +20,7 @@ export function useTableActions({
   errorMessage = "오류가 발생했습니다.",
 }: UseTableActionsOptions) {
   const [loading, setLoading] = useState(false);
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
 
   const executeAction = async <T = void>(
     action: () => Promise<T>,

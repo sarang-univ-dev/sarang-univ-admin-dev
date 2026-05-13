@@ -1,5 +1,6 @@
-import { webAxios } from "./axios";
 import { IUserScheduleChangeRetreat } from "@/types";
+
+import { webAxios } from "./axios";
 
 /**
  * Schedule Change Request API
@@ -39,6 +40,26 @@ export const ScheduleChangeRequestAPI = {
         userRetreatRegistrationId,
         afterScheduleIds,
         selectedPaymentScheduleId,
+      }
+    );
+  },
+
+  /**
+   * 신청 취소 처리
+   * @param retreatSlug - 수양회 slug
+   * @param userRetreatRegistrationId - 신청 ID
+   * @param refundRequired - 환불 필요 여부
+   */
+  cancelRegistration: async (
+    retreatSlug: string,
+    userRetreatRegistrationId: string,
+    refundRequired: boolean
+  ): Promise<void> => {
+    await webAxios.post(
+      `/api/v1/retreat/${retreatSlug}/account/cancel-registration`,
+      {
+        userRetreatRegistrationId,
+        refundRequired,
       }
     );
   },

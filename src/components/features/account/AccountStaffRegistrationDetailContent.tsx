@@ -1,6 +1,6 @@
+import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { formatDate } from "@/utils/formatDate";
 
 interface AccountStaffRegistrationDetailContentProps {
@@ -17,24 +17,21 @@ export function AccountStaffRegistrationDetailContent({
         <InfoItem label="이름" value={data.name} />
         <InfoItem label="부서" value={data.department} />
         <InfoItem label="학년" value={data.grade} />
-        <InfoItem label="성별" value={<GenderBadge gender={data.gender as any} />} />
+        <InfoItem
+          label="성별"
+          value={<GenderBadge gender={data.gender as any} />}
+        />
         <InfoItem label="전화번호" value={data.phoneNumber} />
       </InfoSection>
 
       {/* 신청 정보 */}
       <InfoSection title="신청 정보">
-        <InfoItem
-          label="신청시각"
-          value={formatDate(data.createdAt)}
-        />
+        <InfoItem label="신청시각" value={formatDate(data.createdAt)} />
         <InfoItem
           label="타입"
           value={data.type ? <TypeBadge type={data.type as any} /> : "-"}
         />
-        <InfoItem
-          label="금액"
-          value={`${data.amount?.toLocaleString()}원`}
-        />
+        <InfoItem label="금액" value={`${data.amount?.toLocaleString()}원`} />
         <InfoItem
           label="입금 현황"
           value={<StatusBadge status={data.status as any} />}

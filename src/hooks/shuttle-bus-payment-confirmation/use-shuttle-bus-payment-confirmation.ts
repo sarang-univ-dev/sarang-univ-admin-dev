@@ -1,10 +1,12 @@
 import useSWR from "swr";
+
 import { webAxios } from "@/lib/api/axios";
 import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
 
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
-  return response.data.retreatShuttleBusRegistrations as IShuttleBusPaymentConfirmationRegistration[];
+  return response.data
+    .retreatShuttleBusRegistrations as IShuttleBusPaymentConfirmationRegistration[];
 };
 
 interface UseShuttleBusPaymentConfirmationOptions {

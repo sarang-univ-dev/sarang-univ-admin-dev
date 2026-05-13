@@ -4,7 +4,9 @@ import { TRetreatShuttleBus } from "@/types";
 import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
 import { formatDate } from "@/utils/formatDate";
 import { useMemo } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
 
 interface ShuttleBusPaymentConfirmationDetailContentProps {
   data: IShuttleBusPaymentConfirmationRegistration;
@@ -22,12 +24,29 @@ export function ShuttleBusPaymentConfirmationDetailContent({
   schedules,
   retreatSlug,
 }: ShuttleBusPaymentConfirmationDetailContentProps) {
-  // 선택된 스케줄 정보 추출
+  // ✅ 색상이 포함된 스케줄 컬럼 정보 생성
+  const scheduleColumnsWithColor = useMemo(
+    () => generateShuttleBusScheduleColumns(schedules),
+    [schedules]
+  );
+
+  // ✅ 색상 매핑 헬퍼 함수
+  const getChipColorClass = (color: string) => {
+    const colorMap: Record<string, string> = {
+      rose: "border-rose-500 bg-rose-50 text-rose-700",
+      amber: "border-amber-500 bg-amber-50 text-amber-700",
+      teal: "border-teal-500 bg-teal-50 text-teal-700",
+      indigo: "border-indigo-500 bg-indigo-50 text-indigo-700",
+    };
+    return colorMap[color] || "border-gray-500 bg-gray-50 text-gray-700";
+  };
+
+  // 선택된 스케줄 정보 추출 (색상 정보 포함)
   const selectedSchedules = useMemo(() => {
-    return schedules.filter((schedule) =>
-      data.userRetreatShuttleBusRegistrationScheduleIds?.includes(schedule.id)
+    return scheduleColumnsWithColor.filter((s) =>
+      data.userRetreatShuttleBusRegistrationScheduleIds?.includes(s.id)
     );
-  }, [schedules, data.userRetreatShuttleBusRegistrationScheduleIds]);
+  }, [scheduleColumnsWithColor, data.userRetreatShuttleBusRegistrationScheduleIds]);
 
   return (
     <>
@@ -85,20 +104,18 @@ export function ShuttleBusPaymentConfirmationDetailContent({
         {selectedSchedules.length === 0 ? (
           <p className="text-sm text-gray-500">선택한 스케줄이 없습니다.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
             {selectedSchedules.map((schedule) => (
-              <div
+              <Badge
                 key={schedule.id}
-                className="flex items-center gap-2 p-2 bg-gray-50 rounded-md"
+                variant="outline"
+                className={cn(
+                  "text-xs py-1.5 justify-center",
+                  getChipColorClass(schedule.color)
+                )}
               >
-                <Checkbox checked disabled />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{schedule.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {formatDate(schedule.departureTime)}
-                  </p>
-                </div>
-              </div>
+                {schedule.label}
+              </Badge>
             ))}
           </div>
         )}

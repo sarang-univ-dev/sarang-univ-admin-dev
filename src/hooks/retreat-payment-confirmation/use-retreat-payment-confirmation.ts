@@ -1,10 +1,11 @@
+import { AxiosError } from "axios";
 import { useState } from "react";
 import useSWR, { SWRConfiguration } from "swr";
-import { webAxios } from "@/lib/api/axios";
+
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
-import { useToastStore } from "@/store/toast-store";
+import { webAxios } from "@/lib/api/axios";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
-import { AxiosError } from "axios";
+import { useToastStore } from "@/store/toast-store";
 
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
@@ -28,7 +29,7 @@ export function useRetreatPaymentConfirmation(
   options?: SWRConfiguration<IUserRetreatRegistration[], Error>
 ) {
   const confirmDialog = useConfirmDialogStore();
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const [isMutating, setIsMutating] = useState(false);
 
   const endpoint = retreatSlug
@@ -68,7 +69,7 @@ export function useRetreatPaymentConfirmation(
       // 2. 단일 item만 병합 (기존 데이터 유지 + 업데이트된 필드 적용)
       if (updated && data) {
         await mutate(
-          data.map((item) =>
+          data.map(item =>
             item.id === updated.id ? { ...item, ...updated } : item
           ),
           { revalidate: false }

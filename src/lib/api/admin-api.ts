@@ -3,8 +3,25 @@
  * 서버의 /api/v1/admin/* 엔드포인트와 통신
  */
 
-import { webAxios } from './axios'
-import type { RetreatWithMenus, RetreatsResponse } from '@/types/sidebar'
+import type {
+  AdminGrade,
+  AdminUnivGroup,
+  AdminUnivGroupWithGrades,
+  CreateGradeRequest,
+  CreateRetreatRequest,
+  ManagedRetreat,
+  ManagedRetreatDetail,
+  RetreatAssetType,
+  UpdateGradeRequest,
+  UpdateRetreatRequest,
+  UploadRetreatAssetResponse,
+} from "@/types/retreat-create";
+import type {
+  AdminNavigationResponse,
+  RetreatWithMenus,
+} from "@/types/sidebar";
+
+import { webAxios } from "./axios";
 
 /**
  * 사용자가 접근 가능한 모든 retreat + 메뉴 목록 조회 (sidebar용)
@@ -16,8 +33,150 @@ import type { RetreatWithMenus, RetreatsResponse } from '@/types/sidebar'
  * // [{ id: 1, slug: '2025-winter', name: '2025 겨울수양회', menuItems: [...] }]
  */
 export async function getRetreatsWithMenus(): Promise<RetreatWithMenus[]> {
-  const response = await webAxios.get<RetreatsResponse>('/api/v1/admin/retreats')
-  return response.data.retreats
+  const response = await webAxios.get<{ retreats: RetreatWithMenus[] }>(
+    "/api/v1/admin/retreats"
+  );
+  return response.data.retreats;
+}
+
+export async function getAdminNavigation(): Promise<AdminNavigationResponse> {
+  const response = await webAxios.get<AdminNavigationResponse>(
+    "/api/v1/admin/navigation"
+  );
+  return response.data;
+}
+
+export async function uploadRetreatAsset({
+  assetType,
+  image,
+}: {
+  assetType: RetreatAssetType;
+  image: File;
+}): Promise<UploadRetreatAssetResponse> {
+  const formData = new FormData();
+  formData.append("assetType", assetType);
+  formData.append("image", image);
+
+  const response = await webAxios.post<UploadRetreatAssetResponse>(
+    "/api/v1/admin/retreat-assets",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data;
+}
+
+export async function downloadRetreatAsset(
+  retreatId: number,
+  assetType: "poster" | "qr-template"
+): Promise<{ blob: Blob; fileName: string }> {
+  const response = await webAxios.get(
+    `/api/v1/admin/retreats/${retreatId}/assets/${assetType}`,
+    {
+      responseType: "blob",
+    }
+  );
+  const contentDisposition = response.headers["content-disposition"];
+  const utf8FileName = contentDisposition?.match(/filename\*=UTF-8''([^;]+)/);
+  const fileName = utf8FileName?.[1]
+    ? decodeURIComponent(utf8FileName[1])
+    : assetType === "poster"
+      ? "poster.png"
+      : "qr-template.png";
+
+  return { blob: response.data, fileName };
+}
+
+export async function createRetreat(request: CreateRetreatRequest) {
+  const response = await webAxios.post("/api/v1/admin/retreats", request);
+
+  return response.data;
+}
+
+export async function getManagedRetreats(): Promise<ManagedRetreat[]> {
+  const response = await webAxios.get<{ retreats: ManagedRetreat[] }>(
+    "/api/v1/admin/retreats/manage"
+  );
+
+  return response.data.retreats;
+}
+
+export async function getManagedRetreat(
+  retreatId: number
+): Promise<ManagedRetreatDetail> {
+  const response = await webAxios.get<{ retreat: ManagedRetreatDetail }>(
+    `/api/v1/admin/retreats/${retreatId}/manage`
+  );
+
+  return response.data.retreat;
+}
+
+export async function updateRetreat(
+  retreatId: number,
+  request: UpdateRetreatRequest
+): Promise<ManagedRetreatDetail> {
+  const response = await webAxios.patch<{ retreat: ManagedRetreatDetail }>(
+    `/api/v1/admin/retreats/${retreatId}`,
+    request
+  );
+
+  return response.data.retreat;
+}
+
+export async function getUnivGroups(): Promise<AdminUnivGroup[]> {
+  const response = await webAxios.get<{ univGroups: AdminUnivGroup[] }>(
+    "/api/v1/admin/univ-groups"
+  );
+
+  return response.data.univGroups;
+}
+
+export async function getUnivGroupsWithGrades(): Promise<
+  AdminUnivGroupWithGrades[]
+> {
+  const response = await webAxios.get<{
+    univGroups: AdminUnivGroupWithGrades[];
+  }>("/api/v1/admin/univ-groups/grades");
+
+  return response.data.univGroups;
+}
+
+export async function createGrade(
+  univGroupId: number,
+  request: CreateGradeRequest
+): Promise<AdminGrade> {
+  const response = await webAxios.post<{ grade: AdminGrade }>(
+    `/api/v1/admin/univ-groups/${univGroupId}/grades`,
+    request
+  );
+
+  return response.data.grade;
+}
+
+export async function promoteUnivGroupGrades(
+  univGroupId: number
+): Promise<AdminGrade[]> {
+  const response = await webAxios.post<{ grades: AdminGrade[] }>(
+    `/api/v1/admin/univ-groups/${univGroupId}/grades/promote`
+  );
+
+  return response.data.grades;
+}
+
+export async function updateGrade(
+  gradeId: number,
+  request: UpdateGradeRequest
+): Promise<AdminGrade> {
+  const response = await webAxios.patch<{ grade: AdminGrade }>(
+    `/api/v1/admin/grades/${gradeId}`,
+    request
+  );
+
+  return response.data.grade;
 }
 
 /**
@@ -38,6 +197,6 @@ export async function checkPageAccess(
   const response = await webAxios.get<{ canAccess: boolean }>(
     `/api/v1/admin/retreats/${retreatId}/permissions`,
     { params: { pagePath } }
-  )
-  return response.data.canAccess
+  );
+  return response.data.canAccess;
 }

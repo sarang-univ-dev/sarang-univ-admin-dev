@@ -1,5 +1,8 @@
 "use client";
 
+import { Sunrise, Sun, Sunset, Bed } from "lucide-react";
+
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -8,10 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { formatSimpleDate } from "@/utils/formatDate";
 import type { TRetreatRegistrationSchedule } from "@/types";
-import { Sunrise, Sun, Sunset, Bed } from "lucide-react";
+import { formatSimpleDate } from "@/utils/formatDate";
 
 // 이벤트 타입을 한글로 매핑
 const EVENT_TYPE_MAP: Record<string, string> = {
@@ -71,9 +72,7 @@ export function RetreatScheduleTable({
 }: RetreatScheduleTableProps) {
   // 날짜 목록 추출 (고유 날짜만, 정렬)
   const retreatDates = Array.from(
-    new Set(
-      schedules.map((s) => new Date(s.time).toISOString().split("T")[0])
-    )
+    new Set(schedules.map(s => new Date(s.time).toISOString().split("T")[0]))
   ).sort();
 
   return (
@@ -95,8 +94,9 @@ export function RetreatScheduleTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {["BREAKFAST", "LUNCH", "DINNER", "SLEEP"].map((eventType) => {
-            const Icon = EVENT_ICON_MAP[eventType as keyof typeof EVENT_ICON_MAP];
+          {["BREAKFAST", "LUNCH", "DINNER", "SLEEP"].map(eventType => {
+            const Icon =
+              EVENT_ICON_MAP[eventType as keyof typeof EVENT_ICON_MAP];
             return (
               <TableRow key={eventType}>
                 <TableCell className="flex items-center justify-center whitespace-nowrap px-2 sm:px-4">
@@ -105,7 +105,7 @@ export function RetreatScheduleTable({
                 </TableCell>
                 {retreatDates.map((date: string) => {
                   const event = schedules.find(
-                    (s) =>
+                    s =>
                       new Date(s.time).toLocaleDateString("ko-KR") ===
                         new Date(date).toLocaleDateString("ko-KR") &&
                       s.type === eventType

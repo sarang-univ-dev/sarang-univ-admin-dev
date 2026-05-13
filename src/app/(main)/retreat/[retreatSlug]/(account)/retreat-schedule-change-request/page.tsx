@@ -1,11 +1,12 @@
 import { Suspense } from "react";
+
+import { TableSkeleton } from "@/components/common/table/TableSkeleton";
+import { ScheduleChangeRequestTable } from "@/components/features/schedule-change-request";
 import {
   fetchScheduleChangeRequests,
   fetchRetreatSchedules,
   fetchRetreatPayments,
 } from "@/lib/api/server-actions";
-import { ScheduleChangeRequestTable } from "@/components/features/schedule-change-request";
-import { TableSkeleton } from "@/components/common/table/TableSkeleton";
 
 interface PageProps {
   params: Promise<{ retreatSlug: string }>;

@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useUserScheduleChangeHistory } from "@/hooks/user-schedule-change-retreat-history";
-import { RetreatScheduleChangeHistoryTable } from "@/components/RetreatScheduleChangeHistoryTable";
 import { useParams } from "next/navigation";
-import {
-  TRetreatRegistrationSchedule,
-  TRetreatUnivGroup,
-} from "@/types";
+import { useEffect, useState } from "react";
+
+import { RetreatScheduleChangeHistoryTable } from "@/components/RetreatScheduleChangeHistoryTable";
+import { useUserScheduleChangeHistory } from "@/hooks/user-schedule-change-retreat-history";
 import { webAxios } from "@/lib/api/axios";
+import { TRetreatRegistrationSchedule, TRetreatUnivGroup } from "@/types";
 
 export default function ScheduleChangeHistoryPage() {
   const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(

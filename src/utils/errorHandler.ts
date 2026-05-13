@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import axios from "axios";
+import { NextResponse } from "next/server";
 
 /**
  * 공통 에러 핸들링 함수

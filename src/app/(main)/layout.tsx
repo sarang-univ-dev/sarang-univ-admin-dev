@@ -1,11 +1,15 @@
-import type React from "react"
-import { cookies } from "next/headers"
+import { cookies } from "next/headers";
+import type React from "react";
 
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/sidebar"
-import ClientProviders from "@/components/providers/ClientProviders"
-import Footer from "@/components/common/layout/Footer"
-import { getRetreatsWithMenusServer } from "@/lib/api/server-admin-api"
+import Footer from "@/components/common/layout/Footer";
+import ClientProviders from "@/components/providers/ClientProviders";
+import { AppSidebar } from "@/components/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { getAdminNavigationServer } from "@/lib/api/server-admin-api";
 
 /**
  * Main Layout - Server Component
@@ -14,22 +18,27 @@ import { getRetreatsWithMenusServer } from "@/lib/api/server-admin-api"
 export default async function MainLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   // 서버에서 데이터 fetch (권한 계산 완료된 데이터)
-  const retreats = await getRetreatsWithMenusServer()
+  const navigation = await getAdminNavigationServer();
 
   // 서버에서 사이드바 상태 cookie 읽기
-  const cookieStore = await cookies()
-  const sidebarState = cookieStore.get("sidebar_state")
-  const defaultOpen = sidebarState?.value === "true" ? true : sidebarState?.value === "false" ? false : true
+  const cookieStore = await cookies();
+  const sidebarState = cookieStore.get("sidebar_state");
+  const defaultOpen =
+    sidebarState?.value === "true"
+      ? true
+      : sidebarState?.value === "false"
+        ? false
+        : true;
 
   return (
     <ClientProviders>
       <SidebarProvider defaultOpen={defaultOpen}>
         <div className="flex min-h-screen w-full">
           {/* 새로운 사이드바 (shadcn UI) */}
-          <AppSidebar retreats={retreats} />
+          <AppSidebar navigation={navigation} />
 
           <div className="flex flex-1 flex-col min-w-0">
             <SidebarInset>
@@ -38,9 +47,7 @@ export default async function MainLayout({
                 <div className="flex-1" />
               </div>
 
-              <main className="flex-1 p-2 md:p-6">
-                {children}
-              </main>
+              <main className="flex-1 p-2 md:p-6">{children}</main>
             </SidebarInset>
 
             <Footer />
@@ -48,5 +55,5 @@ export default async function MainLayout({
         </div>
       </SidebarProvider>
     </ClientProviders>
-  )
+  );
 }

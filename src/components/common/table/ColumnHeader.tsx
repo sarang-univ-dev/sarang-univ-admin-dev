@@ -3,6 +3,8 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterableHeader } from "./FilterableHeader";
 import { UnifiedColumnHeader } from "./UnifiedColumnHeader";
+import { ColumnHeaderHelp } from "@/components/common/help";
+import type { ColumnHelpContent } from "@/lib/help/types";
 
 interface ColumnHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -36,6 +38,11 @@ interface ColumnHeaderProps<TData> {
    * - false: 정렬과 필터 아이콘을 나란히 표시 (기존 방식)
    */
   unified?: boolean;
+  /**
+   * 컬럼 도움말 콘텐츠
+   * - 제공 시 헤더에 도움말 아이콘 표시
+   */
+  helpContent?: ColumnHelpContent;
 }
 
 /**
@@ -90,12 +97,14 @@ export function ColumnHeader<TData>({
   sortFilterValues,
   titleOnly = false,
   unified = true,
+  helpContent,
 }: ColumnHeaderProps<TData>) {
   // 제목만 표시
   if (titleOnly || (!enableSorting && !enableFiltering)) {
     return (
-      <div className="text-center text-sm whitespace-nowrap px-2">
-        {title}
+      <div className="flex items-center justify-center gap-1 text-sm whitespace-nowrap px-2">
+        <span>{title}</span>
+        {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
       </div>
     );
   }
@@ -112,6 +121,7 @@ export function ColumnHeader<TData>({
         formatFilterValue={formatFilterValue}
         sortFilterValues={sortFilterValues}
         titleOnly={titleOnly}
+        helpContent={helpContent}
       />
     );
   }
@@ -166,6 +176,9 @@ export function ColumnHeader<TData>({
       ) : (
         <span className="text-sm px-2">{title}</span>
       )}
+
+      {/* 도움말 아이콘 */}
+      {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
 
       {/* 필터 버튼 */}
       {enableFiltering && (

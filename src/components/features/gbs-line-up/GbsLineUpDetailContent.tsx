@@ -1,25 +1,45 @@
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { GBSLineupRow } from "@/hooks/gbs-line-up/use-gbs-lineup";
-import { TRetreatRegistrationSchedule } from "@/types";
+import { TRetreatRegistrationSchedule, Gender } from "@/types";
 import { GenderBadge, TypeBadge } from "@/components/Badge";
 import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   UserCircle,
   Calendar,
   FileText,
   MessageSquare,
   Info,
+  Pencil,
 } from "lucide-react";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
+import { Button } from "@/components/ui/button";
+import { RegistrationEditModal } from "@/components/features/common/RegistrationEditModal";
+
+interface Grade {
+  gradeId: number;
+  gradeName: string;
+  gradeNumber: number;
+}
 
 interface GbsLineUpDetailContentProps {
   data: GBSLineupRow;
   retreatSlug: string;
   schedules: TRetreatRegistrationSchedule[];
+  grades: Grade[];
   onSaveScheduleMemo: (id: string, memo: string) => Promise<void>;
   onUpdateScheduleMemo: (id: string, memo: string) => Promise<void>;
   onDeleteScheduleMemo: (id: string) => Promise<void>;
+  onUpdateRegistrationInfo?: (
+    id: string,
+    data: {
+      name: string;
+      phoneNumber: string;
+      gender: Gender;
+      gradeId: number;
+      currentLeaderName: string;
+    }
+  ) => Promise<void>;
   isMutating: boolean;
 }
 
@@ -27,11 +47,16 @@ export function GbsLineUpDetailContent({
   data,
   retreatSlug,
   schedules,
+  grades,
   onSaveScheduleMemo,
   onUpdateScheduleMemo,
   onDeleteScheduleMemo,
+  onUpdateRegistrationInfo,
   isMutating,
 }: GbsLineUpDetailContentProps) {
+  // 수정 모달 상태
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   // 선택된 스케줄 ID 추출
   const selectedScheduleIds = useMemo(() => {
     return schedules
@@ -39,10 +64,34 @@ export function GbsLineUpDetailContent({
       .map((schedule) => schedule.id);
   }, [schedules, data.schedule]);
 
+  // data.grade에서 gradeNumber 추출 (예: "1학년" -> 1)
+  const gradeNumber = useMemo(() => {
+    const match = data.grade.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 1;
+  }, [data.grade]);
+
   return (
     <>
       {/* 기본 정보 - 2컬럼 그리드 */}
-      <InfoSection title="기본 정보" icon={UserCircle} columns={2}>
+      <InfoSection
+        title="기본 정보"
+        icon={UserCircle}
+        columns={2}
+        action={
+          onUpdateRegistrationInfo && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditModalOpen(true)}
+              disabled={isMutating}
+              className="h-7 px-2"
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1" />
+              수정
+            </Button>
+          )
+        }
+      >
         <InfoItem label="이름" value={data.name} />
         <InfoItem label="부서" value={data.department} />
         <InfoItem label="학년" value={data.grade} />
@@ -138,6 +187,27 @@ export function GbsLineUpDetailContent({
             <p className="text-sm whitespace-pre-wrap">{data.adminMemo}</p>
           </div>
         </InfoSection>
+      )}
+
+      {/* 수정 모달 */}
+      {onUpdateRegistrationInfo && (
+        <RegistrationEditModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSave={async (editData) => {
+            await onUpdateRegistrationInfo(data.id, editData);
+          }}
+          initialData={{
+            name: data.name,
+            phoneNumber: data.phoneNumber,
+            gender: data.gender,
+            gradeNumber,
+            currentLeaderName: data.currentLeader || "",
+          }}
+          grades={grades}
+          isLoading={isMutating}
+          showCurrentLeaderName={true}
+        />
       )}
     </>
   );

@@ -1,14 +1,15 @@
 import { Suspense } from "react";
-import {
-  fetchUnivGroupBusRegistrations,
-  fetchShuttleBusSchedules,
-} from "@/lib/api/server-actions";
+
 import {
   UnivGroupBusRegistrationTable,
   BusPaymentSummary,
   BusScheduleSummary,
 } from "@/components/features/univ-group-bus-registration";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  fetchUnivGroupBusRegistrations,
+  fetchShuttleBusSchedules,
+} from "@/lib/api/server-actions";
 
 interface PageProps {
   params: Promise<{
@@ -41,10 +42,7 @@ export default async function UnivGroupBusRegistrationPage({
       {/* ✅ Server Component (정적 집계) */}
       <BusPaymentSummary registrations={registrations} />
 
-      <BusScheduleSummary
-        registrations={registrations}
-        schedules={schedules}
-      />
+      <BusScheduleSummary registrations={registrations} schedules={schedules} />
 
       {/* ✅ Client Component (인터랙션 필요 - TanStack Table) */}
       <Suspense fallback={<TableSkeleton />}>

@@ -1,9 +1,11 @@
-import { useState, useCallback } from "react";
-import { webAxios } from "@/lib/api/axios";
-import { useToastStore } from "@/store/toast-store";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { AxiosError } from "axios";
+import { useState, useCallback } from "react";
 import { KeyedMutator } from "swr";
+
+import { webAxios } from "@/lib/api/axios";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useToastStore } from "@/store/toast-store";
+
 import { IDormitoryRetreatRegistration } from "./use-retreat-registration";
 
 /**
@@ -22,7 +24,7 @@ export function useDormitoryRetreatRegistrationMemo(
   retreatSlug: string,
   mutate: KeyedMutator<IDormitoryRetreatRegistration[]>
 ) {
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const confirmDialog = useConfirmDialogStore();
   const [isMutating, setIsMutating] = useState(false);
 

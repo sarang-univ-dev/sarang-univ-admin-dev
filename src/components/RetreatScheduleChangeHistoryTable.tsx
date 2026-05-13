@@ -1,6 +1,20 @@
 "use client";
 
+import { AxiosError } from "axios";
+import { Search } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
+
+import { GenderBadge } from "@/components/Badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -9,25 +23,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
-import { GenderBadge } from "@/components/Badge";
-import { generateScheduleColumns } from "../utils/retreat-utils";
+import { IUserScheduleChangeHistory } from "@/hooks/user-schedule-change-retreat-history";
+import { useToastStore } from "@/store/toast-store";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { formatDate } from "@/utils/formatDate";
-import { useToastStore } from "@/store/toast-store";
-import { AxiosError } from "axios";
-import { IUserScheduleChangeHistory } from "@/hooks/user-schedule-change-retreat-history";
+
+import { generateScheduleColumns } from "../utils/retreat-utils";
 
 const transformScheduleChangeHistoryForTable = (
   histories: IUserScheduleChangeHistory[],
@@ -296,100 +297,98 @@ export function RetreatScheduleChangeHistoryTable({
             ref={tableContainerRef}
           >
             <div className="max-h-[80vh] overflow-auto">
-                <Table className="min-w-full whitespace-nowrap relative text-sm">
-                  <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
-                    <TableRow>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>부서</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>성별</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>학년</span>
-                        </div>
-                      </TableHead>
+              <Table className="min-w-full whitespace-nowrap relative text-sm">
+                <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
+                  <TableRow>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>부서</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>성별</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>학년</span>
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="sticky left-0 bg-gray-100 z-20 px-3 py-2.5"
+                      rowSpan={2}
+                    >
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>이름</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>전화번호</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>구분</span>
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      colSpan={scheduleColumns.length}
+                      className="text-center px-3 py-2.5"
+                    >
+                      수양회 일정
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>금액</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>처리자명</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>처리시각</span>
+                      </div>
+                    </TableHead>
+                  </TableRow>
+                  <TableRow>
+                    {scheduleColumns.map(scheduleCol => (
                       <TableHead
-                        className="sticky left-0 bg-gray-100 z-20 px-3 py-2.5"
-                        rowSpan={2}
+                        key={scheduleCol.key}
+                        className="p-2 text-center"
                       >
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>이름</span>
+                        <div className="flex items-center justify-center">
+                          <span className="text-xs whitespace-normal">
+                            {scheduleCol.label}
+                          </span>
                         </div>
                       </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>전화번호</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>구분</span>
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        colSpan={scheduleColumns.length}
-                        className="text-center px-3 py-2.5"
-                      >
-                        수양회 일정
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>금액</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>처리자명</span>
-                        </div>
-                      </TableHead>
-                      <TableHead className="px-3 py-2.5" rowSpan={2}>
-                        <div className="flex items-center space-x-1 justify-center">
-                          <span>처리시각</span>
-                        </div>
-                      </TableHead>
-                    </TableRow>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-gray-200">
+                  {filteredData.length === 0 && (
                     <TableRow>
-                      {scheduleColumns.map(scheduleCol => (
-                        <TableHead
-                          key={scheduleCol.key}
-                          className="p-2 text-center"
-                        >
-                          <div className="flex items-center justify-center">
-                            <span className="text-xs whitespace-normal">
-                              {scheduleCol.label}
-                            </span>
-                          </div>
-                        </TableHead>
-                      ))}
+                      <TableCell
+                        colSpan={10 + scheduleColumns.length}
+                        className="text-center py-10 text-gray-500"
+                      >
+                        {allData.length > 0
+                          ? "검색 결과가 없습니다."
+                          : "표시할 데이터가 없습니다."}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-gray-200">
-                    {filteredData.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={10 + scheduleColumns.length}
-                          className="text-center py-10 text-gray-500"
-                        >
-                          {allData.length > 0
-                            ? "검색 결과가 없습니다."
-                            : "표시할 데이터가 없습니다."}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    {filteredData.map((row, index) =>
-                      renderTableRow(row, index)
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                  )}
+                  {filteredData.map((row, index) => renderTableRow(row, index))}
+                </TableBody>
+              </Table>
             </div>
           </div>
+        </div>
       </CardContent>
     </Card>
   );

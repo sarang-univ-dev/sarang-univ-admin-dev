@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react";
+
 import { TRetreatRegistrationSchedule } from "./index";
 
 /**

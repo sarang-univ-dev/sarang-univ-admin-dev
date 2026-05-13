@@ -1,4 +1,5 @@
 import useSWR from "swr";
+
 import { webAxios } from "@/lib/api/axios";
 import { Gender } from "@/types";
 

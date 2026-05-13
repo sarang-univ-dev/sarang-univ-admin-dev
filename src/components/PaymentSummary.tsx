@@ -1,7 +1,11 @@
+import {
+  UserRetreatRegistrationPaymentStatus,
+  IUnivGroupAdminStaffRetreat,
+} from "@/types";
+
+import { StatusBadge } from "./Badge";
 import { SummaryTable } from "./SummaryTable";
 import { generateDepartmentStats } from "../utils/retreat-utils";
-import { StatusBadge } from "./Badge";
-import { UserRetreatRegistrationPaymentStatus, IUnivGroupAdminStaffRetreat } from "@/types";
 
 interface PaymentSummaryProps {
   registrations: IUnivGroupAdminStaffRetreat[];
@@ -15,11 +19,11 @@ interface PaymentSummaryProps {
  * - 정적 계산만 수행 (인터랙션 없음)
  * - JavaScript 번들 크기 감소
  */
-export function PaymentSummary({
-  registrations = [],
-}: PaymentSummaryProps) {
+export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
   // 부서 수 계산 (서버에서 한 번만 실행)
-  const uniqueDepartments = new Set(registrations.map(reg => reg.univGroupNumber)).size;
+  const uniqueDepartments = new Set(
+    registrations.map(reg => reg.univGroupNumber)
+  ).size;
 
   // StatusBadge 컴포넌트를 활용한 동적 컬럼 생성
   const columns = [
@@ -36,6 +40,26 @@ export function PaymentSummary({
       header: (
         <div className="flex justify-center">
           <StatusBadge status={UserRetreatRegistrationPaymentStatus.PAID} />
+        </div>
+      ),
+    },
+    {
+      id: UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING,
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge
+            status={UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING}
+          />
+        </div>
+      ),
+    },
+    {
+      id: UserRetreatRegistrationPaymentStatus.CANCELED,
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge
+            status={UserRetreatRegistrationPaymentStatus.CANCELED}
+          />
         </div>
       ),
     },
@@ -70,6 +94,16 @@ export function PaymentSummary({
       ),
     },
     {
+      id: UserRetreatRegistrationPaymentStatus.REFUND_ONGOING,
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge
+            status={UserRetreatRegistrationPaymentStatus.REFUND_ONGOING}
+          />
+        </div>
+      ),
+    },
+    {
       id: UserRetreatRegistrationPaymentStatus.REFUNDED,
       header: (
         <div className="flex justify-center">
@@ -82,7 +116,9 @@ export function PaymentSummary({
       header: (
         <div className="flex justify-center">
           <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 shrink-0">
-            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">전체 인원</span>
+            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+              전체 인원
+            </span>
           </div>
         </div>
       ),
@@ -93,9 +129,10 @@ export function PaymentSummary({
   const allRows = generateDepartmentStats(registrations);
 
   // 부서가 1개인 경우 전체 행 제외
-  const rows = uniqueDepartments <= 1
-    ? allRows.filter(row => row.id !== "total")
-    : allRows;
+  const rows =
+    uniqueDepartments <= 1
+      ? allRows.filter(row => row.id !== "total")
+      : allRows;
 
   // 각 행을 변환하여 셀 생성
   const formattedRows = rows.map(row => {
@@ -120,6 +157,18 @@ export function PaymentSummary({
               <span className="font-semibold">{row.cells.confirmed}명</span>
             </div>
           ),
+          [UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING]: (
+            <div className="text-center">
+              <span className="font-semibold">
+                {row.cells.cancel_ongoing}명
+              </span>
+            </div>
+          ),
+          [UserRetreatRegistrationPaymentStatus.CANCELED]: (
+            <div className="text-center">
+              <span className="font-semibold">{row.cells.canceled}명</span>
+            </div>
+          ),
           [UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST]: (
             <div className="text-center">
               <span className="font-semibold">
@@ -138,6 +187,13 @@ export function PaymentSummary({
             <div className="text-center">
               <span className="font-semibold">
                 {row.cells.refund_requested}명
+              </span>
+            </div>
+          ),
+          [UserRetreatRegistrationPaymentStatus.REFUND_ONGOING]: (
+            <div className="text-center">
+              <span className="font-semibold">
+                {row.cells.refund_ongoing}명
               </span>
             </div>
           ),
@@ -167,6 +223,12 @@ export function PaymentSummary({
         [UserRetreatRegistrationPaymentStatus.PAID]: (
           <div className="text-center">{row.cells.confirmed}명</div>
         ),
+        [UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING]: (
+          <div className="text-center">{row.cells.cancel_ongoing}명</div>
+        ),
+        [UserRetreatRegistrationPaymentStatus.CANCELED]: (
+          <div className="text-center">{row.cells.canceled}명</div>
+        ),
         [UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST]: (
           <div className="text-center">{row.cells.new_family_request}명</div>
         ),
@@ -175,6 +237,9 @@ export function PaymentSummary({
         ),
         [UserRetreatRegistrationPaymentStatus.REFUND_REQUEST]: (
           <div className="text-center">{row.cells.refund_requested}명</div>
+        ),
+        [UserRetreatRegistrationPaymentStatus.REFUND_ONGOING]: (
+          <div className="text-center">{row.cells.refund_ongoing}명</div>
         ),
         [UserRetreatRegistrationPaymentStatus.REFUNDED]: (
           <div className="text-center">{row.cells.refund_completed}명</div>

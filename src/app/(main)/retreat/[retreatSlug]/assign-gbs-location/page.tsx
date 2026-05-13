@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+
 import { AssignGbsLocationTable } from "@/components/AssignGbsLocationTable";
 
 export default function AssignGbsLocationPage() {
@@ -13,4 +14,4 @@ export default function AssignGbsLocationPage() {
       <AssignGbsLocationTable retreatSlug={retreatSlug} />
     </div>
   );
-} 
+}

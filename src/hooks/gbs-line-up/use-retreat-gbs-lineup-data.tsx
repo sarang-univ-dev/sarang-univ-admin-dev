@@ -1,10 +1,11 @@
-import { useState } from "react";
-import useSWR, { SWRConfiguration } from "swr";
-import { webAxios } from "@/lib/api/axios";
-import { useToastStore } from "@/store/toast-store";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { AxiosError } from "axios";
 import isEqual from "lodash/isEqual";
+import { useState } from "react";
+import useSWR, { SWRConfiguration } from "swr";
+
+import { webAxios } from "@/lib/api/axios";
+import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useToastStore } from "@/store/toast-store";
 
 export interface IUserRetreatGBSLineup {
   gbsNumber: number | null;
@@ -55,7 +56,7 @@ export function useRetreatGbsLineupData(
   options?: SWRConfiguration<IUserRetreatGBSLineup[], Error>
 ) {
   const confirmDialog = useConfirmDialogStore();
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const [isMutating, setIsMutating] = useState(false);
 
   const endpoint = retreatSlug
@@ -71,13 +72,16 @@ export function useRetreatGbsLineupData(
     // ✅ 탭이 백그라운드에 있을 때도 polling 중지 (배터리/성능 절약)
     refreshInterval: () => {
       // 1. 탭이 백그라운드에 있으면 polling 중지
-      if (typeof document !== 'undefined' && document.hidden) {
+      if (typeof document !== "undefined" && document.hidden) {
         return 0;
       }
 
       // 2. input에 focus가 있으면 polling 멈춤 (사용자 입력 중)
       const activeElement = document.activeElement;
-      if (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') {
+      if (
+        activeElement?.tagName === "INPUT" ||
+        activeElement?.tagName === "TEXTAREA"
+      ) {
         return 0;
       }
 
@@ -127,7 +131,7 @@ export function useRetreatGbsLineupData(
       // 2. 즉시 캐시 업데이트 (2초 polling 대기하지 않음)
       if (updated && data) {
         await mutate(
-          data.map((item) =>
+          data.map(item =>
             item.id === updated.id ? { ...item, ...updated } : item
           ),
           { revalidate: false }
@@ -200,7 +204,11 @@ export function useRetreatGbsLineupData(
    * @param memo - 메모 내용
    * @param color - 메모 색상 (선택)
    */
-  const updateLineupMemo = async (memoId: string, memo: string, color?: string) => {
+  const updateLineupMemo = async (
+    memoId: string,
+    memo: string,
+    color?: string
+  ) => {
     await updateCache(async () => {
       const response = await webAxios.put(
         `/api/v1/retreat/${retreatSlug}/line-up/${memoId}/lineup-memo`,

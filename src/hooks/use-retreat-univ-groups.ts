@@ -1,4 +1,5 @@
 import useSWR from "swr";
+
 import { webAxios } from "@/lib/api/axios";
 import { TRetreatUnivGroup } from "@/types";
 
@@ -11,7 +12,7 @@ import { TRetreatUnivGroup } from "@/types";
 export function useRetreatUnivGroups(retreatSlug?: string) {
   return useSWR(
     retreatSlug ? `/api/v1/retreat/${retreatSlug}/univ-group-info` : null,
-    async (url) => {
+    async url => {
       const response = await webAxios.get(url);
       return response.data.retreatUnivGroup as TRetreatUnivGroup[];
     },

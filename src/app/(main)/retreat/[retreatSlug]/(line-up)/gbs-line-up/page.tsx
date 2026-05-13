@@ -1,13 +1,14 @@
 import { Suspense } from "react";
+
+import { GbsLineUpTable } from "@/components/features/gbs-line-up/GbsLineUpTableNew";
+import { PaymentSummary } from "@/components/PaymentSummary";
+import { RetreatScheduleSummary } from "@/components/RetreatScheduleSummary";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchGbsLineUpData,
   fetchRetreatSchedules,
   fetchAccountStaffRegistrations,
 } from "@/lib/api/server-actions";
-import { GbsLineUpTable } from "@/components/features/gbs-line-up/GbsLineUpTableNew";
-import { PaymentSummary } from "@/components/PaymentSummary";
-import { RetreatScheduleSummary } from "@/components/RetreatScheduleSummary";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageProps {
   params: Promise<{

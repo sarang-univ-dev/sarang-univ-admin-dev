@@ -1,10 +1,10 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { SWRConfig } from "swr";
 
 import LoadingIndicator from "@/components/common/LoadingIndicator";
-import { SWRConfig } from "swr";
-import { useEffect } from "react";
 import useUser from "@/lib/hooks/swr/useUser";
 
 // /, /login, /login/redirect, /register, /books, /book/[id] 페이지에 관한 WHITE LIST

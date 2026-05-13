@@ -1,7 +1,8 @@
-import { useMemo } from "react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import { TRetreatRegistrationSchedule } from "@/types";
+import { useMemo } from "react";
+
 import { Checkbox } from "@/components/ui/custom-checkbox";
+import { TRetreatRegistrationSchedule } from "@/types";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 /**
@@ -152,9 +153,9 @@ export function createRetreatScheduleColumns<T extends ScheduleRow>(
 ) {
   const scheduleColumnsInfo = generateScheduleColumns(schedules);
 
-  return scheduleColumnsInfo.map((scheduleInfo) => {
+  return scheduleColumnsInfo.map(scheduleInfo => {
     return columnHelper.accessor(
-      (row) => row.schedules[`schedule_${scheduleInfo.id}`],
+      row => row.schedules[`schedule_${scheduleInfo.id}`],
       {
         id: `schedule_${scheduleInfo.id}`,
         header: createScheduleHeaderCell(scheduleInfo),

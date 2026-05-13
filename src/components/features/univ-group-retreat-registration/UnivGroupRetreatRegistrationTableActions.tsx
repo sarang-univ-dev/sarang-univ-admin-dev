@@ -1,10 +1,11 @@
 "use client";
 
+import { CheckSquare, XSquare } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { CheckSquare, XSquare, RotateCcw } from "lucide-react";
 import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
-import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
+import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 
 interface UnivGroupRetreatRegistrationTableActionsProps {
   row: UnivGroupAdminStaffData;
@@ -21,41 +22,22 @@ export function UnivGroupRetreatRegistrationTableActions({
   row,
   retreatSlug,
 }: UnivGroupRetreatRegistrationTableActionsProps) {
-  const {
-    isMutating,
-    refundComplete,
-    handleNewFamilyRequest,
-    handleMilitaryRequest,
-  } = useUnivGroupRetreatRegistration(retreatSlug);
+  const { isMutating, handleNewFamilyRequest, handleMilitaryRequest } =
+    useUnivGroupRetreatRegistration(retreatSlug);
 
   // 상태에 따른 액션 버튼 렌더링
   switch (row.status) {
     case UserRetreatRegistrationPaymentStatus.PENDING:
-      return null;
-
     case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
-      return (
-        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => refundComplete(row.id)}
-            disabled={isMutating}
-            className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors text-xs h-7"
-          >
-            {isMutating ? (
-              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : (
-              <RotateCcw className="h-3.5 w-3.5" />
-            )}
-            <span>환불 처리 완료</span>
-          </Button>
-        </div>
-      );
+    case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
+    case UserRetreatRegistrationPaymentStatus.REFUNDED:
+    case UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING:
+    case UserRetreatRegistrationPaymentStatus.CANCELED:
+      return null;
 
     case UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST:
       return (
-        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
@@ -89,7 +71,7 @@ export function UnivGroupRetreatRegistrationTableActions({
 
     case UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST:
       return (
-        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"

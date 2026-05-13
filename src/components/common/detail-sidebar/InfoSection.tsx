@@ -12,6 +12,10 @@ interface InfoSectionProps {
    * - 2: 2컬럼 그리드 (반응형)
    */
   columns?: 1 | 2;
+  /**
+   * 섹션 헤더 오른쪽에 표시할 액션 버튼
+   */
+  action?: React.ReactNode;
 }
 
 export function InfoSection({
@@ -19,13 +23,17 @@ export function InfoSection({
   icon: Icon,
   children,
   className,
-  columns = 1
+  columns = 1,
+  action
 }: InfoSectionProps) {
   return (
     <div className={cn("space-y-3", className)}>
-      <h3 className="text-base font-semibold text-gray-900 pb-2 border-b flex items-center gap-2">
-        {Icon && <Icon className="h-4 w-4" />}
-        {title}
+      <h3 className="text-base font-semibold text-gray-900 pb-2 border-b flex items-center justify-between">
+        <span className="flex items-center gap-2">
+          {Icon && <Icon className="h-4 w-4" />}
+          {title}
+        </span>
+        {action}
       </h3>
       <div className={cn(
         columns === 2

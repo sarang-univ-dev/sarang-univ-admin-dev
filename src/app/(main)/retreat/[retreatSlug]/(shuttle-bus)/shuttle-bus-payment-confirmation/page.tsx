@@ -1,8 +1,5 @@
 import { Suspense } from "react";
-import {
-  fetchShuttleBusPaymentConfirmationRegistrations,
-  fetchShuttleBusSchedules,
-} from "@/lib/api/server-actions";
+
 import {
   ShuttleBusPaymentConfirmationTable,
   PaymentSummary,
@@ -10,6 +7,10 @@ import {
   AccountStatus,
 } from "@/components/features/shuttle-bus-payment-confirmation";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  fetchShuttleBusPaymentConfirmationRegistrations,
+  fetchShuttleBusSchedules,
+} from "@/lib/api/server-actions";
 
 interface PageProps {
   params: Promise<{
@@ -30,7 +31,9 @@ interface PageProps {
  * - TanStack Table 기반 테이블
  * - SWR로 실시간 데이터 동기화
  */
-export default async function ShuttleBusPaymentConfirmationPage({ params }: PageProps) {
+export default async function ShuttleBusPaymentConfirmationPage({
+  params,
+}: PageProps) {
   const { retreatSlug } = await params;
 
   // ✅ 서버에서 병렬 데이터 페칭 (Promise.all)
@@ -46,10 +49,7 @@ export default async function ShuttleBusPaymentConfirmationPage({ params }: Page
       {/* ✅ Server Component (정적 집계) */}
       <PaymentSummary registrations={registrations} />
 
-      <BusScheduleSummary
-        registrations={registrations}
-        schedules={schedules}
-      />
+      <BusScheduleSummary registrations={registrations} schedules={schedules} />
 
       <AccountStatus registrations={registrations} />
 

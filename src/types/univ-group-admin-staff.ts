@@ -1,4 +1,8 @@
-import { Gender, UserRetreatRegistrationType, UserRetreatRegistrationPaymentStatus } from "./index";
+import {
+  Gender,
+  UserRetreatRegistrationType,
+  UserRetreatRegistrationPaymentStatus,
+} from "./index";
 
 /**
  * 부서 행정 간사 - 수양회 신청 데이터

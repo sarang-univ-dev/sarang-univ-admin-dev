@@ -1,31 +1,42 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
 import { Table } from "@tanstack/react-table";
-import { Input } from "@/components/ui/input";
+import { AxiosError } from "axios";
+import debounce from "lodash/debounce";
+import {
+  Download,
+  Search,
+  Settings,
+  Filter,
+  Check,
+  X,
+  Circle,
+} from "lucide-react";
+import { useMemo, useEffect, useState } from "react";
+
 import { Button } from "@/components/ui/button";
-import { Download, Search, Settings, Filter, Check, X, Circle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import debounce from "lodash/debounce";
+import { Input } from "@/components/ui/input";
+import { GBSLineupRow } from "@/hooks/gbs-line-up/use-gbs-lineup";
 import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
-import { formatDate } from "@/utils/formatDate";
-import { GBSLineupRow } from "@/hooks/gbs-line-up/use-gbs-lineup";
-import { AxiosError } from "axios";
 import { TRetreatRegistrationSchedule } from "@/types";
+import { formatDate } from "@/utils/formatDate";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 interface GbsLineUpTableToolbarProps {
   table: Table<GBSLineupRow>;
   retreatSlug: string;
   schedules: TRetreatRegistrationSchedule[];
-  scheduleFilter: Record<string, 'none' | 'include' | 'exclude'>;
-  setScheduleFilter: (filter: Record<string, 'none' | 'include' | 'exclude'>) => void;
+  scheduleFilter: Record<string, "none" | "include" | "exclude">;
+  setScheduleFilter: (
+    filter: Record<string, "none" | "include" | "exclude">
+  ) => void;
 }
 
 /**
@@ -46,7 +57,7 @@ export function GbsLineUpTableToolbar({
   scheduleFilter,
   setScheduleFilter,
 }: GbsLineUpTableToolbarProps) {
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const [loadingStates, setLoadingStates] = useState({
     exportExcel: false,
     exportDepartmentGbsTags: false,
@@ -77,7 +88,7 @@ export function GbsLineUpTableToolbar({
 
   // 엑셀 다운로드
   const handleDownloadExcel = async () => {
-    setLoadingStates((prev) => ({ ...prev, exportExcel: true }));
+    setLoadingStates(prev => ({ ...prev, exportExcel: true }));
     try {
       const response = await webAxios.get(
         `/api/v1/retreat/${retreatSlug}/line-up/full-lineup-excel`,
@@ -112,13 +123,13 @@ export function GbsLineUpTableToolbar({
         variant: "destructive",
       });
     } finally {
-      setLoadingStates((prev) => ({ ...prev, exportExcel: false }));
+      setLoadingStates(prev => ({ ...prev, exportExcel: false }));
     }
   };
 
   // 부서 GBS 꼬리표 다운로드
   const handleDownloadUnivGbsLabel = async () => {
-    setLoadingStates((prev) => ({ ...prev, exportDepartmentGbsTags: true }));
+    setLoadingStates(prev => ({ ...prev, exportDepartmentGbsTags: true }));
     try {
       const response = await webAxios.get(
         `/api/v1/retreat/${retreatSlug}/line-up/univ-gbs-label-excel`,
@@ -165,13 +176,13 @@ export function GbsLineUpTableToolbar({
         variant: "destructive",
       });
     } finally {
-      setLoadingStates((prev) => ({ ...prev, exportDepartmentGbsTags: false }));
+      setLoadingStates(prev => ({ ...prev, exportDepartmentGbsTags: false }));
     }
   };
 
   // 수양회 GBS 꼬리표 다운로드
   const handleDownloadRetreatGbsLabel = async () => {
-    setLoadingStates((prev) => ({ ...prev, exportRetreatGbsTags: true }));
+    setLoadingStates(prev => ({ ...prev, exportRetreatGbsTags: true }));
     try {
       const response = await webAxios.get(
         `/api/v1/retreat/${retreatSlug}/line-up/retreat-gbs-label-excel`,
@@ -218,21 +229,21 @@ export function GbsLineUpTableToolbar({
         variant: "destructive",
       });
     } finally {
-      setLoadingStates((prev) => ({ ...prev, exportRetreatGbsTags: false }));
+      setLoadingStates(prev => ({ ...prev, exportRetreatGbsTags: false }));
     }
   };
 
   // ✅ 3-State 토글 함수: none → include → exclude → none
   const toggleScheduleFilter = (scheduleKey: string) => {
-    const currentState = scheduleFilter[scheduleKey] || 'none';
+    const currentState = scheduleFilter[scheduleKey] || "none";
 
-    let nextState: 'none' | 'include' | 'exclude';
-    if (currentState === 'none') {
-      nextState = 'include';
-    } else if (currentState === 'include') {
-      nextState = 'exclude';
+    let nextState: "none" | "include" | "exclude";
+    if (currentState === "none") {
+      nextState = "include";
+    } else if (currentState === "include") {
+      nextState = "exclude";
     } else {
-      nextState = 'none';
+      nextState = "none";
     }
 
     setScheduleFilter({
@@ -243,7 +254,7 @@ export function GbsLineUpTableToolbar({
 
   // ✅ 활성화된 필터 개수 계산
   const activeFilterCount = Object.values(scheduleFilter).filter(
-    (mode) => mode !== 'none'
+    mode => mode !== "none"
   ).length;
 
   // 컬럼명 매핑 (스케줄 라벨 참조를 위해 useMemo 사용)
@@ -270,7 +281,7 @@ export function GbsLineUpTableToolbar({
     };
 
     // 스케줄 컬럼 라벨 매핑 추가
-    scheduleColumnsMeta.forEach((col) => {
+    scheduleColumnsMeta.forEach(col => {
       names[col.key] = col.label;
     });
 
@@ -285,11 +296,11 @@ export function GbsLineUpTableToolbar({
         <Input
           placeholder="GBS번호/부서/학년/이름/타입/메모로 검색..."
           defaultValue={
-            typeof table.getState().globalFilter === 'object'
+            typeof table.getState().globalFilter === "object"
               ? (table.getState().globalFilter as any).search
-              : table.getState().globalFilter ?? ""
+              : (table.getState().globalFilter ?? "")
           }
-          onChange={(e) => debouncedSetGlobalFilter(e.target.value)}
+          onChange={e => debouncedSetGlobalFilter(e.target.value)}
           className="pl-8 text-sm"
         />
       </div>
@@ -309,7 +320,10 @@ export function GbsLineUpTableToolbar({
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[280px] max-h-[400px] overflow-y-auto">
+          <DropdownMenuContent
+            align="end"
+            className="w-[280px] max-h-[400px] overflow-y-auto"
+          >
             <div className="px-2 py-1.5 text-xs text-muted-foreground border-b mb-1">
               <p className="font-medium mb-1">클릭으로 상태 변경:</p>
               <div className="flex items-center gap-3 text-[10px]">
@@ -327,8 +341,8 @@ export function GbsLineUpTableToolbar({
                 </div>
               </div>
             </div>
-            {scheduleColumnsMeta.map((col) => {
-              const filterMode = scheduleFilter[col.key] || 'none';
+            {scheduleColumnsMeta.map(col => {
+              const filterMode = scheduleFilter[col.key] || "none";
 
               return (
                 <div
@@ -337,24 +351,30 @@ export function GbsLineUpTableToolbar({
                   onClick={() => toggleScheduleFilter(col.key)}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${col.simpleColorClass}`} />
+                    <div
+                      className={`w-3 h-3 rounded-full ${col.simpleColorClass}`}
+                    />
                     <span className="text-sm">{col.label}</span>
                   </div>
 
                   <div className="flex items-center gap-1">
-                    {filterMode === 'none' && (
+                    {filterMode === "none" && (
                       <Circle className="h-4 w-4 text-gray-400" />
                     )}
-                    {filterMode === 'include' && (
+                    {filterMode === "include" && (
                       <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-green-50 border border-green-200">
                         <Check className="h-3.5 w-3.5 text-green-600" />
-                        <span className="text-xs font-medium text-green-700">포함</span>
+                        <span className="text-xs font-medium text-green-700">
+                          포함
+                        </span>
                       </div>
                     )}
-                    {filterMode === 'exclude' && (
+                    {filterMode === "exclude" && (
                       <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-red-50 border border-red-200">
                         <X className="h-3.5 w-3.5 text-red-600" />
-                        <span className="text-xs font-medium text-red-700">제외</span>
+                        <span className="text-xs font-medium text-red-700">
+                          제외
+                        </span>
                       </div>
                     )}
                   </div>
@@ -368,20 +388,22 @@ export function GbsLineUpTableToolbar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              열 숨기기
+              <Settings className="h-4 w-4 mr-2" />열 숨기기
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px] max-h-[400px] overflow-y-auto">
+          <DropdownMenuContent
+            align="end"
+            className="w-[200px] max-h-[400px] overflow-y-auto"
+          >
             {table
               .getAllLeafColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
+              .filter(column => column.getCanHide())
+              .map(column => (
                 <DropdownMenuCheckboxItem
                   key={column.id}
                   checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  onSelect={(event) => {
+                  onCheckedChange={value => column.toggleVisibility(!!value)}
+                  onSelect={event => {
                     event.preventDefault();
                   }}
                 >

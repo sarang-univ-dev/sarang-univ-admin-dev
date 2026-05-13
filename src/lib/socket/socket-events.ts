@@ -2,7 +2,7 @@
  * 공통 응답 타입
  */
 export interface SocketResponse<T = any> {
-  status: 'OK' | 'ERROR';
+  status: "OK" | "ERROR";
   data?: T;
   message?: string;
   code?: string;
@@ -22,7 +22,7 @@ export interface UserRetreatGbsLineup {
   userId: number;
   univGroupNumber: number;
   gradeNumber: number;
-  gender: 'MALE' | 'FEMALE';
+  gender: "MALE" | "FEMALE";
   name: string;
   phoneNumber: string;
   isLeader: boolean;
@@ -43,13 +43,13 @@ export interface UserRetreatGbsLineup {
  */
 export interface ClientToServerEvents {
   // 특정 수양회 room 참여
-  'join-retreat': (
+  "join-retreat": (
     retreatSlug: string,
     callback: (response: SocketResponse<UserRetreatGbsLineup[]>) => void
   ) => void;
 
   // GBS 번호 수정 (사용자의 GBS 번호 배정 변경)
-  'update-gbs-number': (
+  "update-gbs-number": (
     data: {
       userRetreatRegistrationId: number;
       gbsNumber: number | null; // null이면 GBS 배정 해제
@@ -58,7 +58,7 @@ export interface ClientToServerEvents {
   ) => void;
 
   // 라인업 메모 작성
-  'create-lineup-memo': (
+  "create-lineup-memo": (
     data: {
       userRetreatRegistrationId: number;
       memo: string;
@@ -68,7 +68,7 @@ export interface ClientToServerEvents {
   ) => void;
 
   // 라인업 메모 수정
-  'update-lineup-memo': (
+  "update-lineup-memo": (
     data: {
       userRetreatRegistrationMemoId: number;
       memo: string;
@@ -78,13 +78,13 @@ export interface ClientToServerEvents {
   ) => void;
 
   // 라인업 메모 삭제
-  'delete-lineup-memo': (
+  "delete-lineup-memo": (
     data: { userRetreatRegistrationMemoId: number },
     callback: (response: SocketResponse<UserRetreatGbsLineup>) => void
   ) => void;
 
   // Room 나가기
-  'leave-retreat': (retreatSlug: string) => void;
+  "leave-retreat": (retreatSlug: string) => void;
 }
 
 /**
@@ -92,10 +92,10 @@ export interface ClientToServerEvents {
  */
 export interface ServerToClientEvents {
   // 단일 라인업 업데이트 (다른 사용자가 수정한 경우)
-  'lineup-updated': (data: UserRetreatGbsLineup) => void;
+  "lineup-updated": (data: UserRetreatGbsLineup) => void;
 
   // 다른 사용자가 편집 중
-  'user-editing': (data: {
+  "user-editing": (data: {
     userRetreatRegistrationId: number;
     adminUserId: number;
     userName: string;

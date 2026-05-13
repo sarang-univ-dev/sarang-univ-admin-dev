@@ -1,4 +1,8 @@
-import { Gender, UserRetreatRegistrationType, UserRetreatRegistrationPaymentStatus } from "./index";
+import {
+  Gender,
+  UserRetreatRegistrationType,
+  UserRetreatRegistrationPaymentStatus,
+} from "./index";
 
 /**
  * 재정 간사 수양회 신청 데이터 타입
@@ -12,6 +16,7 @@ export interface IRetreatRegistration {
   phoneNumber: string;
   userRetreatRegistrationScheduleIds: number[];
   price: number;
+  refundAmount?: number;
   userType: UserRetreatRegistrationType | null;
   paymentStatus: UserRetreatRegistrationPaymentStatus;
   createdAt: string;

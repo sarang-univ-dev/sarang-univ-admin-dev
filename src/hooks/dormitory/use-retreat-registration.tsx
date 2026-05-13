@@ -1,4 +1,5 @@
 import useSWR from "swr";
+
 import { webAxios } from "@/lib/api/axios";
 import { Gender } from "@/types";
 
@@ -13,7 +14,7 @@ export interface IDormitoryRetreatRegistration {
   name: string;
   userRetreatRegistrationScheduleIds: number[];
   gbsNumber?: number | null;
-  dormitoryLocation?: string;
+  dormitoryLocation?: string | null;
   dormitoryTeamMemberMemo?: string;
   isLeader: boolean;
 }
