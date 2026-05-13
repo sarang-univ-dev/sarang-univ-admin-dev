@@ -69,7 +69,7 @@ export default function RetreatListClient({
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {retreats.map(retreat => {
-            const registrationLink = `${retreatWebHost}/retreat/${retreat.slug}/retreat-gansa`;
+            const registrationLink = `${retreatWebHost}/retreat/${retreat.slug}/retreat`;
             const shuttleBusLink = `${retreatWebHost}/retreat/${retreat.slug}/shuttle-bus`;
 
             return (

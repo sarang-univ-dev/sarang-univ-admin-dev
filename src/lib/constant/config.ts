@@ -2,7 +2,8 @@ const prodConfig = {
   ENV: "production",
   API_HOST: "https://api.sarang-univ.com",
   RETREAT_WEB_HOST:
-    process.env.NEXT_PUBLIC_RETREAT_WEB_HOST || "https://sarang-univ.com",
+    process.env.NEXT_PUBLIC_RETREAT_WEB_HOST ||
+    "https://retreat.sarang-univ.com",
   GOOGLE_CLIENT_ID:
     "562303431713-do7g1uutr5rvseehrtdudkds7c7d69nb.apps.googleusercontent.com",
 };
@@ -11,7 +12,8 @@ const devConfig: typeof prodConfig = {
   ENV: "development",
   API_HOST: "https://dev.api.sarang-univ.com",
   RETREAT_WEB_HOST:
-    process.env.NEXT_PUBLIC_RETREAT_WEB_HOST || "https://dev.sarang-univ.com",
+    process.env.NEXT_PUBLIC_RETREAT_WEB_HOST ||
+    "https://dev.retreat.sarang-univ.com",
   GOOGLE_CLIENT_ID:
     "562303431713-91oltl838dbrd5datetoiagop80o1tep.apps.googleusercontent.com",
 };
