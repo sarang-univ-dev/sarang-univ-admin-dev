@@ -4,6 +4,9 @@
  */
 
 import type {
+  AddPaymentScheduleRequest,
+  AddRegistrationScheduleRequest,
+  AddShuttleBusRequest,
   AdminGrade,
   AdminUnivGroup,
   AdminUnivGroupWithGrades,
@@ -12,8 +15,12 @@ import type {
   ManagedRetreat,
   ManagedRetreatDetail,
   RetreatAssetType,
+  RetreatUnivGroupInformationInput,
   UpdateGradeRequest,
+  UpdatePaymentScheduleRequest,
+  UpdateRegistrationScheduleRequest,
   UpdateRetreatRequest,
+  UpdateShuttleBusRequest,
   UploadRetreatAssetResponse,
 } from "@/types/retreat-create";
 import type {
@@ -125,6 +132,114 @@ export async function updateRetreat(
   );
 
   return response.data.retreat;
+}
+
+export async function addPaymentSchedule(
+  retreatId: number,
+  request: AddPaymentScheduleRequest
+) {
+  const response = await webAxios.post(
+    `/api/v1/admin/retreats/${retreatId}/payment-schedules`,
+    request
+  );
+
+  return response.data;
+}
+
+export async function addShuttleBus(
+  retreatId: number,
+  request: AddShuttleBusRequest
+) {
+  const response = await webAxios.post(
+    `/api/v1/admin/retreats/${retreatId}/shuttle-buses`,
+    request
+  );
+
+  return response.data;
+}
+
+export async function updateUnivGroupInformation(
+  retreatId: number,
+  univGroupId: number,
+  information: RetreatUnivGroupInformationInput
+) {
+  const response = await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatId}/univ-groups/${univGroupId}/information`,
+    information
+  );
+
+  return response.data;
+}
+
+export async function updatePaymentSchedule(
+  retreatId: number,
+  paymentScheduleId: number,
+  request: UpdatePaymentScheduleRequest
+) {
+  const response = await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatId}/payment-schedules/${paymentScheduleId}`,
+    request
+  );
+  return response.data;
+}
+
+export async function deletePaymentSchedule(
+  retreatId: number,
+  paymentScheduleId: number
+) {
+  await webAxios.delete(
+    `/api/v1/admin/retreats/${retreatId}/payment-schedules/${paymentScheduleId}`
+  );
+}
+
+export async function updateShuttleBus(
+  retreatId: number,
+  shuttleBusId: number,
+  request: UpdateShuttleBusRequest
+) {
+  const response = await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatId}/shuttle-buses/${shuttleBusId}`,
+    request
+  );
+  return response.data;
+}
+
+export async function deleteShuttleBus(retreatId: number, shuttleBusId: number) {
+  await webAxios.delete(
+    `/api/v1/admin/retreats/${retreatId}/shuttle-buses/${shuttleBusId}`
+  );
+}
+
+export async function addRegistrationSchedule(
+  retreatId: number,
+  request: AddRegistrationScheduleRequest
+) {
+  const response = await webAxios.post(
+    `/api/v1/admin/retreats/${retreatId}/registration-schedules`,
+    request
+  );
+  return response.data;
+}
+
+export async function updateRegistrationSchedule(
+  retreatId: number,
+  registrationScheduleId: number,
+  request: UpdateRegistrationScheduleRequest
+) {
+  const response = await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatId}/registration-schedules/${registrationScheduleId}`,
+    request
+  );
+  return response.data;
+}
+
+export async function deleteRegistrationSchedule(
+  retreatId: number,
+  registrationScheduleId: number
+) {
+  await webAxios.delete(
+    `/api/v1/admin/retreats/${retreatId}/registration-schedules/${registrationScheduleId}`
+  );
 }
 
 export async function getUnivGroups(): Promise<AdminUnivGroup[]> {

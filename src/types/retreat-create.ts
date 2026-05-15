@@ -9,9 +9,27 @@ export type RetreatUnivGroupInformation = {
   shuttleBusDepositAccountHolder: string;
 };
 
+export type RetreatUnivGroupInformationInput = Partial<RetreatUnivGroupInformation>;
+
 export type RetreatUnivGroupRequest = {
   univGroupId: number;
-  information: RetreatUnivGroupInformation;
+  information?: RetreatUnivGroupInformationInput;
+};
+
+export type AddPaymentScheduleRequest = {
+  name: string;
+  totalPrice: number;
+  partialPricePerSchedule: number;
+  startAt: string;
+  endAt: string;
+};
+
+export type AddShuttleBusRequest = {
+  name: string;
+  direction: "FROM_CHURCH_TO_RETREAT" | "FROM_RETREAT_TO_CHURCH";
+  price: number;
+  departureTime: string;
+  arrivalTime?: string;
 };
 
 export type CreateRetreatRequest = {
@@ -99,10 +117,55 @@ export type ManagedRetreat = {
   updatedAt: string;
 };
 
+export type ManagedRetreatPaymentSchedule = {
+  id: number;
+  retreatId: number;
+  name: string;
+  totalPrice: number;
+  partialPricePerSchedule: number;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+};
+
+export type ManagedRetreatShuttleBus = {
+  id: number;
+  retreatId: number;
+  name: string;
+  direction: "FROM_CHURCH_TO_RETREAT" | "FROM_RETREAT_TO_CHURCH";
+  price: number;
+  departureTime: string;
+  arrivalTime?: string | null;
+  createdAt: string;
+};
+
+export type ManagedRetreatRegistrationSchedule = {
+  id: number;
+  retreatId: number;
+  time: string;
+  type: "BREAKFAST" | "LUNCH" | "DINNER" | "SLEEP";
+  createdAt: string;
+};
+
+export type UpdatePaymentScheduleRequest = Partial<AddPaymentScheduleRequest>;
+export type UpdateShuttleBusRequest = Partial<
+  Omit<AddShuttleBusRequest, "arrivalTime">
+> & { arrivalTime?: string | null };
+
+export type AddRegistrationScheduleRequest = {
+  date: string;
+  type: ManagedRetreatRegistrationSchedule["type"];
+};
+export type UpdateRegistrationScheduleRequest =
+  Partial<AddRegistrationScheduleRequest>;
+
 export type ManagedRetreatDetail = ManagedRetreat & {
   univGroups: (AdminUnivGroup & {
     information: RetreatUnivGroupInformation;
   })[];
+  paymentSchedules: ManagedRetreatPaymentSchedule[];
+  shuttleBuses: ManagedRetreatShuttleBus[];
+  registrationSchedules: ManagedRetreatRegistrationSchedule[];
 };
 
 export type UpdateRetreatRequest = {

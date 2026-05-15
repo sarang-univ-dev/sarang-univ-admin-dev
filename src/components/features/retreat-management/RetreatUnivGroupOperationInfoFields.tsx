@@ -98,7 +98,6 @@ export function RetreatUnivGroupOperationInfoFields({
                     onChange={event =>
                       onChange(univGroup.id, field.key, event.target.value)
                     }
-                    required
                   />
                 </div>
               ))}
