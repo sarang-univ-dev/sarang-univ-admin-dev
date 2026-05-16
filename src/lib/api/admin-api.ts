@@ -315,3 +315,49 @@ export async function checkPageAccess(
   );
   return response.data.canAccess;
 }
+
+// --- Admin user 관리 (superuser 전용) ----------------------------------------
+
+import type {
+  AdminListRow,
+  AdminDetail,
+  CreateAdminPayload,
+  UpdateAdminPayload,
+} from "@/types/admin-management";
+
+export async function listAdmins(): Promise<AdminListRow[]> {
+  const response = await webAxios.get<{ admins: AdminListRow[] }>(
+    `/api/v1/admin/admins`
+  );
+  return response.data.admins;
+}
+
+export async function createAdmin(
+  payload: CreateAdminPayload
+): Promise<AdminListRow> {
+  const response = await webAxios.post<{ admin: AdminListRow }>(
+    `/api/v1/admin/admins`,
+    payload
+  );
+  return response.data.admin;
+}
+
+export async function getAdminDetail(
+  adminUserId: number
+): Promise<AdminDetail> {
+  const response = await webAxios.get<AdminDetail>(
+    `/api/v1/admin/admins/${adminUserId}`
+  );
+  return response.data;
+}
+
+export async function updateAdmin(
+  adminUserId: number,
+  payload: UpdateAdminPayload
+): Promise<AdminListRow> {
+  const response = await webAxios.patch<{ admin: AdminListRow }>(
+    `/api/v1/admin/admins/${adminUserId}`,
+    payload
+  );
+  return response.data.admin;
+}

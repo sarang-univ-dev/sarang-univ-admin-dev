@@ -20,6 +20,7 @@ import {
   Plus,
   List,
   GraduationCap,
+  UserCog,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,6 +50,7 @@ export const iconMap: Record<string, LucideIcon> = {
   Plus,
   List,
   GraduationCap,
+  UserCog,
   BusIcon: Bus, // BusIcon은 Bus와 동일하게 처리
 };
 
