@@ -3,6 +3,7 @@
 import { Download, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, ReactNode, useState } from "react";
+import useSWR from "swr";
 
 import {
   createEmptyRetreatUnivGroupInformation,
@@ -23,10 +24,13 @@ import {
   addPaymentSchedule,
   addRegistrationSchedule,
   addShuttleBus,
+  createRetreatAdminAssignment,
   deletePaymentSchedule,
   deleteRegistrationSchedule,
   deleteShuttleBus,
   downloadRetreatAsset,
+  getRetreatAdminAssignmentOptions,
+  getRetreatAdminAssignments,
   updatePaymentSchedule,
   updateRegistrationSchedule,
   updateRetreat,
@@ -35,10 +39,12 @@ import {
 } from "@/lib/api/admin-api";
 import { useToastStore } from "@/store/toast-store";
 import type {
+  CreateRetreatAdminAssignmentRequest,
   ManagedRetreatDetail,
   ManagedRetreatPaymentSchedule,
   ManagedRetreatRegistrationSchedule,
   ManagedRetreatShuttleBus,
+  RetreatAdminAssignment,
   RetreatUnivGroupInformation,
   UpdateRetreatRequest,
 } from "@/types/retreat-create";
@@ -72,7 +78,10 @@ const shuttleDirections = [
   "FROM_CHURCH_TO_RETREAT",
   "FROM_RETREAT_TO_CHURCH",
 ] as const;
-const shuttleDirectionLabels: Record<(typeof shuttleDirections)[number], string> = {
+const shuttleDirectionLabels: Record<
+  (typeof shuttleDirections)[number],
+  string
+> = {
   FROM_CHURCH_TO_RETREAT: "교회 -> 수양회",
   FROM_RETREAT_TO_CHURCH: "수양회 -> 교회",
 };
@@ -81,8 +90,11 @@ function toIsoDateTime(value: string) {
   return new Date(value).toISOString();
 }
 
+const gmailEmailPattern = /^[^\s@]+@gmail\.com$/;
+
 type RetreatEditFormProps = {
   retreat: ManagedRetreatDetail;
+  canManageRetreats: boolean;
 };
 
 function getErrorMessage(
@@ -106,7 +118,10 @@ function getErrorMessage(
   return fallbackMessage;
 }
 
-export default function RetreatEditForm({ retreat }: RetreatEditFormProps) {
+export default function RetreatEditForm({
+  retreat,
+  canManageRetreats,
+}: RetreatEditFormProps) {
   const router = useRouter();
   const addToast = useToastStore(state => state.add);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -238,152 +253,510 @@ export default function RetreatEditForm({ retreat }: RetreatEditFormProps) {
 
   return (
     <div className="space-y-6">
-    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">수양회 정보 수정</h1>
         <p className="text-muted-foreground">
-          신청 일정, 결제 일정, 셔틀버스 노선은 이 화면에서 수정하지 않습니다.
+          {canManageRetreats
+            ? "신청 일정, 결제 일정, 셔틀버스 노선과 권한을 관리합니다."
+            : "접근 가능한 수양회의 권한을 관리합니다."}
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>기본 정보</CardTitle>
-          <CardDescription>
-            수양회 신청 폼에 표시되는 정보입니다. 신청 폼 주소: {retreat.slug}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <Field label="수양회 이름">
-            <Input
-              value={form.name}
-              onChange={event =>
-                setForm(current => ({ ...current, name: event.target.value }))
-              }
-              required
-            />
-          </Field>
-          <Field label="수양회 장소">
-            <Input
-              value={form.location}
-              onChange={event =>
-                setForm(current => ({
-                  ...current,
-                  location: event.target.value,
-                }))
-              }
-              required
-            />
-          </Field>
-          <Field label="수양회 강사">
-            <Input
-              value={form.mainSpeaker}
-              onChange={event =>
-                setForm(current => ({
-                  ...current,
-                  mainSpeaker: event.target.value,
-                }))
-              }
-              required
-            />
-          </Field>
-          <Field label="주제 말씀" className="md:col-span-2">
-            <Textarea
-              value={form.mainVerse}
-              onChange={event =>
-                setForm(current => ({
-                  ...current,
-                  mainVerse: event.target.value,
-                }))
-              }
-              required
-            />
-          </Field>
-          <Field label="포스터 이미지" className="md:col-span-2">
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={event =>
-                setPosterImage(event.target.files?.[0] ?? null)
-              }
-            />
-            {form.posterUrl ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void handleDownloadAsset("poster")}
-                disabled={downloadingAsset !== null}
-              >
-                <Download className="h-4 w-4" />
-                {downloadingAsset === "poster"
-                  ? "포스터 다운로드 중"
-                  : "현재 포스터 다운로드"}
-              </Button>
-            ) : null}
-          </Field>
-          <Field label="QR 템플릿 이미지" className="md:col-span-2">
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={event => setQrImage(event.target.files?.[0] ?? null)}
-            />
-            {form.qrTemplateImageKey ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void handleDownloadAsset("qr-template")}
-                disabled={downloadingAsset !== null}
-              >
-                <Download className="h-4 w-4" />
-                {downloadingAsset === "qr-template"
-                  ? "QR 템플릿 다운로드 중"
-                  : "현재 QR 템플릿 다운로드"}
-              </Button>
-            ) : null}
-          </Field>
-        </CardContent>
-      </Card>
+      {canManageRetreats ? (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>기본 정보</CardTitle>
+              <CardDescription>
+                수양회 신청 폼에 표시되는 정보입니다. 신청 폼 주소:{" "}
+                {retreat.slug}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <Field label="수양회 이름">
+                <Input
+                  value={form.name}
+                  onChange={event =>
+                    setForm(current => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </Field>
+              <Field label="수양회 장소">
+                <Input
+                  value={form.location}
+                  onChange={event =>
+                    setForm(current => ({
+                      ...current,
+                      location: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </Field>
+              <Field label="수양회 강사">
+                <Input
+                  value={form.mainSpeaker}
+                  onChange={event =>
+                    setForm(current => ({
+                      ...current,
+                      mainSpeaker: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </Field>
+              <Field label="주제 말씀" className="md:col-span-2">
+                <Textarea
+                  value={form.mainVerse}
+                  onChange={event =>
+                    setForm(current => ({
+                      ...current,
+                      mainVerse: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </Field>
+              <Field label="포스터 이미지" className="md:col-span-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={event =>
+                    setPosterImage(event.target.files?.[0] ?? null)
+                  }
+                />
+                {form.posterUrl ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void handleDownloadAsset("poster")}
+                    disabled={downloadingAsset !== null}
+                  >
+                    <Download className="h-4 w-4" />
+                    {downloadingAsset === "poster"
+                      ? "포스터 다운로드 중"
+                      : "현재 포스터 다운로드"}
+                  </Button>
+                ) : null}
+              </Field>
+              <Field label="QR 템플릿 이미지" className="md:col-span-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={event =>
+                    setQrImage(event.target.files?.[0] ?? null)
+                  }
+                />
+                {form.qrTemplateImageKey ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void handleDownloadAsset("qr-template")}
+                    disabled={downloadingAsset !== null}
+                  >
+                    <Download className="h-4 w-4" />
+                    {downloadingAsset === "qr-template"
+                      ? "QR 템플릿 다운로드 중"
+                      : "현재 QR 템플릿 다운로드"}
+                  </Button>
+                ) : null}
+              </Field>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>부서별 운영 정보</CardTitle>
-          <CardDescription>
-            신청 완료 안내와 문자 발송에 사용되는 정보입니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RetreatUnivGroupOperationInfoFields
-            univGroups={retreat.univGroups}
-            informationByUnivGroupId={operationInfoByUnivGroupId}
-            onChange={updateOperationInfo}
+          <Card>
+            <CardHeader>
+              <CardTitle>부서별 운영 정보</CardTitle>
+              <CardDescription>
+                신청 완료 안내와 문자 발송에 사용되는 정보입니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RetreatUnivGroupOperationInfoFields
+                univGroups={retreat.univGroups}
+                informationByUnivGroupId={operationInfoByUnivGroupId}
+                onChange={updateOperationInfo}
+              />
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isSubmitting}>
+              <Save className="h-4 w-4" />
+              {isSubmitting ? "저장 중" : "저장"}
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <RetreatSummaryCard retreat={retreat} />
+      )}
+
+      <RetreatAdminAssignmentsCard retreatSlug={retreat.slug} />
+
+      {canManageRetreats ? (
+        <>
+          <RegistrationSchedulesCard
+            retreatId={retreat.id}
+            registrationSchedules={retreat.registrationSchedules}
           />
-        </CardContent>
-      </Card>
+          <PaymentSchedulesCard
+            retreatId={retreat.id}
+            paymentSchedules={retreat.paymentSchedules}
+          />
+          <AddPaymentScheduleCard retreatId={retreat.id} />
+          <ShuttleBusesCard
+            retreatId={retreat.id}
+            shuttleBuses={retreat.shuttleBuses}
+          />
+          <AddShuttleBusCard retreatId={retreat.id} />
+        </>
+      ) : null}
+    </div>
+  );
+}
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isSubmitting}>
-          <Save className="h-4 w-4" />
-          {isSubmitting ? "저장 중" : "저장"}
-        </Button>
+function RetreatSummaryCard({ retreat }: { retreat: ManagedRetreatDetail }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>수양회 정보</CardTitle>
+        <CardDescription>{retreat.slug}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <dl className="grid gap-3 text-sm md:grid-cols-2">
+          <div>
+            <dt className="text-muted-foreground">수양회 이름</dt>
+            <dd className="font-medium">{retreat.name}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">장소</dt>
+            <dd className="font-medium">{retreat.location}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">강사</dt>
+            <dd className="font-medium">{retreat.mainSpeaker}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">주제 말씀</dt>
+            <dd className="font-medium">{retreat.mainVerse}</dd>
+          </div>
+        </dl>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
+  const router = useRouter();
+  const addToast = useToastStore(state => state.add);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    univGroupId: "",
+    name: "",
+    email: "",
+    roleId: "",
+    startDate: "",
+    endDate: "",
+  });
+  const {
+    data: options,
+    error: optionsError,
+    isLoading: optionsLoading,
+  } = useSWR(["retreat-admin-assignment-options", retreatSlug], () =>
+    getRetreatAdminAssignmentOptions(retreatSlug)
+  );
+  const {
+    data: assignments = [],
+    error: assignmentsError,
+    isLoading: assignmentsLoading,
+    mutate,
+  } = useSWR(["retreat-admin-assignments", retreatSlug], () =>
+    getRetreatAdminAssignments(retreatSlug)
+  );
+
+  const reset = () =>
+    setForm({
+      univGroupId: "",
+      name: "",
+      email: "",
+      roleId: "",
+      startDate: "",
+      endDate: "",
+    });
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const name = form.name.trim();
+    const email = form.email.trim().toLowerCase();
+    const univGroupId = Number(form.univGroupId);
+    const roleId = Number(form.roleId);
+
+    if (!Number.isInteger(univGroupId) || univGroupId <= 0) {
+      addToast({
+        title: "부서를 선택해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!name) {
+      addToast({
+        title: "이름을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!gmailEmailPattern.test(email)) {
+      addToast({
+        title: "Gmail 주소를 입력해주세요.",
+        description: "@gmail.com 이메일만 사용할 수 있습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      addToast({
+        title: "권한을 선택해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!form.startDate) {
+      addToast({
+        title: "시작 일자를 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (form.endDate && form.endDate < form.startDate) {
+      addToast({
+        title: "끝 일자는 시작 일자 이후로 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const request: CreateRetreatAdminAssignmentRequest = {
+      univGroupId,
+      name,
+      email,
+      roleId,
+      startDate: toIsoDateTime(`${form.startDate}T00:00`),
+      endDate: form.endDate ? toIsoDateTime(`${form.endDate}T23:59`) : null,
+    };
+
+    setSubmitting(true);
+
+    try {
+      await createRetreatAdminAssignment(retreatSlug, request);
+      addToast({
+        title: "권한을 추가했습니다.",
+        variant: "success",
+      });
+      reset();
+      await mutate();
+      router.refresh();
+    } catch (error) {
+      addToast({
+        title: "권한 추가 실패",
+        description: getErrorMessage(error, "권한을 추가하지 못했습니다."),
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const isOptionEmpty =
+    !!options &&
+    (options.roles.length === 0 || options.univGroups.length === 0);
+  const isFormDisabled =
+    submitting || !options || optionsLoading || isOptionEmpty;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>권한</CardTitle>
+        <CardDescription>
+          수양회별 Admin 권한을 부서와 역할 단위로 관리합니다.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Field label="부서">
+              <select
+                value={form.univGroupId}
+                onChange={event =>
+                  setForm(current => ({
+                    ...current,
+                    univGroupId: event.target.value,
+                  }))
+                }
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                disabled={isFormDisabled}
+                required
+              >
+                <option value="">선택</option>
+                {options?.univGroups.map(univGroup => (
+                  <option key={univGroup.id} value={univGroup.id}>
+                    {univGroup.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="이름">
+              <Input
+                value={form.name}
+                onChange={event =>
+                  setForm(current => ({ ...current, name: event.target.value }))
+                }
+                disabled={isFormDisabled}
+                required
+              />
+            </Field>
+            <Field label="이메일">
+              <Input
+                type="email"
+                value={form.email}
+                onChange={event =>
+                  setForm(current => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
+                }
+                disabled={isFormDisabled}
+                required
+              />
+            </Field>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Field label="권한">
+              <select
+                value={form.roleId}
+                onChange={event =>
+                  setForm(current => ({
+                    ...current,
+                    roleId: event.target.value,
+                  }))
+                }
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                disabled={isFormDisabled}
+                required
+              >
+                <option value="">선택</option>
+                {options?.roles.map(role => (
+                  <option key={role.id} value={role.id}>
+                    {role.displayName}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="시작 일자">
+              <Input
+                type="date"
+                value={form.startDate}
+                onChange={event =>
+                  setForm(current => ({
+                    ...current,
+                    startDate: event.target.value,
+                  }))
+                }
+                disabled={isFormDisabled}
+                required
+              />
+            </Field>
+            <Field label="끝 일자 (선택)">
+              <Input
+                type="date"
+                value={form.endDate}
+                onChange={event =>
+                  setForm(current => ({
+                    ...current,
+                    endDate: event.target.value,
+                  }))
+                }
+                disabled={isFormDisabled}
+              />
+            </Field>
+          </div>
+          {optionsError || assignmentsError ? (
+            <p className="text-sm text-destructive">
+              권한 정보를 불러오지 못했습니다.
+            </p>
+          ) : null}
+          {isOptionEmpty ? (
+            <p className="text-sm text-muted-foreground">
+              등록 가능한 부서 또는 권한이 없습니다.
+            </p>
+          ) : null}
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isFormDisabled}>
+              <Plus className="h-4 w-4" />
+              {submitting ? "추가 중" : "권한 추가"}
+            </Button>
+          </div>
+        </form>
+
+        <div className="space-y-2">
+          {assignmentsLoading ? (
+            <p className="text-sm text-muted-foreground">
+              권한 목록을 불러오는 중입니다.
+            </p>
+          ) : assignments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              등록된 권한이 없습니다.
+            </p>
+          ) : (
+            assignments.map(assignment => (
+              <RetreatAdminAssignmentRow
+                key={assignment.assignmentId}
+                assignment={assignment}
+              />
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RetreatAdminAssignmentRow({
+  assignment,
+}: {
+  assignment: RetreatAdminAssignment;
+}) {
+  return (
+    <div className="rounded-md border p-3 text-sm">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <div className="font-medium">{assignment.adminName}</div>
+          <div className="break-all text-muted-foreground">
+            {assignment.adminEmail}
+          </div>
+        </div>
+        <div className="shrink-0 font-medium">{assignment.roleDisplayName}</div>
       </div>
-    </form>
-
-      <RegistrationSchedulesCard
-        retreatId={retreat.id}
-        registrationSchedules={retreat.registrationSchedules}
-      />
-      <PaymentSchedulesCard
-        retreatId={retreat.id}
-        paymentSchedules={retreat.paymentSchedules}
-      />
-      <AddPaymentScheduleCard retreatId={retreat.id} />
-      <ShuttleBusesCard
-        retreatId={retreat.id}
-        shuttleBuses={retreat.shuttleBuses}
-      />
-      <AddShuttleBusCard retreatId={retreat.id} />
+      <div className="mt-2 grid gap-1 text-muted-foreground md:grid-cols-2">
+        <div>부서: {assignment.univGroupName}</div>
+        <div>
+          기간: {formatDateTime(assignment.startDate)}
+          {assignment.endDate
+            ? ` - ${formatDateTime(assignment.endDate)}`
+            : " - 종료일 없음"}
+        </div>
+      </div>
     </div>
   );
 }
@@ -536,8 +909,7 @@ function AddShuttleBusCard({ retreatId }: { retreatId: number }) {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    direction:
-      "FROM_CHURCH_TO_RETREAT" as (typeof shuttleDirections)[number],
+    direction: "FROM_CHURCH_TO_RETREAT" as (typeof shuttleDirections)[number],
     price: "",
     departureTime: "",
     arrivalTime: "",
@@ -728,7 +1100,8 @@ function PaymentSchedulesCard({
       <CardHeader>
         <CardTitle>결제 일정 목록</CardTitle>
         <CardDescription>
-          현재 등록된 결제 일정입니다. 신청 내역이 없을 때만 변경/삭제할 수 있습니다.
+          현재 등록된 결제 일정입니다. 신청 내역이 없을 때만 변경/삭제할 수
+          있습니다.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -854,7 +1227,8 @@ function PaymentScheduleRow({
         <div className="mt-1 grid gap-1 text-muted-foreground md:grid-cols-2">
           <div>전참: {schedule.totalPrice.toLocaleString()}원</div>
           <div>
-            부분참(식수당): {schedule.partialPricePerSchedule.toLocaleString()}원
+            부분참(식수당): {schedule.partialPricePerSchedule.toLocaleString()}
+            원
           </div>
           <div>시작: {formatDateTime(schedule.startAt)}</div>
           <div>종료: {formatDateTime(schedule.endAt)}</div>
@@ -955,7 +1329,8 @@ function ShuttleBusesCard({
       <CardHeader>
         <CardTitle>셔틀버스 목록</CardTitle>
         <CardDescription>
-          현재 등록된 셔틀버스입니다. 신청 내역이 없을 때만 변경/삭제할 수 있습니다.
+          현재 등록된 셔틀버스입니다. 신청 내역이 없을 때만 변경/삭제할 수
+          있습니다.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -966,11 +1341,7 @@ function ShuttleBusesCard({
         ) : (
           <div className="space-y-2">
             {shuttleBuses.map(bus => (
-              <ShuttleBusRow
-                key={bus.id}
-                retreatId={retreatId}
-                bus={bus}
-              />
+              <ShuttleBusRow key={bus.id} retreatId={retreatId} bus={bus} />
             ))}
           </div>
         )}
@@ -1203,9 +1574,7 @@ function RegistrationSchedulesCard({
     dateOnly: string,
     type: ManagedRetreatRegistrationSchedule["type"]
   ) =>
-    dateOnly
-      ? `${dateOnly}T${registrationScheduleDefaultTimes[type]}`
-      : "";
+    dateOnly ? `${dateOnly}T${registrationScheduleDefaultTimes[type]}` : "";
 
   const handleAdd = async () => {
     if (!newForm.date) return;
@@ -1237,7 +1606,8 @@ function RegistrationSchedulesCard({
           <div>
             <CardTitle>신청 일정 목록</CardTitle>
             <CardDescription>
-              현재 등록된 신청 일정입니다. 시간은 종류에 따라 자동 지정됩니다 (아침 08:00, 점심 12:00, 저녁 18:00, 숙박 22:00).
+              현재 등록된 신청 일정입니다. 시간은 종류에 따라 자동 지정됩니다
+              (아침 08:00, 점심 12:00, 저녁 18:00, 숙박 22:00).
             </CardDescription>
           </div>
           <Button
@@ -1300,7 +1670,11 @@ function RegistrationSchedulesCard({
                 <X className="h-4 w-4" />
                 취소
               </Button>
-              <Button type="button" onClick={handleAdd} disabled={busy || !newForm.date}>
+              <Button
+                type="button"
+                onClick={handleAdd}
+                disabled={busy || !newForm.date}
+              >
                 <Plus className="h-4 w-4" />
                 {busy ? "추가 중" : "추가"}
               </Button>
@@ -1400,7 +1774,8 @@ function RegistrationScheduleRow({
       <div className="rounded-md border p-3 text-sm">
         <div className="flex items-start justify-between gap-2">
           <div className="font-medium">
-            {formatDateTime(schedule.time)} · {registrationScheduleLabels[schedule.type]}
+            {formatDateTime(schedule.time)} ·{" "}
+            {registrationScheduleLabels[schedule.type]}
           </div>
           <div className="flex gap-2">
             <Button

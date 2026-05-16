@@ -105,10 +105,10 @@ export async function getManagedRetreatsServer(): Promise<ManagedRetreat[]> {
 }
 
 export async function getManagedRetreatServer(
-  retreatId: number
+  retreatSlug: string
 ): Promise<ManagedRetreatDetail | null> {
   const data = await fetchAdminServer<{ retreat: ManagedRetreatDetail | null }>(
-    `/api/v1/admin/retreats/${retreatId}/manage`,
+    `/api/v1/admin/retreats/${retreatSlug}/manage`,
     { retreat: null }
   );
 
