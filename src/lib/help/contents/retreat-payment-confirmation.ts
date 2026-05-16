@@ -9,7 +9,52 @@ export const retreatPaymentConfirmationHelp: PageHelpContent = {
   description:
     "재정 팀원이 부서 신청자의 입금, 할인 승인, 취소, 환불 처리 상태를 확인하는 페이지입니다.",
 
-  sections: [],
+  sections: [
+    {
+      id: "overview",
+      title: "페이지 개요",
+      description:
+        "부서 재정팀원이 소속 부서 신청자의 입금 상태와 신청 정보를 확인하는 페이지입니다.",
+      items: [
+        {
+          label: "입금 현황 요약",
+          description:
+            "페이지 상단에서 부서 신청자의 입금 완료, 대기, 환불 관련 현황을 확인합니다.",
+        },
+        {
+          label: "신청자 목록",
+          description:
+            "신청자별 참석 일정, 참가 타입, 금액, 입금 상태를 표로 조회합니다.",
+        },
+        {
+          label: "상세 패널",
+          description:
+            "상세 보기에서 신청자의 기본 정보와 선택한 수양회 일정을 확인합니다.",
+        },
+      ],
+    },
+    {
+      id: "payment-actions",
+      title: "입금 처리",
+      description:
+        "신청자의 실제 입금 여부에 따라 입금 확인, 입금 요청, 환불 완료 처리를 수행합니다.",
+      items: [
+        {
+          label: "입금 확인",
+          description: "신청자의 입금을 확인한 뒤 입금 완료 상태로 변경합니다.",
+        },
+        {
+          label: "입금 요청",
+          description: "입금 대기 상태의 신청자에게 입금 안내 요청을 보냅니다.",
+        },
+        {
+          label: "환불 완료",
+          description:
+            "환불이 실제로 끝난 신청 건을 환불 처리 완료 상태로 변경합니다.",
+        },
+      ],
+    },
+  ],
 
   columns: [
     {

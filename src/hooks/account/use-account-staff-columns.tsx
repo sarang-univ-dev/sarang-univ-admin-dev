@@ -3,13 +3,11 @@ import { Info } from "lucide-react";
 import { useMemo } from "react";
 
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
-import { HelpTooltip } from "@/components/common/help";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { UnifiedColumnHeader } from "@/components/common/table/UnifiedColumnHeader";
 import { AccountStaffRegistrationTableActions } from "@/components/features/account/AccountStaffRegistrationTableActions";
 import { Button } from "@/components/ui/button";
 import { createRetreatScheduleColumns } from "@/hooks/retreat/use-retreat-schedule-columns";
-import { accountRetreatRegistrationHelp } from "@/lib/help";
 import {
   Gender,
   TRetreatRegistrationSchedule,
@@ -65,20 +63,6 @@ export const arrayIncludesFilterFn: FilterFn<AccountStaffTableData> = (
 };
 
 const columnHelper = createColumnHelper<AccountStaffTableData>();
-
-const columnHelpMap = accountRetreatRegistrationHelp.columns.reduce(
-  (acc, col) => ({ ...acc, [col.columnId]: col }),
-  {} as Record<string, (typeof accountRetreatRegistrationHelp.columns)[0]>
-);
-
-const paymentStatusHelpMap =
-  accountRetreatRegistrationHelp.badges.paymentStatus.reduce(
-    (acc, badge) => ({ ...acc, [badge.status]: badge }),
-    {} as Record<
-      string,
-      (typeof accountRetreatRegistrationHelp.badges.paymentStatus)[0]
-    >
-  );
 
 /**
  * 재정 간사 수양회 신청 테이블 컬럼 훅
@@ -229,7 +213,6 @@ export function useAccountStaffColumns(
               };
               return typeNames[value] || value;
             }}
-            helpContent={columnHelpMap.type}
           />
         ),
         cell: info => {
@@ -248,12 +231,7 @@ export function useAccountStaffColumns(
       columnHelper.accessor("amount", {
         id: "amount",
         header: ({ column, table }) => (
-          <UnifiedColumnHeader
-            column={column}
-            table={table}
-            title="금액"
-            helpContent={columnHelpMap.amount}
-          />
+          <UnifiedColumnHeader column={column} table={table} title="금액" />
         ),
         cell: info => (
           <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
@@ -297,39 +275,15 @@ export function useAccountStaffColumns(
               };
               return statusNames[value] || value;
             }}
-            helpContent={columnHelpMap.status}
           />
         ),
         cell: props => {
           const status = props.getValue();
-          const helpInfo = paymentStatusHelpMap[status];
 
           return (
             <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
               <div className="flex flex-col items-center gap-1">
-                {helpInfo ? (
-                  <HelpTooltip
-                    content={
-                      <div className="space-y-1">
-                        <p className="font-medium">{helpInfo.title}</p>
-                        <p className="text-muted-foreground">
-                          {helpInfo.description}
-                        </p>
-                        {helpInfo.action && (
-                          <p className="text-xs text-blue-600 mt-1">
-                            {helpInfo.action}
-                          </p>
-                        )}
-                      </div>
-                    }
-                  >
-                    <span>
-                      <StatusBadge status={status} />
-                    </span>
-                  </HelpTooltip>
-                ) : (
-                  <StatusBadge status={status} />
-                )}
+                <StatusBadge status={status} />
                 <AccountStaffRegistrationTableActions
                   row={props.row.original}
                   retreatSlug={retreatSlug}
@@ -372,7 +326,6 @@ export function useAccountStaffColumns(
             column={column}
             table={table}
             title="재정간사 메모"
-            helpContent={columnHelpMap.accountMemo}
           />
         ),
         cell: props => {
