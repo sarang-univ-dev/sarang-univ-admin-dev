@@ -9,7 +9,70 @@ export const accountRetreatRegistrationHelp: PageHelpContent = {
   description:
     "재정간사가 수양회 신청자의 입금, 간사 배정, 취소, 환불 처리 상태를 확인하는 페이지입니다.",
 
-  sections: [],
+  sections: [
+    {
+      id: "overview",
+      title: "페이지 개요",
+      description:
+        "대학부 전체 수양회 신청자의 입금 상태, 참석 일정, 환불 및 취소 처리 현황을 확인하는 페이지입니다.",
+      items: [
+        {
+          label: "요약 영역",
+          description:
+            "페이지 상단에서 전체 입금 현황과 일정별 참석 인원을 확인합니다.",
+        },
+        {
+          label: "신청자 목록",
+          description:
+            "신청자별 참가 타입, 금액, 입금 상태, 재정간사 메모를 표로 조회합니다.",
+        },
+        {
+          label: "상세 패널",
+          description:
+            "상세 보기에서 신청자의 기본 정보, 신청 일정, 처리 이력을 확인합니다.",
+        },
+      ],
+    },
+    {
+      id: "payment-workflow",
+      title: "입금 처리",
+      description:
+        "신청자의 상태에 맞춰 입금 확인, 간사 배정, 환불 완료 처리를 진행합니다.",
+      items: [
+        {
+          label: "입금 확인",
+          description: "실제 입금이 확인된 신청을 입금 완료 상태로 변경합니다.",
+        },
+        {
+          label: "간사 배정",
+          description:
+            "재정간사가 직접 입금자를 확인해야 하는 건은 담당 간사에게 배정합니다.",
+        },
+        {
+          label: "환불 처리",
+          description:
+            "환불 요청 또는 취소 처리 건은 실제 환불 후 환불 완료로 처리합니다.",
+        },
+      ],
+    },
+    {
+      id: "memo",
+      title: "재정간사 메모",
+      description:
+        "입금자명 불일치, 환불 계좌, 차액 처리 등 재정 처리에 필요한 내부 메모를 관리합니다.",
+      items: [
+        {
+          label: "메모 작성",
+          description:
+            "신청자별로 재정 처리 메모를 추가하고 추후 확인할 수 있습니다.",
+        },
+        {
+          label: "메모 수정 및 삭제",
+          description: "기존 메모는 같은 표에서 수정하거나 삭제할 수 있습니다.",
+        },
+      ],
+    },
+  ],
 
   columns: [
     {

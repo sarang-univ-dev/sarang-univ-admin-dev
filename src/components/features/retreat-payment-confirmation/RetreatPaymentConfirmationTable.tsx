@@ -12,12 +12,12 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { Info } from "lucide-react";
+import { HelpCircle, Info } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { DetailSidebar } from "@/components/common/detail-sidebar";
-import { HelpTooltip } from "@/components/common/help";
+import { PageHelpPanel } from "@/components/common/help";
 import { VirtualizedTable } from "@/components/common/table";
 import { ColumnHeader } from "@/components/common/table/ColumnHeader";
 import { Button } from "@/components/ui/button";
@@ -60,20 +60,6 @@ type TableRow = {
 
 const columnHelper = createColumnHelper<TableRow>();
 
-const columnHelpMap = retreatPaymentConfirmationHelp.columns.reduce(
-  (acc, col) => ({ ...acc, [col.columnId]: col }),
-  {} as Record<string, (typeof retreatPaymentConfirmationHelp.columns)[0]>
-);
-
-const paymentStatusHelpMap =
-  retreatPaymentConfirmationHelp.badges.paymentStatus.reduce(
-    (acc, badge) => ({ ...acc, [badge.status]: badge }),
-    {} as Record<
-      string,
-      (typeof retreatPaymentConfirmationHelp.badges.paymentStatus)[0]
-    >
-  );
-
 /**
  * 부서 재정 팀원 - 입금 확인 테이블 (TanStack Table)
  *
@@ -109,6 +95,7 @@ export function RetreatPaymentConfirmationTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // ✅ Detail Sidebar State
   const [selectedRow, setSelectedRow] =
@@ -237,12 +224,7 @@ export function RetreatPaymentConfirmationTable({
       columnHelper.accessor("type", {
         id: "type",
         header: ({ column, table }) => (
-          <ColumnHeader
-            column={column}
-            table={table}
-            title="타입"
-            helpContent={columnHelpMap.type}
-          />
+          <ColumnHeader column={column} table={table} title="타입" />
         ),
         size: 85,
         cell: info => {
@@ -257,12 +239,7 @@ export function RetreatPaymentConfirmationTable({
       columnHelper.accessor("amount", {
         id: "amount",
         header: ({ column, table }) => (
-          <ColumnHeader
-            column={column}
-            table={table}
-            title="금액"
-            helpContent={columnHelpMap.amount}
-          />
+          <ColumnHeader column={column} table={table} title="금액" />
         ),
         cell: info => (
           <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
@@ -285,39 +262,15 @@ export function RetreatPaymentConfirmationTable({
                 value as keyof typeof PAYMENT_STATUS_LABELS
               ] || value
             }
-            helpContent={columnHelpMap.status}
           />
         ),
         cell: props => {
           const status = props.getValue();
-          const helpInfo = paymentStatusHelpMap[status];
 
           return (
             <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
               <div className="flex flex-col items-center gap-1">
-                {helpInfo ? (
-                  <HelpTooltip
-                    content={
-                      <div className="space-y-1">
-                        <p className="font-medium">{helpInfo.title}</p>
-                        <p className="text-muted-foreground">
-                          {helpInfo.description}
-                        </p>
-                        {helpInfo.action && (
-                          <p className="text-xs text-blue-600 mt-1">
-                            {helpInfo.action}
-                          </p>
-                        )}
-                      </div>
-                    }
-                  >
-                    <span>
-                      <StatusBadge status={status} />
-                    </span>
-                  </HelpTooltip>
-                ) : (
-                  <StatusBadge status={status} />
-                )}
+                <StatusBadge status={status} />
                 <RetreatPaymentConfirmationTableActions
                   registration={props.row.original.original}
                   confirmPayment={confirmPayment}
@@ -404,14 +357,32 @@ export function RetreatPaymentConfirmationTable({
     <>
       <div className="space-y-4">
         {/* 헤더 */}
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">
-            신청 현황 및 입금 조회
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            전체 신청자 목록 ({table.getFilteredRowModel().rows.length}명)
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              신청 현황 및 입금 조회
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              전체 신청자 목록 ({table.getFilteredRowModel().rows.length}명)
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            onClick={() => setHelpOpen(true)}
+          >
+            <HelpCircle className="h-5 w-5" />
+            <span className="sr-only">입금 확인 도움말</span>
+          </Button>
         </div>
+
+        <PageHelpPanel
+          content={retreatPaymentConfirmationHelp}
+          open={helpOpen}
+          onOpenChange={setHelpOpen}
+        />
 
         {/* 툴바 */}
         <RetreatPaymentConfirmationTableToolbar

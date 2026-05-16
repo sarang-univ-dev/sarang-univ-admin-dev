@@ -1,10 +1,10 @@
 import { Column, Table } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+
 import { FilterableHeader } from "./FilterableHeader";
 import { UnifiedColumnHeader } from "./UnifiedColumnHeader";
-import { ColumnHeaderHelp } from "@/components/common/help";
-import type { ColumnHelpContent } from "@/lib/help/types";
 
 interface ColumnHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -22,12 +22,12 @@ interface ColumnHeaderProps<TData> {
    * 필터 값을 표시할 포맷 함수
    * @example (value) => value === 'M' ? '남자' : '여자'
    */
-  formatFilterValue?: (value: any) => string;
+  formatFilterValue?: (value: never) => unknown;
   /**
    * 필터 값을 정렬할 함수
    * @example (a, b) => schedules.findIndex(s => s.id === a) - schedules.findIndex(s => s.id === b)
    */
-  sortFilterValues?: (a: any, b: any) => number;
+  sortFilterValues?: (a: never, b: never) => number;
   /**
    * 정렬/필터 없이 제목만 표시
    */
@@ -38,11 +38,6 @@ interface ColumnHeaderProps<TData> {
    * - false: 정렬과 필터 아이콘을 나란히 표시 (기존 방식)
    */
   unified?: boolean;
-  /**
-   * 컬럼 도움말 콘텐츠
-   * - 제공 시 헤더에 도움말 아이콘 표시
-   */
-  helpContent?: ColumnHelpContent;
 }
 
 /**
@@ -97,14 +92,12 @@ export function ColumnHeader<TData>({
   sortFilterValues,
   titleOnly = false,
   unified = true,
-  helpContent,
 }: ColumnHeaderProps<TData>) {
   // 제목만 표시
   if (titleOnly || (!enableSorting && !enableFiltering)) {
     return (
       <div className="flex items-center justify-center gap-1 text-sm whitespace-nowrap px-2">
         <span>{title}</span>
-        {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
       </div>
     );
   }
@@ -121,7 +114,6 @@ export function ColumnHeader<TData>({
         formatFilterValue={formatFilterValue}
         sortFilterValues={sortFilterValues}
         titleOnly={titleOnly}
-        helpContent={helpContent}
       />
     );
   }
@@ -177,17 +169,22 @@ export function ColumnHeader<TData>({
         <span className="text-sm px-2">{title}</span>
       )}
 
-      {/* 도움말 아이콘 */}
-      {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
-
       {/* 필터 버튼 */}
       {enableFiltering && (
         <FilterableHeader
           column={column}
           table={table}
           title={title}
-          formatValue={formatFilterValue}
-          sortFilterValues={sortFilterValues}
+          formatValue={
+            formatFilterValue
+              ? value => String(formatFilterValue(value as never))
+              : undefined
+          }
+          sortFilterValues={
+            sortFilterValues
+              ? (a, b) => sortFilterValues(a as never, b as never)
+              : undefined
+          }
         />
       )}
     </div>
