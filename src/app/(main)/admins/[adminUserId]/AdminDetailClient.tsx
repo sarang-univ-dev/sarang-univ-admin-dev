@@ -3,13 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Shield, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -17,14 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useToastStore } from "@/store/toast-store";
 import {
   getAdminDetail,
@@ -49,21 +47,6 @@ function getErrorMessage(error: unknown, fallback: string) {
     return String(error.response.data.message);
   }
   return fallback;
-}
-
-function formatDate(value: string | null | undefined) {
-  if (!value) return "-";
-  try {
-    return new Date(value).toLocaleString("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return String(value);
-  }
 }
 
 type Props = { adminUserId: number };
@@ -98,7 +81,7 @@ export default function AdminDetailClient({ adminUserId }: Props) {
 
   if (isLoading || !data) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="space-y-6">
         {error ? (
           <p className="text-destructive">
             조회 실패: {getErrorMessage(error, "Admin 정보를 불러오지 못했습니다.")}
@@ -110,7 +93,7 @@ export default function AdminDetailClient({ adminUserId }: Props) {
     );
   }
 
-  const { admin, assignments } = data;
+  const { admin } = data;
   const dirty =
     name !== admin.name ||
     univGroupId !== admin.univGroupId.toString() ||
@@ -143,7 +126,7 @@ export default function AdminDetailClient({ adminUserId }: Props) {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div>
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admins">
@@ -153,140 +136,106 @@ export default function AdminDetailClient({ adminUserId }: Props) {
         </Button>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{admin.name}</h1>
-          <p className="text-sm text-muted-foreground">{admin.email}</p>
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight">{admin.name}</h1>
+          {admin.isSuperuser && (
+            <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200">
+              <Shield className="h-3.5 w-3.5 text-indigo-500 mr-1.5 flex-shrink-0" />
+              <span className="text-xs font-medium text-indigo-700 whitespace-nowrap">
+                Superuser
+              </span>
+            </div>
+          )}
+          {!admin.isActive && (
+            <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
+              <XCircle className="h-3.5 w-3.5 text-gray-500 mr-1.5 flex-shrink-0" />
+              <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+                비활성
+              </span>
+            </div>
+          )}
         </div>
-        <div className="flex gap-2">
-          {admin.isSuperuser && <Badge>Superuser</Badge>}
-          {!admin.isActive && <Badge variant="secondary">비활성</Badge>}
-        </div>
+        <p className="text-muted-foreground">{admin.email}</p>
       </div>
 
-      <section className="rounded-lg border p-6 space-y-4">
-        <h2 className="text-lg font-semibold">기본 정보</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">이름</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">이메일</Label>
-            <Input id="email" value={admin.email} disabled />
-            <p className="text-xs text-muted-foreground">
-              이메일은 로그인 키로 사용되며 변경할 수 없습니다.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="univ-group">부서</Label>
-            <Select value={univGroupId} onValueChange={setUnivGroupId}>
-              <SelectTrigger id="univ-group">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {univGroups?.map(ug => (
-                  <SelectItem key={ug.id} value={ug.id.toString()}>
-                    {ug.number}부 {ug.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="is-active">활성</Label>
-              <p className="text-xs text-muted-foreground">
-                비활성 시 로그인 및 권한 체크에서 즉시 차단됩니다.
-              </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>기본 정보</CardTitle>
+          <CardDescription>
+            이름, 부서, 활성 여부, superuser 권한을 변경할 수 있습니다. 이메일은 로그인 키이므로 수정할 수 없습니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">이름</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+              />
             </div>
-            <Switch
-              id="is-active"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-          </div>
 
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="is-superuser">Superuser</Label>
-              <p className="text-xs text-muted-foreground">
-                수양회 생성, admin 관리, 부서/학년 관리 등 운영 권한을 가집니다.
-              </p>
+            <div className="space-y-2">
+              <Label htmlFor="email">이메일</Label>
+              <Input id="email" value={admin.email} disabled />
             </div>
-            <Switch
-              id="is-superuser"
-              checked={isSuperuser}
-              onCheckedChange={setIsSuperuser}
-            />
+
+            <div className="space-y-2">
+              <Label htmlFor="univ-group">부서</Label>
+              <Select value={univGroupId} onValueChange={setUnivGroupId}>
+                <SelectTrigger id="univ-group">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {univGroups?.map(ug => (
+                    <SelectItem key={ug.id} value={ug.id.toString()}>
+                      {ug.number}부 {ug.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
 
-        <div className="flex justify-end pt-2">
-          <Button onClick={handleSave} disabled={!dirty || saving}>
-            {saving ? "저장 중…" : "저장"}
-          </Button>
-        </div>
-      </section>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="is-active">활성</Label>
+                <p className="text-xs text-muted-foreground">
+                  비활성 시 로그인 및 권한 체크에서 즉시 차단됩니다.
+                </p>
+              </div>
+              <Switch
+                id="is-active"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+            </div>
 
-      <section className="rounded-lg border p-6 space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">부여된 수양회 권한</h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            수양회별 개별 권한의 추가·회수는 다음 패치에서 수양회 수정 페이지를 통해 제공됩니다.
-          </p>
-        </div>
-
-        {assignments.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            부여된 수양회 권한이 없습니다.
-          </p>
-        ) : (
-          <div className="border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>수양회</TableHead>
-                  <TableHead>역할</TableHead>
-                  <TableHead>시작</TableHead>
-                  <TableHead>종료</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assignments.map(a => (
-                  <TableRow key={a.assignmentId}>
-                    <TableCell>
-                      <div className="font-medium">{a.retreatName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {a.retreatSlug}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{a.roleDisplayName}</Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(a.startDate)}</TableCell>
-                    <TableCell>
-                      {a.endDate ? formatDate(a.endDate) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="is-superuser">Superuser</Label>
+                <p className="text-xs text-muted-foreground">
+                  수양회 생성, admin 관리, 부서/학년 관리 등 운영 권한을 가집니다.
+                </p>
+              </div>
+              <Switch
+                id="is-superuser"
+                checked={isSuperuser}
+                onCheckedChange={setIsSuperuser}
+              />
+            </div>
           </div>
-        )}
-      </section>
+
+          <div className="flex justify-end pt-2">
+            <Button onClick={handleSave} disabled={!dirty || saving}>
+              {saving ? "저장 중…" : "저장"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
