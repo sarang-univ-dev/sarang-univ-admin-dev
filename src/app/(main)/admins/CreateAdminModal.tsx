@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,9 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { useToastStore } from "@/store/toast-store";
 import { createAdmin, getUnivGroups } from "@/lib/api/admin-api";
+import { useToastStore } from "@/store/toast-store";
 import type { AdminUnivGroup } from "@/types/retreat-create";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -59,7 +58,6 @@ export default function CreateAdminModal({ open, onClose, onCreated }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [univGroupId, setUnivGroupId] = useState<string>("");
-  const [isSuperuser, setIsSuperuser] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -67,14 +65,14 @@ export default function CreateAdminModal({ open, onClose, onCreated }: Props) {
       setName("");
       setEmail("");
       setUnivGroupId("");
-      setIsSuperuser(false);
       setSubmitting(false);
     }
   }, [open]);
 
+  const normalizedEmail = email.trim().toLowerCase();
   const canSubmit =
     name.trim().length > 0 &&
-    /^\S+@\S+\.\S+$/.test(email.trim()) &&
+    /^[^\s@]+@gmail\.com$/.test(normalizedEmail) &&
     univGroupId !== "" &&
     !submitting;
 
@@ -84,16 +82,18 @@ export default function CreateAdminModal({ open, onClose, onCreated }: Props) {
     try {
       await createAdmin({
         name: name.trim(),
-        email: email.trim(),
+        email: normalizedEmail,
         univGroupId: Number(univGroupId),
-        isSuperuser,
       });
       onCreated();
       onClose();
     } catch (error) {
       addToast({
-        title: "Admin 추가 실패",
-        description: getErrorMessage(error, "Admin을 추가하지 못했습니다."),
+        title: "수양회 관리자 추가 실패",
+        description: getErrorMessage(
+          error,
+          "수양회 관리자를 추가하지 못했습니다."
+        ),
         variant: "destructive",
       });
     } finally {
@@ -105,9 +105,10 @@ export default function CreateAdminModal({ open, onClose, onCreated }: Props) {
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Admin 추가</DialogTitle>
+          <DialogTitle>수양회 관리자 추가</DialogTitle>
           <DialogDescription>
-            새 관리자 계정을 등록합니다. 이메일은 Google 로그인 시 사용됩니다.
+            전체 수양회 운영 권한을 가진 관리자 계정을 등록합니다. 이메일은
+            Gmail 주소만 사용할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
 
@@ -147,20 +148,6 @@ export default function CreateAdminModal({ open, onClose, onCreated }: Props) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="admin-is-superuser">Superuser 권한</Label>
-              <p className="text-xs text-muted-foreground">
-                수양회 생성, admin 관리, 부서/학년 관리 등 운영 권한 부여
-              </p>
-            </div>
-            <Switch
-              id="admin-is-superuser"
-              checked={isSuperuser}
-              onCheckedChange={setIsSuperuser}
-            />
           </div>
         </div>
 
