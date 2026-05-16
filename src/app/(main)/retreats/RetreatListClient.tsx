@@ -84,14 +84,12 @@ export default function RetreatListClient({
                         {retreat.slug}
                       </CardDescription>
                     </div>
-                    {canManageRetreats && (
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/retreats/${retreat.id}/edit`}>
-                          <Pencil className="h-4 w-4" />
-                          수정
-                        </Link>
-                      </Button>
-                    )}
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/retreats/${retreat.slug}/edit`}>
+                        <Pencil className="h-4 w-4" />
+                        {canManageRetreats ? "수정" : "권한"}
+                      </Link>
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">

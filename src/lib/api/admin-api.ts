@@ -4,6 +4,12 @@
  */
 
 import type {
+  AdminDetail,
+  AdminListRow,
+  CreateAdminPayload,
+  UpdateAdminPayload,
+} from "@/types/admin-management";
+import type {
   AddPaymentScheduleRequest,
   AddRegistrationScheduleRequest,
   AddShuttleBusRequest,
@@ -11,9 +17,12 @@ import type {
   AdminUnivGroup,
   AdminUnivGroupWithGrades,
   CreateGradeRequest,
+  CreateRetreatAdminAssignmentRequest,
   CreateRetreatRequest,
   ManagedRetreat,
   ManagedRetreatDetail,
+  RetreatAdminAssignment,
+  RetreatAdminAssignmentOptions,
   RetreatAssetType,
   RetreatUnivGroupInformationInput,
   UpdateGradeRequest,
@@ -113,13 +122,44 @@ export async function getManagedRetreats(): Promise<ManagedRetreat[]> {
 }
 
 export async function getManagedRetreat(
-  retreatId: number
+  retreatSlug: string
 ): Promise<ManagedRetreatDetail> {
   const response = await webAxios.get<{ retreat: ManagedRetreatDetail }>(
-    `/api/v1/admin/retreats/${retreatId}/manage`
+    `/api/v1/admin/retreats/${retreatSlug}/manage`
   );
 
   return response.data.retreat;
+}
+
+export async function getRetreatAdminAssignmentOptions(
+  retreatSlug: string
+): Promise<RetreatAdminAssignmentOptions> {
+  const response = await webAxios.get<RetreatAdminAssignmentOptions>(
+    `/api/v1/admin/retreats/${retreatSlug}/admin-assignment-options`
+  );
+
+  return response.data;
+}
+
+export async function getRetreatAdminAssignments(
+  retreatSlug: string
+): Promise<RetreatAdminAssignment[]> {
+  const response = await webAxios.get<{
+    assignments: RetreatAdminAssignment[];
+  }>(`/api/v1/admin/retreats/${retreatSlug}/admin-assignments`);
+
+  return response.data.assignments;
+}
+
+export async function createRetreatAdminAssignment(
+  retreatSlug: string,
+  request: CreateRetreatAdminAssignmentRequest
+): Promise<RetreatAdminAssignment> {
+  const response = await webAxios.post<{
+    assignment: RetreatAdminAssignment;
+  }>(`/api/v1/admin/retreats/${retreatSlug}/admin-assignments`, request);
+
+  return response.data.assignment;
 }
 
 export async function updateRetreat(
@@ -204,7 +244,10 @@ export async function updateShuttleBus(
   return response.data;
 }
 
-export async function deleteShuttleBus(retreatId: number, shuttleBusId: number) {
+export async function deleteShuttleBus(
+  retreatId: number,
+  shuttleBusId: number
+) {
   await webAxios.delete(
     `/api/v1/admin/retreats/${retreatId}/shuttle-buses/${shuttleBusId}`
   );
@@ -317,13 +360,6 @@ export async function checkPageAccess(
 }
 
 // --- Admin user 관리 (superuser 전용) ----------------------------------------
-
-import type {
-  AdminListRow,
-  AdminDetail,
-  CreateAdminPayload,
-  UpdateAdminPayload,
-} from "@/types/admin-management";
 
 export async function listAdmins(): Promise<AdminListRow[]> {
   const response = await webAxios.get<{ admins: AdminListRow[] }>(

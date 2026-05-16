@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import {
   getAdminNavigationServer,
@@ -9,34 +9,32 @@ import RetreatEditForm from "./RetreatEditForm";
 
 type RetreatEditPageProps = {
   params: {
-    retreatId: string;
+    retreatSlug: string;
   };
 };
 
 export default async function RetreatEditPage({
   params,
 }: RetreatEditPageProps) {
-  const retreatId = Number(params.retreatId);
+  const retreatSlug = params.retreatSlug.trim();
 
-  if (!Number.isInteger(retreatId) || retreatId <= 0) {
+  if (!retreatSlug) {
     notFound();
   }
 
   const [navigation, retreat] = await Promise.all([
     getAdminNavigationServer(),
-    getManagedRetreatServer(retreatId),
+    getManagedRetreatServer(retreatSlug),
   ]);
   const canManageRetreats = navigation.globalMenuItems.some(
     item => item.href === "/retreats/new"
   );
 
-  if (!canManageRetreats) {
-    redirect("/unauthorized");
-  }
-
   if (!retreat) {
     notFound();
   }
 
-  return <RetreatEditForm retreat={retreat} />;
+  return (
+    <RetreatEditForm retreat={retreat} canManageRetreats={canManageRetreats} />
+  );
 }

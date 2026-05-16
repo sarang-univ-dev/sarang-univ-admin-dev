@@ -9,7 +9,8 @@ export type RetreatUnivGroupInformation = {
   shuttleBusDepositAccountHolder: string;
 };
 
-export type RetreatUnivGroupInformationInput = Partial<RetreatUnivGroupInformation>;
+export type RetreatUnivGroupInformationInput =
+  Partial<RetreatUnivGroupInformation>;
 
 export type RetreatUnivGroupRequest = {
   univGroupId: number;
@@ -145,6 +146,42 @@ export type ManagedRetreatRegistrationSchedule = {
   time: string;
   type: "BREAKFAST" | "LUNCH" | "DINNER" | "SLEEP";
   createdAt: string;
+};
+
+export type RetreatAdminRoleOption = {
+  id: number;
+  name: string;
+  displayName: string;
+};
+
+export type RetreatAdminAssignmentOptions = {
+  roles: RetreatAdminRoleOption[];
+  univGroups: AdminUnivGroup[];
+};
+
+export type RetreatAdminAssignment = {
+  assignmentId: number;
+  adminUserId: number;
+  adminName: string;
+  adminEmail: string;
+  adminIsActive: boolean;
+  univGroupId: number;
+  univGroupName: string;
+  univGroupNumber: number;
+  roleId: number;
+  roleName: string;
+  roleDisplayName: string;
+  startDate: string;
+  endDate: string | null;
+};
+
+export type CreateRetreatAdminAssignmentRequest = {
+  univGroupId: number;
+  name: string;
+  email: string;
+  roleId: number;
+  startDate: string;
+  endDate?: string | null;
 };
 
 export type UpdatePaymentScheduleRequest = Partial<AddPaymentScheduleRequest>;
