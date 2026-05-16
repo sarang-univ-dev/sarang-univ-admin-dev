@@ -4,10 +4,8 @@
  */
 
 import type {
-  AdminDetail,
   AdminListRow,
   CreateAdminPayload,
-  UpdateAdminPayload,
 } from "@/types/admin-management";
 import type {
   AddPaymentScheduleRequest,
@@ -378,22 +376,11 @@ export async function createAdmin(
   return response.data.admin;
 }
 
-export async function getAdminDetail(
+export async function deactivateAdmin(
   adminUserId: number
-): Promise<AdminDetail> {
-  const response = await webAxios.get<AdminDetail>(
-    `/api/v1/admin/admins/${adminUserId}`
-  );
-  return response.data;
-}
-
-export async function updateAdmin(
-  adminUserId: number,
-  payload: UpdateAdminPayload
 ): Promise<AdminListRow> {
   const response = await webAxios.patch<{ admin: AdminListRow }>(
-    `/api/v1/admin/admins/${adminUserId}`,
-    payload
+    `/api/v1/admin/admins/${adminUserId}/deactivate`
   );
   return response.data.admin;
 }

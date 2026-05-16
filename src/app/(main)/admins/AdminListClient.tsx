@@ -1,9 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import useSWR from "swr";
-import { debounce } from "lodash";
 import {
   SortingState,
   createColumnHelper,
@@ -12,8 +8,25 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { CheckCheck, Plus, Search, Shield, XCircle } from "lucide-react";
+import { debounce } from "lodash";
+import { Ban, Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
 
+import {
+  UnifiedColumnHeader,
+  VirtualizedTable,
+} from "@/components/common/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,9 +36,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { UnifiedColumnHeader, VirtualizedTable } from "@/components/common/table";
+import { deactivateAdmin, listAdmins } from "@/lib/api/admin-api";
 import { useToastStore } from "@/store/toast-store";
-import { listAdmins } from "@/lib/api/admin-api";
 import type { AdminListRow } from "@/types/admin-management";
 
 import CreateAdminModal from "./CreateAdminModal";
@@ -33,11 +45,14 @@ import CreateAdminModal from "./CreateAdminModal";
 const columnHelper = createColumnHelper<AdminListRow>();
 
 export default function AdminListClient() {
-  const router = useRouter();
   const addToast = useToastStore(state => state.add);
   const [searchInput, setSearchInput] = useState("");
   const [globalFilter, setGlobalFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [deactivateTarget, setDeactivateTarget] = useState<AdminListRow | null>(
+    null
+  );
+  const [deactivating, setDeactivating] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "id", desc: false },
   ]);
@@ -127,58 +142,34 @@ export default function AdminListClient() {
           filterFn: "arrIncludesSome",
         }
       ),
-      columnHelper.accessor("isActive", {
+      columnHelper.display({
+        id: "actions",
         header: ({ column, table }) => (
           <UnifiedColumnHeader
             column={column}
             table={table}
-            title="활성"
-            enableSorting
+            title="관리"
+            titleOnly
           />
         ),
-        cell: info => (
-          <div className="flex justify-center shrink-0 px-1">
-            {info.getValue() ? (
-              <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
-                <CheckCheck className="h-3.5 w-3.5 text-green-500 mr-1.5 flex-shrink-0" />
-                <span className="text-xs font-medium text-green-700 whitespace-nowrap">
-                  활성
-                </span>
-              </div>
-            ) : (
-              <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
-                <XCircle className="h-3.5 w-3.5 text-gray-500 mr-1.5 flex-shrink-0" />
-                <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
-                  비활성
-                </span>
-              </div>
-            )}
+        cell: ({ row }) => (
+          <div className="flex justify-center px-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              onClick={event => {
+                event.stopPropagation();
+                setDeactivateTarget(row.original);
+              }}
+            >
+              <Ban className="h-4 w-4 mr-1" />
+              비활성화
+            </Button>
           </div>
         ),
-      }),
-      columnHelper.accessor("isSuperuser", {
-        header: ({ column, table }) => (
-          <UnifiedColumnHeader
-            column={column}
-            table={table}
-            title="Superuser"
-            enableSorting
-          />
-        ),
-        cell: info => (
-          <div className="flex justify-center shrink-0 px-1">
-            {info.getValue() ? (
-              <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200">
-                <Shield className="h-3.5 w-3.5 text-indigo-500 mr-1.5 flex-shrink-0" />
-                <span className="text-xs font-medium text-indigo-700 whitespace-nowrap">
-                  Superuser
-                </span>
-              </div>
-            ) : (
-              <span className="text-muted-foreground text-sm">-</span>
-            )}
-          </div>
-        ),
+        size: 120,
       }),
     ],
     []
@@ -195,8 +186,7 @@ export default function AdminListClient() {
       if (!q) return true;
       const r = row.original;
       return (
-        r.name.toLowerCase().includes(q) ||
-        r.email.toLowerCase().includes(q)
+        r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q)
       );
     },
     getCoreRowModel: getCoreRowModel(),
@@ -204,12 +194,46 @@ export default function AdminListClient() {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  const handleDeactivate = async () => {
+    if (!deactivateTarget || deactivating) return;
+    setDeactivating(true);
+    try {
+      await deactivateAdmin(deactivateTarget.id);
+      await mutate();
+      addToast({
+        title: "수양회 관리자를 비활성화했습니다.",
+        variant: "success",
+      });
+      setDeactivateTarget(null);
+    } catch (error) {
+      const description =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof error.response === "object" &&
+        error.response !== null &&
+        "data" in error.response &&
+        typeof error.response.data === "object" &&
+        error.response.data !== null &&
+        "message" in error.response.data
+          ? String(error.response.data.message)
+          : "수양회 관리자를 비활성화하지 못했습니다.";
+      addToast({
+        title: "비활성화 실패",
+        description,
+        variant: "destructive",
+      });
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Admin 관리</h1>
+        <h1 className="text-3xl font-bold tracking-tight">수양회 관리자</h1>
         <p className="text-muted-foreground">
-          관리자 계정을 조회·추가하고 superuser 권한을 부여합니다.
+          전체 수양회 운영 권한을 가진 관리자 계정을 조회하고 추가합니다.
         </p>
       </div>
 
@@ -223,7 +247,7 @@ export default function AdminListClient() {
           </div>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Admin 추가
+            관리자 추가
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -242,7 +266,8 @@ export default function AdminListClient() {
 
           {error ? (
             <div className="border rounded-lg py-12 text-center text-destructive">
-              조회 실패: {String((error as { message?: string })?.message ?? error)}
+              조회 실패:{" "}
+              {String((error as { message?: string })?.message ?? error)}
             </div>
           ) : isLoading ? (
             <div className="border rounded-lg py-12 text-center text-muted-foreground">
@@ -254,8 +279,6 @@ export default function AdminListClient() {
               estimateSize={52}
               className="max-h-[70vh]"
               emptyMessage="결과가 없습니다."
-              onRowClick={row => router.push(`/admins/${row.id}`)}
-              getRowClassName={() => "cursor-pointer"}
             />
           )}
         </CardContent>
@@ -266,9 +289,52 @@ export default function AdminListClient() {
         onClose={() => setCreateOpen(false)}
         onCreated={() => {
           mutate();
-          addToast({ title: "Admin이 추가되었습니다.", variant: "success" });
+          addToast({
+            title: "수양회 관리자가 추가되었습니다.",
+            variant: "success",
+          });
         }}
       />
+
+      <AlertDialog
+        open={deactivateTarget !== null}
+        onOpenChange={open => {
+          if (!open && !deactivating) setDeactivateTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>수양회 관리자 비활성화</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deactivateTarget?.name} ({deactivateTarget?.email}) 계정을
+              비활성화합니다. 이 계정은 즉시 로그인할 수 없고, 전체 수양회 운영
+              권한과 연결된 수양회 역할 권한도 사용할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deactivateTarget && (
+            <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+              연결된 수양회 역할 {deactivateTarget.assignmentCount}개는 삭제되지
+              않지만, 계정이 비활성화된 동안 권한 체크에서 제외됩니다.
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deactivating}>취소</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deactivating}
+                onClick={event => {
+                  event.preventDefault();
+                  handleDeactivate();
+                }}
+              >
+                {deactivating ? "비활성화 중…" : "비활성화"}
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
