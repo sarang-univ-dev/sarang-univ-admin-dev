@@ -4,16 +4,30 @@
  */
 
 import type {
+  AdminListRow,
+  CreateAdminPayload,
+} from "@/types/admin-management";
+import type {
+  AddPaymentScheduleRequest,
+  AddRegistrationScheduleRequest,
+  AddShuttleBusRequest,
   AdminGrade,
   AdminUnivGroup,
   AdminUnivGroupWithGrades,
   CreateGradeRequest,
+  CreateRetreatAdminAssignmentRequest,
   CreateRetreatRequest,
   ManagedRetreat,
   ManagedRetreatDetail,
+  RetreatAdminAssignment,
+  RetreatAdminAssignmentOptions,
   RetreatAssetType,
+  RetreatUnivGroupInformationInput,
   UpdateGradeRequest,
+  UpdatePaymentScheduleRequest,
+  UpdateRegistrationScheduleRequest,
   UpdateRetreatRequest,
+  UpdateShuttleBusRequest,
   UploadRetreatAssetResponse,
 } from "@/types/retreat-create";
 import type {
@@ -106,13 +120,44 @@ export async function getManagedRetreats(): Promise<ManagedRetreat[]> {
 }
 
 export async function getManagedRetreat(
-  retreatId: number
+  retreatSlug: string
 ): Promise<ManagedRetreatDetail> {
   const response = await webAxios.get<{ retreat: ManagedRetreatDetail }>(
-    `/api/v1/admin/retreats/${retreatId}/manage`
+    `/api/v1/admin/retreats/${retreatSlug}/manage`
   );
 
   return response.data.retreat;
+}
+
+export async function getRetreatAdminAssignmentOptions(
+  retreatSlug: string
+): Promise<RetreatAdminAssignmentOptions> {
+  const response = await webAxios.get<RetreatAdminAssignmentOptions>(
+    `/api/v1/admin/retreats/${retreatSlug}/admin-assignment-options`
+  );
+
+  return response.data;
+}
+
+export async function getRetreatAdminAssignments(
+  retreatSlug: string
+): Promise<RetreatAdminAssignment[]> {
+  const response = await webAxios.get<{
+    assignments: RetreatAdminAssignment[];
+  }>(`/api/v1/admin/retreats/${retreatSlug}/admin-assignments`);
+
+  return response.data.assignments;
+}
+
+export async function createRetreatAdminAssignment(
+  retreatSlug: string,
+  request: CreateRetreatAdminAssignmentRequest
+): Promise<RetreatAdminAssignment> {
+  const response = await webAxios.post<{
+    assignment: RetreatAdminAssignment;
+  }>(`/api/v1/admin/retreats/${retreatSlug}/admin-assignments`, request);
+
+  return response.data.assignment;
 }
 
 export async function updateRetreat(
@@ -125,6 +170,117 @@ export async function updateRetreat(
   );
 
   return response.data.retreat;
+}
+
+export async function addPaymentSchedule(
+  retreatId: number,
+  request: AddPaymentScheduleRequest
+) {
+  const response = await webAxios.post(
+    `/api/v1/admin/retreats/${retreatId}/payment-schedules`,
+    request
+  );
+
+  return response.data;
+}
+
+export async function addShuttleBus(
+  retreatId: number,
+  request: AddShuttleBusRequest
+) {
+  const response = await webAxios.post(
+    `/api/v1/admin/retreats/${retreatId}/shuttle-buses`,
+    request
+  );
+
+  return response.data;
+}
+
+export async function updateUnivGroupInformation(
+  retreatId: number,
+  univGroupId: number,
+  information: RetreatUnivGroupInformationInput
+) {
+  const response = await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatId}/univ-groups/${univGroupId}/information`,
+    information
+  );
+
+  return response.data;
+}
+
+export async function updatePaymentSchedule(
+  retreatId: number,
+  paymentScheduleId: number,
+  request: UpdatePaymentScheduleRequest
+) {
+  const response = await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatId}/payment-schedules/${paymentScheduleId}`,
+    request
+  );
+  return response.data;
+}
+
+export async function deletePaymentSchedule(
+  retreatId: number,
+  paymentScheduleId: number
+) {
+  await webAxios.delete(
+    `/api/v1/admin/retreats/${retreatId}/payment-schedules/${paymentScheduleId}`
+  );
+}
+
+export async function updateShuttleBus(
+  retreatId: number,
+  shuttleBusId: number,
+  request: UpdateShuttleBusRequest
+) {
+  const response = await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatId}/shuttle-buses/${shuttleBusId}`,
+    request
+  );
+  return response.data;
+}
+
+export async function deleteShuttleBus(
+  retreatId: number,
+  shuttleBusId: number
+) {
+  await webAxios.delete(
+    `/api/v1/admin/retreats/${retreatId}/shuttle-buses/${shuttleBusId}`
+  );
+}
+
+export async function addRegistrationSchedule(
+  retreatId: number,
+  request: AddRegistrationScheduleRequest
+) {
+  const response = await webAxios.post(
+    `/api/v1/admin/retreats/${retreatId}/registration-schedules`,
+    request
+  );
+  return response.data;
+}
+
+export async function updateRegistrationSchedule(
+  retreatId: number,
+  registrationScheduleId: number,
+  request: UpdateRegistrationScheduleRequest
+) {
+  const response = await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatId}/registration-schedules/${registrationScheduleId}`,
+    request
+  );
+  return response.data;
+}
+
+export async function deleteRegistrationSchedule(
+  retreatId: number,
+  registrationScheduleId: number
+) {
+  await webAxios.delete(
+    `/api/v1/admin/retreats/${retreatId}/registration-schedules/${registrationScheduleId}`
+  );
 }
 
 export async function getUnivGroups(): Promise<AdminUnivGroup[]> {
@@ -199,4 +355,32 @@ export async function checkPageAccess(
     { params: { pagePath } }
   );
   return response.data.canAccess;
+}
+
+// --- Admin user 관리 (superuser 전용) ----------------------------------------
+
+export async function listAdmins(): Promise<AdminListRow[]> {
+  const response = await webAxios.get<{ admins: AdminListRow[] }>(
+    `/api/v1/admin/admins`
+  );
+  return response.data.admins;
+}
+
+export async function createAdmin(
+  payload: CreateAdminPayload
+): Promise<AdminListRow> {
+  const response = await webAxios.post<{ admin: AdminListRow }>(
+    `/api/v1/admin/admins`,
+    payload
+  );
+  return response.data.admin;
+}
+
+export async function deactivateAdmin(
+  adminUserId: number
+): Promise<AdminListRow> {
+  const response = await webAxios.patch<{ admin: AdminListRow }>(
+    `/api/v1/admin/admins/${adminUserId}/deactivate`
+  );
+  return response.data.admin;
 }

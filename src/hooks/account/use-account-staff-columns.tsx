@@ -1,31 +1,37 @@
-import { useMemo } from "react";
-import { ColumnDef, createColumnHelper, FilterFn } from "@tanstack/react-table";
-import { IRetreatRegistration } from "@/types/account";
-import { TRetreatRegistrationSchedule } from "@/types";
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
-import { Button } from "@/components/ui/button";
+import { createColumnHelper, FilterFn } from "@tanstack/react-table";
 import { Info } from "lucide-react";
-import { formatDate } from "@/utils/formatDate";
-import { createRetreatScheduleColumns } from "@/hooks/retreat/use-retreat-schedule-columns";
-import { useAccountStaffRegistration } from "./use-account-staff-registration";
+import { useMemo } from "react";
+
+import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
-import { AccountStaffRegistrationTableActions } from "@/components/features/account/AccountStaffRegistrationTableActions";
 import { UnifiedColumnHeader } from "@/components/common/table/UnifiedColumnHeader";
+import { AccountStaffRegistrationTableActions } from "@/components/features/account/AccountStaffRegistrationTableActions";
+import { Button } from "@/components/ui/button";
+import { createRetreatScheduleColumns } from "@/hooks/retreat/use-retreat-schedule-columns";
+import {
+  Gender,
+  TRetreatRegistrationSchedule,
+  UserRetreatRegistrationPaymentStatus,
+  UserRetreatRegistrationType,
+} from "@/types";
+import { formatDate } from "@/utils/formatDate";
 import { gradeDescSortingFn, gradeFilterSort } from "@/utils/sorting";
+
+import { useAccountStaffRegistration } from "./use-account-staff-registration";
 
 // 테이블 데이터 타입 정의 (filterFn보다 먼저 정의)
 export interface AccountStaffTableData {
   id: number;
   department: string;
-  gender: string;
+  gender: Gender;
   grade: string;
   name: string;
   phoneNumber: string;
   schedules: Record<string, boolean>;
-  type: string | null;
+  type: UserRetreatRegistrationType | null;
   amount: number;
   createdAt: string;
-  status: string;
+  status: UserRetreatRegistrationPaymentStatus;
   confirmedBy: string | null;
   paymentConfirmedAt: string | null;
   accountMemo: string | null;
@@ -77,7 +83,7 @@ export function useAccountStaffColumns(
   onRowClick?: (row: AccountStaffTableData) => void
 ) {
   // 통합 훅에서 메모 관련 액션 가져오기
-  const { saveAccountMemo, updateAccountMemo, deleteAccountMemo, isMutating } =
+  const { saveAccountMemo, updateAccountMemo, deleteAccountMemo } =
     useAccountStaffRegistration(retreatSlug);
 
   const columns = useMemo(() => {
@@ -94,7 +100,7 @@ export function useAccountStaffColumns(
             enableFiltering
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()}
           </div>
@@ -113,14 +119,14 @@ export function useAccountStaffColumns(
             table={table}
             title="성별"
             enableFiltering
-            formatFilterValue={(value) =>
+            formatFilterValue={value =>
               value === "MALE" ? "남자" : value === "FEMALE" ? "여자" : value
             }
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
-            <GenderBadge gender={info.getValue() as any} />
+            <GenderBadge gender={info.getValue()} />
           </div>
         ),
         filterFn: arrayIncludesFilterFn,
@@ -140,7 +146,7 @@ export function useAccountStaffColumns(
             sortFilterValues={gradeFilterSort}
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()}
           </div>
@@ -161,7 +167,7 @@ export function useAccountStaffColumns(
             enableSorting
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()}
           </div>
@@ -173,7 +179,7 @@ export function useAccountStaffColumns(
       columnHelper.accessor("phoneNumber", {
         id: "phoneNumber",
         header: () => <div className="text-center text-sm">전화번호</div>,
-        cell: (info) => (
+        cell: info => (
           <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue() || "-"}
           </div>
@@ -198,7 +204,7 @@ export function useAccountStaffColumns(
             table={table}
             title="타입"
             enableFiltering
-            formatFilterValue={(value) => {
+            formatFilterValue={value => {
               const typeNames: Record<string, string> = {
                 FULL: "전참",
                 FIRST_NIGHT: "1박",
@@ -209,11 +215,11 @@ export function useAccountStaffColumns(
             }}
           />
         ),
-        cell: (info) => {
+        cell: info => {
           const type = info.getValue();
           return (
             <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
-              {type ? <TypeBadge type={type as any} /> : "-"}
+              {type ? <TypeBadge type={type} /> : "-"}
             </div>
           );
         },
@@ -224,8 +230,10 @@ export function useAccountStaffColumns(
 
       columnHelper.accessor("amount", {
         id: "amount",
-        header: () => <div className="text-center text-sm">금액</div>,
-        cell: (info) => (
+        header: ({ column, table }) => (
+          <UnifiedColumnHeader column={column} table={table} title="금액" />
+        ),
+        cell: info => (
           <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()?.toLocaleString()}원
           </div>
@@ -236,7 +244,7 @@ export function useAccountStaffColumns(
       columnHelper.accessor("createdAt", {
         id: "createdAt",
         header: () => <div className="text-center text-sm">신청 시각</div>,
-        cell: (info) => (
+        cell: info => (
           <div className="text-center px-2 py-1 whitespace-nowrap shrink-0 text-gray-600">
             {formatDate(info.getValue())}
           </div>
@@ -253,7 +261,7 @@ export function useAccountStaffColumns(
             table={table}
             title="입금 현황"
             enableFiltering
-            formatFilterValue={(value) => {
+            formatFilterValue={value => {
               const statusNames: Record<string, string> = {
                 PENDING: "입금 대기",
                 PAYMENT_REQUESTED: "입금 요청",
@@ -269,17 +277,21 @@ export function useAccountStaffColumns(
             }}
           />
         ),
-        cell: (props) => (
-          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
-            <div className="flex flex-col items-center gap-1">
-              <StatusBadge status={props.getValue() as any} />
-              <AccountStaffRegistrationTableActions
-                row={props.row.original}
-                retreatSlug={retreatSlug}
-              />
+        cell: props => {
+          const status = props.getValue();
+
+          return (
+            <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+              <div className="flex flex-col items-center gap-1">
+                <StatusBadge status={status} />
+                <AccountStaffRegistrationTableActions
+                  row={props.row.original}
+                  retreatSlug={retreatSlug}
+                />
+              </div>
             </div>
-          </div>
-        ),
+          );
+        },
         filterFn: arrayIncludesFilterFn,
         enableColumnFilter: true,
         size: 150,
@@ -288,10 +300,10 @@ export function useAccountStaffColumns(
       columnHelper.display({
         id: "detailInfo",
         header: () => <div className="text-center text-sm">상세</div>,
-        cell: (props) => (
+        cell: props => (
           <div
             className="text-center px-2 py-1 whitespace-nowrap shrink-0"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <Button
               size="sm"
@@ -309,18 +321,19 @@ export function useAccountStaffColumns(
 
       columnHelper.display({
         id: "accountMemo",
-        header: () => (
-          <div className="text-center text-sm whitespace-normal">
-            재정간사
-            <br />
-            메모
-          </div>
+        header: ({ column, table }) => (
+          <UnifiedColumnHeader
+            column={column}
+            table={table}
+            title="재정간사 메모"
+          />
         ),
-        cell: (props) => {
+        cell: props => {
           const row = props.row.original;
+          const memoRow = { ...row, id: String(row.id) };
           return (
             <MemoEditor
-              row={row}
+              row={memoRow}
               memoValue={row.accountMemo}
               onSave={async (id, memo) => {
                 await saveAccountMemo(String(id), memo);
@@ -335,7 +348,7 @@ export function useAccountStaffColumns(
                   await deleteAccountMemo(row.accountMemoId);
                 }
               }}
-              hasExistingMemo={(r: any) => !!r.accountMemo && !!r.accountMemoId}
+              hasExistingMemo={r => !!r.accountMemo && !!r.accountMemoId}
             />
           );
         },
@@ -351,7 +364,6 @@ export function useAccountStaffColumns(
     saveAccountMemo,
     updateAccountMemo,
     deleteAccountMemo,
-    isMutating,
   ]);
 
   return columns;

@@ -82,14 +82,6 @@ function toDateInputValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function toTimeInputValue(value: string) {
-  return value.split("T")[1]?.slice(0, 5) || "";
-}
-
-function toScheduleDateTimeInputValue(date: Date, time: string) {
-  return `${toDateInputValue(date)}T${time}`;
-}
-
 function getErrorMessage(error: unknown) {
   if (
     typeof error === "object" &&
@@ -131,29 +123,12 @@ export default function CreateRetreatForm() {
   });
   const [registrationSchedules, setRegistrationSchedules] = useState<
     RegistrationScheduleInput[]
-  >([{ id: createId(), date: "", type: "DINNER" }]);
+  >([]);
   const [paymentSchedules, setPaymentSchedules] = useState<
     PaymentScheduleInput[]
-  >([
-    {
-      id: createId(),
-      name: "",
-      totalPrice: 0,
-      partialPricePerSchedule: 0,
-      startAt: "",
-      endAt: "",
-    },
-  ]);
-  const [shuttleBuses, setShuttleBuses] = useState<ShuttleBusInput[]>([
-    {
-      id: createId(),
-      name: "",
-      direction: "FROM_CHURCH_TO_RETREAT",
-      price: 0,
-      departureTime: "",
-      arrivalTime: "",
-    },
-  ]);
+  >([]);
+  const [shuttleBuses, setShuttleBuses] = useState<ShuttleBusInput[]>([]);
+  const [disableQr, setDisableQr] = useState(false);
   const allUnivGroupsSelected =
     univGroups.length > 0 && selectedUnivGroupIds.length === univGroups.length;
   const selectedUnivGroups = univGroups.filter(group =>
@@ -233,7 +208,7 @@ export default function CreateRetreatForm() {
         }
       }
 
-      if (qrImage) {
+      if (!disableQr && qrImage) {
         const qrTemplate = await uploadRetreatAsset({
           assetType: "QR_TEMPLATE",
           image: qrImage,
@@ -250,12 +225,17 @@ export default function CreateRetreatForm() {
           posterUrl,
           qrTemplateImageKey,
         },
-        univGroups: selectedUnivGroupIds.map(univGroupId => ({
-          univGroupId,
-          information:
+        univGroups: selectedUnivGroupIds.map(univGroupId => {
+          const information =
             operationInfoByUnivGroupId[univGroupId] ??
-            createEmptyRetreatUnivGroupInformation(),
-        })),
+            createEmptyRetreatUnivGroupInformation();
+          const hasAnyValue = Object.values(information).some(
+            value => value && value.trim().length > 0
+          );
+          return hasAnyValue
+            ? { univGroupId, information }
+            : { univGroupId };
+        }),
         registrationSchedules: registrationSchedules.map(({ date, type }) => ({
           date: toIsoDateTime(date),
           type,
@@ -457,7 +437,7 @@ export default function CreateRetreatForm() {
       <section className="space-y-5 border-b py-8">
         <SectionHeader
           title="부서별 운영 정보"
-          description="신청 완료 안내와 문자 발송에 사용되는 정보입니다."
+          description="신청 완료 안내와 문자 발송에 사용되는 정보입니다. 아직 정해지지 않은 항목은 비워두고 생성한 뒤 운영 페이지에서 나중에 채울 수 있습니다."
         />
         <RetreatUnivGroupOperationInfoFields
           univGroups={selectedUnivGroups}
@@ -481,13 +461,33 @@ export default function CreateRetreatForm() {
               }
             />
           </Field>
-          <Field label="QR 템플릿 이미지">
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={event => setQrImage(event.target.files?.[0] ?? null)}
+          <label className="flex items-start gap-3 rounded-md border bg-muted/30 p-3 text-sm">
+            <Checkbox
+              checked={disableQr}
+              onCheckedChange={value => {
+                const next = Boolean(value);
+                setDisableQr(next);
+                if (next) setQrImage(null);
+              }}
             />
-          </Field>
+            <span className="space-y-1">
+              <span className="block font-medium">
+                이번 수양회는 QR을 사용하지 않습니다
+              </span>
+              <span className="block text-muted-foreground">
+                체크 시 QR 템플릿 업로드가 비활성화되며, 입금 확인 후 발송 문자에 QR 다운로드 링크가 포함되지 않습니다.
+              </span>
+            </span>
+          </label>
+          {!disableQr && (
+            <Field label="QR 템플릿 이미지">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={event => setQrImage(event.target.files?.[0] ?? null)}
+              />
+            </Field>
+          )}
         </div>
       </section>
 
@@ -504,7 +504,11 @@ export default function CreateRetreatForm() {
       <div className="flex justify-end py-8">
         <Button
           type="submit"
-          disabled={isSubmitting || selectedUnivGroupIds.length === 0}
+          disabled={
+            isSubmitting ||
+            selectedUnivGroupIds.length === 0 ||
+            registrationSchedules.length === 0
+          }
         >
           {isSubmitting ? (
             <>
@@ -560,6 +564,18 @@ function Field({
   );
 }
 
+function scheduleDateOnly(date: string) {
+  return date ? date.split("T")[0] : "";
+}
+
+function composeScheduleDateTime(
+  dateOnly: string,
+  type: RegistrationScheduleInput["type"]
+) {
+  if (!dateOnly) return "";
+  return `${dateOnly}T${scheduleDefaultTimes[type]}`;
+}
+
 function ScheduleSection({
   schedules,
   onChange,
@@ -567,84 +583,49 @@ function ScheduleSection({
   schedules: RegistrationScheduleInput[];
   onChange: (schedules: RegistrationScheduleInput[]) => void;
 }) {
-  const [bulkStart, setBulkStart] = useState<RegistrationScheduleInput>({
-    id: createId(),
-    date: "",
-    type: "DINNER",
-  });
-  const [bulkEnd, setBulkEnd] = useState<RegistrationScheduleInput>({
-    id: createId(),
-    date: "",
-    type: "LUNCH",
-  });
-  const bulkStartDate = bulkStart.date ? new Date(bulkStart.date) : null;
-  const bulkEndDate = bulkEnd.date ? new Date(bulkEnd.date) : null;
-  const bulkStartDay = bulkStartDate ? toDateInputValue(bulkStartDate) : "";
-  const bulkEndDay = bulkEndDate ? toDateInputValue(bulkEndDate) : "";
-  const bulkStartTypeIndex = scheduleTypes.indexOf(bulkStart.type);
-  const bulkEndTypeIndex = scheduleTypes.indexOf(bulkEnd.type);
+  const [bulkStartDate, setBulkStartDate] = useState("");
+  const [bulkEndDate, setBulkEndDate] = useState("");
+  const [bulkStartType, setBulkStartType] =
+    useState<RegistrationScheduleInput["type"]>("DINNER");
+  const [bulkEndType, setBulkEndType] =
+    useState<RegistrationScheduleInput["type"]>("LUNCH");
+
+  const bulkStartTypeIndex = scheduleTypes.indexOf(bulkStartType);
+  const bulkEndTypeIndex = scheduleTypes.indexOf(bulkEndType);
   const canBulkAdd =
-    Boolean(bulkStart.date && bulkEnd.date) &&
-    (bulkStartDay < bulkEndDay ||
-      (bulkStartDay === bulkEndDay && bulkStartTypeIndex <= bulkEndTypeIndex));
+    Boolean(bulkStartDate && bulkEndDate) &&
+    (bulkStartDate < bulkEndDate ||
+      (bulkStartDate === bulkEndDate &&
+        bulkStartTypeIndex <= bulkEndTypeIndex));
 
   const handleBulkAdd = () => {
-    if (!canBulkAdd || !bulkStartDate || !bulkEndDate) {
-      return;
-    }
+    if (!canBulkAdd) return;
 
-    const startDay = new Date(
-      bulkStartDate.getFullYear(),
-      bulkStartDate.getMonth(),
-      bulkStartDate.getDate()
-    );
-    const endDay = new Date(
-      bulkEndDate.getFullYear(),
-      bulkEndDate.getMonth(),
-      bulkEndDate.getDate()
-    );
-    const generatedSchedules: RegistrationScheduleInput[] = [];
+    const generated: RegistrationScheduleInput[] = [];
+    // Parse with explicit local time to avoid UTC off-by-one
+    const cursor = new Date(`${bulkStartDate}T00:00:00`);
+    const stop = new Date(`${bulkEndDate}T00:00:00`);
 
-    for (
-      const currentDay = new Date(startDay);
-      currentDay <= endDay;
-      currentDay.setDate(currentDay.getDate() + 1)
-    ) {
-      const currentDayValue = toDateInputValue(currentDay);
+    while (cursor <= stop) {
+      const cursorDay = toDateInputValue(cursor);
 
-      scheduleTypes.forEach((type, typeIndex) => {
-        if (
-          currentDayValue === bulkStartDay &&
-          typeIndex < bulkStartTypeIndex
-        ) {
-          return;
-        }
+      scheduleTypes.forEach((type, idx) => {
+        if (cursorDay === bulkStartDate && idx < bulkStartTypeIndex) return;
+        if (cursorDay === bulkEndDate && idx > bulkEndTypeIndex) return;
 
-        if (currentDayValue === bulkEndDay && typeIndex > bulkEndTypeIndex) {
-          return;
-        }
-
-        const isStartBoundary =
-          currentDayValue === bulkStartDay && type === bulkStart.type;
-        const isEndBoundary =
-          currentDayValue === bulkEndDay && type === bulkEnd.type;
-        const time = isStartBoundary
-          ? toTimeInputValue(bulkStart.date) || scheduleDefaultTimes[type]
-          : isEndBoundary
-            ? toTimeInputValue(bulkEnd.date) || scheduleDefaultTimes[type]
-            : scheduleDefaultTimes[type];
-
-        generatedSchedules.push({
-          id: createId() + generatedSchedules.length,
-          date: toScheduleDateTimeInputValue(currentDay, time),
+        generated.push({
+          id: createId() + generated.length,
+          date: composeScheduleDateTime(cursorDay, type),
           type,
         });
       });
+
+      cursor.setDate(cursor.getDate() + 1);
     }
 
     onChange([
       ...schedules.filter(schedule => schedule.date),
-      ...generatedSchedules,
+      ...generated,
     ]);
   };
 
@@ -653,7 +634,7 @@ function ScheduleSection({
       <div className="flex items-start justify-between gap-4">
         <SectionHeader
           title="신청 일정"
-          description="식사/숙박 선택 단위입니다. 생성 후 기존 일정은 수정할 수 없고 추가만 가능합니다. 신청 내역이 없으면 삭제할 수 있고, 신청 내역이 있으면 삭제할 수 없습니다."
+          description="식사/숙박 선택 단위입니다. 각 일정의 시간은 종류에 따라 자동 지정됩니다 (아침 08:00, 점심 12:00, 저녁 18:00, 숙박 22:00). 생성 후 기존 일정은 수정할 수 없고 추가만 가능합니다."
         />
         <Button
           type="button"
@@ -662,7 +643,14 @@ function ScheduleSection({
           onClick={() =>
             onChange([
               ...schedules,
-              { id: createId(), date: "", type: "DINNER" },
+              {
+                id: createId(),
+                date: composeScheduleDateTime(
+                  toDateInputValue(new Date()),
+                  "DINNER"
+                ),
+                type: "DINNER",
+              },
             ])
           }
         >
@@ -673,27 +661,20 @@ function ScheduleSection({
       <div className="rounded-md border bg-muted/30 p-4">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_10rem]">
-            <Field label="첫 일정 시간">
+            <Field label="시작 날짜">
               <Input
-                type="datetime-local"
-                value={bulkStart.date}
-                onChange={event =>
-                  setBulkStart(current => ({
-                    ...current,
-                    date: event.target.value,
-                  }))
-                }
+                type="date"
+                value={bulkStartDate}
+                onChange={event => setBulkStartDate(event.target.value)}
               />
             </Field>
-            <Field label="첫 일정 종류">
+            <Field label="시작 식사">
               <select
-                value={bulkStart.type}
+                value={bulkStartType}
                 onChange={event =>
-                  setBulkStart(current => ({
-                    ...current,
-                    type: event.target
-                      .value as RegistrationScheduleInput["type"],
-                  }))
+                  setBulkStartType(
+                    event.target.value as RegistrationScheduleInput["type"]
+                  )
                 }
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
@@ -706,27 +687,20 @@ function ScheduleSection({
             </Field>
           </div>
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_10rem]">
-            <Field label="마지막 일정 시간">
+            <Field label="끝 날짜">
               <Input
-                type="datetime-local"
-                value={bulkEnd.date}
-                onChange={event =>
-                  setBulkEnd(current => ({
-                    ...current,
-                    date: event.target.value,
-                  }))
-                }
+                type="date"
+                value={bulkEndDate}
+                onChange={event => setBulkEndDate(event.target.value)}
               />
             </Field>
-            <Field label="마지막 일정 종류">
+            <Field label="끝 식사">
               <select
-                value={bulkEnd.type}
+                value={bulkEndType}
                 onChange={event =>
-                  setBulkEnd(current => ({
-                    ...current,
-                    type: event.target
-                      .value as RegistrationScheduleInput["type"],
-                  }))
+                  setBulkEndType(
+                    event.target.value as RegistrationScheduleInput["type"]
+                  )
                 }
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
@@ -750,20 +724,32 @@ function ScheduleSection({
         </div>
       </div>
       <div className="space-y-3">
+        {schedules.length === 0 && (
+          <p className="rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">
+            아직 등록된 일정이 없습니다. 위의 자동 채우기 또는 "추가" 버튼으로
+            일정을 등록해주세요.
+          </p>
+        )}
         {schedules.map(schedule => (
           <div
             key={schedule.id}
             className="grid gap-3 rounded-md border p-4 md:grid-cols-[minmax(0,1fr)_12rem_auto] md:items-end"
           >
-            <Field label="일정 시간">
+            <Field label="날짜">
               <Input
-                type="datetime-local"
-                value={schedule.date}
+                type="date"
+                value={scheduleDateOnly(schedule.date)}
                 onChange={event =>
                   onChange(
                     schedules.map(item =>
                       item.id === schedule.id
-                        ? { ...item, date: event.target.value }
+                        ? {
+                            ...item,
+                            date: composeScheduleDateTime(
+                              event.target.value,
+                              item.type
+                            ),
+                          }
                         : item
                     )
                   )
@@ -774,19 +760,24 @@ function ScheduleSection({
             <Field label="일정 종류">
               <select
                 value={schedule.type}
-                onChange={event =>
+                onChange={event => {
+                  const nextType = event.target
+                    .value as RegistrationScheduleInput["type"];
                   onChange(
                     schedules.map(item =>
                       item.id === schedule.id
                         ? {
                             ...item,
-                            type: event.target
-                              .value as RegistrationScheduleInput["type"],
+                            type: nextType,
+                            date: composeScheduleDateTime(
+                              scheduleDateOnly(item.date),
+                              nextType
+                            ),
                           }
                         : item
                     )
-                  )
-                }
+                  );
+                }}
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
                 {scheduleTypes.map(type => (
@@ -798,7 +789,6 @@ function ScheduleSection({
             </Field>
             <div className="flex justify-end md:justify-start">
               <RemoveButton
-                disabled={schedules.length === 1}
                 onClick={() =>
                   onChange(schedules.filter(item => item.id !== schedule.id))
                 }
@@ -823,7 +813,7 @@ function PaymentSection({
       <div className="flex items-start justify-between gap-4">
         <SectionHeader
           title="결제 일정"
-          description="신청 기간별 금액 정책입니다. 신청 내역이 없을 때만 변경할 수 있습니다."
+          description="신청 기간별 금액 정책입니다. 지금 비워두고 운영 페이지에서 나중에 추가해도 됩니다. 신청 내역이 없을 때만 변경할 수 있습니다."
         />
         <Button
           type="button"
@@ -848,6 +838,12 @@ function PaymentSection({
         </Button>
       </div>
       <div className="space-y-3">
+        {schedules.length === 0 && (
+          <p className="rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">
+            등록된 결제 일정이 없습니다. 수양회 생성 후 운영 페이지에서 추가할
+            수 있습니다.
+          </p>
+        )}
         {schedules.map(schedule => (
           <div key={schedule.id} className="space-y-3 rounded-md border p-3">
             <div className="space-y-3">
@@ -949,7 +945,6 @@ function PaymentSection({
               </div>
               <div className="flex justify-end">
                 <RemoveButton
-                  disabled={schedules.length === 1}
                   onClick={() =>
                     onChange(schedules.filter(item => item.id !== schedule.id))
                   }
@@ -975,7 +970,7 @@ function ShuttleBusSection({
       <div className="flex items-start justify-between gap-4">
         <SectionHeader
           title="셔틀버스"
-          description="신청 가능한 셔틀버스 노선입니다. 생성 후 기존 셔틀버스 일정은 수정할 수 없고 추가만 가능합니다. 신청 내역이 없으면 삭제할 수 있고, 신청 내역이 있으면 삭제할 수 없습니다."
+          description="신청 가능한 셔틀버스 노선입니다. 지금 비워두고 운영 페이지에서 나중에 추가해도 됩니다. 생성 후 기존 셔틀버스는 수정할 수 없고 추가만 가능합니다."
         />
         <Button
           type="button"
@@ -1000,6 +995,12 @@ function ShuttleBusSection({
         </Button>
       </div>
       <div className="space-y-3">
+        {buses.length === 0 && (
+          <p className="rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">
+            등록된 셔틀버스가 없습니다. 수양회 생성 후 운영 페이지에서 추가할
+            수 있습니다.
+          </p>
+        )}
         {buses.map(bus => (
           <div key={bus.id} className="space-y-3 rounded-md border p-3">
             <div className="space-y-3">
@@ -1099,7 +1100,6 @@ function ShuttleBusSection({
               </div>
               <div className="flex justify-end">
                 <RemoveButton
-                  disabled={buses.length === 1}
                   onClick={() =>
                     onChange(buses.filter(item => item.id !== bus.id))
                   }
@@ -1117,7 +1117,7 @@ function RemoveButton({
   disabled,
   onClick,
 }: {
-  disabled: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (

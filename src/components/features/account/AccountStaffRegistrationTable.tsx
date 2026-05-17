@@ -11,18 +11,22 @@ import {
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
+import { HelpCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import {
   DetailSidebar,
   useDetailSidebar,
 } from "@/components/common/detail-sidebar";
+import { PageHelpPanel } from "@/components/common/help";
 import { VirtualizedTable } from "@/components/common/table";
+import { Button } from "@/components/ui/button";
 import {
   useAccountStaffColumns,
   AccountStaffTableData,
 } from "@/hooks/account/use-account-staff-columns";
 import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
+import { accountRetreatRegistrationHelp } from "@/lib/help";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { IRetreatRegistration } from "@/types/account";
 
@@ -66,6 +70,7 @@ export function AccountStaffRegistrationTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // ✅ 컬럼 훅으로 컬럼 정의 가져오기
   const columns = useAccountStaffColumns(schedules, retreatSlug, sidebar.open);
@@ -133,14 +138,32 @@ export function AccountStaffRegistrationTable({
   return (
     <>
       <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">
-            재정 간사 조회
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            대학부 전체 신청자 목록 ({filteredRowCount}명)
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              재정 간사 조회
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              대학부 전체 신청자 목록 ({filteredRowCount}명)
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            onClick={() => setHelpOpen(true)}
+          >
+            <HelpCircle className="h-5 w-5" />
+            <span className="sr-only">재정간사 신청 조회 도움말</span>
+          </Button>
         </div>
+
+        <PageHelpPanel
+          content={accountRetreatRegistrationHelp}
+          open={helpOpen}
+          onOpenChange={setHelpOpen}
+        />
 
         {/* 툴바 */}
         <AccountStaffRegistrationTableToolbar

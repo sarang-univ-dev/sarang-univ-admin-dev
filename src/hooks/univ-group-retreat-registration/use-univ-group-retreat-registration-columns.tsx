@@ -1,37 +1,21 @@
-import { useMemo } from "react";
-import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
-import { TRetreatRegistrationSchedule } from "@/types";
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
-import { Button } from "@/components/ui/button";
+import { createColumnHelper } from "@tanstack/react-table";
 import { Info } from "lucide-react";
-import { UnivGroupRetreatRegistrationTableActions } from "@/components/features/univ-group-retreat-registration/UnivGroupRetreatRegistrationTableActions";
-import { MemoEditor } from "@/components/common/table/MemoEditor";
-import { ShuttleBusStatusBadge } from "@/components/features/univ-group-retreat-registration/ShuttleBusStatusBadge";
-import { AttendanceBadge } from "@/components/features/univ-group-retreat-registration/AttendanceBadge";
-import { formatDate } from "@/utils/formatDate";
-import { useUnivGroupRetreatRegistration } from "./use-univ-group-retreat-registration";
+import { useMemo } from "react";
+
+import { GenderBadge, StatusBadge } from "@/components/Badge";
 import { ColumnHeader } from "@/components/common/table/ColumnHeader";
-import { HelpTooltip } from "@/components/common/help";
-import {
-  USER_RETREAT_TYPE_LABELS,
-  PAYMENT_STATUS_LABELS,
-} from "@/lib/constant/labels";
-import { univGroupRetreatRegistrationHelp } from "@/lib/help";
+import { MemoEditor } from "@/components/common/table/MemoEditor";
+import { AttendanceBadge } from "@/components/features/univ-group-retreat-registration/AttendanceBadge";
+import { ShuttleBusStatusBadge } from "@/components/features/univ-group-retreat-registration/ShuttleBusStatusBadge";
+import { UnivGroupRetreatRegistrationTableActions } from "@/components/features/univ-group-retreat-registration/UnivGroupRetreatRegistrationTableActions";
+import { Button } from "@/components/ui/button";
+import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
+import { TRetreatRegistrationSchedule } from "@/types";
+import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
+
+import { useUnivGroupRetreatRegistration } from "./use-univ-group-retreat-registration";
 
 const columnHelper = createColumnHelper<UnivGroupAdminStaffData>();
-
-// 컬럼별 도움말 콘텐츠 맵핑
-const columnHelpMap = univGroupRetreatRegistrationHelp.columns.reduce(
-  (acc, col) => ({ ...acc, [col.columnId]: col }),
-  {} as Record<string, typeof univGroupRetreatRegistrationHelp.columns[0]>
-);
-
-// 결제 상태별 도움말 콘텐츠 맵핑
-const paymentStatusHelpMap = univGroupRetreatRegistrationHelp.badges.paymentStatus.reduce(
-  (acc, badge) => ({ ...acc, [badge.status]: badge }),
-  {} as Record<string, typeof univGroupRetreatRegistrationHelp.badges.paymentStatus[0]>
-);
 
 /**
  * 부서 수양회 신청 테이블 컬럼 훅
@@ -47,16 +31,13 @@ const paymentStatusHelpMap = univGroupRetreatRegistrationHelp.badges.paymentStat
  * @returns TanStack Table columns
  */
 export function useUnivGroupRetreatRegistrationColumns(
-  schedules: TRetreatRegistrationSchedule[],
+  _schedules: TRetreatRegistrationSchedule[],
   retreatSlug: string,
   onRowClick?: (row: UnivGroupAdminStaffData) => void
 ) {
   // 통합 훅에서 메모 관련 액션 가져오기
-  const {
-    saveAdminMemo,
-    updateAdminMemo,
-    deleteAdminMemo,
-  } = useUnivGroupRetreatRegistration(retreatSlug);
+  const { saveAdminMemo, updateAdminMemo, deleteAdminMemo } =
+    useUnivGroupRetreatRegistration(retreatSlug);
 
   const columns = useMemo(() => {
     // 1. 왼쪽 정적 컬럼
@@ -70,8 +51,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             title="성별"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => value === "MALE" ? "남" : "여"}
-            helpContent={columnHelpMap.gender}
+            formatFilterValue={value => (value === "MALE" ? "남" : "여")}
           />
         ),
         cell: info => (
@@ -91,11 +71,12 @@ export function useUnivGroupRetreatRegistrationColumns(
             title="학년"
             enableSorting
             enableFiltering
-            helpContent={columnHelpMap.grade}
           />
         ),
         cell: info => (
-          <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">{info.getValue()}</div>
+          <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">
+            {info.getValue()}
+          </div>
         ),
         filterFn: "arrIncludesSome",
         sortingFn: (rowA, rowB, columnId) => {
@@ -103,8 +84,8 @@ export function useUnivGroupRetreatRegistrationColumns(
           const gradeB = rowB.getValue(columnId) as string;
 
           // 숫자 부분만 추출 (예: "1학년" -> 1, "10학년" -> 10)
-          const numA = parseInt(gradeA?.replace(/[^0-9]/g, '') || '0', 10);
-          const numB = parseInt(gradeB?.replace(/[^0-9]/g, '') || '0', 10);
+          const numA = parseInt(gradeA?.replace(/[^0-9]/g, "") || "0", 10);
+          const numB = parseInt(gradeB?.replace(/[^0-9]/g, "") || "0", 10);
 
           return numA - numB;
         },
@@ -142,7 +123,9 @@ export function useUnivGroupRetreatRegistrationColumns(
           />
         ),
         cell: info => (
-          <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">{info.getValue() || "-"}</div>
+          <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">
+            {info.getValue() || "-"}
+          </div>
         ),
         filterFn: "arrIncludesSome",
       }),
@@ -159,7 +142,9 @@ export function useUnivGroupRetreatRegistrationColumns(
           />
         ),
         cell: info => (
-          <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">{info.getValue() || "-"}</div>
+          <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">
+            {info.getValue() || "-"}
+          </div>
         ),
         filterFn: "arrIncludesSome",
       }),
@@ -175,8 +160,7 @@ export function useUnivGroupRetreatRegistrationColumns(
           title="참석 현황"
           enableSorting
           enableFiltering
-          formatFilterValue={(value) => value ? "전참" : "부분참"}
-          helpContent={columnHelpMap.attendance}
+          formatFilterValue={value => (value ? "전참" : "부분참")}
         />
       ),
       cell: info => (
@@ -202,37 +186,19 @@ export function useUnivGroupRetreatRegistrationColumns(
             title="입금 현황"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) =>
-              PAYMENT_STATUS_LABELS[value as keyof typeof PAYMENT_STATUS_LABELS] || value
+            formatFilterValue={value =>
+              PAYMENT_STATUS_LABELS[
+                value as keyof typeof PAYMENT_STATUS_LABELS
+              ] || value
             }
-            helpContent={columnHelpMap.status}
           />
         ),
         cell: props => {
           const status = props.getValue();
-          const helpInfo = paymentStatusHelpMap[status];
 
           return (
             <div className="flex flex-col items-center gap-1 shrink-0 px-1">
-              {helpInfo ? (
-                <HelpTooltip
-                  content={
-                    <div className="space-y-1">
-                      <p className="font-medium">{helpInfo.title}</p>
-                      <p className="text-muted-foreground">{helpInfo.description}</p>
-                      {helpInfo.action && (
-                        <p className="text-xs text-blue-600 mt-1">{helpInfo.action}</p>
-                      )}
-                    </div>
-                  }
-                >
-                  <span>
-                    <StatusBadge status={status} />
-                  </span>
-                </HelpTooltip>
-              ) : (
-                <StatusBadge status={status} />
-              )}
+              <StatusBadge status={status} />
               <UnivGroupRetreatRegistrationTableActions
                 row={props.row.original}
                 retreatSlug={retreatSlug}
@@ -252,8 +218,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             title="셔틀버스 신청 여부"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => value ? "신청함" : "신청 안함"}
-            helpContent={columnHelpMap.shuttleBus}
+            formatFilterValue={value => (value ? "신청함" : "신청 안함")}
           />
         ),
         cell: info => (
@@ -277,7 +242,6 @@ export function useUnivGroupRetreatRegistrationColumns(
             title="행정간사 메모"
             enableSorting
             enableFiltering
-            helpContent={columnHelpMap.adminMemo}
           />
         ),
         cell: props => {
@@ -300,7 +264,7 @@ export function useUnivGroupRetreatRegistrationColumns(
                     await deleteAdminMemo(row.adminMemoId);
                   }
                 }}
-                hasExistingMemo={(r) => !!r.staffMemo && !!r.adminMemoId}
+                hasExistingMemo={r => !!r.staffMemo && !!r.adminMemoId}
               />
             </div>
           );
@@ -310,11 +274,13 @@ export function useUnivGroupRetreatRegistrationColumns(
 
       columnHelper.display({
         id: "detailInfo",
-        header: () => <div className="text-center text-sm whitespace-nowrap">상세보기</div>,
+        header: () => (
+          <div className="text-center text-sm whitespace-nowrap">상세보기</div>
+        ),
         cell: props => (
           <div
             className="flex justify-center shrink-0 px-1"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <Button
               size="sm"
@@ -332,7 +298,6 @@ export function useUnivGroupRetreatRegistrationColumns(
 
     return [...leftColumns, attendanceColumn, ...rightColumns];
   }, [
-    schedules,
     retreatSlug,
     onRowClick,
     saveAdminMemo,

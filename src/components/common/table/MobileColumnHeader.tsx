@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { Column, Table } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter, Check } from "lucide-react";
+import { useMemo, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Drawer,
   DrawerContent,
@@ -14,8 +14,7 @@ import {
   DrawerFooter,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { ColumnHeaderHelp } from "@/components/common/help";
-import type { ColumnHelpContent } from "@/lib/help/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface MobileColumnHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -27,15 +26,11 @@ interface MobileColumnHeaderProps<TData> {
    * 필터 값을 표시할 포맷 함수
    * @example (value) => value === 'MALE' ? '남' : '여'
    */
-  formatFilterValue?: (value: any) => string;
+  formatFilterValue?: (value: never) => unknown;
   /**
    * 필터 값을 정렬할 함수
    */
-  sortFilterValues?: (a: any, b: any) => number;
-  /**
-   * 컬럼 도움말 콘텐츠
-   */
-  helpContent?: ColumnHelpContent;
+  sortFilterValues?: (a: never, b: never) => number;
 }
 
 /**
@@ -52,9 +47,8 @@ export function MobileColumnHeader<TData>({
   title,
   enableSorting = false,
   enableFiltering = false,
-  formatFilterValue = (value) => String(value),
+  formatFilterValue = value => String(value),
   sortFilterValues,
-  helpContent,
 }: MobileColumnHeaderProps<TData>) {
   const [open, setOpen] = useState(false);
 
@@ -63,7 +57,7 @@ export function MobileColumnHeader<TData>({
   const isSorted = !!sortingState;
 
   // 필터 상태
-  const filterValue = (column.getFilterValue() as any[]) || [];
+  const filterValue = (column.getFilterValue() as unknown[]) || [];
   const isFiltered = filterValue.length > 0;
 
   // 활성 상태 여부
@@ -71,17 +65,17 @@ export function MobileColumnHeader<TData>({
 
   // 해당 컬럼의 고유 값 목록 추출
   const uniqueValues = useMemo(() => {
-    const valuesSet = new Set<any>();
+    const valuesSet = new Set<unknown>();
     let hasEmptyValue = false;
 
-    table.getPreFilteredRowModel().rows.forEach((row) => {
+    table.getPreFilteredRowModel().rows.forEach(row => {
       const value = row.getValue(column.id);
 
       if (Array.isArray(value)) {
         if (value.length === 0) {
           hasEmptyValue = true;
         } else {
-          value.forEach((item) => valuesSet.add(item));
+          value.forEach(item => valuesSet.add(item));
         }
       } else if (value === null || value === undefined || value === "") {
         hasEmptyValue = true;
@@ -92,7 +86,7 @@ export function MobileColumnHeader<TData>({
 
     const values = Array.from(valuesSet).sort((a, b) => {
       if (sortFilterValues) {
-        return sortFilterValues(a, b);
+        return sortFilterValues(a as never, b as never);
       }
       if (typeof a === "number" && typeof b === "number") {
         return a - b;
@@ -108,7 +102,7 @@ export function MobileColumnHeader<TData>({
   }, [table, column.id, sortFilterValues]);
 
   // 체크박스 상태 관리
-  const [selectedValues, setSelectedValues] = useState<Set<any>>(
+  const [selectedValues, setSelectedValues] = useState<Set<unknown>>(
     new Set(filterValue.length > 0 ? filterValue : uniqueValues)
   );
 
@@ -144,7 +138,7 @@ export function MobileColumnHeader<TData>({
     setSelectedValues(new Set());
   };
 
-  const handleToggle = (value: any) => {
+  const handleToggle = (value: unknown) => {
     const newSet = new Set(selectedValues);
     if (newSet.has(value)) {
       newSet.delete(value);
@@ -199,7 +193,6 @@ export function MobileColumnHeader<TData>({
     return (
       <div className="flex items-center justify-center gap-1 font-semibold text-xs whitespace-nowrap">
         <span>{title}</span>
-        {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
       </div>
     );
   }
@@ -294,10 +287,12 @@ export function MobileColumnHeader<TData>({
               {/* 값 목록 */}
               <ScrollArea className="h-[200px] border rounded-md">
                 <div className="p-2 space-y-1">
-                  {uniqueValues.map((value) => {
+                  {uniqueValues.map(value => {
                     const isSelected = selectedValues.has(value);
                     const displayValue =
-                      value === "__EMPTY__" ? "값 없음" : formatFilterValue(value);
+                      value === "__EMPTY__"
+                        ? "값 없음"
+                        : String(formatFilterValue(value as never));
                     return (
                       <div
                         key={String(value)}

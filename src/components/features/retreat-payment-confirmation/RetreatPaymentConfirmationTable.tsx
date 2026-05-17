@@ -1,42 +1,43 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
 import {
-  useReactTable,
-  getCoreRowModel,
+  ColumnFiltersState,
+  createColumnHelper,
   getFilteredRowModel,
-  getSortedRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
-  ColumnDef,
+  getCoreRowModel,
+  getSortedRowModel,
   SortingState,
-  ColumnFiltersState,
+  useReactTable,
   VisibilityState,
-  createColumnHelper,
 } from "@tanstack/react-table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Info } from "lucide-react";
+import { HelpCircle, Info } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+
+import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
+import { DetailSidebar } from "@/components/common/detail-sidebar";
+import { PageHelpPanel } from "@/components/common/help";
 import { VirtualizedTable } from "@/components/common/table";
 import { ColumnHeader } from "@/components/common/table/ColumnHeader";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useRetreatPaymentConfirmation } from "@/hooks/retreat-payment-confirmation/use-retreat-payment-confirmation";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
-import { gradeDescSortingFn } from "@/utils/sorting";
+import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
+import { retreatPaymentConfirmationHelp } from "@/lib/help";
 import {
+  Gender,
   TRetreatRegistrationSchedule,
   UserRetreatRegistrationPaymentStatus,
   UserRetreatRegistrationType,
-  Gender,
 } from "@/types";
-import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
-import { useRetreatPaymentConfirmation } from "@/hooks/retreat-payment-confirmation/use-retreat-payment-confirmation";
-import { RetreatPaymentConfirmationTableToolbar } from "./RetreatPaymentConfirmationTableToolbar";
-import { RetreatPaymentConfirmationTableActions } from "./RetreatPaymentConfirmationTableActions";
-import { RetreatPaymentConfirmationDetailContent } from "./RetreatPaymentConfirmationDetailContent";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
-import { DetailSidebar } from "@/components/common/detail-sidebar";
-import {
-  PAYMENT_STATUS_LABELS,
-} from "@/lib/constant/labels";
+import { gradeDescSortingFn } from "@/utils/sorting";
+
+import { RetreatPaymentConfirmationDetailContent } from "./RetreatPaymentConfirmationDetailContent";
+import { RetreatPaymentConfirmationTableActions } from "./RetreatPaymentConfirmationTableActions";
+import { RetreatPaymentConfirmationTableToolbar } from "./RetreatPaymentConfirmationTableToolbar";
 
 interface RetreatPaymentConfirmationTableProps {
   initialData: IUserRetreatRegistration[];
@@ -94,9 +95,11 @@ export function RetreatPaymentConfirmationTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // ✅ Detail Sidebar State
-  const [selectedRow, setSelectedRow] = useState<IUserRetreatRegistration | null>(null);
+  const [selectedRow, setSelectedRow] =
+    useState<IUserRetreatRegistration | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // ✅ 스케줄 컬럼 메타데이터 생성
@@ -107,9 +110,9 @@ export function RetreatPaymentConfirmationTable({
 
   // ✅ 데이터 변환 (useMemo로 메모이제이션)
   const data = useMemo<TableRow[]>(() => {
-    return registrations.map((reg) => {
+    return registrations.map(reg => {
       const scheduleData: Record<string, boolean> = {};
-      schedules.forEach((schedule) => {
+      schedules.forEach(schedule => {
         scheduleData[`schedule_${schedule.id}`] =
           reg.userRetreatRegistrationScheduleIds?.includes(schedule.id) ||
           false;
@@ -147,10 +150,10 @@ export function RetreatPaymentConfirmationTable({
             title="성별"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => value === "MALE" ? "남자" : "여자"}
+            formatFilterValue={value => (value === "MALE" ? "남자" : "여자")}
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="flex justify-center px-2 py-1 whitespace-nowrap shrink-0">
             <GenderBadge gender={info.getValue()} />
           </div>
@@ -168,7 +171,7 @@ export function RetreatPaymentConfirmationTable({
             enableFiltering
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()}
           </div>
@@ -187,7 +190,7 @@ export function RetreatPaymentConfirmationTable({
             enableFiltering
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue()}
           </div>
@@ -198,11 +201,11 @@ export function RetreatPaymentConfirmationTable({
     ];
 
     // 동적 스케줄 컬럼
-    const scheduleColumns = scheduleColumnsMeta.map((col) =>
-      columnHelper.accessor((row) => row.schedule[col.key], {
+    const scheduleColumns = scheduleColumnsMeta.map(col =>
+      columnHelper.accessor(row => row.schedule[col.key], {
         id: col.key,
         header: col.label,
-        cell: (info) => {
+        cell: info => {
           const isChecked = !!info.getValue();
           return (
             <div className="flex justify-center px-2 py-1 whitespace-nowrap shrink-0">
@@ -220,9 +223,11 @@ export function RetreatPaymentConfirmationTable({
     const endColumns = [
       columnHelper.accessor("type", {
         id: "type",
-        header: "타입",
+        header: ({ column, table }) => (
+          <ColumnHeader column={column} table={table} title="타입" />
+        ),
         size: 85,
-        cell: (info) => {
+        cell: info => {
           const type = info.getValue();
           return (
             <div className="flex justify-center px-2 py-1 whitespace-nowrap shrink-0">
@@ -233,8 +238,10 @@ export function RetreatPaymentConfirmationTable({
       }),
       columnHelper.accessor("amount", {
         id: "amount",
-        header: "금액",
-        cell: (info) => (
+        header: ({ column, table }) => (
+          <ColumnHeader column={column} table={table} title="금액" />
+        ),
+        cell: info => (
           <div className="font-medium text-center px-2 py-1 whitespace-nowrap shrink-0">
             {info.getValue().toLocaleString()}원
           </div>
@@ -250,37 +257,43 @@ export function RetreatPaymentConfirmationTable({
             title="입금 현황"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) =>
-              PAYMENT_STATUS_LABELS[value as keyof typeof PAYMENT_STATUS_LABELS] || value
+            formatFilterValue={value =>
+              PAYMENT_STATUS_LABELS[
+                value as keyof typeof PAYMENT_STATUS_LABELS
+              ] || value
             }
           />
         ),
-        cell: (props) => (
-          <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
-            <div className="flex flex-col items-center gap-1">
-              <StatusBadge status={props.getValue()} />
-              <RetreatPaymentConfirmationTableActions
-                registration={props.row.original.original}
-                confirmPayment={confirmPayment}
-                sendPaymentRequest={sendPaymentRequest}
-                refundComplete={refundComplete}
-                isMutating={isMutating}
-              />
+        cell: props => {
+          const status = props.getValue();
+
+          return (
+            <div className="text-center px-2 py-1 whitespace-nowrap shrink-0">
+              <div className="flex flex-col items-center gap-1">
+                <StatusBadge status={status} />
+                <RetreatPaymentConfirmationTableActions
+                  registration={props.row.original.original}
+                  confirmPayment={confirmPayment}
+                  sendPaymentRequest={sendPaymentRequest}
+                  refundComplete={refundComplete}
+                  isMutating={isMutating}
+                />
+              </div>
             </div>
-          </div>
-        ),
+          );
+        },
         filterFn: "arrIncludesSome",
       }),
       // ✅ 상세 정보 버튼
       columnHelper.display({
         id: "detailInfo",
         header: () => <div className="text-center whitespace-nowrap">상세</div>,
-        cell: (props) => (
+        cell: props => (
           <div className="flex justify-center px-2 py-1 whitespace-nowrap shrink-0">
             <Button
               size="sm"
               variant="outline"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 handleRowClick(props.row.original.original);
               }}
@@ -295,7 +308,14 @@ export function RetreatPaymentConfirmationTable({
     ];
 
     return [...staticColumns, ...scheduleColumns, ...endColumns];
-  }, [scheduleColumnsMeta, confirmPayment, sendPaymentRequest, refundComplete, isMutating, handleRowClick]);
+  }, [
+    scheduleColumnsMeta,
+    confirmPayment,
+    sendPaymentRequest,
+    refundComplete,
+    isMutating,
+    handleRowClick,
+  ]);
 
   // ✅ TanStack Table 초기화
   const table = useReactTable<TableRow>({
@@ -325,12 +345,9 @@ export function RetreatPaymentConfirmationTable({
     isMultiSortEvent: () => true,
     // 전역 필터 함수 (통합 검색)
     globalFilterFn: (row, columnId, filterValue) => {
-      const searchableFields = [
-        row.original.name,
-        row.original.grade,
-      ];
+      const searchableFields = [row.original.name, row.original.grade];
 
-      return searchableFields.some((field) =>
+      return searchableFields.some(field =>
         field?.toLowerCase().includes(filterValue.toLowerCase())
       );
     },
@@ -340,14 +357,32 @@ export function RetreatPaymentConfirmationTable({
     <>
       <div className="space-y-4">
         {/* 헤더 */}
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">
-            신청 현황 및 입금 조회
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            전체 신청자 목록 ({table.getFilteredRowModel().rows.length}명)
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              신청 현황 및 입금 조회
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              전체 신청자 목록 ({table.getFilteredRowModel().rows.length}명)
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            onClick={() => setHelpOpen(true)}
+          >
+            <HelpCircle className="h-5 w-5" />
+            <span className="sr-only">입금 확인 도움말</span>
+          </Button>
         </div>
+
+        <PageHelpPanel
+          content={retreatPaymentConfirmationHelp}
+          open={helpOpen}
+          onOpenChange={setHelpOpen}
+        />
 
         {/* 툴바 */}
         <RetreatPaymentConfirmationTableToolbar
@@ -365,9 +400,7 @@ export function RetreatPaymentConfirmationTable({
           overscan={10}
           className="max-h-[70vh]"
           emptyMessage={
-            globalFilter
-              ? "검색 결과가 없습니다."
-              : "표시할 데이터가 없습니다."
+            globalFilter ? "검색 결과가 없습니다." : "표시할 데이터가 없습니다."
           }
         />
       </div>
@@ -379,7 +412,7 @@ export function RetreatPaymentConfirmationTable({
         data={selectedRow}
         title="신청 상세 정보"
       >
-        {(data) => (
+        {data => (
           <RetreatPaymentConfirmationDetailContent
             data={data}
             schedules={schedules}

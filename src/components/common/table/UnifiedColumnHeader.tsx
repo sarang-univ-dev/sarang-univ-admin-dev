@@ -1,26 +1,24 @@
-import { useState, useMemo } from "react";
 import { Column, Table } from "@tanstack/react-table";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  Filter,
   Check,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
+import { useMemo, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { ColumnHeaderHelp } from "@/components/common/help";
-import type { ColumnHelpContent } from "@/lib/help/types";
 
 interface UnifiedColumnHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -38,20 +36,16 @@ interface UnifiedColumnHeaderProps<TData> {
    * 필터 값을 표시할 포맷 함수
    * @example (value) => value === 'M' ? '남자' : '여자'
    */
-  formatFilterValue?: (value: any) => string;
+  formatFilterValue?: (value: never) => unknown;
   /**
    * 필터 값을 정렬할 함수
    * @example (a, b) => schedules.findIndex(s => s.id === a) - schedules.findIndex(s => s.id === b)
    */
-  sortFilterValues?: (a: any, b: any) => number;
+  sortFilterValues?: (a: never, b: never) => number;
   /**
    * 정렬/필터 없이 제목만 표시
    */
   titleOnly?: boolean;
-  /**
-   * 컬럼 도움말 콘텐츠
-   */
-  helpContent?: ColumnHelpContent;
 }
 
 /**
@@ -91,23 +85,12 @@ export function UnifiedColumnHeader<TData>({
   title,
   enableSorting = false,
   enableFiltering = false,
-  formatFilterValue = (value) => String(value),
+  formatFilterValue = value => String(value),
   sortFilterValues,
   titleOnly = false,
-  helpContent,
 }: UnifiedColumnHeaderProps<TData>) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
-  // 제목만 표시
-  if (titleOnly || (!enableSorting && !enableFiltering)) {
-    return (
-      <div className="flex items-center justify-center gap-1 text-sm whitespace-nowrap px-2">
-        <span>{title}</span>
-        {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
-      </div>
-    );
-  }
 
   // === 정렬 관련 로직 ===
   const sortingState = column.getIsSorted();
@@ -125,7 +108,7 @@ export function UnifiedColumnHeader<TData>({
   };
 
   // === 필터 관련 로직 ===
-  const filterValue = (column.getFilterValue() as string[]) || [];
+  const filterValue = (column.getFilterValue() as unknown[]) || [];
 
   // ✅ getPreFilteredRowModel() 사용 (가장 안정적인 방식)
   // getFacetedUniqueValues()가 빈 Map을 반환하는 문제가 있어서
@@ -133,30 +116,30 @@ export function UnifiedColumnHeader<TData>({
   const uniqueValues = useMemo(() => {
     if (!enableFiltering) return [];
 
-    const valuesSet = new Set<string | number>();
+    const valuesSet = new Set<unknown>();
     let hasEmptyValue = false;
 
     // 필터링 전 모든 행에서 고유 값 추출
-    table.getPreFilteredRowModel().rows.forEach((row) => {
+    table.getPreFilteredRowModel().rows.forEach(row => {
       const value = row.getValue(column.id);
 
       if (Array.isArray(value)) {
         if (value.length === 0) {
           hasEmptyValue = true;
         } else {
-          value.forEach((item) => valuesSet.add(item));
+          value.forEach(item => valuesSet.add(item));
         }
       } else if (value === null || value === undefined || value === "") {
         hasEmptyValue = true;
       } else {
-        valuesSet.add(value as string | number);
+        valuesSet.add(value);
       }
     });
 
     // 정렬
     const values = Array.from(valuesSet).sort((a, b) => {
       if (sortFilterValues) {
-        return sortFilterValues(a, b);
+        return sortFilterValues(a as never, b as never);
       }
       if (typeof a === "number" && typeof b === "number") {
         return a - b;
@@ -165,7 +148,7 @@ export function UnifiedColumnHeader<TData>({
     });
 
     if (hasEmptyValue) {
-      return ["__EMPTY__", ...values] as (string | number)[];
+      return ["__EMPTY__", ...values];
     }
     return values;
   }, [table, column.id, enableFiltering, sortFilterValues]);
@@ -175,33 +158,45 @@ export function UnifiedColumnHeader<TData>({
     if (!searchTerm) return uniqueValues;
 
     const lowerSearchTerm = searchTerm.toLowerCase();
-    return uniqueValues.filter((value) => {
-      const displayValue = value === "__EMPTY__" ? "값 없음" : formatFilterValue(value);
+    return uniqueValues.filter(value => {
+      const displayValue =
+        value === "__EMPTY__"
+          ? "값 없음"
+          : String(formatFilterValue(value as never));
       return displayValue.toLowerCase().includes(lowerSearchTerm);
     });
   }, [uniqueValues, searchTerm, formatFilterValue]);
 
   // 체크박스 상태 관리
-  const [selectedValues, setSelectedValues] = useState<Set<any>>(
+  const [selectedValues, setSelectedValues] = useState<Set<unknown>>(
     new Set(filterValue)
   );
+
+  // 제목만 표시
+  if (titleOnly || (!enableSorting && !enableFiltering)) {
+    return (
+      <div className="flex items-center justify-center gap-1 text-sm whitespace-nowrap px-2">
+        <span>{title}</span>
+      </div>
+    );
+  }
 
   // 전체 선택 (현재 필터링된 값들만)
   const handleSelectAll = () => {
     const newSet = new Set(selectedValues);
-    filteredValues.forEach((value) => newSet.add(value));
+    filteredValues.forEach(value => newSet.add(value));
     setSelectedValues(newSet);
   };
 
   // 전체 해제 (현재 필터링된 값들만)
   const handleClearAll = () => {
     const newSet = new Set(selectedValues);
-    filteredValues.forEach((value) => newSet.delete(value));
+    filteredValues.forEach(value => newSet.delete(value));
     setSelectedValues(newSet);
   };
 
   // 개별 선택/해제
-  const handleToggle = (value: any) => {
+  const handleToggle = (value: unknown) => {
     const newSet = new Set(selectedValues);
     if (newSet.has(value)) {
       newSet.delete(value);
@@ -214,7 +209,9 @@ export function UnifiedColumnHeader<TData>({
   // 필터 적용
   const handleApplyFilter = () => {
     const values = Array.from(selectedValues);
-    column.setFilterValue(values.length === uniqueValues.length ? undefined : values);
+    column.setFilterValue(
+      values.length === uniqueValues.length ? undefined : values
+    );
   };
 
   // 필터 초기화
@@ -226,7 +223,9 @@ export function UnifiedColumnHeader<TData>({
   // Popover 열릴 때 현재 필터 값으로 초기화
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      setSelectedValues(new Set(filterValue.length > 0 ? filterValue : uniqueValues));
+      setSelectedValues(
+        new Set(filterValue.length > 0 ? filterValue : uniqueValues)
+      );
       setSearchTerm(""); // 검색어 초기화
     }
     setOpen(isOpen);
@@ -251,14 +250,13 @@ export function UnifiedColumnHeader<TData>({
     setOpen(false);
   };
 
-  const isFiltered = filterValue.length > 0 && filterValue.length < uniqueValues.length;
-  const filteredCount = filterValue.length;
+  const isFiltered =
+    filterValue.length > 0 && filterValue.length < uniqueValues.length;
   const hasActiveState = sortingState || isFiltered;
 
   return (
     <div className="flex items-center justify-center gap-1 whitespace-nowrap">
       <span className="text-sm">{title}</span>
-      {helpContent && <ColumnHeaderHelp helpContent={helpContent} />}
 
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
@@ -351,7 +349,7 @@ export function UnifiedColumnHeader<TData>({
                       type="text"
                       placeholder="검색..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={e => setSearchTerm(e.target.value)}
                       className="pl-8 h-8 text-sm"
                     />
                   </div>
@@ -385,7 +383,7 @@ export function UnifiedColumnHeader<TData>({
                         검색 결과가 없습니다.
                       </div>
                     ) : (
-                      filteredValues.map((value) => {
+                      filteredValues.map(value => {
                         const isSelected = selectedValues.has(value);
                         return (
                           <div
@@ -399,9 +397,13 @@ export function UnifiedColumnHeader<TData>({
                               className="cursor-pointer"
                             />
                             <span className="text-sm flex-1 cursor-pointer">
-                              {value === "__EMPTY__" ? "값 없음" : formatFilterValue(value)}
+                              {value === "__EMPTY__"
+                                ? "값 없음"
+                                : String(formatFilterValue(value as never))}
                             </span>
-                            {isSelected && <Check className="h-3 w-3 text-blue-600" />}
+                            {isSelected && (
+                              <Check className="h-3 w-3 text-blue-600" />
+                            )}
                           </div>
                         );
                       })
