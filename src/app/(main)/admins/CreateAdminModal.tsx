@@ -107,8 +107,8 @@ export default function CreateAdminModal({ open, onClose, onCreated }: Props) {
         <DialogHeader>
           <DialogTitle>수양회 관리자 추가</DialogTitle>
           <DialogDescription>
-            전체 수양회 운영 권한을 가진 관리자 계정을 등록합니다. 이메일은
-            Gmail 주소만 사용할 수 있습니다.
+            수양회 생성 및 전역 수양회 관리 권한을 가진 관리자 계정을
+            등록합니다. 이메일은 Gmail 주소만 사용할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
 
@@ -143,7 +143,7 @@ export default function CreateAdminModal({ open, onClose, onCreated }: Props) {
               <SelectContent>
                 {univGroups?.map(ug => (
                   <SelectItem key={ug.id} value={ug.id.toString()}>
-                    {ug.number}부 {ug.name}
+                    {ug.number}부
                   </SelectItem>
                 ))}
               </SelectContent>

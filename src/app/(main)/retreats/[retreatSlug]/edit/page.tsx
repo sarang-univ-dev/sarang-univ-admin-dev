@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import {
   getAdminNavigationServer,
@@ -29,6 +29,10 @@ export default async function RetreatEditPage({
   const canManageRetreats = navigation.globalMenuItems.some(
     item => item.href === "/retreats/new"
   );
+
+  if (!canManageRetreats) {
+    redirect("/unauthorized");
+  }
 
   if (!retreat) {
     notFound();

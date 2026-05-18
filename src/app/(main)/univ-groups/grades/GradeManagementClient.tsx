@@ -227,6 +227,12 @@ export default function GradeManagementClient({
           모든 부서의 신청 가능 학년을 관리합니다. 삭제 대신 비활성화합니다.{" "}
           비활성화되는 경우 신청폼 학년 목록에서 나오지 않습니다.
         </p>
+        <p className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+          학년은 수양회 기간 중 실제 학년 기준으로 설정해야 합니다. 예를 들어
+          2026년에 수양회를 만들고 2027년에 수양회가 진행되는 겨울 수양회는
+          2027년 수양회로 운영되어야 1학년 1차 등록 등 학년 기준 기능이
+          정상적으로 동작합니다.
+        </p>
       </div>
 
       {univGroups.length === 0 ? (
