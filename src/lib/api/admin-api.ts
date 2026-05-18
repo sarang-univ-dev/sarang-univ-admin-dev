@@ -23,6 +23,7 @@ import type {
   RetreatAdminAssignmentOptions,
   RetreatAssetType,
   RetreatUnivGroupInformationInput,
+  UpdateRetreatAdminUserRequest,
   UpdateGradeRequest,
   UpdatePaymentScheduleRequest,
   UpdateRegistrationScheduleRequest,
@@ -158,6 +159,17 @@ export async function createRetreatAdminAssignment(
   }>(`/api/v1/admin/retreats/${retreatSlug}/admin-assignments`, request);
 
   return response.data.assignment;
+}
+
+export async function updateRetreatAdminUser(
+  retreatSlug: string,
+  adminUserId: number,
+  request: UpdateRetreatAdminUserRequest
+): Promise<void> {
+  await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatSlug}/admin-users/${adminUserId}`,
+    request
+  );
 }
 
 export async function updateRetreat(

@@ -27,7 +27,7 @@ const operationInfoFields: {
   {
     key: "depositAccount",
     label: "수양회 입금 계좌",
-    placeholder: "3333-00-1234567 카카오뱅크",
+    placeholder: "3333001234567 카카오뱅크",
   },
   {
     key: "depositAccountHolder",
@@ -37,7 +37,7 @@ const operationInfoFields: {
   {
     key: "shuttleBusDepositAccount",
     label: "셔틀버스 입금 계좌",
-    placeholder: "3333-00-1234567 카카오뱅크",
+    placeholder: "3333001234567 카카오뱅크",
   },
   {
     key: "shuttleBusDepositAccountHolder",

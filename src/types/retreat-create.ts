@@ -184,6 +184,12 @@ export type CreateRetreatAdminAssignmentRequest = {
   endDate?: string | null;
 };
 
+export type UpdateRetreatAdminUserRequest = {
+  name: string;
+  email: string;
+  univGroupId: number;
+};
+
 export type UpdatePaymentScheduleRequest = Partial<AddPaymentScheduleRequest>;
 export type UpdateShuttleBusRequest = Partial<
   Omit<AddShuttleBusRequest, "arrivalTime">
