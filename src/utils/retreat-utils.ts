@@ -1,5 +1,6 @@
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import { getKSTDay, getKSTDateString } from "@/lib/utils/date-utils";
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import {
   Gender,
   UserRetreatRegistrationType,
@@ -90,7 +91,6 @@ export function generateDepartmentStats(registrations: any[]) {
       canceled: 0,
       new_family_request: 0,
       military_request: 0,
-      refund_requested: 0,
       refund_ongoing: 0,
       refund_completed: 0,
     },
@@ -103,7 +103,7 @@ export function generateDepartmentStats(registrations: any[]) {
     );
     if (deptIndex === -1) return;
 
-    switch (reg.paymentStatus) {
+    switch (normalizeRetreatPaymentStatus(reg.paymentStatus)) {
       case UserRetreatRegistrationPaymentStatus.PENDING:
         stats[deptIndex].cells.waiting++;
         break;
@@ -121,9 +121,6 @@ export function generateDepartmentStats(registrations: any[]) {
         break;
       case UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST:
         stats[deptIndex].cells.military_request++;
-        break;
-      case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
-        stats[deptIndex].cells.refund_requested++;
         break;
       case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
         stats[deptIndex].cells.refund_ongoing++;
@@ -152,10 +149,6 @@ export function generateDepartmentStats(registrations: any[]) {
       ),
       military_request: stats.reduce(
         (sum, dept) => sum + dept.cells.military_request,
-        0
-      ),
-      refund_requested: stats.reduce(
-        (sum, dept) => sum + dept.cells.refund_requested,
         0
       ),
       refund_ongoing: stats.reduce(

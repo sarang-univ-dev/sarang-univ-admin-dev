@@ -26,6 +26,7 @@ import { useRetreatPaymentConfirmation } from "@/hooks/retreat-payment-confirmat
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
 import { retreatPaymentConfirmationHelp } from "@/lib/help";
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import {
   Gender,
   TRetreatRegistrationSchedule,
@@ -126,7 +127,7 @@ export function RetreatPaymentConfirmationTable({
         schedule: scheduleData,
         type: reg.userType,
         amount: reg.price,
-        status: reg.paymentStatus,
+        status: normalizeRetreatPaymentStatus(reg.paymentStatus),
         original: reg,
       };
     });

@@ -4,6 +4,7 @@ import { CheckSquare, XSquare } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useUnivGroupRetreatRegistration } from "@/hooks/univ-group-retreat-registration/use-univ-group-retreat-registration";
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 
@@ -24,11 +25,11 @@ export function UnivGroupRetreatRegistrationTableActions({
 }: UnivGroupRetreatRegistrationTableActionsProps) {
   const { isMutating, handleNewFamilyRequest, handleMilitaryRequest } =
     useUnivGroupRetreatRegistration(retreatSlug);
+  const paymentStatus = normalizeRetreatPaymentStatus(row.status);
 
   // 상태에 따른 액션 버튼 렌더링
-  switch (row.status) {
+  switch (paymentStatus) {
     case UserRetreatRegistrationPaymentStatus.PENDING:
-    case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
     case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
     case UserRetreatRegistrationPaymentStatus.REFUNDED:
     case UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING:

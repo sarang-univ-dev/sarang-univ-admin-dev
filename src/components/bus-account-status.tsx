@@ -61,7 +61,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
-      // 예상 출금 금액: 환불 요청(REFUND_REQUEST)인 항목의 금액 합계
+      // 예상 출금 금액: 환불 처리 중인 항목의 금액 합계
       const expectedRefund = deptRegistrations
         .filter(
           reg =>
@@ -82,7 +82,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       // 현재 계좌 현황: 실제 입금액 - 실제 출금액
       const currentBalance = actualIncome - actualRefund;
 
-      // 예상 계좌 현황: 입금 대기 + 입금 완료 - 환불 대기 - 환불 완료
+      // 예상 계좌 현황: 입금 대기 + 입금 완료 - 환불 처리 중 - 환불 완료
       const expectedFutureBalance =
         expectedIncome + actualIncome - expectedRefund - actualRefund;
 
@@ -228,7 +228,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
               </TableRow>
               <TableRow className="bg-gray-50">
                 <TableCell className="font-bold">
-                  예상 계좌 현황 (입금 대기 + 입금 완료 - 환불 대기 - 환불 완료)
+                  예상 계좌 현황 (입금 대기 + 입금 완료 - 환불 처리 중 - 환불 완료)
                 </TableCell>
                 <TableCell className="text-right font-bold">
                   {dept.expectedFutureBalance.toLocaleString()}원
@@ -336,8 +336,8 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
                   </TableRow>
                   <TableRow className="bg-gray-50">
                     <TableCell className="font-bold">
-                      목표 계좌 금액 (입금 대기 + 입금 완료 - 환불 대기 - 환불
-                      완료)
+                      목표 계좌 금액 (입금 대기 + 입금 완료 - 환불 처리 중 -
+                      환불 완료)
                     </TableCell>
                     <TableCell className="text-right font-bold">
                       {dept.expectedFutureBalance.toLocaleString()}원
