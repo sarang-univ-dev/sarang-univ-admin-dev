@@ -75,13 +75,27 @@ export function VirtualizedTable<TData>({
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();
-  const totalSize = rowVirtualizer.getTotalSize();
+  const renderedVirtualRows: Array<{
+    index: number;
+    start: number;
+    end: number;
+  }> =
+    virtualRows.length > 0
+      ? virtualRows
+      : rows.slice(0, Math.min(rows.length, overscan + 1)).map((_, index) => ({
+          index,
+          start: index * estimateSize,
+          end: (index + 1) * estimateSize,
+        }));
+  const totalSize = rowVirtualizer.getTotalSize() || rows.length * estimateSize;
 
   // ✅ 보이는 행의 시작/끝 인덱스
-  const paddingTop = virtualRows.length > 0 ? virtualRows[0]?.start || 0 : 0;
+  const paddingTop =
+    renderedVirtualRows.length > 0 ? renderedVirtualRows[0]?.start || 0 : 0;
   const paddingBottom =
-    virtualRows.length > 0
-      ? totalSize - (virtualRows[virtualRows.length - 1]?.end || 0)
+    renderedVirtualRows.length > 0
+      ? totalSize -
+        (renderedVirtualRows[renderedVirtualRows.length - 1]?.end || 0)
       : 0;
 
   return (
@@ -134,7 +148,7 @@ export function VirtualizedTable<TData>({
               )}
 
               {/* 보이는 행만 렌더링 */}
-              {virtualRows.map(virtualRow => {
+              {renderedVirtualRows.map(virtualRow => {
                 const row = rows[virtualRow.index];
                 // ✅ visible cell IDs를 미리 계산하여 prop으로 전달
                 // memo 비교 함수에서 안정적으로 비교 가능

@@ -40,6 +40,7 @@ interface RegistrationData {
   gradeNumber: number;
   gender: Gender;
   phoneNumber?: string;
+  userPhoneNumber?: string;
   currentLeaderName?: string;
   userType?: UserRetreatRegistrationType | null;
   price?: number;
@@ -115,6 +116,7 @@ export function MinisterViewTable({
   // 데이터 변환 (useMemo로 메모이제이션)
   const data = useMemo<TableRow[]>(() => {
     return initialData.map((reg) => {
+      const phoneNumber = reg.phoneNumber || reg.userPhoneNumber || "";
       const scheduleData: Record<string, boolean> = {};
       schedules.forEach((schedule) => {
         scheduleData[`schedule_${schedule.id}`] =
@@ -127,14 +129,17 @@ export function MinisterViewTable({
         gender: reg.gender,
         grade: `${reg.gradeNumber}학년`,
         name: reg.name,
-        phoneNumber: reg.phoneNumber || "",
+        phoneNumber,
         currentLeaderName: reg.currentLeaderName || "",
         schedule: scheduleData,
         type: reg.userType || null,
         amount: reg.price || 0,
         status: reg.paymentStatus,
         univGroupNumber: reg.univGroupNumber,
-        original: reg,
+        original: {
+          ...reg,
+          phoneNumber,
+        },
       };
     });
   }, [initialData, schedules]);
@@ -425,7 +430,7 @@ export function MinisterViewTable({
           table={table}
           estimateSize={50}
           overscan={10}
-          className="max-h-[70vh]"
+          className="h-[70vh]"
           emptyMessage={
             globalFilter
               ? "검색 결과가 없습니다."

@@ -37,17 +37,13 @@ export function RegistrationTrendChart({
     ? cumulativeChartConfig
     : registrationChartConfig;
 
-  const dataKeys = showCumulative
-    ? {
-        leaders: "cumulativeLeaders",
-        members: "cumulativeMembers",
-        total: "cumulativeTotal",
-      }
-    : {
-        leaders: "leaders",
-        members: "members",
-        total: "total",
-      };
+  const lines = showCumulative
+    ? [
+        { dataKey: "cumulativeLeaders" },
+        { dataKey: "cumulativeMembers" },
+        { dataKey: "cumulativeTotal" },
+      ]
+    : [{ dataKey: "leaders" }, { dataKey: "members" }, { dataKey: "total" }];
 
   if (data.length === 0) {
     return (
@@ -94,33 +90,19 @@ export function RegistrationTrendChart({
           }
         />
         <ChartLegend content={<ChartLegendContent />} />
-        <Line
-          type="monotone"
-          dataKey={dataKeys.leaders}
-          name="leaders"
-          stroke="var(--color-leaders)"
-          strokeWidth={2}
-          dot={{ fill: "var(--color-leaders)", strokeWidth: 0, r: 3 }}
-          activeDot={{ r: 5 }}
-        />
-        <Line
-          type="monotone"
-          dataKey={dataKeys.members}
-          name="members"
-          stroke="var(--color-members)"
-          strokeWidth={2}
-          dot={{ fill: "var(--color-members)", strokeWidth: 0, r: 3 }}
-          activeDot={{ r: 5 }}
-        />
-        <Line
-          type="monotone"
-          dataKey={dataKeys.total}
-          name="total"
-          stroke="var(--color-total)"
-          strokeWidth={2}
-          dot={{ fill: "var(--color-total)", strokeWidth: 0, r: 3 }}
-          activeDot={{ r: 5 }}
-        />
+        {lines.map(({ dataKey }) => (
+          <Line
+            key={dataKey}
+            type="monotone"
+            dataKey={dataKey}
+            name={dataKey}
+            stroke={`var(--color-${dataKey})`}
+            strokeWidth={2}
+            dot={{ fill: `var(--color-${dataKey})`, strokeWidth: 0, r: 3 }}
+            activeDot={{ r: 5 }}
+            connectNulls
+          />
+        ))}
       </LineChart>
     </ChartContainer>
   );
