@@ -338,6 +338,26 @@ export const univGroupRetreatRegistrationHelp: PageHelpContent = {
   badges: {
     paymentStatus: [
       {
+        status: "PENDING",
+        title: "입금 대기",
+        description: "신청은 완료되었으나 아직 입금되지 않은 상태입니다.",
+        action: "입금 확인 후 '입금 완료' 처리",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "PENDING" },
+        },
+      },
+      {
+        status: "PAID",
+        title: "입금 완료",
+        description: "입금이 확인되어 수양회 참석이 확정된 상태입니다.",
+        action: "환불 요청 시 '환불 요청' 처리",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "PAID" },
+        },
+      },
+      {
         status: "NEW_COMER_REQUEST",
         title: "새가족 요청",
         description:
@@ -360,33 +380,31 @@ export const univGroupRetreatRegistrationHelp: PageHelpContent = {
         },
       },
       {
-        status: "PENDING",
-        title: "입금 대기",
-        description: "신청은 완료되었으나 아직 입금되지 않은 상태입니다.",
-        action: "입금 확인 후 '입금 완료' 처리",
+        status: "CANCEL_ONGOING",
+        title: "취소 처리 중",
+        description:
+          "신청 취소가 접수되어 처리 중인 상태입니다. 재정, 라인업, 인원관리 확인이 필요할 수 있습니다.",
         preview: {
           component: "StatusBadge",
-          props: { status: "PENDING" },
+          props: { status: "CANCEL_ONGOING" },
         },
       },
       {
-        status: "PAID",
-        title: "입금 완료",
-        description: "입금이 확인되어 수양회 참석이 확정된 상태입니다.",
-        action: "환불 요청 시 '환불 요청' 처리",
+        status: "CANCELED",
+        title: "취소 완료",
+        description: "신청 취소가 완료된 상태입니다.",
         preview: {
           component: "StatusBadge",
-          props: { status: "PAID" },
+          props: { status: "CANCELED" },
         },
       },
       {
-        status: "REFUND_REQUEST",
-        title: "환불 요청",
-        description: "신청자가 환불을 요청한 상태입니다.",
-        action: "실제 환불 후 '환불 완료' 처리",
+        status: "REFUND_ONGOING",
+        title: "환불 처리 중",
+        description: "환불이 필요한 취소/변동 건이 처리 중인 상태입니다.",
         preview: {
           component: "StatusBadge",
-          props: { status: "REFUND_REQUEST" },
+          props: { status: "REFUND_ONGOING" },
         },
       },
       {

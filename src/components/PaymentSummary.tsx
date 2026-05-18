@@ -6,6 +6,7 @@ import {
 import { StatusBadge } from "./Badge";
 import { SummaryTable } from "./SummaryTable";
 import { generateDepartmentStats } from "../utils/retreat-utils";
+import { RETREAT_PAYMENT_STATUS_ORDER } from "@/lib/utils/retreat-payment-status";
 
 interface PaymentSummaryProps {
   registrations: IUnivGroupAdminStaffRetreat[];
@@ -27,90 +28,14 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
 
   // StatusBadge 컴포넌트를 활용한 동적 컬럼 생성
   const columns = [
-    {
-      id: UserRetreatRegistrationPaymentStatus.PENDING,
+    ...RETREAT_PAYMENT_STATUS_ORDER.map(status => ({
+      id: status,
       header: (
         <div className="flex justify-center">
-          <StatusBadge status={UserRetreatRegistrationPaymentStatus.PENDING} />
+          <StatusBadge status={status} />
         </div>
       ),
-    },
-    {
-      id: UserRetreatRegistrationPaymentStatus.PAID,
-      header: (
-        <div className="flex justify-center">
-          <StatusBadge status={UserRetreatRegistrationPaymentStatus.PAID} />
-        </div>
-      ),
-    },
-    {
-      id: UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING,
-      header: (
-        <div className="flex justify-center">
-          <StatusBadge
-            status={UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING}
-          />
-        </div>
-      ),
-    },
-    {
-      id: UserRetreatRegistrationPaymentStatus.CANCELED,
-      header: (
-        <div className="flex justify-center">
-          <StatusBadge
-            status={UserRetreatRegistrationPaymentStatus.CANCELED}
-          />
-        </div>
-      ),
-    },
-    {
-      id: UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST,
-      header: (
-        <div className="flex justify-center">
-          <StatusBadge
-            status={UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST}
-          />
-        </div>
-      ),
-    },
-    {
-      id: UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST,
-      header: (
-        <div className="flex justify-center">
-          <StatusBadge
-            status={UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST}
-          />
-        </div>
-      ),
-    },
-    {
-      id: UserRetreatRegistrationPaymentStatus.REFUND_REQUEST,
-      header: (
-        <div className="flex justify-center">
-          <StatusBadge
-            status={UserRetreatRegistrationPaymentStatus.REFUND_REQUEST}
-          />
-        </div>
-      ),
-    },
-    {
-      id: UserRetreatRegistrationPaymentStatus.REFUND_ONGOING,
-      header: (
-        <div className="flex justify-center">
-          <StatusBadge
-            status={UserRetreatRegistrationPaymentStatus.REFUND_ONGOING}
-          />
-        </div>
-      ),
-    },
-    {
-      id: UserRetreatRegistrationPaymentStatus.REFUNDED,
-      header: (
-        <div className="flex justify-center">
-          <StatusBadge status={UserRetreatRegistrationPaymentStatus.REFUNDED} />
-        </div>
-      ),
-    },
+    })),
     {
       id: "total",
       header: (
@@ -157,18 +82,6 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
               <span className="font-semibold">{row.cells.confirmed}명</span>
             </div>
           ),
-          [UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING]: (
-            <div className="text-center">
-              <span className="font-semibold">
-                {row.cells.cancel_ongoing}명
-              </span>
-            </div>
-          ),
-          [UserRetreatRegistrationPaymentStatus.CANCELED]: (
-            <div className="text-center">
-              <span className="font-semibold">{row.cells.canceled}명</span>
-            </div>
-          ),
           [UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST]: (
             <div className="text-center">
               <span className="font-semibold">
@@ -183,11 +96,16 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
               </span>
             </div>
           ),
-          [UserRetreatRegistrationPaymentStatus.REFUND_REQUEST]: (
+          [UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING]: (
             <div className="text-center">
               <span className="font-semibold">
-                {row.cells.refund_requested}명
+                {row.cells.cancel_ongoing}명
               </span>
+            </div>
+          ),
+          [UserRetreatRegistrationPaymentStatus.CANCELED]: (
+            <div className="text-center">
+              <span className="font-semibold">{row.cells.canceled}명</span>
             </div>
           ),
           [UserRetreatRegistrationPaymentStatus.REFUND_ONGOING]: (
@@ -223,20 +141,17 @@ export function PaymentSummary({ registrations = [] }: PaymentSummaryProps) {
         [UserRetreatRegistrationPaymentStatus.PAID]: (
           <div className="text-center">{row.cells.confirmed}명</div>
         ),
-        [UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING]: (
-          <div className="text-center">{row.cells.cancel_ongoing}명</div>
-        ),
-        [UserRetreatRegistrationPaymentStatus.CANCELED]: (
-          <div className="text-center">{row.cells.canceled}명</div>
-        ),
         [UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST]: (
           <div className="text-center">{row.cells.new_family_request}명</div>
         ),
         [UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST]: (
           <div className="text-center">{row.cells.military_request}명</div>
         ),
-        [UserRetreatRegistrationPaymentStatus.REFUND_REQUEST]: (
-          <div className="text-center">{row.cells.refund_requested}명</div>
+        [UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING]: (
+          <div className="text-center">{row.cells.cancel_ongoing}명</div>
+        ),
+        [UserRetreatRegistrationPaymentStatus.CANCELED]: (
+          <div className="text-center">{row.cells.canceled}명</div>
         ),
         [UserRetreatRegistrationPaymentStatus.REFUND_ONGOING]: (
           <div className="text-center">{row.cells.refund_ongoing}명</div>

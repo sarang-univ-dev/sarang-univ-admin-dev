@@ -9,6 +9,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 
 import {
   UserRetreatRegistrationPaymentStatus,
@@ -24,9 +25,10 @@ export const StatusBadge = ({
 }: {
   status: UserRetreatRegistrationPaymentStatus;
 }) => {
-  const label = PAYMENT_STATUS_LABELS[status];
+  const normalizedStatus = normalizeRetreatPaymentStatus(status);
+  const label = PAYMENT_STATUS_LABELS[normalizedStatus];
 
-  switch (status) {
+  switch (normalizedStatus) {
     case UserRetreatRegistrationPaymentStatus.PENDING:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-yellow-50 border border-yellow-200">
@@ -45,7 +47,6 @@ export const StatusBadge = ({
           </span>
         </div>
       );
-    case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
     case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200">

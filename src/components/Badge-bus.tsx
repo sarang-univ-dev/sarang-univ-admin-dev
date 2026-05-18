@@ -43,7 +43,7 @@ export const StatusBadge = ({
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200">
           <RefreshCcw className="h-3.5 w-3.5 text-blue-500 mr-1.5" />
           <span className="text-xs font-medium text-blue-700">
-            환불 처리 대기
+            환불 처리 중
           </span>
         </div>
       );

@@ -104,25 +104,15 @@ export const accountRetreatRegistrationHelp: PageHelpContent = {
   badges: {
     paymentStatus: [
       {
-        status: "NEW_COMER_REQUEST",
-        title: "새가족 신청 요청",
-        description:
-          "새가족 할인 적용 요청 상태입니다. 행정간사 승인 후 할인 금액과 입금 안내가 확정됩니다.",
-        action: "행정간사 승인 상태 확인",
-      },
-      {
-        status: "SOLDIER_REQUEST",
-        title: "군지체 신청 요청",
-        description:
-          "군지체 할인 적용 요청 상태입니다. 행정간사 승인 후 할인 금액과 입금 안내가 확정됩니다.",
-        action: "행정간사 승인 상태 확인",
-      },
-      {
         status: "PENDING",
         title: "입금 확인 대기",
         description:
           "신청은 완료되었지만 아직 입금 확인이 되지 않은 상태입니다.",
         action: "입금 확인 완료 또는 간사 배정",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "PENDING" },
+        },
       },
       {
         status: "PAID",
@@ -130,6 +120,32 @@ export const accountRetreatRegistrationHelp: PageHelpContent = {
         description:
           "입금이 확인되어 수양회 참석이 확정된 상태입니다. 일정 변동이 있으면 차액 처리 여부를 확인합니다.",
         action: "추가 재정 처리 필요 여부 확인",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "PAID" },
+        },
+      },
+      {
+        status: "NEW_COMER_REQUEST",
+        title: "새가족 신청 요청",
+        description:
+          "새가족 할인 적용 요청 상태입니다. 행정간사 승인 후 할인 금액과 입금 안내가 확정됩니다.",
+        action: "행정간사 승인 상태 확인",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "NEW_COMER_REQUEST" },
+        },
+      },
+      {
+        status: "SOLDIER_REQUEST",
+        title: "군지체 신청 요청",
+        description:
+          "군지체 할인 적용 요청 상태입니다. 행정간사 승인 후 할인 금액과 입금 안내가 확정됩니다.",
+        action: "행정간사 승인 상태 확인",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "SOLDIER_REQUEST" },
+        },
       },
       {
         status: "CANCEL_ONGOING",
@@ -137,6 +153,10 @@ export const accountRetreatRegistrationHelp: PageHelpContent = {
         description:
           "신청 취소가 접수되어 처리 중인 상태입니다. 재정, 라인업, 인원관리 확인이 필요할 수 있습니다.",
         action: "관련 간사 처리 상태 확인",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "CANCEL_ONGOING" },
+        },
       },
       {
         status: "CANCELED",
@@ -144,12 +164,10 @@ export const accountRetreatRegistrationHelp: PageHelpContent = {
         description:
           "신청 취소가 완료된 상태입니다. 더 이상 입금 처리 대상이 아닙니다.",
         action: "추가 처리 불필요",
-      },
-      {
-        status: "REFUND_REQUEST",
-        title: "환불 처리 대기",
-        description: "신청자가 환불을 요청해 재정 처리가 필요한 상태입니다.",
-        action: "실제 환불 후 환불 처리 완료",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "CANCELED" },
+        },
       },
       {
         status: "REFUND_ONGOING",
@@ -157,6 +175,10 @@ export const accountRetreatRegistrationHelp: PageHelpContent = {
         description:
           "환불이 필요한 취소/변동 건이 처리 중인 상태입니다. 라인업/인원관리 확인이 필요할 수 있습니다.",
         action: "중복 환불 없이 처리 상태 확인",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "REFUND_ONGOING" },
+        },
       },
       {
         status: "REFUNDED",
@@ -164,6 +186,10 @@ export const accountRetreatRegistrationHelp: PageHelpContent = {
         description:
           "환불이 완료되어 더 이상 입금 처리 대상이 아닌 상태입니다.",
         action: "추가 처리 불필요",
+        preview: {
+          component: "StatusBadge",
+          props: { status: "REFUNDED" },
+        },
       },
     ],
   },

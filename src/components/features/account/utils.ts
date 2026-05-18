@@ -1,4 +1,5 @@
 import { AccountStaffTableData } from "@/hooks/account/use-account-staff-columns";
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { IRetreatRegistration } from "@/types/account";
 
@@ -34,7 +35,7 @@ export function transformRegistrationsForTable(
       type: registration.userType,
       amount: registration.price,
       createdAt: registration.createdAt,
-      status: registration.paymentStatus,
+      status: normalizeRetreatPaymentStatus(registration.paymentStatus),
       confirmedBy: registration.paymentConfirmUserName ?? null,
       paymentConfirmedAt: registration.paymentConfirmedAt ?? null,
       accountMemo: registration.accountMemo ?? null,

@@ -26,6 +26,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import { webAxios } from "@/lib/api/axios";
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import {
@@ -256,7 +257,7 @@ export function RegistrationTable({
 
   // 액션 버튼 렌더링
   const getActionButtons = (row: RegistrationTableRow) => {
-    switch (row.status) {
+    switch (normalizeRetreatPaymentStatus(row.status)) {
       case UserRetreatRegistrationPaymentStatus.PENDING:
         return (
           <div className="flex flex-col gap-1">
@@ -290,7 +291,7 @@ export function RegistrationTable({
             </Button>
           </div>
         );
-      case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
+      case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
         return (
           <div className="flex flex-col gap-1">
             <Button

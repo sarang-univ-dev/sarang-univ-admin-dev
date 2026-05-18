@@ -1,3 +1,4 @@
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import { TRetreatRegistrationSchedule } from "@/types";
 import {
   IUnivGroupAdminStaffRetreat,
@@ -37,7 +38,7 @@ export function transformUnivGroupAdminStaffData(
       type: reg.userType,
       amount: reg.price,
       createdAt: reg.createdAt,
-      status: reg.paymentStatus,
+      status: normalizeRetreatPaymentStatus(reg.paymentStatus),
       confirmedBy: reg.paymentConfirmUserName || null,
       paymentConfirmedAt: reg.paymentConfirmedAt || null,
       hadRegisteredShuttleBus: reg.hadRegisteredShuttleBus,
