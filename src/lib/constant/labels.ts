@@ -29,7 +29,7 @@ export const PAYMENT_STATUS_LABELS: Record<
   PAID: "입금 확인 완료",
   CANCEL_ONGOING: "취소 처리 중",
   CANCELED: "취소 완료",
-  REFUND_REQUEST: "환불 처리 대기",
+  REFUND_REQUEST: "환불 처리 중",
   REFUND_ONGOING: "환불 처리 중",
   REFUNDED: "환불 처리 완료",
 };

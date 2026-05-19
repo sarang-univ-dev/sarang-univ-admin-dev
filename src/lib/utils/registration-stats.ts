@@ -4,7 +4,7 @@
  * 신청 시각 기준으로 일별/주별 통계를 계산합니다.
  * - 리더/조원 구분: name === currentLeaderName이면 리더
  * - 시간대: KST (한국 표준시) 기준
- * - 주차: 일요일 시작 기준 (일~토)
+ * - 주별 범위: 일요일 시작, 토요일 종료 기준
  */
 
 /**
@@ -21,9 +21,9 @@ export interface RegistrationForStats {
  * 통계 데이터 타입
  */
 export interface RegistrationStats {
-  /** YYYY-MM-DD 또는 YYYY-W## 형식 */
+  /** YYYY-MM-DD 형식. 주별 통계에서는 주일 날짜를 사용 */
   date: string;
-  /** 표시용 라벨 (1/15, 1주차 등) */
+  /** 표시용 라벨 (1/15, 1/14~1/20 등) */
   label: string;
   /** 리더 수 */
   leaders: number;
@@ -61,47 +61,15 @@ export function getDateKey(createdAt: string): string {
 }
 
 /**
- * 일요일 시작 기준 주차 계산 (연도 시작 기준)
- * 1월 1일이 속한 주를 1주차로 계산
- */
-export function getSundayBasedWeekNumber(date: Date): number {
-  const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
-
-  // 해당 연도의 1월 1일
-  const yearStart = new Date(kstDate.getFullYear(), 0, 1);
-
-  // 1월 1일의 요일 (0: 일요일, 1: 월요일, ...)
-  const yearStartDay = yearStart.getDay();
-
-  // 1월 1일이 속한 주의 일요일 찾기
-  const firstSunday = new Date(yearStart);
-  if (yearStartDay !== 0) {
-    // 1월 1일이 일요일이 아니면, 그 전 일요일로 이동
-    firstSunday.setDate(1 - yearStartDay);
-  }
-
-  // 현재 날짜가 속한 주의 일요일 찾기
-  const currentDay = kstDate.getDay();
-  const currentSunday = new Date(kstDate);
-  currentSunday.setDate(kstDate.getDate() - currentDay);
-
-  // 두 일요일 사이의 주 수 계산
-  const diffTime = currentSunday.getTime() - firstSunday.getTime();
-  const diffWeeks = Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000));
-
-  return diffWeeks + 1;
-}
-
-/**
- * KST 기준 주 키 생성 (YYYY-W##)
- * 일요일 시작 기준
+ * KST 기준 주 키 생성 (YYYY-MM-DD)
+ * 해당 주의 주일 날짜를 키로 사용합니다.
  */
 export function getWeekKey(createdAt: string): string {
-  const date = new Date(createdAt);
-  const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
-  const year = kstDate.getFullYear();
-  const weekNumber = getSundayBasedWeekNumber(date);
-  return `${year}-W${weekNumber.toString().padStart(2, "0")}`;
+  const dateKey = getDateKey(createdAt);
+  const kstDay = new Date(`${dateKey}T00:00:00.000Z`);
+  const day = kstDay.getUTCDay();
+  kstDay.setUTCDate(kstDay.getUTCDate() - day);
+  return kstDay.toISOString().split("T")[0];
 }
 
 /**
@@ -125,30 +93,12 @@ function getAllDatesInRange(startDate: string, endDate: string): string[] {
  */
 function getAllWeeksInRange(startWeek: string, endWeek: string): string[] {
   const weeks: string[] = [];
+  const current = new Date(`${startWeek}T00:00:00.000Z`);
+  const end = new Date(`${endWeek}T00:00:00.000Z`);
 
-  const parseWeek = (weekKey: string) => {
-    const [yearStr, weekStr] = weekKey.split("-W");
-    return { year: parseInt(yearStr), week: parseInt(weekStr) };
-  };
-
-  const start = parseWeek(startWeek);
-  const end = parseWeek(endWeek);
-
-  let currentYear = start.year;
-  let currentWeek = start.week;
-
-  while (
-    currentYear < end.year ||
-    (currentYear === end.year && currentWeek <= end.week)
-  ) {
-    weeks.push(`${currentYear}-W${currentWeek.toString().padStart(2, "0")}`);
-    currentWeek++;
-
-    // 대략적으로 53주까지 있다고 가정 (정확한 처리를 위해서는 더 복잡한 로직 필요)
-    if (currentWeek > 53) {
-      currentWeek = 1;
-      currentYear++;
-    }
+  while (current <= end) {
+    weeks.push(current.toISOString().split("T")[0]);
+    current.setUTCDate(current.getUTCDate() + 7);
   }
 
   return weeks;
@@ -162,12 +112,18 @@ function formatDateLabel(dateKey: string): string {
   return `${parseInt(month)}/${parseInt(day)}`;
 }
 
+function addDays(dateKey: string, days: number): string {
+  const date = new Date(`${dateKey}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().split("T")[0];
+}
+
 /**
- * 주 키를 표시용 라벨로 변환 (1주차 형식)
+ * 주 키를 표시용 라벨로 변환 (주일~토요일 날짜 범위)
  */
-function formatWeekLabel(weekKey: string): string {
-  const weekNumber = parseInt(weekKey.split("-W")[1]);
-  return `${weekNumber}주차`;
+export function formatWeekLabel(weekKey: string): string {
+  const weekEndKey = addDays(weekKey, 6);
+  return `${formatDateLabel(weekKey)}~${formatDateLabel(weekEndKey)}`;
 }
 
 /**

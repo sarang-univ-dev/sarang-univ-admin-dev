@@ -4,6 +4,7 @@ import { useMemo } from "react";
 
 import { StatusBadge } from "@/components/Badge";
 import { SummaryTable } from "@/components/SummaryTable";
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
 import { IRetreatRegistration } from "@/types/account";
 
@@ -54,12 +55,11 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
 
       // 실제 입금 금액: 현재 계좌에 들어온 금액
       const actualIncome = deptRegistrations.reduce((sum, reg) => {
-        switch (reg.paymentStatus) {
+        switch (normalizeRetreatPaymentStatus(reg.paymentStatus)) {
           case UserRetreatRegistrationPaymentStatus.PAID:
           case UserRetreatRegistrationPaymentStatus.CANCEL_ONGOING:
           case UserRetreatRegistrationPaymentStatus.CANCELED:
             return sum + (reg.price || 0);
-          case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
           case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
           case UserRetreatRegistrationPaymentStatus.REFUNDED:
             return sum + (reg.refundAmount || reg.price || 0);
@@ -68,10 +68,9 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
         }
       }, 0);
 
-      // 예상 출금 금액: 환불 대기/처리 중인 금액
+      // 예상 출금 금액: 환불 처리 중인 금액
       const expectedRefund = deptRegistrations.reduce((sum, reg) => {
-        switch (reg.paymentStatus) {
-          case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
+        switch (normalizeRetreatPaymentStatus(reg.paymentStatus)) {
           case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
             return sum + (reg.refundAmount || reg.price || 0);
           default:
@@ -93,7 +92,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
       // 현재 계좌 현황: 실제 입금액 - 실제 출금액
       const currentBalance = actualIncome - actualRefund;
 
-      // 예상 계좌 현황: 입금 대기 + 입금 완료 - 환불 대기 - 환불 완료
+      // 예상 계좌 현황: 입금 대기 + 입금 완료 - 환불 처리 중 - 환불 완료
       const expectedFutureBalance =
         expectedIncome + actualIncome - expectedRefund - actualRefund;
 
@@ -216,7 +215,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
             </span>
           </div>
           <span className="text-[10px] text-gray-500 text-center whitespace-nowrap">
-            (입금대기 + 입금완료 - 환불대기 - 환불완료)
+            (입금대기 + 입금완료 - 환불처리중 - 환불완료)
           </span>
         </div>
       ),

@@ -4,6 +4,7 @@ import { CheckCircle2, Send, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
 
 interface RetreatPaymentConfirmationTableActionsProps {
@@ -18,7 +19,7 @@ interface RetreatPaymentConfirmationTableActionsProps {
  * 부서 재정 팀원 - 입금 확인 테이블 액션 컴포넌트
  * - 입금 확인 버튼 (PENDING 상태)
  * - 입금 요청 버튼 (PENDING 상태)
- * - 환불 처리 완료 버튼 (REFUND_REQUEST 상태)
+ * - 환불 처리 완료 버튼 (REFUND_ONGOING 상태)
  */
 export function RetreatPaymentConfirmationTableActions({
   registration,
@@ -27,8 +28,12 @@ export function RetreatPaymentConfirmationTableActions({
   refundComplete,
   isMutating,
 }: RetreatPaymentConfirmationTableActionsProps) {
+  const paymentStatus = normalizeRetreatPaymentStatus(
+    registration.paymentStatus
+  );
+
   // 상태에 따른 액션 버튼 렌더링
-  switch (registration.paymentStatus) {
+  switch (paymentStatus) {
     case UserRetreatRegistrationPaymentStatus.PENDING:
       return (
         <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
@@ -63,7 +68,7 @@ export function RetreatPaymentConfirmationTableActions({
         </div>
       );
 
-    case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
+    case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
       return (
         <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
           <Button

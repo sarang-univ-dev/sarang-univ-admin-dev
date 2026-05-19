@@ -12,6 +12,7 @@ import {
 import type React from "react";
 
 import { extractNumber } from "@/lib/utils/extract-number";
+import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
 
 interface SummaryTableColumn {
@@ -37,7 +38,14 @@ const renderStatusBadgeWithCount = (
   status: string,
   count: number
 ): JSX.Element | null => {
-  switch (status) {
+  const normalizedStatus =
+    status === "total"
+      ? status
+      : normalizeRetreatPaymentStatus(
+          status as UserRetreatRegistrationPaymentStatus
+        );
+
+  switch (normalizedStatus) {
     case UserRetreatRegistrationPaymentStatus.PENDING:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-yellow-50 border border-yellow-200">
@@ -62,7 +70,6 @@ const renderStatusBadgeWithCount = (
           </span>
         </div>
       );
-    case UserRetreatRegistrationPaymentStatus.REFUND_REQUEST:
     case UserRetreatRegistrationPaymentStatus.REFUND_ONGOING:
       return (
         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200">
@@ -71,10 +78,7 @@ const renderStatusBadgeWithCount = (
             aria-hidden="true"
           />
           <span className="text-xs font-medium text-blue-700 whitespace-nowrap">
-            {status === UserRetreatRegistrationPaymentStatus.REFUND_ONGOING
-              ? "환불 처리 중"
-              : "환불 처리 대기"}{" "}
-            <span className="font-bold">{count}</span>명
+            환불 처리 중 <span className="font-bold">{count}</span>명
           </span>
         </div>
       );

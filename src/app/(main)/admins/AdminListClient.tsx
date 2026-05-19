@@ -1,22 +1,10 @@
 "use client";
 
-import {
-  SortingState,
-  createColumnHelper,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
 import { debounce } from "lodash";
 import { Ban, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 
-import {
-  UnifiedColumnHeader,
-  VirtualizedTable,
-} from "@/components/common/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,8 +30,6 @@ import type { AdminListRow } from "@/types/admin-management";
 
 import CreateAdminModal from "./CreateAdminModal";
 
-const columnHelper = createColumnHelper<AdminListRow>();
-
 export default function AdminListClient() {
   const addToast = useToastStore(state => state.add);
   const [searchInput, setSearchInput] = useState("");
@@ -53,9 +39,6 @@ export default function AdminListClient() {
     null
   );
   const [deactivating, setDeactivating] = useState(false);
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "id", desc: false },
-  ]);
 
   const debouncedSetFilter = useMemo(
     () => debounce((v: string) => setGlobalFilter(v), 200),
@@ -70,129 +53,55 @@ export default function AdminListClient() {
 
   const rows = useMemo(() => data ?? [], [data]);
 
-  const columns = useMemo(
-    () => [
-      columnHelper.accessor("id", {
-        header: ({ column, table }) => (
-          <UnifiedColumnHeader
-            column={column}
-            table={table}
-            title="ID"
-            enableSorting
-          />
-        ),
-        cell: info => (
-          <div className="text-center text-sm text-muted-foreground whitespace-nowrap shrink-0 px-1">
-            {info.getValue()}
-          </div>
-        ),
-        size: 70,
-      }),
-      columnHelper.accessor("name", {
-        header: ({ column, table }) => (
-          <UnifiedColumnHeader
-            column={column}
-            table={table}
-            title="이름"
-            enableSorting
-          />
-        ),
-        cell: info => (
-          <div className="font-medium text-center text-sm whitespace-nowrap shrink-0 px-1">
-            {info.getValue()}
-          </div>
-        ),
-      }),
-      columnHelper.accessor("email", {
-        header: ({ column, table }) => (
-          <UnifiedColumnHeader
-            column={column}
-            table={table}
-            title="이메일"
-            enableSorting
-          />
-        ),
-        cell: info => (
-          <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">
-            {info.getValue()}
-          </div>
-        ),
-      }),
-      columnHelper.accessor(
-        row =>
-          row.univGroupNumber != null
-            ? `${row.univGroupNumber}부 ${row.univGroupName ?? ""}`.trim()
-            : "-",
-        {
-          id: "univGroup",
-          header: ({ column, table }) => (
-            <UnifiedColumnHeader
-              column={column}
-              table={table}
-              title="부서"
-              enableSorting
-              enableFiltering
-            />
-          ),
-          cell: info => (
-            <div className="text-center text-sm whitespace-nowrap shrink-0 px-1">
-              {info.getValue()}
-            </div>
-          ),
-          filterFn: "arrIncludesSome",
-        }
-      ),
-      columnHelper.display({
-        id: "actions",
-        header: ({ column, table }) => (
-          <UnifiedColumnHeader
-            column={column}
-            table={table}
-            title="관리"
-            titleOnly
-          />
-        ),
-        cell: ({ row }) => (
-          <div className="flex justify-center px-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={event => {
-                event.stopPropagation();
-                setDeactivateTarget(row.original);
-              }}
-            >
-              <Ban className="h-4 w-4 mr-1" />
-              비활성화
-            </Button>
-          </div>
-        ),
-        size: 120,
-      }),
-    ],
-    []
-  );
-
-  const table = useReactTable({
-    data: rows,
-    columns,
-    state: { sorting, globalFilter },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: (row, _columnId, filterValue) => {
-      const q = String(filterValue).toLowerCase().trim();
+  const groupedRows = useMemo(() => {
+    const q = globalFilter.toLowerCase().trim();
+    const filteredRows = rows.filter(row => {
       if (!q) return true;
-      const r = row.original;
       return (
-        r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q)
+        row.name.toLowerCase().includes(q) ||
+        row.email.toLowerCase().includes(q) ||
+        (row.univGroupNumber != null &&
+          `${row.univGroupNumber}부`.includes(q))
       );
-    },
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  });
+    });
+
+    return Object.values(
+      filteredRows.reduce<
+        Record<
+          string,
+          {
+            univGroupNumber: number | null;
+            rows: AdminListRow[];
+          }
+        >
+      >((groups, row) => {
+        const key =
+          row.univGroupNumber == null
+            ? "unknown"
+            : row.univGroupNumber.toString();
+
+        groups[key] ??= {
+          univGroupNumber: row.univGroupNumber,
+          rows: [],
+        };
+        groups[key].rows.push(row);
+        return groups;
+      }, {})
+    )
+      .sort((a, b) => {
+        if (a.univGroupNumber == null) return 1;
+        if (b.univGroupNumber == null) return -1;
+        return a.univGroupNumber - b.univGroupNumber;
+      })
+      .map(group => ({
+        ...group,
+        rows: group.rows.sort((a, b) => {
+          const nameCompare = a.name.localeCompare(b.name, "ko");
+          if (nameCompare !== 0) return nameCompare;
+          return a.email.localeCompare(b.email);
+        }),
+      }));
+  }, [globalFilter, rows]);
 
   const handleDeactivate = async () => {
     if (!deactivateTarget || deactivating) return;
@@ -233,7 +142,8 @@ export default function AdminListClient() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">수양회 관리자</h1>
         <p className="text-muted-foreground">
-          전체 수양회 운영 권한을 가진 관리자 계정을 조회하고 추가합니다.
+          현재는 수양회 생성 및 전역 수양회 관리 권한을 가진 관리자 계정을
+          조회하고 추가합니다. 이후 권한 범위는 확장될 수 있습니다.
         </p>
       </div>
 
@@ -242,7 +152,9 @@ export default function AdminListClient() {
           <div>
             <CardTitle>관리자 목록</CardTitle>
             <CardDescription>
-              {data ? `총 ${data.length}명` : "불러오는 중…"}
+              {data
+                ? `총 ${data.length}명, ${groupedRows.length}개 부서`
+                : "불러오는 중…"}
             </CardDescription>
           </div>
           <Button onClick={() => setCreateOpen(true)}>
@@ -273,13 +185,63 @@ export default function AdminListClient() {
             <div className="border rounded-lg py-12 text-center text-muted-foreground">
               불러오는 중…
             </div>
+          ) : groupedRows.length === 0 ? (
+            <div className="border rounded-lg py-12 text-center text-muted-foreground">
+              결과가 없습니다.
+            </div>
           ) : (
-            <VirtualizedTable
-              table={table}
-              estimateSize={52}
-              className="max-h-[70vh]"
-              emptyMessage="결과가 없습니다."
-            />
+            <div className="space-y-4">
+              {groupedRows.map(group => (
+                <section
+                  key={group.univGroupNumber ?? "unknown"}
+                  className="overflow-hidden rounded-lg border"
+                >
+                  <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-3">
+                    <h2 className="text-sm font-semibold">
+                      {group.univGroupNumber == null
+                        ? "부서 없음"
+                        : `${group.univGroupNumber}부`}
+                    </h2>
+                    <span className="text-xs text-muted-foreground">
+                      {group.rows.length}명
+                    </span>
+                  </div>
+                  <div className="divide-y">
+                    {group.rows.map(row => (
+                      <div
+                        key={row.id}
+                        className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(120px,0.8fr)_minmax(180px,1.4fr)_auto]"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-medium">{row.name}</div>
+                          <div className="text-xs text-muted-foreground md:hidden">
+                            {row.email}
+                          </div>
+                        </div>
+                        <div className="hidden min-w-0 items-center text-sm text-muted-foreground md:flex">
+                          <span className="truncate">{row.email}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 md:justify-end">
+                          <span className="text-xs text-muted-foreground">
+                            역할 {row.assignmentCount}개
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeactivateTarget(row)}
+                          >
+                            <Ban className="mr-1 h-4 w-4" />
+                            비활성화
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

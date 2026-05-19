@@ -2,8 +2,8 @@
 
 import { Download, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, ReactNode, useState } from "react";
-import useSWR from "swr";
+import { FormEvent, ReactNode, useMemo, useState } from "react";
+import useSWR, { useSWRConfig } from "swr";
 
 import {
   createEmptyRetreatUnivGroupInformation,
@@ -32,6 +32,7 @@ import {
   getRetreatAdminAssignmentOptions,
   getRetreatAdminAssignments,
   updatePaymentSchedule,
+  updateRetreatAdminUser,
   updateRegistrationSchedule,
   updateRetreat,
   updateShuttleBus,
@@ -46,6 +47,7 @@ import type {
   ManagedRetreatShuttleBus,
   RetreatAdminAssignment,
   RetreatUnivGroupInformation,
+  UpdateRetreatAdminUserRequest,
   UpdateRetreatRequest,
 } from "@/types/retreat-create";
 
@@ -91,6 +93,38 @@ function toIsoDateTime(value: string) {
 }
 
 const gmailEmailPattern = /^[^\s@]+@gmail\.com$/;
+
+const retreatAdminRoleOrder = [
+  "UNIV_GROUP_ADMIN_STAFF",
+  "ACCOUNT_STAFF",
+  "LINEUP_STAFF",
+  "DORMITORY_STAFF",
+  "SHUTTLE_BUS_ACCOUNT_STAFF",
+  "SHUTTLE_BUS_BOARDING_STAFF",
+  "UNIV_GROUP_MINISTER",
+  "ADMIN_MINISTER",
+  "UNIV_GROUP_ACCOUNT_MEMBER",
+  "UNIV_GROUP_DORMITORY_MEMBER",
+  "SHUTTLE_BUS_ACCOUNT_MEMBER",
+] as const;
+
+const retreatAdminRoleLabels: Record<string, string> = {
+  UNIV_GROUP_ADMIN_STAFF: "행정 간사",
+  ACCOUNT_STAFF: "재정 간사",
+  LINEUP_STAFF: "라인업 간사",
+  DORMITORY_STAFF: "인원관리 간사",
+  SHUTTLE_BUS_ACCOUNT_STAFF: "버스 간사",
+  SHUTTLE_BUS_BOARDING_STAFF: "부분참 선탑 간사",
+  UNIV_GROUP_MINISTER: "부서 교역자",
+  ADMIN_MINISTER: "행정 총괄 교역자",
+  UNIV_GROUP_ACCOUNT_MEMBER: "부서 재정팀원",
+  UNIV_GROUP_DORMITORY_MEMBER: "부서 인원관리 팀원",
+  SHUTTLE_BUS_ACCOUNT_MEMBER: "총무 팀원/셔틀버스 재정 팀원",
+};
+
+function getRetreatAdminRoleLabel(roleName: string, fallback: string) {
+  return retreatAdminRoleLabels[roleName] ?? fallback;
+}
 
 type RetreatEditFormProps = {
   retreat: ManagedRetreatDetail;
@@ -397,8 +431,6 @@ export default function RetreatEditForm({
         <RetreatSummaryCard retreat={retreat} />
       )}
 
-      <RetreatAdminAssignmentsCard retreatSlug={retreat.slug} />
-
       {canManageRetreats ? (
         <>
           <RegistrationSchedulesCard
@@ -417,6 +449,8 @@ export default function RetreatEditForm({
           <AddShuttleBusCard retreatId={retreat.id} />
         </>
       ) : null}
+
+      <RetreatAdminAssignmentsCard retreatSlug={retreat.slug} />
     </div>
   );
 }
@@ -455,6 +489,7 @@ function RetreatSummaryCard({ retreat }: { retreat: ManagedRetreatDetail }) {
 function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
   const router = useRouter();
   const addToast = useToastStore(state => state.add);
+  const { mutate: mutateGlobal } = useSWRConfig();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     univGroupId: "",
@@ -479,6 +514,61 @@ function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
   } = useSWR(["retreat-admin-assignments", retreatSlug], () =>
     getRetreatAdminAssignments(retreatSlug)
   );
+
+  const sortedRoles = useMemo(() => {
+    if (!options) return [];
+    return [...options.roles].sort((a, b) => {
+      const indexA = retreatAdminRoleOrder.indexOf(
+        a.name as (typeof retreatAdminRoleOrder)[number]
+      );
+      const indexB = retreatAdminRoleOrder.indexOf(
+        b.name as (typeof retreatAdminRoleOrder)[number]
+      );
+
+      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      return a.displayName.localeCompare(b.displayName, "ko");
+    });
+  }, [options]);
+
+  const groupedAssignments = useMemo(() => {
+    const groupMap = new Map<string, RetreatAdminAssignment[]>();
+
+    assignments.forEach(assignment => {
+      const group = groupMap.get(assignment.roleName) ?? [];
+      group.push(assignment);
+      groupMap.set(assignment.roleName, group);
+    });
+
+    return Array.from(groupMap.entries())
+      .sort(([roleNameA], [roleNameB]) => {
+        const indexA = retreatAdminRoleOrder.indexOf(
+          roleNameA as (typeof retreatAdminRoleOrder)[number]
+        );
+        const indexB = retreatAdminRoleOrder.indexOf(
+          roleNameB as (typeof retreatAdminRoleOrder)[number]
+        );
+
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return roleNameA.localeCompare(roleNameB, "ko");
+      })
+      .map(([roleName, items]) => ({
+        roleName,
+        roleLabel: getRetreatAdminRoleLabel(
+          roleName,
+          items[0]?.roleDisplayName ?? roleName
+        ),
+        assignments: [...items].sort((a, b) => {
+          if (a.univGroupNumber !== b.univGroupNumber) {
+            return a.univGroupNumber - b.univGroupNumber;
+          }
+          return a.adminName.localeCompare(b.adminName, "ko");
+        }),
+      }));
+  }, [assignments]);
 
   const reset = () =>
     setForm({
@@ -565,7 +655,11 @@ function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
         variant: "success",
       });
       reset();
-      await mutate();
+      await Promise.all([
+        mutate(),
+        mutateGlobal("/api/v1/auth/check-auth"),
+        mutateGlobal("/api/v1/admin/navigation"),
+      ]);
       router.refresh();
     } catch (error) {
       addToast({
@@ -576,6 +670,19 @@ function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleUpdateUser = async (
+    adminUserId: number,
+    request: UpdateRetreatAdminUserRequest
+  ) => {
+    await updateRetreatAdminUser(retreatSlug, adminUserId, request);
+    await Promise.all([
+      mutate(),
+      mutateGlobal("/api/v1/auth/check-auth"),
+      mutateGlobal("/api/v1/admin/navigation"),
+    ]);
+    router.refresh();
   };
 
   const isOptionEmpty =
@@ -589,7 +696,7 @@ function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
       <CardHeader>
         <CardTitle>권한</CardTitle>
         <CardDescription>
-          수양회별 Admin 권한을 부서와 역할 단위로 관리합니다.
+          수양회 팀별 권한을 관리합니다.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -611,7 +718,7 @@ function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
                 <option value="">선택</option>
                 {options?.univGroups.map(univGroup => (
                   <option key={univGroup.id} value={univGroup.id}>
-                    {univGroup.name}
+                    {univGroup.number}부
                   </option>
                 ))}
               </select>
@@ -656,9 +763,9 @@ function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
                 required
               >
                 <option value="">선택</option>
-                {options?.roles.map(role => (
+                {sortedRoles.map(role => (
                   <option key={role.id} value={role.id}>
-                    {role.displayName}
+                    {getRetreatAdminRoleLabel(role.name, role.displayName)}
                   </option>
                 ))}
               </select>
@@ -719,11 +826,25 @@ function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
               등록된 권한이 없습니다.
             </p>
           ) : (
-            assignments.map(assignment => (
-              <RetreatAdminAssignmentRow
-                key={assignment.assignmentId}
-                assignment={assignment}
-              />
+            groupedAssignments.map(group => (
+              <section key={group.roleName} className="space-y-2">
+                <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
+                  <h3 className="text-sm font-semibold">{group.roleLabel}</h3>
+                  <span className="text-xs text-muted-foreground">
+                    {group.assignments.length}명
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {group.assignments.map(assignment => (
+                    <RetreatAdminAssignmentRow
+                      key={assignment.assignmentId}
+                      assignment={assignment}
+                      univGroups={options?.univGroups ?? []}
+                      onUpdate={handleUpdateUser}
+                    />
+                  ))}
+                </div>
+              </section>
             ))
           )}
         </div>
@@ -734,22 +855,169 @@ function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
 
 function RetreatAdminAssignmentRow({
   assignment,
+  univGroups,
+  onUpdate,
 }: {
   assignment: RetreatAdminAssignment;
+  univGroups: { id: number; number: number }[];
+  onUpdate: (
+    adminUserId: number,
+    request: UpdateRetreatAdminUserRequest
+  ) => Promise<void>;
 }) {
+  const addToast = useToastStore(state => state.add);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: assignment.adminName,
+    email: assignment.adminEmail,
+    univGroupId: String(assignment.univGroupId),
+  });
+
+  const startEditing = () => {
+    setEditForm({
+      name: assignment.adminName,
+      email: assignment.adminEmail,
+      univGroupId: String(assignment.univGroupId),
+    });
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    const name = editForm.name.trim();
+    const email = editForm.email.trim().toLowerCase();
+    const univGroupId = Number(editForm.univGroupId);
+
+    if (!name) {
+      addToast({ title: "이름을 입력해주세요.", variant: "destructive" });
+      return;
+    }
+
+    if (!gmailEmailPattern.test(email)) {
+      addToast({
+        title: "Gmail 주소를 입력해주세요.",
+        description: "@gmail.com 이메일만 사용할 수 있습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!Number.isInteger(univGroupId) || univGroupId <= 0) {
+      addToast({ title: "부서를 선택해주세요.", variant: "destructive" });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await onUpdate(assignment.adminUserId, {
+        name,
+        email,
+        univGroupId,
+      });
+      addToast({ title: "사용자 정보를 수정했습니다.", variant: "success" });
+      setEditing(false);
+    } catch (error) {
+      addToast({
+        title: "사용자 정보 수정 실패",
+        description: getErrorMessage(
+          error,
+          "사용자 정보를 수정하지 못했습니다."
+        ),
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="rounded-md border p-3 text-sm">
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
-          <div className="font-medium">{assignment.adminName}</div>
-          <div className="break-all text-muted-foreground">
-            {assignment.adminEmail}
+        {editing ? (
+          <div className="grid flex-1 gap-2 md:grid-cols-[1fr_1.5fr_96px]">
+            <Input
+              value={editForm.name}
+              onChange={event =>
+                setEditForm(current => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+              disabled={saving}
+              aria-label="이름"
+            />
+            <Input
+              type="email"
+              value={editForm.email}
+              onChange={event =>
+                setEditForm(current => ({
+                  ...current,
+                  email: event.target.value,
+                }))
+              }
+              disabled={saving}
+              aria-label="이메일"
+            />
+            <select
+              value={editForm.univGroupId}
+              onChange={event =>
+                setEditForm(current => ({
+                  ...current,
+                  univGroupId: event.target.value,
+                }))
+              }
+              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              disabled={saving}
+              aria-label="부서"
+            >
+              {univGroups.map(univGroup => (
+                <option key={univGroup.id} value={univGroup.id}>
+                  {univGroup.number}부
+                </option>
+              ))}
+            </select>
           </div>
+        ) : (
+          <div className="min-w-0">
+            <div className="font-medium">{assignment.adminName}</div>
+            <div className="break-all text-muted-foreground">
+              {assignment.adminEmail}
+            </div>
+          </div>
+        )}
+        <div className="flex shrink-0 gap-2">
+          {editing ? (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void handleSave()}
+                disabled={saving}
+              >
+                <Save className="h-4 w-4" />
+                {saving ? "저장 중" : "저장"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setEditing(false)}
+                disabled={saving}
+              >
+                <X className="h-4 w-4" />
+                취소
+              </Button>
+            </>
+          ) : (
+            <Button type="button" size="sm" variant="outline" onClick={startEditing}>
+              <Pencil className="h-4 w-4" />
+              수정
+            </Button>
+          )}
         </div>
-        <div className="shrink-0 font-medium">{assignment.roleDisplayName}</div>
       </div>
       <div className="mt-2 grid gap-1 text-muted-foreground md:grid-cols-2">
-        <div>부서: {assignment.univGroupName}</div>
+        <div>부서: {assignment.univGroupNumber}부</div>
         <div>
           기간: {formatDateTime(assignment.startDate)}
           {assignment.endDate

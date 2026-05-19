@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import {
   getAdminNavigationServer,
   getManagedRetreatsServer,
@@ -14,6 +16,10 @@ export default async function RetreatsPage() {
   const canManageRetreats = navigation.globalMenuItems.some(
     item => item.href === "/retreats/new"
   );
+
+  if (!canManageRetreats) {
+    redirect("/unauthorized");
+  }
 
   return (
     <RetreatListClient
