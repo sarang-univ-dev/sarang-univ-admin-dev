@@ -244,8 +244,8 @@ export function MobileAllFiltersDrawer<TData>({
           )}
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader>
+      <DrawerContent className="h-[85vh] max-h-[85vh] overflow-hidden">
+        <DrawerHeader className="shrink-0">
           <DrawerTitle className="flex items-center gap-2">
             전체 필터
             {activeFilterCount > 0 && (
@@ -256,7 +256,7 @@ export function MobileAllFiltersDrawer<TData>({
           </DrawerTitle>
         </DrawerHeader>
 
-        <ScrollArea className="flex-1 px-4 max-h-[50vh]">
+        <ScrollArea className="min-h-0 flex-1 px-4">
           <div className="space-y-2 pb-4">
             {filterColumns.map((config) => {
               const column = table.getColumn(config.id);
@@ -371,7 +371,7 @@ export function MobileAllFiltersDrawer<TData>({
           </div>
         </ScrollArea>
 
-        <DrawerFooter className="flex-row gap-2 border-t">
+        <DrawerFooter className="shrink-0 flex-row gap-2 border-t">
           <Button
             variant="outline"
             onClick={handleResetAll}
