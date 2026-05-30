@@ -1222,9 +1222,6 @@ function AddShuttleBusCard({ retreatId }: { retreatId: number }) {
     <Card>
       <CardHeader>
         <CardTitle>셔틀버스 추가</CardTitle>
-        <CardDescription>
-          셔틀버스는 신청 내역이 있어도 언제든 추가할 수 있습니다.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
