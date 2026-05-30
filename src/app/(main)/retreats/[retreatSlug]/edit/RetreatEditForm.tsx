@@ -1081,9 +1081,6 @@ function AddPaymentScheduleCard({ retreatId }: { retreatId: number }) {
     <Card>
       <CardHeader>
         <CardTitle>결제 일정 추가</CardTitle>
-        <CardDescription>
-          신청 내역이 없을 때만 추가할 수 있습니다.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -1226,7 +1223,7 @@ function AddShuttleBusCard({ retreatId }: { retreatId: number }) {
       <CardHeader>
         <CardTitle>셔틀버스 추가</CardTitle>
         <CardDescription>
-          신청 내역이 없을 때만 추가할 수 있습니다.
+          셔틀버스는 신청 내역이 있어도 언제든 추가할 수 있습니다.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -1367,10 +1364,7 @@ function PaymentSchedulesCard({
     <Card>
       <CardHeader>
         <CardTitle>결제 일정 목록</CardTitle>
-        <CardDescription>
-          현재 등록된 결제 일정입니다. 신청 내역이 없을 때만 변경/삭제할 수
-          있습니다.
-        </CardDescription>
+        <CardDescription>현재 등록된 결제 일정입니다.</CardDescription>
       </CardHeader>
       <CardContent>
         {paymentSchedules.length === 0 ? (
@@ -1597,8 +1591,8 @@ function ShuttleBusesCard({
       <CardHeader>
         <CardTitle>셔틀버스 목록</CardTitle>
         <CardDescription>
-          현재 등록된 셔틀버스입니다. 신청 내역이 없을 때만 변경/삭제할 수
-          있습니다.
+          현재 등록된 셔틀버스입니다. 해당 버스를 신청한 인원이 없을 때만
+          변경·삭제할 수 있습니다.
         </CardDescription>
       </CardHeader>
       <CardContent>
