@@ -269,7 +269,7 @@ export function GbsLineUpTableToolbar({
       gender: "성별",
       grade: "학년",
       name: "이름",
-      currentLeader: "부서 리더명",
+      currentLeader: "현리더",
       phoneNumber: "전화번호",
       lineupMemo: "라인업 메모",
       type: "타입",

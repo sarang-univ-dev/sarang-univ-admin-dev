@@ -384,6 +384,35 @@ export function useGbsLineupColumns(
         },
       }),
 
+      // 라인업 메모 (✅ V2: 버퍼링 + Debounce 지원)
+      columnHelper.accessor(
+        (row) => `${row.lineupMemo}__${row.lineupMemocolor}__${row.lineupMemoId}`,
+        {
+          id: "lineupMemo",
+          header: "라인업 메모",
+          cell: (info) => {
+            const row = info.row.original;
+
+            return (
+              <div className="relative px-2 py-1 whitespace-nowrap">
+                <LineUpMemoEditor
+                  row={row}
+                  memoValue={row.lineupMemo}
+                  memoColor={row.lineupMemocolor}
+                  onSave={onSaveLineupMemo}
+                  onUpdate={onUpdateLineupMemo}
+                  onDelete={onDeleteLineupMemo}
+                  loading={isLoading(row.id, "lineup_memo")}
+                  placeholder="메모를 입력하세요..."
+                  hasExistingMemo={(r) => !!r.lineupMemoId}
+                  colors={MEMO_COLORS}
+                />
+              </div>
+            );
+          },
+        }
+      ),
+
       // 부서
       columnHelper.accessor("department", {
         id: "department",
@@ -449,7 +478,15 @@ export function useGbsLineupColumns(
       // 이름
       columnHelper.accessor("name", {
         id: "name",
-        header: "이름",
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="이름"
+            enableFiltering
+            enableSorting
+          />
+        ),
         cell: (info) => {
           const row = info.row.original;
           const nameClassName = row.isLeader ? "font-bold text-base" : "";
@@ -459,18 +496,11 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-      }),
-
-      // 부서 리더명
-      columnHelper.accessor("currentLeader", {
-        id: "currentLeader",
-        header: "부서 리더명",
-        cell: (info) => {
-          return (
-            <div className="text-center px-2 py-1 whitespace-nowrap">
-              {info.getValue()}
-            </div>
-          );
+        filterFn: "arrIncludesSome",
+        sortingFn: (rowA, rowB, columnId) => {
+          const nameA = rowA.getValue(columnId) as string;
+          const nameB = rowB.getValue(columnId) as string;
+          return nameA.localeCompare(nameB, "ko-KR");
         },
       }),
 
@@ -487,35 +517,6 @@ export function useGbsLineupColumns(
         },
       }),
 
-      // 라인업 메모 (✅ V2: 버퍼링 + Debounce 지원)
-      columnHelper.accessor(
-        (row) => `${row.lineupMemo}__${row.lineupMemocolor}__${row.lineupMemoId}`,
-        {
-          id: "lineupMemo",
-          header: "라인업 메모",
-          cell: (info) => {
-            const row = info.row.original;
-
-            return (
-              <div className="relative px-2 py-1 whitespace-nowrap">
-                <LineUpMemoEditor
-                  row={row}
-                  memoValue={row.lineupMemo}
-                  memoColor={row.lineupMemocolor}
-                  onSave={onSaveLineupMemo}
-                  onUpdate={onUpdateLineupMemo}
-                  onDelete={onDeleteLineupMemo}
-                  loading={isLoading(row.id, "lineup_memo")}
-                  placeholder="메모를 입력하세요..."
-                  hasExistingMemo={(r) => !!r.lineupMemoId}
-                  colors={MEMO_COLORS}
-                />
-              </div>
-            );
-          },
-        }
-      ),
-
       // 타입
       columnHelper.display({
         id: "type",
@@ -531,6 +532,19 @@ export function useGbsLineupColumns(
                 gradeNumber={gradeNumber}
                 lineupMemo={row.lineupMemo}
               />
+            </div>
+          );
+        },
+      }),
+
+      // 현리더
+      columnHelper.accessor("currentLeader", {
+        id: "currentLeader",
+        header: "현리더",
+        cell: (info) => {
+          return (
+            <div className="text-center px-2 py-1 whitespace-nowrap">
+              {info.getValue()}
             </div>
           );
         },

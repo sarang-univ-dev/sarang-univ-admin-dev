@@ -34,6 +34,7 @@ export interface UserRetreatGbsLineup {
   currentLeader: string;
   userType: string | null;
   userRetreatRegistrationScheduleIds: number[];
+  createdAt: string;
   unresolvedLineupHistoryMemo?: string | null;
   adminMemo?: string | null;
 }
