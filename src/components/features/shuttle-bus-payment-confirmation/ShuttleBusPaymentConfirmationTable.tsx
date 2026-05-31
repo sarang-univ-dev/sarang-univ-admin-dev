@@ -345,6 +345,7 @@ export function ShuttleBusPaymentConfirmationTable({
           <ShuttleBusPaymentConfirmationTableActions
             registration={props.row.original}
             retreatSlug={retreatSlug}
+            scheduleColumnsWithColor={scheduleColumnsWithColor}
             onOpenDetail={() => sidebar.open(props.row.original)}
           />
         ),

@@ -7,15 +7,20 @@ import { mutate } from "swr";
 
 import { Button } from "@/components/ui/button";
 import { webAxios } from "@/lib/api/axios";
+import { cn } from "@/lib/utils";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import { UserRetreatShuttleBusPaymentStatus } from "@/types";
 import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
-import { getShuttleBusScheduleLabel } from "@/utils/bus-utils";
+import {
+  generateShuttleBusScheduleColumns,
+  getShuttleBusScheduleLabel,
+} from "@/utils/bus-utils";
 
 interface ShuttleBusPaymentConfirmationTableActionsProps {
   registration: IShuttleBusPaymentConfirmationRegistration;
   retreatSlug: string;
+  scheduleColumnsWithColor: ReturnType<typeof generateShuttleBusScheduleColumns>;
   onOpenDetail?: () => void;
 }
 
@@ -28,6 +33,7 @@ interface ShuttleBusPaymentConfirmationTableActionsProps {
 export function ShuttleBusPaymentConfirmationTableActions({
   registration,
   retreatSlug,
+  scheduleColumnsWithColor,
   onOpenDetail,
 }: ShuttleBusPaymentConfirmationTableActionsProps) {
   const addToast = useToastStore(state => state.add);
@@ -53,6 +59,21 @@ export function ShuttleBusPaymentConfirmationTableActions({
   // 로딩 상태 확인
   const isLoading = (action: string) => {
     return !!loadingStates[`${registration.id}_${action}`];
+  };
+
+  const getTicketButtonColorClass = (color?: string) => {
+    const colorMap: Record<string, string> = {
+      rose: "border-rose-500 bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:border-rose-500 disabled:bg-rose-50 disabled:text-rose-700",
+      amber:
+        "border-amber-500 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:border-amber-500 disabled:bg-amber-50 disabled:text-amber-700",
+      teal: "border-teal-500 bg-teal-50 text-teal-700 hover:bg-teal-100 disabled:border-teal-500 disabled:bg-teal-50 disabled:text-teal-700",
+      indigo:
+        "border-indigo-500 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:border-indigo-500 disabled:bg-indigo-50 disabled:text-indigo-700",
+    };
+    return (
+      colorMap[color ?? ""] ||
+      "border-gray-500 bg-gray-50 text-gray-700 hover:bg-gray-100 disabled:border-gray-500 disabled:bg-gray-50 disabled:text-gray-700"
+    );
   };
 
   // 입금 확인
@@ -266,6 +287,9 @@ export function ShuttleBusPaymentConfirmationTableActions({
               ticketReceipt.departureTime,
               ticketReceipt.shuttleBusName
             ).replace("\n", " ");
+            const ticketSchedule = scheduleColumnsWithColor.find(
+              (schedule) => schedule.id === ticketReceipt.shuttleBusId
+            );
 
             return (
               <Button
@@ -277,14 +301,19 @@ export function ShuttleBusPaymentConfirmationTableActions({
                 }
                 disabled={isReceived || isTicketReceiptPending}
                 title={`${ticketLabel} ${isReceived ? "수령 완료" : "티켓 수령"}`}
-                className="flex h-7 min-w-48 items-center justify-start gap-1.5 text-xs"
+                className={cn(
+                  "flex h-7 w-fit max-w-48 items-center justify-center gap-1.5 px-3 text-center text-xs disabled:cursor-default disabled:opacity-100",
+                  getTicketButtonColorClass(ticketSchedule?.color)
+                )}
               >
                 {isTicketReceiptPending ? (
                   <div className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 ) : (
                   <TicketCheck className="h-3.5 w-3.5 shrink-0" />
                 )}
-                <span className="min-w-0 truncate">{ticketLabel}</span>
+                <span className="min-w-0 truncate text-center">
+                  {ticketLabel}
+                </span>
                 <span className="shrink-0">
                   {isReceived ? "수령 완료" : "티켓 수령"}
                 </span>
