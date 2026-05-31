@@ -1,5 +1,11 @@
 import { Gender, UserRetreatShuttleBusPaymentStatus } from "@/types";
 
+export interface IShuttleBusTicketReceipt {
+  shuttleBusId: number;
+  ticketReceivedAt?: string | null;
+  ticketReceivedAdminUserName?: string | null;
+}
+
 /**
  * 셔틀버스 재정 팀원용 신청 내역 데이터
  *
@@ -45,4 +51,7 @@ export interface IShuttleBusPaymentConfirmationRegistration {
 
   /** 처리 시각 (입금 확인 처리 시각) (timestamp) */
   paymentConfirmedAt?: string | null;
+
+  /** 버스별 티켓 수령 확인 정보 */
+  ticketReceipts?: IShuttleBusTicketReceipt[];
 }
