@@ -1,7 +1,7 @@
 "use client";
 
 import { AxiosError } from "axios";
-import { CheckCircle2, Send, RotateCcw } from "lucide-react";
+import { CheckCircle2, Send, RotateCcw, TicketCheck } from "lucide-react";
 import { useState } from "react";
 import { mutate } from "swr";
 
@@ -31,6 +31,10 @@ export function ShuttleBusPaymentConfirmationTableActions({
 }: ShuttleBusPaymentConfirmationTableActionsProps) {
   const addToast = useToastStore(state => state.add);
   const confirmDialog = useConfirmDialogStore();
+  const [
+    pendingTicketReceiptShuttleBusId,
+    setPendingTicketReceiptShuttleBusId,
+  ] = useState<number | null>(null);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {}
   );
@@ -131,6 +135,37 @@ export function ShuttleBusPaymentConfirmationTableActions({
     });
   };
 
+  const performConfirmTicketReceipt = async (shuttleBusId: number) => {
+    setPendingTicketReceiptShuttleBusId(shuttleBusId);
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${registration.id}/confirm-ticket-receipt`,
+        { shuttleBusId }
+      );
+
+      await mutate(registrationsEndpoint);
+
+      addToast({
+        title: "성공",
+        description: "버스 티켓 수령 확인이 완료되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "버스 티켓 수령 확인 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setPendingTicketReceiptShuttleBusId(null);
+    }
+  };
+
   // 환불 처리 완료
   const handleCompleteRefund = async () => {
     setLoading("refund", true);
@@ -216,6 +251,37 @@ export function ShuttleBusPaymentConfirmationTableActions({
             )}
             <span>환불 처리 완료</span>
           </Button>
+        </div>
+      );
+
+    case UserRetreatShuttleBusPaymentStatus.PAID:
+      return (
+        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
+          {registration.ticketReceipts?.map((ticketReceipt) => {
+            const isReceived = !!ticketReceipt?.ticketReceivedAt;
+            const isTicketReceiptPending =
+              pendingTicketReceiptShuttleBusId === ticketReceipt.shuttleBusId;
+
+            return (
+              <Button
+                key={ticketReceipt.shuttleBusId}
+                size="sm"
+                variant={isReceived ? "secondary" : "outline"}
+                onClick={() =>
+                  performConfirmTicketReceipt(ticketReceipt.shuttleBusId)
+                }
+                disabled={isReceived || isTicketReceiptPending}
+                className="flex h-7 items-center gap-1.5 text-xs"
+              >
+                {isTicketReceiptPending ? (
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <TicketCheck className="h-3.5 w-3.5" />
+                )}
+                <span>{isReceived ? "수령 완료" : "티켓 수령"}</span>
+              </Button>
+            );
+          })}
         </div>
       );
 
