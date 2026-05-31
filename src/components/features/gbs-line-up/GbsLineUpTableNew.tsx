@@ -173,7 +173,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   const sidebar = useDetailSidebar<GBSLineupRow>();
 
   // ✅ TanStack Table 상태
-  // 기본 정렬은 서버의 등록순(createdAt ASC, id ASC)을 그대로 사용
+  // 기본 정렬은 서버의 GBS 배정/미배정 정렬 순서를 그대로 사용
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
