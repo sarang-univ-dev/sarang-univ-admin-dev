@@ -6,7 +6,8 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  ColumnDef,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
@@ -25,6 +26,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
+import { ColumnHeader } from "@/components/common/table/ColumnHeader";
+import { getPaymentStatusLabel } from "@/lib/constant/labels";
 import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
 import { TRetreatShuttleBus } from "@/types";
 import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
@@ -98,8 +101,25 @@ export function ShuttleBusPaymentConfirmationTable({
     const staticColumns = [
       columnHelper.accessor("univGroupNumber", {
         id: "department",
-        header: "부서",
-        cell: (info) => `${info.getValue()}부`,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="부서"
+            enableSorting
+            enableFiltering
+            formatFilterValue={(value) => `${value}부`}
+          />
+        ),
+        cell: (info) => (
+          <div className="text-center">{`${info.getValue()}부`}</div>
+        ),
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          return value.includes(row.getValue(id));
+        },
       }),
       columnHelper.accessor("gender", {
         id: "gender",
@@ -108,12 +128,37 @@ export function ShuttleBusPaymentConfirmationTable({
       }),
       columnHelper.accessor("gradeNumber", {
         id: "grade",
-        header: "학년",
-        cell: (info) => `${info.getValue()}학년`,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="학년"
+            enableSorting
+            enableFiltering
+            formatFilterValue={(value) => `${value}학년`}
+          />
+        ),
+        cell: (info) => (
+          <div className="text-center">{`${info.getValue()}학년`}</div>
+        ),
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          return value.includes(row.getValue(id));
+        },
       }),
       columnHelper.accessor("name", {
         id: "name",
-        header: "이름",
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="이름"
+            enableSorting
+            enableFiltering
+          />
+        ),
         cell: (info) => (
           <button
             onClick={() => sidebar.open(info.row.original)}
@@ -122,11 +167,49 @@ export function ShuttleBusPaymentConfirmationTable({
             {info.getValue()}
           </button>
         ),
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          return value.includes(row.getValue(id));
+        },
       }),
       // ✅ 신청 버스 컬럼 (chip/badge로 표시)
       columnHelper.accessor("userRetreatShuttleBusRegistrationScheduleIds", {
         id: "selected-buses",
-        header: "신청 버스",
+        header: ({ column, table }) => {
+          const formatBusValue = (value: number) => {
+            const schedule = scheduleColumnsWithColor.find(
+              (schedule) => schedule.id === value
+            );
+            return schedule ? schedule.label : String(value);
+          };
+
+          const sortBusByTime = (a: number, b: number) => {
+            const indexA = scheduleColumnsWithColor.findIndex(
+              (schedule) => schedule.id === a
+            );
+            const indexB = scheduleColumnsWithColor.findIndex(
+              (schedule) => schedule.id === b
+            );
+            return (
+              (indexA === -1 ? Infinity : indexA) -
+              (indexB === -1 ? Infinity : indexB)
+            );
+          };
+
+          return (
+            <ColumnHeader
+              column={column}
+              table={table}
+              title="신청 버스"
+              enableSorting
+              enableFiltering
+              formatFilterValue={formatBusValue}
+              sortFilterValues={sortBusByTime}
+            />
+          );
+        },
         cell: (info) => {
           const selectedIds = info.getValue() || [];
           const selectedSchedules = scheduleColumnsWithColor.filter((s) =>
@@ -160,19 +243,99 @@ export function ShuttleBusPaymentConfirmationTable({
             </div>
           );
         },
+        enableSorting: true,
+        enableColumnFilter: true,
+        sortingFn: (rowA, rowB, columnId) => {
+          const idsA = (rowA.getValue(columnId) as number[]) || [];
+          const idsB = (rowB.getValue(columnId) as number[]) || [];
+
+          const countDiff = idsA.length - idsB.length;
+          if (countDiff !== 0) {
+            return countDiff;
+          }
+
+          const maxLength = Math.max(idsA.length, idsB.length);
+
+          for (let index = 0; index < maxLength; index += 1) {
+            const idA = idsA[index];
+            const idB = idsB[index];
+
+            if (idA === undefined) return 1;
+            if (idB === undefined) return -1;
+
+            const scheduleIndexA = scheduleColumnsWithColor.findIndex(
+              (schedule) => schedule.id === idA
+            );
+            const scheduleIndexB = scheduleColumnsWithColor.findIndex(
+              (schedule) => schedule.id === idB
+            );
+
+            const diff =
+              (scheduleIndexA === -1 ? Infinity : scheduleIndexA) -
+              (scheduleIndexB === -1 ? Infinity : scheduleIndexB);
+
+            if (diff !== 0) {
+              return diff;
+            }
+          }
+
+          return 0;
+        },
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          const userScheduleIds = row.getValue(id) as number[];
+          if (!userScheduleIds || userScheduleIds.length === 0) return false;
+          return value.some((filterId) => userScheduleIds.includes(filterId));
+        },
       }),
     ];
 
     const endColumns = [
       columnHelper.accessor("price", {
         id: "amount",
-        header: "금액",
-        cell: (info) => `${info.getValue().toLocaleString()}원`,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="금액"
+            enableSorting
+            enableFiltering
+            formatFilterValue={(value) => `${Number(value).toLocaleString()}원`}
+          />
+        ),
+        cell: (info) => (
+          <div className="text-center">{`${info.getValue().toLocaleString()}원`}</div>
+        ),
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          return value.includes(row.getValue(id));
+        },
       }),
       columnHelper.accessor("shuttleBusPaymentStatus", {
         id: "status",
-        header: "입금 현황",
-        cell: (info) => <StatusBadge status={info.getValue()} />,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="입금 현황"
+            enableSorting
+            enableFiltering
+            formatFilterValue={getPaymentStatusLabel}
+          />
+        ),
+        cell: (info) => (
+          <div className="flex justify-center">
+            <StatusBadge status={info.getValue()} />
+          </div>
+        ),
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          return value.includes(row.getValue(id));
+        },
       }),
       // ❌ Timestamp 정보 제거: createdAt, paymentConfirmedAt, paymentConfirmUserName
       columnHelper.display({
@@ -208,6 +371,10 @@ export function ShuttleBusPaymentConfirmationTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    enableColumnFilters: true,
+    enableFilters: true,
     // 전역 필터 함수
     globalFilterFn: (row, columnId, filterValue) => {
       const searchableFields = [
@@ -316,7 +483,11 @@ export function ShuttleBusPaymentConfirmationTable({
         open={sidebar.isOpen}
         onOpenChange={sidebar.setIsOpen}
         data={sidebar.selectedItem}
-        title={sidebar.selectedItem ? `${sidebar.selectedItem.name} 상세 정보` : "상세 정보"}
+        title={
+          sidebar.selectedItem
+            ? `${sidebar.selectedItem.name} 상세 정보`
+            : "상세 정보"
+        }
       >
         {(data) => (
           <ShuttleBusPaymentConfirmationDetailContent
