@@ -149,6 +149,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         isLeader: registration.isLeader,
         isFullAttendance: registration.isFullAttendance,
         currentLeader: registration.currentLeader,
+        createdAt: registration.createdAt,
         gbsNumber: registration.gbsNumber,
         gbsMemo: registration.gbsMemo ?? "",
         lineupMemo: registration.lineupMemo ?? "",
@@ -172,10 +173,8 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   const sidebar = useDetailSidebar<GBSLineupRow>();
 
   // ✅ TanStack Table 상태
-  // 초기 sorting: GBS 번호 오름차순 정렬 (plans 요구사항)
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: 'gbsNumber', desc: false }
-  ]);
+  // 기본 정렬은 서버의 GBS 배정/미배정 정렬 순서를 그대로 사용
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   // ✅ globalFilter를 객체로 관리 (search + timestamp)

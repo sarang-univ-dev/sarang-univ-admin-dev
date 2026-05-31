@@ -107,7 +107,7 @@ export function GbsLineUpDetailContent({
             </a>
           }
         />
-        <InfoItem label="부서 리더명" value={data.currentLeader || "-"} />
+        <InfoItem label="현리더" value={data.currentLeader || "-"} />
       </InfoSection>
 
       {/* GBS 정보 */}

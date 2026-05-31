@@ -23,6 +23,7 @@ export interface GBSLineupRow {
   isLeader: boolean;
   isFullAttendance: boolean;
   currentLeader: string;
+  createdAt: string;
   gbsNumber: number | null;
   gbsMemo: string;
   lineupMemo: string;
@@ -97,6 +98,7 @@ export const useGBSLineup = (
         isLeader: registration.isLeader,
         isFullAttendance: registration.isFullAttendance,
         currentLeader: registration.currentLeader,
+        createdAt: registration.createdAt,
         gbsNumber: registration.gbsNumber,
         gbsMemo: registration.gbsMemo,
         lineupMemo: registration.lineupMemo,

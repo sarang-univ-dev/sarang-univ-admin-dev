@@ -9,3 +9,5 @@ ssl/
 
 .DS_Store
 .vscode/
+# TypeScript incremental build info
+tsconfig.tsbuildinfo

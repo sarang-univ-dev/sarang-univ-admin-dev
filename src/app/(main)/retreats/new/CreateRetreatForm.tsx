@@ -813,7 +813,7 @@ function PaymentSection({
       <div className="flex items-start justify-between gap-4">
         <SectionHeader
           title="결제 일정"
-          description="신청 기간별 금액 정책입니다. 지금 비워두고 운영 페이지에서 나중에 추가해도 됩니다. 신청 내역이 없을 때만 변경할 수 있습니다."
+          description="신청 기간별 금액 정책입니다. 지금 비워두고 운영 페이지에서 나중에 추가해도 됩니다."
         />
         <Button
           type="button"
