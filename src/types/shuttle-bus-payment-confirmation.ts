@@ -2,6 +2,8 @@ import { Gender, UserRetreatShuttleBusPaymentStatus } from "@/types";
 
 export interface IShuttleBusTicketReceipt {
   shuttleBusId: number;
+  shuttleBusName: string;
+  departureTime: string;
   ticketReceivedAt?: string | null;
   ticketReceivedAdminUserName?: string | null;
 }

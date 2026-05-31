@@ -11,6 +11,7 @@ import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import { UserRetreatShuttleBusPaymentStatus } from "@/types";
 import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
+import { getShuttleBusScheduleLabel } from "@/utils/bus-utils";
 
 interface ShuttleBusPaymentConfirmationTableActionsProps {
   registration: IShuttleBusPaymentConfirmationRegistration;
@@ -261,25 +262,36 @@ export function ShuttleBusPaymentConfirmationTableActions({
             const isReceived = !!ticketReceipt?.ticketReceivedAt;
             const isTicketReceiptPending =
               pendingTicketReceiptShuttleBusId === ticketReceipt.shuttleBusId;
+            const ticketLabel = getShuttleBusScheduleLabel(
+              ticketReceipt.departureTime,
+              ticketReceipt.shuttleBusName
+            ).replace("\n", " ");
 
             return (
-              <Button
+              <div
                 key={ticketReceipt.shuttleBusId}
-                size="sm"
-                variant={isReceived ? "secondary" : "outline"}
-                onClick={() =>
-                  performConfirmTicketReceipt(ticketReceipt.shuttleBusId)
-                }
-                disabled={isReceived || isTicketReceiptPending}
-                className="flex h-7 items-center gap-1.5 text-xs"
+                className="flex items-center justify-end gap-2"
               >
-                {isTicketReceiptPending ? (
-                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <TicketCheck className="h-3.5 w-3.5" />
-                )}
-                <span>{isReceived ? "수령 완료" : "티켓 수령"}</span>
-              </Button>
+                <span className="max-w-36 truncate text-xs text-gray-600">
+                  {ticketLabel}
+                </span>
+                <Button
+                  size="sm"
+                  variant={isReceived ? "secondary" : "outline"}
+                  onClick={() =>
+                    performConfirmTicketReceipt(ticketReceipt.shuttleBusId)
+                  }
+                  disabled={isReceived || isTicketReceiptPending}
+                  className="flex h-7 shrink-0 items-center gap-1.5 text-xs"
+                >
+                  {isTicketReceiptPending ? (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <TicketCheck className="h-3.5 w-3.5" />
+                  )}
+                  <span>{isReceived ? "수령 완료" : "티켓 수령"}</span>
+                </Button>
+              </div>
             );
           })}
         </div>
