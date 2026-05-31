@@ -268,30 +268,27 @@ export function ShuttleBusPaymentConfirmationTableActions({
             ).replace("\n", " ");
 
             return (
-              <div
+              <Button
                 key={ticketReceipt.shuttleBusId}
-                className="flex items-center justify-end gap-2"
+                size="sm"
+                variant={isReceived ? "secondary" : "outline"}
+                onClick={() =>
+                  performConfirmTicketReceipt(ticketReceipt.shuttleBusId)
+                }
+                disabled={isReceived || isTicketReceiptPending}
+                title={`${ticketLabel} ${isReceived ? "수령 완료" : "티켓 수령"}`}
+                className="flex h-7 min-w-48 items-center justify-start gap-1.5 text-xs"
               >
-                <span className="max-w-36 truncate text-xs text-gray-600">
-                  {ticketLabel}
+                {isTicketReceiptPending ? (
+                  <div className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <TicketCheck className="h-3.5 w-3.5 shrink-0" />
+                )}
+                <span className="min-w-0 truncate">{ticketLabel}</span>
+                <span className="shrink-0">
+                  {isReceived ? "수령 완료" : "티켓 수령"}
                 </span>
-                <Button
-                  size="sm"
-                  variant={isReceived ? "secondary" : "outline"}
-                  onClick={() =>
-                    performConfirmTicketReceipt(ticketReceipt.shuttleBusId)
-                  }
-                  disabled={isReceived || isTicketReceiptPending}
-                  className="flex h-7 shrink-0 items-center gap-1.5 text-xs"
-                >
-                  {isTicketReceiptPending ? (
-                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  ) : (
-                    <TicketCheck className="h-3.5 w-3.5" />
-                  )}
-                  <span>{isReceived ? "수령 완료" : "티켓 수령"}</span>
-                </Button>
-              </div>
+              </Button>
             );
           })}
         </div>
