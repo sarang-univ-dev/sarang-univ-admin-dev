@@ -302,7 +302,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
                 disabled={isReceived || isTicketReceiptPending}
                 title={`${ticketLabel} ${isReceived ? "수령 완료" : "티켓 수령"}`}
                 className={cn(
-                  "flex h-7 w-fit max-w-48 items-center justify-center gap-1.5 px-3 text-center text-xs disabled:cursor-default disabled:opacity-100",
+                  "flex h-7 w-full items-center justify-center gap-1.5 px-3 text-center text-xs whitespace-nowrap disabled:cursor-default disabled:opacity-100",
                   getTicketButtonColorClass(ticketSchedule?.color)
                 )}
               >
@@ -311,9 +311,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
                 ) : (
                   <TicketCheck className="h-3.5 w-3.5 shrink-0" />
                 )}
-                <span className="min-w-0 truncate text-center">
-                  {ticketLabel}
-                </span>
+                <span>{ticketLabel}</span>
                 <span className="shrink-0">
                   {isReceived ? "수령 완료" : "티켓 수령"}
                 </span>

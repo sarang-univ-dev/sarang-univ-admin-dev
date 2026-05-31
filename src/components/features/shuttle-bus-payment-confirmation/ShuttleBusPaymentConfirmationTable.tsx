@@ -426,7 +426,11 @@ export function ShuttleBusPaymentConfirmationTable({
                         {headerGroup.headers.map((header) => (
                           <TableHead
                             key={header.id}
-                            className="text-center px-3 py-2.5"
+                            className={cn(
+                              "text-center px-3 py-2.5",
+                              header.column.id === "actions" &&
+                                "w-[250px] min-w-[250px]"
+                            )}
                           >
                             {header.isPlaceholder
                               ? null
@@ -460,7 +464,11 @@ export function ShuttleBusPaymentConfirmationTable({
                           {row.getVisibleCells().map((cell) => (
                             <TableCell
                               key={cell.id}
-                              className="text-center px-3 py-2.5"
+                              className={cn(
+                                "text-center px-3 py-2.5",
+                                cell.column.id === "actions" &&
+                                  "w-[250px] min-w-[250px]"
+                              )}
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
