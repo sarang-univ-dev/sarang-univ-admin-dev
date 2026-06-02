@@ -51,6 +51,7 @@ const DELETABLE_STATUSES = [
   UserRetreatRegistrationPaymentStatus.PENDING,
   UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST,
   UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST,
+  UserRetreatRegistrationPaymentStatus.CANCELED,
 ];
 
 export function UnivGroupRetreatRegistrationDetailContent({
