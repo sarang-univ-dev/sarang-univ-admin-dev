@@ -299,7 +299,7 @@ export function UnivGroupBusRegistrationDetailContent({
             name: data.name,
             phoneNumber: data.userPhoneNumber,
             gender: data.gender,
-            gradeNumber: data.gradeNumber,
+            gradeId: data.gradeId,
             currentLeaderName: "", // 셔틀버스에는 없음
           }}
           grades={grades}

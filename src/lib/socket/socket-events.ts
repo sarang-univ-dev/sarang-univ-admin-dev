@@ -20,7 +20,9 @@ export interface UserRetreatGbsLineup {
   partialAttendanceCount: number;
   id: number;
   userId: number;
+  univGroupId: number;
   univGroupNumber: number;
+  gradeId: number;
   gradeNumber: number;
   gender: "MALE" | "FEMALE";
   name: string;

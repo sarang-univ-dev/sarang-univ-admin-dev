@@ -13,6 +13,7 @@ export interface IUnivGroupAdminStaffRetreat {
   userId: number;
   univGroupNumber: number;
   gender: Gender;
+  gradeId: number;
   gradeNumber: number;
   name: string;
   userPhoneNumber: string;
@@ -43,6 +44,7 @@ export interface UnivGroupAdminStaffData {
   id: string;
   department: string;
   gender: Gender;
+  gradeId: number;
   grade: string;
   name: string;
   phone: string;

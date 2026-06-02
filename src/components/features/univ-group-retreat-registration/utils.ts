@@ -23,6 +23,7 @@ export function transformUnivGroupAdminStaffData(
       id: reg.id.toString(),
       department: `${reg.univGroupNumber}부`,
       gender: reg.gender,
+      gradeId: reg.gradeId,
       grade: `${reg.gradeNumber}학년`,
       name: reg.name,
       phone: reg.userPhoneNumber,
