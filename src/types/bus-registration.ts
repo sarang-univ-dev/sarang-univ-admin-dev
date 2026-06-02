@@ -15,6 +15,8 @@ export interface IUnivGroupBusRegistration {
   univGroupNumber: number;
   /** 성별 */
   gender: Gender;
+  /** 학년 ID */
+  gradeId: number;
   /** 학년 */
   gradeNumber: number;
   /** 신청자 이름 */

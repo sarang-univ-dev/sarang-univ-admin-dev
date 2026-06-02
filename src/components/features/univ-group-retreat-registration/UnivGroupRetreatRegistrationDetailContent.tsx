@@ -81,12 +81,6 @@ export function UnivGroupRetreatRegistrationDetailContent({
       .map((schedule) => schedule.id);
   }, [schedules, data.schedules]);
 
-  // data.grade에서 gradeNumber 추출 (예: "1학년" -> 1)
-  const gradeNumber = useMemo(() => {
-    const match = data.grade.match(/(\d+)/);
-    return match ? parseInt(match[1], 10) : 1;
-  }, [data.grade]);
-
   return (
     <>
       {/* 기본 정보 - 2컬럼 그리드 */}
@@ -275,7 +269,7 @@ export function UnivGroupRetreatRegistrationDetailContent({
             name: data.name,
             phoneNumber: data.phone,
             gender: data.gender,
-            gradeNumber,
+            gradeId: data.gradeId,
             currentLeaderName: data.currentLeaderName || "",
           }}
           grades={grades}

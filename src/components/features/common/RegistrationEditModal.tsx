@@ -41,7 +41,7 @@ interface RegistrationEditModalProps {
     name: string;
     phoneNumber: string;
     gender: Gender;
-    gradeNumber: number;
+    gradeId: number;
     currentLeaderName: string;
   };
   grades: Grade[];
@@ -62,24 +62,12 @@ export function RegistrationEditModal({
   const [name, setName] = useState(initialData.name);
   const [phoneNumber, setPhoneNumber] = useState(initialData.phoneNumber);
   const [gender, setGender] = useState<Gender>(initialData.gender);
-  const [gradeId, setGradeId] = useState<number | null>(null);
+  const [gradeId, setGradeId] = useState<number | null>(initialData.gradeId);
   const [currentLeaderName, setCurrentLeaderName] = useState(
     initialData.currentLeaderName || ""
   );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // 초기 gradeId 설정 (gradeNumber로 찾기)
-  useEffect(() => {
-    if (open && grades.length > 0) {
-      const matchingGrade = grades.find(
-        (g) => g.gradeNumber === initialData.gradeNumber
-      );
-      if (matchingGrade) {
-        setGradeId(matchingGrade.gradeId);
-      }
-    }
-  }, [open, grades, initialData.gradeNumber]);
 
   // 모달이 열릴 때 초기값으로 리셋
   useEffect(() => {
@@ -87,10 +75,18 @@ export function RegistrationEditModal({
       setName(initialData.name);
       setPhoneNumber(initialData.phoneNumber);
       setGender(initialData.gender);
+      setGradeId(initialData.gradeId);
       setCurrentLeaderName(initialData.currentLeaderName || "");
       setError(null);
     }
-  }, [open, initialData]);
+  }, [
+    open,
+    initialData.name,
+    initialData.phoneNumber,
+    initialData.gender,
+    initialData.gradeId,
+    initialData.currentLeaderName,
+  ]);
 
   const validatePhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^010-\d{4}-\d{4}$/;
