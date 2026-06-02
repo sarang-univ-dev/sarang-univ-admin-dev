@@ -84,8 +84,10 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   // ✅ 토스트 훅
   const addToast = useToastStore((state) => state.add);
 
-  // ✅ 부서 학년 목록 (수정 모달용)
-  const [grades, setGrades] = useState<Grade[]>([]);
+  // ✅ 부서별 학년 목록 (수정 모달용)
+  const [univGroupAndGrade, setUnivGroupAndGrade] = useState<
+    { univGroupNumber: number; grades: Grade[] }[]
+  >([]);
 
   // ✅ 부서 학년 정보 가져오기
   useEffect(() => {
@@ -96,25 +98,27 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         );
         const retreatInfo = response.data.retreatInfo;
 
-        // 첫 번째 데이터의 부서 번호로 학년 목록 필터링
-        if (initialData.length > 0 && retreatInfo.univGroupAndGrade) {
-          const univGroupNumber = initialData[0].univGroupNumber;
-          const univGroup = retreatInfo.univGroupAndGrade.find(
-            (group: { univGroupNumber: number }) => group.univGroupNumber === univGroupNumber
-          );
-          if (univGroup) {
-            setGrades(univGroup.grades);
-          }
-        }
+        setUnivGroupAndGrade(retreatInfo.univGroupAndGrade ?? []);
       } catch (error) {
         console.error("학년 정보 조회 중 오류 발생:", error);
       }
     };
 
-    if (retreatSlug && initialData.length > 0) {
+    if (retreatSlug) {
       fetchGrades();
     }
-  }, [retreatSlug, initialData]);
+  }, [retreatSlug]);
+
+  const gradesByUnivGroupNumber = useMemo(
+    () =>
+      new Map(
+        univGroupAndGrade.map((group) => [
+          group.univGroupNumber,
+          group.grades,
+        ])
+      ),
+    [univGroupAndGrade]
+  );
 
   // ✅ 데이터 변환
   const data = useMemo<GBSLineupRow[]>(() => {
@@ -140,8 +144,11 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         fullAttendanceCount: registration.fullAttendanceCount,
         partialAttendanceCount: registration.partialAttendanceCount,
         department: `${registration.univGroupNumber}부`,
+        univGroupNumber: registration.univGroupNumber,
         gender: registration.gender as Gender,
         grade: `${registration.gradeNumber}학년`,
+        gradeId: registration.gradeId,
+        gradeNumber: registration.gradeNumber,
         name: registration.name,
         phoneNumber: registration.phoneNumber,
         schedule: scheduleData,
@@ -485,7 +492,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
           data={rowData}
           retreatSlug={retreatSlug}
           schedules={schedules}
-          grades={grades}
+          grades={gradesByUnivGroupNumber.get(rowData.univGroupNumber) ?? []}
           onSaveScheduleMemo={handleSaveScheduleMemo}
           onUpdateScheduleMemo={handleUpdateScheduleMemo}
           onDeleteScheduleMemo={handleDeleteScheduleMemo}

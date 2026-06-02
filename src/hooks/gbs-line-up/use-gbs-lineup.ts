@@ -14,8 +14,11 @@ export interface GBSLineupRow {
   fullAttendanceCount: number;
   partialAttendanceCount: number;
   department: string;
+  univGroupNumber: number;
   gender: Gender;
   grade: string;
+  gradeId: number;
+  gradeNumber: number;
   name: string;
   phoneNumber: string;
   schedule: Record<string, boolean>;
@@ -89,8 +92,11 @@ export const useGBSLineup = (
         fullAttendanceCount: registration.fullAttendanceCount,
         partialAttendanceCount: registration.partialAttendanceCount,
         department: `${registration.univGroupNumber}부`,
+        univGroupNumber: registration.univGroupNumber,
         gender: registration.gender,
         grade: `${registration.gradeNumber}학년`,
+        gradeId: registration.gradeId,
+        gradeNumber: registration.gradeNumber,
         name: registration.name,
         phoneNumber: registration.phoneNumber,
         schedule: scheduleData,
