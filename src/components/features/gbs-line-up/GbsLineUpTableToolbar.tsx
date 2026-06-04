@@ -11,6 +11,7 @@ import {
   Check,
   X,
   Circle,
+  Upload,
 } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 
@@ -23,11 +24,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { GBSLineupRow } from "@/hooks/gbs-line-up/use-gbs-lineup";
+import { type IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { formatDate } from "@/utils/formatDate";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
+
+import { GbsExcelImportModal } from "./excel-import/GbsExcelImportModal";
 
 interface GbsLineUpTableToolbarProps {
   table: Table<GBSLineupRow>;
@@ -37,6 +41,12 @@ interface GbsLineUpTableToolbarProps {
   setScheduleFilter: (
     filter: Record<string, "none" | "include" | "exclude">
   ) => void;
+  /** 검증 비교용 전체 라인업 데이터 (엑셀 가져오기) */
+  lineups: IUserRetreatGBSLineup[];
+  /** 가져오기 적용 후 데이터 새로고침 */
+  onImported: () => void;
+  /** superuser 여부 (오류 무시 제출 체크박스 노출용) */
+  isSuperuser: boolean;
 }
 
 /**
@@ -56,8 +66,12 @@ export function GbsLineUpTableToolbar({
   schedules,
   scheduleFilter,
   setScheduleFilter,
+  lineups,
+  onImported,
+  isSuperuser,
 }: GbsLineUpTableToolbarProps) {
   const addToast = useToastStore(state => state.add);
+  const [importOpen, setImportOpen] = useState(false);
   const [loadingStates, setLoadingStates] = useState({
     exportExcel: false,
     exportDepartmentGbsTags: false,
@@ -413,21 +427,6 @@ export function GbsLineUpTableToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 엑셀 다운로드 */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDownloadExcel}
-          disabled={loadingStates.exportExcel}
-        >
-          {loadingStates.exportExcel ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-          ) : (
-            <Download className="h-4 w-4 mr-2" />
-          )}
-          엑셀로 내보내기
-        </Button>
-
         {/* 부서 GBS 꼬리표 */}
         <Button
           variant="outline"
@@ -457,7 +456,42 @@ export function GbsLineUpTableToolbar({
           )}
           수양회 GBS 꼬리표
         </Button>
+
+        {/* 엑셀 내보내기 */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDownloadExcel}
+          disabled={loadingStates.exportExcel}
+        >
+          {loadingStates.exportExcel ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+          ) : (
+            <Download className="h-4 w-4 mr-2" />
+          )}
+          엑셀로 내보내기
+        </Button>
+
+        {/* 엑셀 가져오기 (진한색으로 구별, 맨 오른쪽) */}
+        <Button
+          size="sm"
+          onClick={() => setImportOpen(true)}
+          className="bg-gray-900 text-white hover:bg-gray-800"
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          엑셀 가져오기
+        </Button>
       </div>
+
+      <GbsExcelImportModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        retreatSlug={retreatSlug}
+        lineups={lineups}
+        schedules={schedules}
+        onImported={onImported}
+        isSuperuser={isSuperuser}
+      />
     </div>
   );
 }

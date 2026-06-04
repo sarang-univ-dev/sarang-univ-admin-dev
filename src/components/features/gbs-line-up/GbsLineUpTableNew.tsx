@@ -44,6 +44,7 @@ interface GbsLineUpTableProps {
   initialData: IUserRetreatGBSLineup[];
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
+  isSuperuser: boolean;
 }
 
 /**
@@ -64,6 +65,7 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
   initialData,
   schedules,
   retreatSlug,
+  isSuperuser,
 }: GbsLineUpTableProps) {
   // ✅ SWR + WebSocket 통합 Hook (Optimistic Update 지원)
   // Best Practice: initialData를 SWR fallbackData로 전달
@@ -463,6 +465,9 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         schedules={schedules}
         scheduleFilter={scheduleFilter}
         setScheduleFilter={setScheduleFilter}
+        lineups={swrData.length > 0 ? swrData : initialData}
+        onImported={refresh}
+        isSuperuser={isSuperuser}
       />
 
       {/* ✅ 가상화 테이블 - 사이드바는 상세보기 버튼에서만 열림 */}

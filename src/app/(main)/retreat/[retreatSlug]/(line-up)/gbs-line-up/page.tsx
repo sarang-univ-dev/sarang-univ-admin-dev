@@ -9,6 +9,7 @@ import {
   fetchRetreatSchedules,
   fetchAccountStaffRegistrations,
 } from "@/lib/api/server-actions";
+import { getAdminNavigationServer } from "@/lib/api/server-admin-api";
 
 interface PageProps {
   params: Promise<{
@@ -34,11 +35,15 @@ export default async function GbsLineUpPage({ params }: PageProps) {
   const { retreatSlug } = await params;
 
   // ✅ 서버에서 병렬 데이터 페칭 (Promise.all)
-  const [lineups, schedules, registrations] = await Promise.all([
+  const [lineups, schedules, registrations, navigation] = await Promise.all([
     fetchGbsLineUpData(retreatSlug),
     fetchRetreatSchedules(retreatSlug),
     fetchAccountStaffRegistrations(retreatSlug),
+    getAdminNavigationServer(),
   ]);
+
+  // superuser 여부 (오류 무시 제출 체크박스 노출용). 실제 권한 강제는 서버 엔드포인트가 함.
+  const isSuperuser = navigation.isSuperuser;
 
   return (
     <div className="space-y-4 md:space-y-8">
@@ -56,6 +61,7 @@ export default async function GbsLineUpPage({ params }: PageProps) {
           initialData={lineups}
           schedules={schedules}
           retreatSlug={retreatSlug}
+          isSuperuser={isSuperuser}
         />
       </Suspense>
     </div>

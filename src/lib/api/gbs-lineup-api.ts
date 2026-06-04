@@ -110,4 +110,27 @@ export const GbsLineupAPI = {
       { data: { gbsNumber } }
     );
   },
+
+  /**
+   * 엑셀 일괄 GBS/리더 배정 (덮어쓰기)
+   * @param ignoreErrors 검증 오류 무시 제출 (superuser 만 서버에서 허용)
+   */
+  bulkAssignGbs: async (
+    retreatSlug: string,
+    payload: {
+      assignments: {
+        userRetreatRegistrationId: number;
+        gbsNumber: number;
+        isLeader: boolean;
+        currentLeaderName: string;
+      }[];
+      ignoreErrors: boolean;
+    }
+  ): Promise<{ updatedCount: number; createdGbsNumbers: number[] }> => {
+    const response = await webAxios.post(
+      `/api/v1/retreat/${retreatSlug}/line-up/bulk-assign-gbs`,
+      payload
+    );
+    return response.data;
+  },
 };
