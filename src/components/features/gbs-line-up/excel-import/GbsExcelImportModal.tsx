@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, FileSpreadsheet, Upload } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -24,8 +24,9 @@ import {
 } from "@/components/ui/select";
 import { IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import { TRetreatRegistrationSchedule } from "@/types";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
-import { PersonRef, ValidationResult } from "./types";
+import { PersonRef, ScheduleMismatchRow, ValidationResult } from "./types";
 import { useGbsExcelImport } from "./use-gbs-excel-import";
 
 interface GbsExcelImportModalProps {
@@ -49,10 +50,8 @@ const CATEGORY_TITLES: Record<number, string> = {
 
 function PersonList({
   people,
-  showSchedule,
 }: {
   people: PersonRef[];
-  showSchedule?: boolean;
 }) {
   return (
     <ScrollArea className="max-h-72 rounded-md border">
@@ -63,9 +62,6 @@ function PersonList({
             <th className="px-2 py-1.5 font-medium">학년</th>
             <th className="px-2 py-1.5 font-medium">이름</th>
             <th className="px-2 py-1.5 font-medium">연락처</th>
-            {showSchedule && (
-              <th className="px-2 py-1.5 font-medium">DB 일정</th>
-            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -75,11 +71,6 @@ function PersonList({
               <td className="px-2 py-1.5">{p.gradeNumber}학년</td>
               <td className="px-2 py-1.5 font-medium">{p.name}</td>
               <td className="px-2 py-1.5">{p.phone}</td>
-              {showSchedule && (
-                <td className="px-2 py-1.5 text-muted-foreground">
-                  {p.dbScheduleLabels || "-"}
-                </td>
-              )}
             </tr>
           ))}
         </tbody>
@@ -88,7 +79,98 @@ function PersonList({
   );
 }
 
-function ResultBody({ validation }: { validation: ValidationResult }) {
+/** 카테고리6: 일정 불일치 — 시트 vs 명단(DB)을 일정 체크박스 그리드로 표시 */
+function ScheduleMismatchList({
+  rows,
+  schedules,
+}: {
+  rows: ScheduleMismatchRow[];
+  schedules: TRetreatRegistrationSchedule[];
+}) {
+  const cols = useMemo(() => generateScheduleColumns(schedules), [schedules]);
+
+  return (
+    <ScrollArea className="max-h-80 rounded-md border">
+      <table className="text-sm">
+        <thead className="sticky top-0 bg-gray-100">
+          <tr className="text-left">
+            <th className="px-2 py-1.5 font-medium whitespace-nowrap">부서</th>
+            <th className="px-2 py-1.5 font-medium whitespace-nowrap">학년</th>
+            <th className="px-2 py-1.5 font-medium whitespace-nowrap">이름</th>
+            <th className="px-2 py-1.5 font-medium whitespace-nowrap">구분</th>
+            {cols.map(col => (
+              <th
+                key={col.id}
+                className="px-1 py-1.5 font-medium text-center whitespace-nowrap"
+              >
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {rows.map((p, i) => {
+            const sheetSet = new Set(p.sheetScheduleIds);
+            const dbSet = new Set(p.dbScheduleIds);
+            return (
+              <Fragment key={`${p.name}-${p.phone}-${i}`}>
+                <tr className="border-t border-gray-200">
+                  <td rowSpan={2} className="px-2 py-1.5 align-middle">
+                    {p.univGroupNumber}부
+                  </td>
+                  <td rowSpan={2} className="px-2 py-1.5 align-middle">
+                    {p.gradeNumber}학년
+                  </td>
+                  <td
+                    rowSpan={2}
+                    className="px-2 py-1.5 align-middle font-medium whitespace-nowrap"
+                  >
+                    {p.name}
+                  </td>
+                  <td className="px-2 py-1 text-muted-foreground whitespace-nowrap">
+                    시트
+                  </td>
+                  {cols.map(col => (
+                    <td key={col.id} className="px-1 py-1 text-center">
+                      <Checkbox
+                        checked={sheetSet.has(col.id)}
+                        disabled
+                        className={col.bgColorClass}
+                      />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="px-2 py-1 text-muted-foreground whitespace-nowrap">
+                    명단
+                  </td>
+                  {cols.map(col => (
+                    <td key={col.id} className="px-1 py-1 text-center">
+                      <Checkbox
+                        checked={dbSet.has(col.id)}
+                        disabled
+                        className={col.bgColorClass}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+      <ScrollBar orientation="horizontal" />
+    </ScrollArea>
+  );
+}
+
+function ResultBody({
+  validation,
+  schedules,
+}: {
+  validation: ValidationResult;
+  schedules: TRetreatRegistrationSchedule[];
+}) {
   const cat = validation.blockingCategory;
 
   if (cat === 1) {
@@ -107,13 +189,28 @@ function ResultBody({ validation }: { validation: ValidationResult }) {
     );
   }
 
+  // 카테고리6: 일정 불일치 — 체크박스 그리드
+  if (cat === 6) {
+    return (
+      <div className="space-y-2">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+          <AlertTriangle className="h-4 w-4" />
+          {CATEGORY_TITLES[6]} ({validation.scheduleMismatches.length}명)
+        </p>
+        <ScheduleMismatchList
+          rows={validation.scheduleMismatches}
+          schedules={schedules}
+        />
+      </div>
+    );
+  }
+
   if (cat != null) {
     const map: Record<number, PersonRef[]> = {
       2: validation.sheetDuplicates,
       3: validation.unmatchedSheetPeople,
       4: validation.missingDbRegistrants,
       5: validation.matchedButNoGbs,
-      6: validation.scheduleMismatches,
     };
     const people = map[cat] ?? [];
     const lockNote = cat === 2 ? " — 이 오류는 무시할 수 없습니다." : "";
@@ -123,7 +220,7 @@ function ResultBody({ validation }: { validation: ValidationResult }) {
           <AlertTriangle className="h-4 w-4" />
           {CATEGORY_TITLES[cat]} ({people.length}명){lockNote}
         </p>
-        <PersonList people={people} showSchedule={cat === 6} />
+        <PersonList people={people} />
       </div>
     );
   }
@@ -279,7 +376,7 @@ export function GbsExcelImportModal({
           {imp.validation && (
             <div className="space-y-2">
               <Label>3. 검증 결과</Label>
-              <ResultBody validation={imp.validation} />
+              <ResultBody validation={imp.validation} schedules={schedules} />
             </div>
           )}
 

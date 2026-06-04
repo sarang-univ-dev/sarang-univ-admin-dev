@@ -39,10 +39,21 @@ export interface PersonRef {
   gradeNumber: number | string;
   name: string;
   phone: string;
-  /** 카테고리6(일정 불일치)에서만: DB 일정 라벨 */
-  dbScheduleLabels?: string;
   /** 오류 표시용 엑셀 행 번호 */
   excelRow?: number;
+}
+
+/** 카테고리6(일정 불일치) 표시용 — 시트/DB 선택 일정 id 집합 (체크박스 렌더용) */
+export interface ScheduleMismatchRow {
+  univGroupNumber: number;
+  gradeNumber: number;
+  name: string;
+  phone: string;
+  excelRow?: number;
+  /** 시트에서 선택된 일정 id */
+  sheetScheduleIds: number[];
+  /** DB(명단)에서 선택된 일정 id */
+  dbScheduleIds: number[];
 }
 
 export interface ChangeWarning {
@@ -74,7 +85,7 @@ export interface ValidationResult {
   /** 카테고리5: 매칭됐으나 조번호 빈칸 */
   matchedButNoGbs: PersonRef[];
   /** 카테고리6: 일정 불일치 */
-  scheduleMismatches: PersonRef[];
+  scheduleMismatches: ScheduleMismatchRow[];
   /** 카테고리7(경고): GBS/리더 변경 내역 */
   changeWarnings: ChangeWarning[];
 

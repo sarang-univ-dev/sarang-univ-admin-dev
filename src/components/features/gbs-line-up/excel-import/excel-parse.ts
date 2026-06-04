@@ -74,22 +74,6 @@ export function buildScheduleLabels(
   return { labels, labelToId, idToLabel };
 }
 
-/** schedule id 집합 → 정렬된 라벨 문자열 (표시용) */
-export function scheduleIdsToLabels(
-  ids: number[],
-  idToLabel: Map<number, string>,
-  schedules: TRetreatRegistrationSchedule[]
-): string {
-  const order = new Map(
-    orderSchedules(schedules).map((s, i) => [s.id, i] as const)
-  );
-  return [...ids]
-    .filter((id) => idToLabel.has(id))
-    .sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0))
-    .map((id) => idToLabel.get(id)!)
-    .join(",");
-}
-
 const cell = (matrix: SheetMatrix, r: number, c: number): string =>
   (matrix[r]?.[c] ?? "").toString().trim();
 

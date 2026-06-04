@@ -12,17 +12,13 @@
  */
 import { IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import { TRetreatRegistrationSchedule } from "@/types";
-import {
-  buildMatchKey,
-  buildScheduleLabels,
-  normalizePhone,
-  scheduleIdsToLabels,
-} from "./excel-parse";
+import { buildMatchKey, normalizePhone } from "./excel-parse";
 import {
   AssignmentPayloadItem,
   ChangeWarning,
   ParsedSheetRow,
   PersonRef,
+  ScheduleMismatchRow,
   ValidationResult,
 } from "./types";
 
@@ -93,7 +89,6 @@ export function runValidation(input: {
   }
 
   // ── 매칭 인덱스 구성 ──
-  const { idToLabel } = buildScheduleLabels(schedules);
   const lineupByKey = new Map<string, IUserRetreatGBSLineup[]>();
   for (const lu of lineups) {
     const key = buildMatchKey(
@@ -110,7 +105,7 @@ export function runValidation(input: {
   const assignments: AssignmentPayloadItem[] = [];
   const unmatched: PersonRef[] = [];
   const matchedButNoGbs: PersonRef[] = [];
-  const scheduleMismatches: PersonRef[] = [];
+  const scheduleMismatches: ScheduleMismatchRow[] = [];
   const changeWarnings: ChangeWarning[] = [];
 
   for (const row of parsedRows) {
@@ -151,11 +146,8 @@ export function runValidation(input: {
         gradeNumber: lu.gradeNumber,
         name: lu.name,
         phone: lu.phoneNumber,
-        dbScheduleLabels: scheduleIdsToLabels(
-          lu.userRetreatRegistrationScheduleIds,
-          idToLabel,
-          schedules
-        ),
+        sheetScheduleIds: [...row.selectedScheduleIds],
+        dbScheduleIds: lu.userRetreatRegistrationScheduleIds,
         excelRow: row.excelRow,
       });
     }
