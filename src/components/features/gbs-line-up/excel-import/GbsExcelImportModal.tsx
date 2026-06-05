@@ -342,13 +342,13 @@ export function GbsExcelImportModal({
           {/* 템플릿 다운로드 */}
           <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 p-2.5">
             <span className="text-xs text-muted-foreground">
-              현재 명단으로 만든 템플릿을 받아 조번호/리더만 편집한 뒤
-              업로드하세요.
+              예시가 채워진 템플릿을 받아 본인 명단으로 바꾼 뒤 업로드하세요.
+              (일정 컬럼은 이 수양회에 맞게 채워져 있습니다.)
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => downloadTemplate(lineups, schedules)}
+              onClick={() => downloadTemplate(schedules)}
             >
               <Download className="mr-1.5 h-3.5 w-3.5" />
               템플릿 다운로드

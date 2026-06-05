@@ -6,7 +6,9 @@
     "dev": "NODE_OPTIONS=--use-system-ca node server.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",
@@ -94,6 +96,9 @@
     "zustand": "^5.0.4"
   },
   "devDependencies": {
-    "@types/react-window": "^1.8.8"
+    "@types/jest": "^30.0.0",
+    "@types/react-window": "^1.8.8",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11"
   }
 }

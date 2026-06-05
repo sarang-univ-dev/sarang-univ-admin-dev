@@ -5,7 +5,7 @@
  * 경고(확인 체크 시 제출 가능): 4.명단(DB)에 있으나 시트 없음 · 5.조번호 빈칸
  * 정보: GBS/리더 변경 내역
  */
-import { IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
+import type { IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { buildMatchKey, normalizePhone } from "./parse";
 import {
