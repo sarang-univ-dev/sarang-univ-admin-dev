@@ -398,55 +398,23 @@ export function GbsExcelImportModal({
               </Label>
             </div>
           )}
-
-          {/* 제출 확인 (모달 내부 단계 — 중첩 다이얼로그 회피) */}
-          {imp.confirming && imp.validation && (
-            <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
-              <span>
-                <b>{imp.validation.assignments.length}명</b>의 GBS 배정·리더
-                정보를 덮어씁니다. 일정/개인정보/메모는 변경되지 않습니다.
-                계속할까요?
-              </span>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
-          {imp.confirming ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={imp.cancelConfirm}
-                disabled={imp.submitting}
-              >
-                뒤로
-              </Button>
-              <Button onClick={imp.confirmSubmit} disabled={imp.submitting}>
-                {imp.submitting ? "적용 중…" : "확인, 덮어쓰기"}
-              </Button>
-            </>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            취소
+          </Button>
+          {imp.validation ? (
+            <Button onClick={imp.submit} disabled={!imp.canSubmit || imp.submitting}>
+              {imp.submitting ? "적용 중…" : "제출"}
+            </Button>
           ) : (
-            <>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                취소
-              </Button>
-              {imp.validation ? (
-                <Button
-                  onClick={imp.requestSubmit}
-                  disabled={!imp.canSubmit || imp.submitting}
-                >
-                  제출
-                </Button>
-              ) : (
-                <Button
-                  onClick={imp.runValidate}
-                  disabled={!imp.selectedSheet || imp.step === "validate"}
-                >
-                  {imp.step === "validate" ? "검증 중…" : "검증"}
-                </Button>
-              )}
-            </>
+            <Button
+              onClick={imp.runValidate}
+              disabled={!imp.selectedSheet || imp.step === "validate"}
+            >
+              {imp.step === "validate" ? "검증 중…" : "검증"}
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>
