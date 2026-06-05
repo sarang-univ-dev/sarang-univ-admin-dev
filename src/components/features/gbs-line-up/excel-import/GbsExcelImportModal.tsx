@@ -67,9 +67,9 @@ function PersonList({
 }) {
   return (
     <ScrollArea className="max-h-72 rounded-md border">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm text-center">
         <thead className="sticky top-0 bg-gray-100">
-          <tr className="text-left">
+          <tr>
             <th className="px-2 py-1.5 font-medium">부서</th>
             <th className="px-2 py-1.5 font-medium">학년</th>
             <th className="px-2 py-1.5 font-medium">이름</th>
@@ -103,9 +103,9 @@ function ScheduleMismatchList({
 
   return (
     <ScrollArea className="max-h-80 rounded-md border">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm text-center">
         <thead className="sticky top-0 bg-gray-100">
-          <tr className="text-left">
+          <tr>
             <th className="px-2 py-1.5 font-medium whitespace-nowrap">부서</th>
             <th className="px-2 py-1.5 font-medium whitespace-nowrap">학년</th>
             <th className="px-2 py-1.5 font-medium whitespace-nowrap">이름</th>
@@ -269,9 +269,9 @@ function ResultBody({
             변경 내역 ({validation.changeWarnings.length}건)
           </p>
           <ScrollArea className="max-h-60 rounded-md border">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm text-center">
               <thead className="sticky top-0 bg-gray-100">
-                <tr className="text-left">
+                <tr>
                   <th className="px-2 py-1.5 font-medium">부서</th>
                   <th className="px-2 py-1.5 font-medium">학년</th>
                   <th className="px-2 py-1.5 font-medium">이름</th>

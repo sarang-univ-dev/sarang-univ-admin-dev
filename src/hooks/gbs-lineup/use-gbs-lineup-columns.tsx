@@ -56,7 +56,7 @@ export function useGbsLineupColumns({
         cell: (props) => {
           const row = props.row.original;
           return (
-            <div className="flex items-center gap-2 px-2 py-1">
+            <div className="text-center px-2 py-1">
               {/* 시트 업로드가 source of truth — 리더 배정/해제 비활성화 (주석처리)
               <Button
                 variant="ghost"
