@@ -91,7 +91,7 @@ function ScheduleMismatchList({
 
   return (
     <ScrollArea className="max-h-80 rounded-md border">
-      <table className="text-sm">
+      <table className="w-full text-sm">
         <thead className="sticky top-0 bg-gray-100">
           <tr className="text-left">
             <th className="px-2 py-1.5 font-medium whitespace-nowrap">부서</th>
