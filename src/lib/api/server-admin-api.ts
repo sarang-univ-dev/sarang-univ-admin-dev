@@ -29,7 +29,7 @@ export async function getAdminNavigationServer(): Promise<AdminNavigationRespons
 
   if (!accessToken) {
     console.error("No access token found in cookies");
-    return { globalMenuItems: [], retreats: [], isSuperuser: false };
+    return { globalMenuItems: [], retreats: [] };
   }
 
   try {
@@ -48,14 +48,14 @@ export async function getAdminNavigationServer(): Promise<AdminNavigationRespons
       console.error(
         `Failed to fetch retreats: ${response.status} ${response.statusText}`
       );
-      return { globalMenuItems: [], retreats: [], isSuperuser: false };
+      return { globalMenuItems: [], retreats: [] };
     }
 
     const data: AdminNavigationResponse = await response.json();
     return data;
   } catch (error) {
     console.error("Error fetching retreats:", error);
-    return { globalMenuItems: [], retreats: [], isSuperuser: false };
+    return { globalMenuItems: [], retreats: [] };
   }
 }
 

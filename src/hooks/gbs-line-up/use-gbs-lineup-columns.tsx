@@ -598,11 +598,18 @@ export function useGbsLineupColumns(
                     리더
                   </span>
                 ) : (
-                  <GbsNumberCell
-                    row={row}
-                    onSave={(cellRow, value) => onSaveGbsNumber(row, value)}
-                    isLoading={isLoading(row.id, "gbs_number")}
-                  />
+                  <>
+                    {/* 시트 업로드가 source of truth — GBS 배정 입력 비활성화 (주석처리)
+                    <GbsNumberCell
+                      row={row}
+                      onSave={(cellRow, value) => onSaveGbsNumber(row, value)}
+                      isLoading={isLoading(row.id, "gbs_number")}
+                    />
+                    */}
+                    <span className="inline-block w-36 text-center py-1 text-sm">
+                      {row.gbsNumber ?? "미배정"}
+                    </span>
+                  </>
                 )}
               </div>
             );

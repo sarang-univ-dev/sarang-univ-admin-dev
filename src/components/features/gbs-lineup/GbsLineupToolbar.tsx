@@ -33,17 +33,19 @@ export function GbsLineupToolbar({
           />
         </div>
 
+        {/* GBS 생성 비활성화 — 시트 업로드가 source of truth (주석처리)
         <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           GBS 생성
         </Button>
+        */}
       </div>
 
-      <GbsCreateModal
+      {/* <GbsCreateModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         retreatSlug={retreatSlug}
-      />
+      /> */}
     </>
   );
 }

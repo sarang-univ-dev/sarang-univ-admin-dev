@@ -57,6 +57,7 @@ export function useGbsLineupColumns({
           const row = props.row.original;
           return (
             <div className="flex items-center gap-2 px-2 py-1">
+              {/* 시트 업로드가 source of truth — 리더 배정/해제 비활성화 (주석처리)
               <Button
                 variant="ghost"
                 size="sm"
@@ -80,6 +81,12 @@ export function useGbsLineupColumns({
                   <Trash2 className="h-3 w-3" />
                 </Button>
               )}
+              */}
+              <span className="px-2 py-1 text-sm">
+                {row.leaderNames || (
+                  <span className="text-gray-400">리더 없음</span>
+                )}
+              </span>
             </div>
           );
         },
@@ -113,24 +120,24 @@ export function useGbsLineupColumns({
         size: 300,
       }),
 
-      // 액션 (삭제)
-      columnHelper.display({
-        id: "actions",
-        header: () => <div className="text-center text-sm">액션</div>,
-        cell: (props) => (
-          <div className="text-center px-2 py-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => deleteGbsGroup(props.row.original.number)}
-              className="h-8 w-8 p-0"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-        size: 80,
-      }),
+      // 액션 (삭제) — 시트 업로드가 source of truth, GBS 삭제 비활성화 (주석처리)
+      // columnHelper.display({
+      //   id: "actions",
+      //   header: () => <div className="text-center text-sm">액션</div>,
+      //   cell: (props) => (
+      //     <div className="text-center px-2 py-1">
+      //       <Button
+      //         variant="outline"
+      //         size="sm"
+      //         onClick={() => deleteGbsGroup(props.row.original.number)}
+      //         className="h-8 w-8 p-0"
+      //       >
+      //         <Trash2 className="h-4 w-4" />
+      //       </Button>
+      //     </div>
+      //   ),
+      //   size: 80,
+      // }),
     ],
     [
       onSelectLeaders,

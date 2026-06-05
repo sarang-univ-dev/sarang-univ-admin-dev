@@ -9,10 +9,13 @@ import { GbsLineupAPI } from "@/lib/api/gbs-lineup-api";
 import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import { TRetreatRegistrationSchedule } from "@/types";
-
-import { detectLayout, parseSheetRows, SheetMatrix } from "./excel-parse";
-import { ImportStep, ValidationResult } from "./types";
-import { runValidation } from "./validate";
+import {
+  detectLayout,
+  parseSheetRows,
+  SheetMatrix,
+} from "@/utils/gbs-excel/parse";
+import { ImportStep, ValidationResult } from "@/utils/gbs-excel/types";
+import { runValidation } from "@/utils/gbs-excel/validate";
 
 export const DEFAULT_SHEET_NAME = "(꼬리표) 수양회GBS";
 
@@ -20,7 +23,6 @@ interface UseGbsExcelImportArgs {
   retreatSlug: string;
   lineups: IUserRetreatGBSLineup[];
   schedules: TRetreatRegistrationSchedule[];
-  isSuperuser: boolean;
   onImported: () => void;
   onClose: () => void;
 }
@@ -29,7 +31,6 @@ export function useGbsExcelImport({
   retreatSlug,
   lineups,
   schedules,
-  isSuperuser,
   onImported,
   onClose,
 }: UseGbsExcelImportArgs) {
@@ -42,7 +43,8 @@ export function useGbsExcelImport({
   const [sheetNames, setSheetNames] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [validation, setValidation] = useState<ValidationResult | null>(null);
-  const [ignoreErrors, setIgnoreErrors] = useState(false);
+  // 경고(시트 누락/조번호 빈칸) 확인 체크
+  const [acknowledgedWarnings, setAcknowledgedWarnings] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +55,7 @@ export function useGbsExcelImport({
     setSheetNames([]);
     setSelectedSheet("");
     setValidation(null);
-    setIgnoreErrors(false);
+    setAcknowledgedWarnings(false);
     setSubmitting(false);
     setError(null);
   }, []);
@@ -61,7 +63,7 @@ export function useGbsExcelImport({
   const handleFile = useCallback(async (file: File) => {
     setError(null);
     setValidation(null);
-    setIgnoreErrors(false);
+    setAcknowledgedWarnings(false);
     try {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
@@ -81,7 +83,7 @@ export function useGbsExcelImport({
   const runValidate = useCallback(() => {
     if (!workbook || !selectedSheet) return;
     setStep("validate");
-    setIgnoreErrors(false);
+    setAcknowledgedWarnings(false);
     try {
       const ws = workbook.Sheets[selectedSheet];
       const matrix = XLSX.utils.sheet_to_json(ws, {
@@ -111,10 +113,10 @@ export function useGbsExcelImport({
 
   const canSubmit = useMemo(() => {
     if (!validation) return false;
-    if (validation.nonBypassable) return false; // 카테고리1·2
-    if (validation.blockingCategory == null) return true; // 오류 없음
-    return isSuperuser && ignoreErrors; // 우회가능 + superuser + 체크
-  }, [validation, isSuperuser, ignoreErrors]);
+    if (validation.blockingCategory != null) return false; // 차단 오류 있음
+    if (validation.hasWarnings) return acknowledgedWarnings; // 경고는 확인 체크 필요
+    return true;
+  }, [validation, acknowledgedWarnings]);
 
   const doSubmit = useCallback(async () => {
     if (!validation || !canSubmit) return;
@@ -123,7 +125,6 @@ export function useGbsExcelImport({
     try {
       const result = await GbsLineupAPI.bulkAssignGbs(retreatSlug, {
         assignments: validation.assignments,
-        ignoreErrors,
       });
       onImported();
       addToast({
@@ -142,12 +143,16 @@ export function useGbsExcelImport({
         e instanceof AxiosError
           ? e.response?.data?.message || "적용 중 오류가 발생했습니다."
           : "적용 중 오류가 발생했습니다.";
-      addToast({ title: "적용 실패", description: message, variant: "destructive" });
+      addToast({
+        title: "적용 실패",
+        description: message,
+        variant: "destructive",
+      });
       setStep("result");
     } finally {
       setSubmitting(false);
     }
-  }, [validation, canSubmit, retreatSlug, ignoreErrors, onImported, addToast, onClose]);
+  }, [validation, canSubmit, retreatSlug, onImported, addToast, onClose]);
 
   const submit = useCallback(() => {
     if (!validation || !canSubmit) return;
@@ -166,11 +171,10 @@ export function useGbsExcelImport({
     selectedSheet,
     setSelectedSheet,
     validation,
-    ignoreErrors,
-    setIgnoreErrors,
+    acknowledgedWarnings,
+    setAcknowledgedWarnings,
     submitting,
     error,
-    isSuperuser,
     handleFile,
     runValidate,
     canSubmit,

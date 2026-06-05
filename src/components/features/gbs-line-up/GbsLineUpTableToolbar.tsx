@@ -45,8 +45,6 @@ interface GbsLineUpTableToolbarProps {
   lineups: IUserRetreatGBSLineup[];
   /** 가져오기 적용 후 데이터 새로고침 */
   onImported: () => void;
-  /** superuser 여부 (오류 무시 제출 체크박스 노출용) */
-  isSuperuser: boolean;
 }
 
 /**
@@ -68,7 +66,6 @@ export function GbsLineUpTableToolbar({
   setScheduleFilter,
   lineups,
   onImported,
-  isSuperuser,
 }: GbsLineUpTableToolbarProps) {
   const addToast = useToastStore(state => state.add);
   const [importOpen, setImportOpen] = useState(false);
@@ -490,7 +487,6 @@ export function GbsLineUpTableToolbar({
         lineups={lineups}
         schedules={schedules}
         onImported={onImported}
-        isSuperuser={isSuperuser}
       />
     </div>
   );

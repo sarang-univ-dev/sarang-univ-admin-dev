@@ -1,6 +1,12 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, FileSpreadsheet, Upload } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  Upload,
+} from "lucide-react";
 import { Fragment, useEffect, useMemo, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -26,7 +32,14 @@ import { IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineu
 import { TRetreatRegistrationSchedule } from "@/types";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 
-import { PersonRef, ScheduleMismatchRow, ValidationResult } from "./types";
+import {
+  PersonRef,
+  ScheduleMismatchRow,
+  ValidationResult,
+} from "@/utils/gbs-excel/types";
+
+import { downloadTemplate } from "@/utils/gbs-excel/template";
+
 import { useGbsExcelImport } from "./use-gbs-excel-import";
 
 interface GbsExcelImportModalProps {
@@ -36,7 +49,6 @@ interface GbsExcelImportModalProps {
   lineups: IUserRetreatGBSLineup[];
   schedules: TRetreatRegistrationSchedule[];
   onImported: () => void;
-  isSuperuser: boolean;
 }
 
 const CATEGORY_TITLES: Record<number, string> = {
@@ -173,12 +185,13 @@ function ResultBody({
 }) {
   const cat = validation.blockingCategory;
 
+  // ── 차단 카테고리 (1·2·3·6) ──
   if (cat === 1) {
     return (
       <div className="space-y-2">
         <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
           <AlertTriangle className="h-4 w-4" />
-          {CATEGORY_TITLES[1]} — 이 오류는 무시할 수 없습니다.
+          {CATEGORY_TITLES[1]} ({validation.fileFormatErrors.length}건)
         </p>
         <ul className="list-disc space-y-1 rounded-md border bg-destructive/5 p-3 pl-7 text-sm text-destructive">
           {validation.fileFormatErrors.map((e, i) => (
@@ -188,8 +201,6 @@ function ResultBody({
       </div>
     );
   }
-
-  // 카테고리6: 일정 불일치 — 체크박스 그리드
   if (cat === 6) {
     return (
       <div className="space-y-2">
@@ -204,39 +215,54 @@ function ResultBody({
       </div>
     );
   }
-
   if (cat != null) {
-    const map: Record<number, PersonRef[]> = {
-      2: validation.sheetDuplicates,
-      3: validation.unmatchedSheetPeople,
-      4: validation.missingDbRegistrants,
-      5: validation.matchedButNoGbs,
-    };
-    const people = map[cat] ?? [];
-    const lockNote = cat === 2 ? " — 이 오류는 무시할 수 없습니다." : "";
+    const people =
+      cat === 2 ? validation.sheetDuplicates : validation.unmatchedSheetPeople;
     return (
       <div className="space-y-2">
         <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
           <AlertTriangle className="h-4 w-4" />
-          {CATEGORY_TITLES[cat]} ({people.length}명){lockNote}
+          {CATEGORY_TITLES[cat]} ({people.length}명)
         </p>
         <PersonList people={people} />
       </div>
     );
   }
 
-  // blocking 없음: 성공 + 경고
+  // ── 차단 없음: 적용 예정 + 경고(4·5) + 변경 내역 ──
   return (
     <div className="space-y-3">
       <p className="flex items-center gap-1.5 text-sm font-medium text-green-700">
         <CheckCircle2 className="h-4 w-4" />
-        검증 통과 — {validation.assignments.length}명 적용 예정
+        {validation.assignments.length}명 적용 예정
       </p>
       {validation.newGbsNumbers.length > 0 && (
         <p className="text-sm text-muted-foreground">
           신규 생성 예정 GBS: {validation.newGbsNumbers.join(", ")}
         </p>
       )}
+
+      {validation.missingDbRegistrants.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
+            <AlertTriangle className="h-4 w-4" />
+            {CATEGORY_TITLES[4]} ({validation.missingDbRegistrants.length}명) —
+            적용에서 제외
+          </p>
+          <PersonList people={validation.missingDbRegistrants} />
+        </div>
+      )}
+      {validation.matchedButNoGbs.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
+            <AlertTriangle className="h-4 w-4" />
+            {CATEGORY_TITLES[5]} ({validation.matchedButNoGbs.length}명) —
+            적용에서 제외
+          </p>
+          <PersonList people={validation.matchedButNoGbs} />
+        </div>
+      )}
+
       {validation.changeWarnings.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-medium text-yellow-700">
@@ -279,7 +305,6 @@ export function GbsExcelImportModal({
   lineups,
   schedules,
   onImported,
-  isSuperuser,
 }: GbsExcelImportModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -287,7 +312,6 @@ export function GbsExcelImportModal({
     retreatSlug,
     lineups,
     schedules,
-    isSuperuser,
     onImported,
     onClose: () => onOpenChange(false),
   });
@@ -298,11 +322,10 @@ export function GbsExcelImportModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const showIgnoreCheckbox =
+  const showAckCheckbox =
     !!imp.validation &&
-    !imp.validation.nonBypassable &&
-    imp.validation.blockingCategory != null &&
-    isSuperuser;
+    imp.validation.blockingCategory == null &&
+    imp.validation.hasWarnings;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -316,6 +339,21 @@ export function GbsExcelImportModal({
         </DialogHeader>
 
         <div className="space-y-4 py-1">
+          {/* 템플릿 다운로드 */}
+          <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 p-2.5">
+            <span className="text-xs text-muted-foreground">
+              현재 명단으로 만든 템플릿을 받아 조번호/리더만 편집한 뒤
+              업로드하세요.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadTemplate(lineups, schedules)}
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              템플릿 다운로드
+            </Button>
+          </div>
           {/* 1) 파일 선택 */}
           <div className="space-y-2">
             <Label>1. 파일 선택</Label>
@@ -380,21 +418,21 @@ export function GbsExcelImportModal({
             </div>
           )}
 
-          {/* superuser 오류 무시 체크박스 */}
-          {showIgnoreCheckbox && (
-            <div className="flex items-start gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3">
+          {/* 경고 확인 체크박스 (시트 누락 / 조번호 빈칸) */}
+          {showAckCheckbox && (
+            <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3">
               <Checkbox
-                id="ignore-errors"
-                checked={imp.ignoreErrors}
-                onCheckedChange={(v) => imp.setIgnoreErrors(v === true)}
+                id="ack-warnings"
+                checked={imp.acknowledgedWarnings}
+                onCheckedChange={(v) => imp.setAcknowledgedWarnings(v === true)}
                 className="mt-0.5"
               />
               <Label
-                htmlFor="ignore-errors"
-                className="cursor-pointer text-sm font-normal text-yellow-800"
+                htmlFor="ack-warnings"
+                className="cursor-pointer text-sm font-normal text-amber-800"
               >
-                오류를 무시하고 제출 (슈퍼유저 전용) — 위 오류 인원은 적용에서
-                제외됩니다.
+                위 경고 인원(시트 누락 / 조번호 빈칸)은 적용에서 제외됨을
+                확인했습니다. 시트에 정상 포함된 인원만 제출합니다.
               </Label>
             </div>
           )}
@@ -405,7 +443,10 @@ export function GbsExcelImportModal({
             취소
           </Button>
           {imp.validation ? (
-            <Button onClick={imp.submit} disabled={!imp.canSubmit || imp.submitting}>
+            <Button
+              onClick={imp.submit}
+              disabled={!imp.canSubmit || imp.submitting}
+            >
               {imp.submitting ? "적용 중…" : "제출"}
             </Button>
           ) : (

@@ -1,18 +1,13 @@
 /**
- * GBS 엑셀 가져오기 — 7개 카테고리 검증 (순수 함수).
+ * GBS 엑셀 가져오기 검증 (순수 함수).
  *
- * 순서(short-circuit):
- *  1. 파일 형식(컬럼)           🔒 비우회
- *  2. 시트 내 중복 레코드        🔒 비우회
- *  3. 시트에 있으나 DB 미매칭
- *  4. DB(입금확인)에 있으나 시트에 없음
- *  5. 매칭됐으나 조번호 빈칸
- *  6. 일정 불일치
- *  7. (경고) GBS/리더 변경 내역
+ * 차단(제출 불가): 1.파일형식 · 2.시트내 중복 · 3.시트에 있으나 명단(DB) 없음 · 6.일정 불일치
+ * 경고(확인 체크 시 제출 가능): 4.명단(DB)에 있으나 시트 없음 · 5.조번호 빈칸
+ * 정보: GBS/리더 변경 내역
  */
 import { IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import { TRetreatRegistrationSchedule } from "@/types";
-import { buildMatchKey, normalizePhone } from "./excel-parse";
+import { buildMatchKey, normalizePhone } from "./parse";
 import {
   AssignmentPayloadItem,
   ChangeWarning,
@@ -38,7 +33,7 @@ function emptyResult(): ValidationResult {
     scheduleMismatches: [],
     changeWarnings: [],
     blockingCategory: null,
-    nonBypassable: false,
+    hasWarnings: false,
     assignments: [],
     newGbsNumbers: [],
   };
@@ -57,7 +52,6 @@ export function runValidation(input: {
   if (fileFormatErrors.length > 0) {
     result.fileFormatErrors = fileFormatErrors;
     result.blockingCategory = 1;
-    result.nonBypassable = true;
     return result;
   }
 
@@ -84,7 +78,6 @@ export function runValidation(input: {
   if (duplicates.length > 0) {
     result.sheetDuplicates = duplicates;
     result.blockingCategory = 2;
-    result.nonBypassable = true;
     return result;
   }
 
@@ -215,11 +208,9 @@ export function runValidation(input: {
 
   // 첫 실패 카테고리 (3→4→5→6)
   if (unmatched.length > 0) result.blockingCategory = 3;
-  else if (missingDb.length > 0) result.blockingCategory = 4;
-  else if (matchedButNoGbs.length > 0) result.blockingCategory = 5;
   else if (scheduleMismatches.length > 0) result.blockingCategory = 6;
   else result.blockingCategory = null;
 
-  result.nonBypassable = false;
+  result.hasWarnings = missingDb.length > 0 || matchedButNoGbs.length > 0;
   return result;
 }

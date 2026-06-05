@@ -71,28 +71,28 @@ export interface AssignmentPayloadItem {
   currentLeaderName: string;
 }
 
-export type BlockingCategory = 1 | 2 | 3 | 4 | 5 | 6 | null;
+export type BlockingCategory = 1 | 2 | 3 | 6 | null;
 
 export interface ValidationResult {
-  /** 카테고리1: 파일 형식(컬럼) — 🔒 비우회 */
+  /** 카테고리1: 파일 형식(컬럼) — 차단 */
   fileFormatErrors: string[];
-  /** 카테고리2: 시트 내 중복 레코드 — 🔒 비우회 */
+  /** 카테고리2: 시트 내 중복 레코드 — 차단 */
   sheetDuplicates: PersonRef[];
-  /** 카테고리3: 시트에 있으나 DB 미매칭 */
+  /** 카테고리3: 시트에 있으나 명단(DB)에 없음 — 차단 */
   unmatchedSheetPeople: PersonRef[];
-  /** 카테고리4: DB(입금확인)에 있으나 시트에 없음 */
-  missingDbRegistrants: PersonRef[];
-  /** 카테고리5: 매칭됐으나 조번호 빈칸 */
-  matchedButNoGbs: PersonRef[];
-  /** 카테고리6: 일정 불일치 */
+  /** 카테고리6: 일정 불일치 — 차단 */
   scheduleMismatches: ScheduleMismatchRow[];
-  /** 카테고리7(경고): GBS/리더 변경 내역 */
+  /** 카테고리4(경고): 명단(DB)에 있으나 시트에 없음 */
+  missingDbRegistrants: PersonRef[];
+  /** 카테고리5(경고): 매칭됐으나 조번호 빈칸 */
+  matchedButNoGbs: PersonRef[];
+  /** GBS/리더 변경 내역(정보성) */
   changeWarnings: ChangeWarning[];
 
-  /** 첫 실패 카테고리(1~6), 없으면 null */
+  /** 차단 카테고리(1·2·3·6) 중 첫 번째, 없으면 null */
   blockingCategory: BlockingCategory;
-  /** 카테고리1·2 존재 여부 → superuser 도 우회 불가 */
-  nonBypassable: boolean;
+  /** 경고(카테고리4·5) 존재 여부 — 확인 체크 시 제출 가능 */
+  hasWarnings: boolean;
   /** 제출 payload (매칭 + 조번호 있는 행) */
   assignments: AssignmentPayloadItem[];
   /** 정보성: 새로 생성될 것으로 보이는 GBS 번호 */

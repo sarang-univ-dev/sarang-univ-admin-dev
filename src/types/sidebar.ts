@@ -20,5 +20,4 @@ export interface RetreatWithMenus {
 export interface AdminNavigationResponse {
   globalMenuItems: MenuItem[];
   retreats: RetreatWithMenus[];
-  isSuperuser: boolean;
 }

@@ -113,7 +113,6 @@ export const GbsLineupAPI = {
 
   /**
    * 엑셀 일괄 GBS/리더 배정 (덮어쓰기)
-   * @param ignoreErrors 검증 오류 무시 제출 (superuser 만 서버에서 허용)
    */
   bulkAssignGbs: async (
     retreatSlug: string,
@@ -124,7 +123,6 @@ export const GbsLineupAPI = {
         isLeader: boolean;
         currentLeaderName: string;
       }[];
-      ignoreErrors: boolean;
     }
   ): Promise<{ updatedCount: number; createdGbsNumbers: number[] }> => {
     const response = await webAxios.post(
