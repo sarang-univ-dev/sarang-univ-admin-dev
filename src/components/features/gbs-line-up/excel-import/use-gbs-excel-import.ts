@@ -6,7 +6,6 @@ import * as XLSX from "xlsx";
 
 import { IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import { GbsLineupAPI } from "@/lib/api/gbs-lineup-api";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import { TRetreatRegistrationSchedule } from "@/types";
 
@@ -34,7 +33,6 @@ export function useGbsExcelImport({
   onClose,
 }: UseGbsExcelImportArgs) {
   const addToast = useToastStore((state) => state.add);
-  const confirmDialog = useConfirmDialogStore();
 
   const [step, setStep] = useState<ImportStep>("pick");
   const [fileName, setFileName] = useState<string>("");
@@ -45,6 +43,9 @@ export function useGbsExcelImport({
   const [ignoreErrors, setIgnoreErrors] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 덮어쓰기 확인은 모달 내부 단계로 처리 (전역 ConfirmModal 중첩 시 Radix
+  // pointer-events 잔존 버그가 있어 두 번째 Radix 모달을 띄우지 않는다)
+  const [confirming, setConfirming] = useState(false);
 
   const reset = useCallback(() => {
     setStep("pick");
@@ -56,6 +57,7 @@ export function useGbsExcelImport({
     setIgnoreErrors(false);
     setSubmitting(false);
     setError(null);
+    setConfirming(false);
   }, []);
 
   const handleFile = useCallback(async (file: File) => {
@@ -136,6 +138,7 @@ export function useGbsExcelImport({
         variant: "success",
       });
       setStep("done");
+      setConfirming(false);
       onClose();
     } catch (e) {
       const message =
@@ -149,15 +152,13 @@ export function useGbsExcelImport({
     }
   }, [validation, canSubmit, retreatSlug, ignoreErrors, onImported, addToast, onClose]);
 
-  const submit = useCallback(() => {
+  // 1단계: 제출 클릭 → 모달 내부 확인 단계로
+  const requestSubmit = useCallback(() => {
     if (!validation || !canSubmit) return;
-    const count = validation.assignments.length;
-    confirmDialog.show({
-      title: "GBS 라인업 일괄 적용",
-      description: `${count}명의 GBS 배정·리더 정보를 덮어씁니다. 일정/개인정보/메모는 변경되지 않습니다. 계속할까요?`,
-      onConfirm: doSubmit,
-    });
-  }, [validation, canSubmit, confirmDialog, doSubmit]);
+    setConfirming(true);
+  }, [validation, canSubmit]);
+
+  const cancelConfirm = useCallback(() => setConfirming(false), []);
 
   return {
     step,
@@ -171,10 +172,13 @@ export function useGbsExcelImport({
     submitting,
     error,
     isSuperuser,
+    confirming,
     handleFile,
     runValidate,
     canSubmit,
-    submit,
+    requestSubmit,
+    confirmSubmit: doSubmit,
+    cancelConfirm,
     reset,
   };
 }
