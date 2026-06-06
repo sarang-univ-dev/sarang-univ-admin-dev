@@ -1,0 +1,38 @@
+name: Guard main promotion
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - labeled
+      - unlabeled
+      - edited
+
+jobs:
+  require-dev-or-hotfix:
+    name: require-dev-or-hotfix-label
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate source branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HAS_HOTFIX_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'hotfix') }}
+        run: |
+          if [ "$HEAD_REF" = "dev" ]; then
+            echo "PR into main is from dev."
+            exit 0
+          fi
+
+          if [ "$HAS_HOTFIX_LABEL" = "true" ]; then
+            echo "PR into main is allowed by the hotfix label."
+            exit 0
+          fi
+
+          echo "PRs into main must come from dev unless the PR has the hotfix label."
+          echo "Current source branch: $HEAD_REF"
+          exit 1
