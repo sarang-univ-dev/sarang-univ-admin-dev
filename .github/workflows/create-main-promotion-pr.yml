@@ -2,12 +2,6 @@ name: "[Production Deploy]: dev -> main"
 
 on:
   workflow_dispatch:
-    inputs:
-      draft:
-        description: Create the pull request as a draft
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -25,7 +19,6 @@ jobs:
         id: create
         env:
           GH_TOKEN: ${{ github.token }}
-          DRAFT: ${{ inputs.draft }}
         run: |
           ahead_by=$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...dev" --jq ".ahead_by")
 
@@ -60,18 +53,12 @@ jobs:
 
           Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
-          draft_flag=""
-          if [ "$DRAFT" = "true" ]; then
-            draft_flag="--draft"
-          fi
-
           pr_url=$(gh pr create \
             --repo "$GITHUB_REPOSITORY" \
             --base main \
             --head dev \
             --title "[Production Deploy]: dev -> main" \
-            --body "$body" \
-            $draft_flag)
+            --body "$body")
 
           echo "Created pull request: $pr_url"
           echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
