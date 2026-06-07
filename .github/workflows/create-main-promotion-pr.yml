@@ -1,0 +1,71 @@
+name: "[Production Deploy]: dev -> main"
+
+on:
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: Create the pull request as a draft
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pr:
+    name: Create production deploy PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRAFT: ${{ inputs.draft }}
+        run: |
+          ahead_by=$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...dev" --jq ".ahead_by")
+
+          if [ "$ahead_by" = "0" ]; then
+            echo "Dev has no commits ahead of main. Nothing to promote."
+            exit 0
+          fi
+
+          echo "Dev is $ahead_by commit(s) ahead of main."
+
+          existing_pr_url=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head dev \
+            --state open \
+            --json url \
+            --jq '.[0].url // ""')
+
+          if [ -n "$existing_pr_url" ]; then
+            echo "A dev to main pull request already exists: $existing_pr_url"
+            exit 0
+          fi
+
+          body="Promotes dev to main.
+
+          Triggered manually by @${GITHUB_ACTOR}.
+
+          Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          if [ "$DRAFT" = "true" ]; then
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base main \
+              --head dev \
+              --title "[Production Deploy]: dev -> main" \
+              --body "$body" \
+              --draft
+            exit 0
+          fi
+
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head dev \
+            --title "[Production Deploy]: dev -> main" \
+            --body "$body"
