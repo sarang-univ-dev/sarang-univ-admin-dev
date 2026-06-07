@@ -237,6 +237,7 @@ export function UnivGroupRetreatRegistrationTable({
         title="신청자 상세 정보"
         description={(data) => `${data.name} (${data.department}) 신청 내역`}
         side={isMobile ? "bottom" : "right"}
+        preventDismissWhenAlertDialogOpen
       >
         {(data) => (
           <UnivGroupRetreatRegistrationDetailContent
@@ -251,8 +252,10 @@ export function UnivGroupRetreatRegistrationTable({
             onUpdateAdminMemo={updateAdminMemo}
             onDeleteAdminMemo={deleteAdminMemo}
             onDeleteRegistration={async (id) => {
-              await deleteRegistration(id);
-              sidebar.close();
+              const deleteSucceeded = await deleteRegistration(id);
+              if (deleteSucceeded) {
+                sidebar.close();
+              }
             }}
             onUpdateRegistrationInfo={updateRegistrationInfo}
             isMutating={isMutating}

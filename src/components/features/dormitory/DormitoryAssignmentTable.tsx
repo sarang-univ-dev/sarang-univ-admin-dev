@@ -98,6 +98,7 @@ interface DormitoryGroupRow {
 }
 
 type DormitoryTableRow = DormitoryDataRow | DormitoryGroupRow;
+type DormitoryColumnDef = ColumnDef<DormitoryTableRow, any>;
 
 const columnHelper = createColumnHelper<DormitoryTableRow>();
 
@@ -669,8 +670,8 @@ function DormitoryAssignmentTableContent({
     return meta;
   }, [baseGroupMeta, groupMode, groupedRows]);
 
-  const columns = useMemo<ColumnDef<DormitoryTableRow>[]>(() => {
-    const baseColumns: ColumnDef<DormitoryTableRow>[] = [
+  const columns = useMemo<DormitoryColumnDef[]>(() => {
+    const baseColumns: DormitoryColumnDef[] = [
       columnHelper.display({
         id: "group",
         header: () => (

@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import useSWR, { SWRConfiguration } from "swr";
 import { AccountStaffAPI } from "@/lib/api/account-api";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 import { IRetreatRegistration } from "@/types/account";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
@@ -23,7 +23,7 @@ export function useAccountStaffRegistration(
   retreatSlug: string,
   options?: SWRConfiguration<IRetreatRegistration[], Error>
 ) {
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
   const addToast = useToastStore((state) => state.add);
   const [isMutating, setIsMutating] = useState(false);
 
@@ -120,7 +120,7 @@ export function useAccountStaffRegistration(
    * @param registrationId - 신청 ID
    */
   const assignStaff = async (registrationId: string) => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "간사 배정",
       description: "정말로 간사 배정 처리를 하시겠습니까?",
       onConfirm: async () => {
@@ -139,7 +139,7 @@ export function useAccountStaffRegistration(
    * @param registrationId - 신청 ID
    */
   const confirmPayment = async (registrationId: string) => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "입금 확인 완료",
       description: "정말로 입금 확인 완료 처리를 하시겠습니까?",
       onConfirm: async () => {
@@ -168,7 +168,7 @@ export function useAccountStaffRegistration(
    * @param registrationId - 신청 ID
    */
   const refundComplete = async (registrationId: string) => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "환불 처리",
       description: "정말로 환불 처리를 완료하시겠습니까?",
       onConfirm: async () => {
@@ -345,7 +345,7 @@ export function useAccountStaffRegistration(
    */
   const deleteAccountMemo = useCallback(
     (memoId: number) => {
-      confirmDialog.show({
+      void confirmDialog.open({
         title: "메모 삭제",
         description: "정말로 메모를 삭제하시겠습니까?",
         onConfirm: async () => {

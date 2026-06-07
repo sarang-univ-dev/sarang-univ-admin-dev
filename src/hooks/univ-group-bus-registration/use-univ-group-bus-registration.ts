@@ -3,10 +3,10 @@ import useSWR from "swr";
 import { webAxios } from "@/lib/api/axios";
 import { IUnivGroupBusRegistration } from "@/types/bus-registration";
 import { useToastStore } from "@/store/toast-store";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { AxiosError } from "axios";
 import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
 import { Gender } from "@/types";
+import { useConfirm } from "@/hooks/use-confirm";
 
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
@@ -35,7 +35,7 @@ export function useUnivGroupBusRegistration(
   retreatSlug: string | null,
   options?: UseUnivGroupBusRegistrationOptions
 ) {
-  const confirmDialog = useConfirmDialogStore();
+  const confirm = useConfirm();
   const addToast = useToastStore((state) => state.add);
   const [isMutating, setIsMutating] = useState(false);
 
@@ -150,7 +150,7 @@ export function useUnivGroupBusRegistration(
   const deleteMemo = async (id: string) => {
     if (!retreatSlug) return;
 
-    confirmDialog.show({
+    await confirm.open({
       title: "메모 삭제",
       description: "정말로 메모를 삭제하시겠습니까?",
       onConfirm: async () => {
@@ -212,10 +212,11 @@ export function useUnivGroupBusRegistration(
 
     const numericId = Number(id);
 
-    confirmDialog.show({
+    return await confirm.open({
       title: "신청 삭제",
       description:
         "정말로 셔틀버스 신청을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+      confirmVariant: "destructive",
       onConfirm: async () => {
         setIsMutating(true);
         try {
@@ -336,7 +337,7 @@ export function useUnivGroupBusRegistration(
   const deleteAdminMemo = async (memoId: number) => {
     if (!retreatSlug) return;
 
-    confirmDialog.show({
+    await confirm.open({
       title: "메모 삭제",
       description: "정말로 메모를 삭제하시겠습니까?",
       onConfirm: async () => {

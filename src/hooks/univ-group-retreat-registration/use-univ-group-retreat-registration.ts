@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
 import useSWR, { SWRConfiguration } from "swr";
 import { UnivGroupRetreatRegistrationAPI } from "@/lib/api/univ-group-retreat-registration-api";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import { IUnivGroupAdminStaffRetreat } from "@/types/univ-group-admin-staff";
 import { AxiosError } from "axios";
 import { Gender } from "@/types";
+import { useConfirm } from "@/hooks/use-confirm";
 
 /**
  * 부서 수양회 신청 데이터 및 액션 통합 훅
@@ -23,7 +23,7 @@ export function useUnivGroupRetreatRegistration(
   retreatSlug: string,
   options?: SWRConfiguration<IUnivGroupAdminStaffRetreat[], Error>
 ) {
-  const confirmDialog = useConfirmDialogStore();
+  const confirm = useConfirm();
   const addToast = useToastStore((state) => state.add);
   const [isMutating, setIsMutating] = useState(false);
 
@@ -110,7 +110,7 @@ export function useUnivGroupRetreatRegistration(
    * @deprecated 서버에 미구현 (API 엔드포인트 없음)
    */
   const refundComplete = async (registrationId: string) => {
-    confirmDialog.show({
+    await confirm.open({
       title: "환불 처리",
       description: "정말로 환불 처리를 완료하시겠습니까?",
       onConfirm: async () => {
@@ -133,7 +133,7 @@ export function useUnivGroupRetreatRegistration(
     registrationId: string,
     approve: boolean
   ) => {
-    confirmDialog.show({
+    await confirm.open({
       title: approve ? "새가족 신청 승인" : "새가족 신청 거절",
       description: approve
         ? "정말로 새가족 신청을 승인하시겠습니까? 새가족으로 입금 안내 문자가 전송됩니다."
@@ -162,7 +162,7 @@ export function useUnivGroupRetreatRegistration(
     registrationId: string,
     approve: boolean
   ) => {
-    confirmDialog.show({
+    await confirm.open({
       title: approve ? "군지체 신청 승인" : "군지체 신청 거절",
       description: approve
         ? "정말로 군지체 신청을 승인하시겠습니까? 군지체로 입금 안내 문자가 전송됩니다."
@@ -341,7 +341,7 @@ export function useUnivGroupRetreatRegistration(
    * @param historyMemoId - history 메모 ID
    */
   const deleteScheduleMemo = async (historyMemoId: number) => {
-    confirmDialog.show({
+    await confirm.open({
       title: "메모 삭제",
       description: "정말로 메모를 삭제하시겠습니까?",
       onConfirm: async () => {
@@ -552,7 +552,7 @@ export function useUnivGroupRetreatRegistration(
    */
   const deleteAdminMemo = useCallback(
     async (memoId: number) => {
-      confirmDialog.show({
+      await confirm.open({
         title: "메모 삭제",
         description: "정말로 메모를 삭제하시겠습니까?",
         onConfirm: async () => {
@@ -609,7 +609,7 @@ export function useUnivGroupRetreatRegistration(
         },
       });
     },
-    [retreatSlug, mutate, addToast, confirmDialog]
+    [retreatSlug, mutate, addToast, confirm]
   );
 
   /**
@@ -620,10 +620,11 @@ export function useUnivGroupRetreatRegistration(
   const deleteRegistration = async (registrationId: string) => {
     const numericId = Number(registrationId);
 
-    confirmDialog.show({
+    return await confirm.open({
       title: "신청 삭제",
       description:
         "정말로 수양회 신청을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+      confirmVariant: "destructive",
       onConfirm: async () => {
         setIsMutating(true);
         try {

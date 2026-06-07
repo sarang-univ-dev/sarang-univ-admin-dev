@@ -467,6 +467,7 @@ export function UnivGroupBusRegistrationTable({
         title="신청자 상세 정보"
         description={(data) => `${data.name} (${data.univGroupNumber}부) 버스 신청 내역`}
         side={isMobile ? "bottom" : "right"}
+        preventDismissWhenAlertDialogOpen
       >
         {(data) => (
           <UnivGroupBusRegistrationDetailContent
@@ -478,8 +479,10 @@ export function UnivGroupBusRegistrationTable({
             onUpdateMemo={updateMemo}
             onDeleteMemo={deleteMemo}
             onDeleteRegistration={async (id) => {
-              await deleteRegistration(id);
-              sidebar.close();
+              const deleteSucceeded = await deleteRegistration(id);
+              if (deleteSucceeded) {
+                sidebar.close();
+              }
             }}
             onUpdateRegistrationInfo={async (id, editData) => {
               // 셔틀버스는 currentLeaderName이 필요 없으므로 제거

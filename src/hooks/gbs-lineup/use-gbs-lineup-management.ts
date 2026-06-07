@@ -13,7 +13,7 @@ import useSWR from "swr";
 import { GbsLineupAPI } from "@/lib/api/gbs-lineup-api";
 import { GbsLineupRow } from "@/types/gbs-lineup";
 import { useToastStore } from "@/store/toast-store";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 
 interface UseGbsLineupManagementOptions {
   fallbackData?: GbsLineupRow[];
@@ -24,7 +24,7 @@ export function useGbsLineupManagement(
   options?: UseGbsLineupManagementOptions
 ) {
   const addToast = useToastStore((state) => state.add);
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
 
   const endpoint = retreatSlug
     ? `/api/v1/retreat/${retreatSlug}/line-up/gbslist`
@@ -73,7 +73,7 @@ export function useGbsLineupManagement(
    */
   const deleteGbsGroup = useCallback(
     (gbsNumber: number) => {
-      confirmDialog.show({
+      void confirmDialog.open({
         title: "GBS 삭제",
         description: `GBS ${gbsNumber}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 배정된 인원도 함께 해제됩니다.`,
         onConfirm: async () => {
@@ -144,7 +144,7 @@ export function useGbsLineupManagement(
    */
   const unassignLeaders = useCallback(
     (gbsId: number) => {
-      confirmDialog.show({
+      void confirmDialog.open({
         title: "리더 삭제",
         description: "정말로 리더 배정을 삭제하시겠습니까?",
         onConfirm: async () => {

@@ -5,7 +5,7 @@ import useSWR, { mutate as mutateGlobal } from 'swr';
 import { getSocketClient } from '@/lib/socket/socket-client';
 import { webAxios } from '@/lib/api/axios';
 import { useToastStore } from '@/store/toast-store';
-import { useConfirmDialogStore } from '@/store/confirm-dialog-store';
+import { useConfirm } from "@/hooks/use-confirm";
 import type { UserRetreatGbsLineup } from '@/lib/socket/socket-events';
 import type { Socket } from 'socket.io-client';
 import type { ClientToServerEvents, ServerToClientEvents } from '@/lib/socket/socket-events';
@@ -73,7 +73,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
   const isMountedRef = useRef(true);
 
   const addToast = useToastStore((state) => state.add);
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SWR Key & Fetcher (✅ HTTP API 사용 - WebSocket 분리)
@@ -414,7 +414,7 @@ export function useGbsLineupSwr(retreatSlug: string, initialData?: UserRetreatGb
    */
   const deleteLineupMemo = useCallback(
     async (userRetreatRegistrationMemoId: number) => {
-      confirmDialog.show({
+      void confirmDialog.open({
         title: '메모 삭제',
         description: '정말로 메모를 삭제하시겠습니까?',
         onConfirm: async () => {

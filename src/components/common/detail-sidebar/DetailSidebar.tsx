@@ -17,8 +17,13 @@ interface DetailSidebarProps<T> {
   description?: string | ((data: T) => string);
   side?: "left" | "right" | "top" | "bottom";
   className?: string;
+  preventDismissWhenAlertDialogOpen?: boolean;
   children: (data: T) => React.ReactNode;
 }
+
+const hasOpenAlertDialog = () =>
+  typeof document !== "undefined" &&
+  document.querySelector('[role="alertdialog"]') !== null;
 
 export function DetailSidebar<T>({
   open,
@@ -28,6 +33,7 @@ export function DetailSidebar<T>({
   description,
   side = "right",
   className,
+  preventDismissWhenAlertDialogOpen = false,
   children,
 }: DetailSidebarProps<T>) {
   if (!data) return null;
@@ -41,6 +47,16 @@ export function DetailSidebar<T>({
           side === "bottom" ? "h-[90vh]" : "!w-fit !max-w-[95vw] min-w-[300px]",
           className
         )}
+        onInteractOutside={event => {
+          if (preventDismissWhenAlertDialogOpen && hasOpenAlertDialog()) {
+            event.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={event => {
+          if (preventDismissWhenAlertDialogOpen && hasOpenAlertDialog()) {
+            event.preventDefault();
+          }
+        }}
       >
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>

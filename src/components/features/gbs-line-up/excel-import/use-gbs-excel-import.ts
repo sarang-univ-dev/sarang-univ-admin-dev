@@ -5,8 +5,8 @@ import { useCallback, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 
 import { IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
+import { useConfirm } from "@/hooks/use-confirm";
 import { GbsLineupAPI } from "@/lib/api/gbs-lineup-api";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import { TRetreatRegistrationSchedule } from "@/types";
 import {
@@ -35,7 +35,7 @@ export function useGbsExcelImport({
   onClose,
 }: UseGbsExcelImportArgs) {
   const addToast = useToastStore((state) => state.add);
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
 
   const [step, setStep] = useState<ImportStep>("pick");
   const [fileName, setFileName] = useState<string>("");
@@ -157,7 +157,7 @@ export function useGbsExcelImport({
   const submit = useCallback(() => {
     if (!validation || !canSubmit) return;
     const count = validation.assignments.length;
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "GBS 라인업 일괄 적용",
       description: `${count}명의 GBS 배정·리더 정보를 덮어씁니다. 일정/개인정보/메모는 변경되지 않습니다. 계속할까요?`,
       onConfirm: doSubmit,

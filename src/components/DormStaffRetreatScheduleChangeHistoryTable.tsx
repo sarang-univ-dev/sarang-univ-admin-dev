@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { IUserScheduleChangeDormitory } from "@/hooks/user-schedule-change-dormitory-request";
 import { webAxios } from "@/lib/api/axios";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { formatDate } from "@/utils/formatDate";
 
 import { generateScheduleColumns } from "../utils/retreat-utils";
@@ -104,7 +104,7 @@ export function RetreatScheduleChangeHistoryTable({
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {}
   );
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
 
   // 로딩 상태 설정 함수
   const setLoading = (id: string, action: string, isLoading: boolean) => {
@@ -290,7 +290,7 @@ export function RetreatScheduleChangeHistoryTable({
   };
 
   const handleResolveChange = (historyMemoId: number) => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "일정 변경 읽음 처리",
       description: "정말로 수양회 일정 변경을 읽음 처리하시겠습니까?",
       onConfirm: () => performResolveChange(historyMemoId),

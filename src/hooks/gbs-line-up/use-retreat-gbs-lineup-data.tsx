@@ -4,7 +4,7 @@ import { useState } from "react";
 import useSWR, { SWRConfiguration } from "swr";
 
 import { webAxios } from "@/lib/api/axios";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 
 export interface IUserRetreatGBSLineup {
@@ -58,7 +58,7 @@ export function useRetreatGbsLineupData(
   retreatSlug: string,
   options?: SWRConfiguration<IUserRetreatGBSLineup[], Error>
 ) {
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
   const addToast = useToastStore(state => state.add);
   const [isMutating, setIsMutating] = useState(false);
 
@@ -227,7 +227,7 @@ export function useRetreatGbsLineupData(
    * @param memoId - 메모 ID
    */
   const deleteLineupMemo = async (memoId: string) => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "메모 삭제",
       description: "정말로 메모를 삭제하시겠습니까?",
       onConfirm: async () => {

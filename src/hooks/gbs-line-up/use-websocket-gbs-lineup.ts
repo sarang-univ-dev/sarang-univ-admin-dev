@@ -9,7 +9,7 @@ import type {
   ClientToServerEvents,
   ServerToClientEvents,
 } from "@/lib/socket/socket-events";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 
 /**
@@ -35,7 +35,7 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
   > | null>(null);
 
   const addToast = useToastStore(state => state.add);
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // 1. Socket 연결 & 초기 데이터 수신
@@ -371,7 +371,7 @@ export function useWebSocketGbsLineup(retreatSlug: string) {
    */
   const deleteLineupMemo = useCallback(
     async (userRetreatRegistrationMemoId: number) => {
-      confirmDialog.show({
+      void confirmDialog.open({
         title: "메모 삭제",
         description: "정말로 메모를 삭제하시겠습니까?",
         onConfirm: async () => {

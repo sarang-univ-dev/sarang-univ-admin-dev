@@ -6,9 +6,9 @@ import { useState } from "react";
 import { mutate } from "swr";
 
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/hooks/use-confirm";
 import { webAxios } from "@/lib/api/axios";
 import { cn } from "@/lib/utils";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
 import { useToastStore } from "@/store/toast-store";
 import { UserRetreatShuttleBusPaymentStatus } from "@/types";
 import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
@@ -37,7 +37,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
   onOpenDetail,
 }: ShuttleBusPaymentConfirmationTableActionsProps) {
   const addToast = useToastStore(state => state.add);
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
   const [
     pendingTicketReceiptShuttleBusId,
     setPendingTicketReceiptShuttleBusId,
@@ -108,7 +108,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
   };
 
   const handleConfirmPayment = () => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "입금 확인",
       description:
         "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
@@ -149,7 +149,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
   };
 
   const handleSendPaymentRequest = () => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "입금 요청",
       description:
         "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",

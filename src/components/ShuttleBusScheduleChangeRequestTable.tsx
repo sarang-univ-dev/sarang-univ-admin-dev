@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { IUserScheduleChangeShuttleBus } from "@/hooks/user-schedule-change-bus-request";
 import { webAxios } from "@/lib/api/axios";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 import {
   // TRetreatRegistrationSchedule,
@@ -82,7 +82,7 @@ export function ShuttleBusScheduleChangeRequestTable({
   retreatLocation: string;
 }) {
   const addToast = useToastStore(state => state.add);
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
   const [data, setData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -170,7 +170,7 @@ export function ShuttleBusScheduleChangeRequestTable({
   // 일정 변경 처리
   const handleConfirmScheduleChange = async () => {
     if (!selectedRow) return;
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "일정 변동 처리 완료",
       description: "해당 일정 변동 요청을 처리하시겠습니까?",
       onConfirm: async () => {

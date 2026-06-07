@@ -4,7 +4,7 @@ import useSWR, { SWRConfiguration } from "swr";
 
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import { webAxios } from "@/lib/api/axios";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 
 const fetcher = async (url: string) => {
@@ -28,7 +28,7 @@ export function useRetreatPaymentConfirmation(
   retreatSlug: string | null,
   options?: SWRConfiguration<IUserRetreatRegistration[], Error>
 ) {
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
   const addToast = useToastStore(state => state.add);
   const [isMutating, setIsMutating] = useState(false);
 
@@ -113,7 +113,7 @@ export function useRetreatPaymentConfirmation(
   const confirmPayment = async (registrationId: number) => {
     if (!retreatSlug) return;
 
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "입금 확인",
       description:
         "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
@@ -137,7 +137,7 @@ export function useRetreatPaymentConfirmation(
   const sendPaymentRequest = async (registrationId: number) => {
     if (!retreatSlug) return;
 
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "입금 요청",
       description:
         "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",
@@ -160,7 +160,7 @@ export function useRetreatPaymentConfirmation(
   const refundComplete = async (registrationId: number) => {
     if (!retreatSlug) return;
 
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "환불 처리",
       description: "정말로 환불 처리를 완료하시겠습니까?",
       onConfirm: async () => {

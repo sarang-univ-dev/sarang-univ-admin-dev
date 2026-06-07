@@ -41,7 +41,7 @@ import {
 import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
 import { webAxios } from "@/lib/api/axios";
 import { COMPLETE_GROUP_ROW_COUNT } from "@/lib/constant/lineup.constant";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 import { UserRetreatRegistrationMemoType, Gender } from "@/types";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
@@ -342,7 +342,7 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
     schedules,
   }) {
     const addToast = useToastStore(s => s.add);
-    const confirmDialog = useConfirmDialogStore();
+    const confirmDialog = useConfirm();
 
     const {
       data: dormitoryStaffData,
@@ -490,7 +490,7 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
     const handleConfirmDeleteMemo = useCallback(
       (id: number, memoId?: string) => {
         if (!memoId) return;
-        confirmDialog.show({
+        void confirmDialog.open({
           title: "메모 삭제 확인",
           description: "정말 삭제하시겠습니까?",
           onConfirm: () => handleDeleteMemo(id, memoId),

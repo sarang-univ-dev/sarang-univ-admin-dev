@@ -3,7 +3,7 @@ import { useState } from "react";
 import useSWR, { SWRConfiguration } from "swr";
 
 import { ScheduleChangeRequestAPI } from "@/lib/api/schedule-change-request-api";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 import { IUserScheduleChangeRetreat } from "@/types";
 
@@ -22,7 +22,7 @@ export function useScheduleChangeRequest(
   options?: SWRConfiguration<IUserScheduleChangeRetreat[], Error>
 ) {
   const addToast = useToastStore(state => state.add);
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
   const [isMutating, setIsMutating] = useState(false);
 
   const endpoint = `/api/v1/retreat/${retreatSlug}/account/schedule-change-request`;
@@ -139,7 +139,7 @@ export function useScheduleChangeRequest(
   const resolveScheduleChange = async (
     userRetreatRegistrationHistoryMemoId: number
   ) => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "처리 완료",
       description: "일정 변경 요청을 처리 완료하시겠습니까?",
       onConfirm: async () => {

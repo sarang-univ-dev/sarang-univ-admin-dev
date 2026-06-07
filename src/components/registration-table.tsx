@@ -27,7 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
 import { webAxios } from "@/lib/api/axios";
 import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 import {
   TRetreatRegistrationSchedule,
@@ -98,7 +98,7 @@ export function RegistrationTable({
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {}
   );
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
 
   // API 엔드포인트
   const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/account/user-retreat-registration`;
@@ -175,7 +175,7 @@ export function RegistrationTable({
   };
 
   const handleConfirmPayment = (id: string) => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "입금 확인",
       description:
         "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
@@ -246,7 +246,7 @@ export function RegistrationTable({
 
   const handleSendMessage = (id: string, messageType: string) => {
     if (messageType === "payment_request") {
-      confirmDialog.show({
+      void confirmDialog.open({
         title: "입금 요청",
         description:
           "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",

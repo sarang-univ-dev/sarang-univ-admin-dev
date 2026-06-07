@@ -26,7 +26,7 @@ import { TableHeader ,
 
 import { IUserBusRegistration } from "@/hooks/use-user-bus-registration";
 import { webAxios } from "@/lib/api/axios";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 import {
   TRetreatShuttleBus,
@@ -55,7 +55,7 @@ export function RegistrationTable({
     {}
   );
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
 
   // API 엔드포인트
   const registrationsEndpoint = `/api/v1/retreat/${retreatSlug}/shuttle-bus/registrations`;
@@ -131,7 +131,7 @@ export function RegistrationTable({
   };
 
   const handleConfirmPayment = (id: string) => {
-    confirmDialog.show({
+    void confirmDialog.open({
       title: "입금 확인",
       description:
         "정말로 입금 확인 처리를 하시겠습니까? 입금 확인 문자가 전송됩니다.",
@@ -218,7 +218,7 @@ export function RegistrationTable({
 
   const handleSendMessage = (id: string, messageType: string) => {
     if (messageType === "payment_request") {
-      confirmDialog.show({
+      void confirmDialog.open({
         title: "입금 요청",
         description:
           "정말로 입금 요청 처리를 하시겠습니까? 입금 요청 문자가 전송됩니다.",

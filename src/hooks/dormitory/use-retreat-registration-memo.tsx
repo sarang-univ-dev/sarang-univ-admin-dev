@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { KeyedMutator } from "swr";
 
 import { webAxios } from "@/lib/api/axios";
-import { useConfirmDialogStore } from "@/store/confirm-dialog-store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 
 import { IDormitoryRetreatRegistration } from "./use-retreat-registration";
@@ -25,7 +25,7 @@ export function useDormitoryRetreatRegistrationMemo(
   mutate: KeyedMutator<IDormitoryRetreatRegistration[]>
 ) {
   const addToast = useToastStore(state => state.add);
-  const confirmDialog = useConfirmDialogStore();
+  const confirmDialog = useConfirm();
   const [isMutating, setIsMutating] = useState(false);
 
   /**
@@ -129,7 +129,7 @@ export function useDormitoryRetreatRegistrationMemo(
     async (userRetreatRegistrationId: string) => {
       if (!retreatSlug) return;
 
-      confirmDialog.show({
+      void confirmDialog.open({
         title: "메모 삭제",
         description: "정말로 일정변동 요청 메모를 삭제하시겠습니까?",
         onConfirm: async () => {

@@ -1,7 +1,6 @@
 // File: src/app/login/layout.tsx
 import type { Metadata } from "next";
 
-import ConfirmModal from "@/components/common/layout/ConfirmModal";
 import Toast from "@/components/common/layout/Toast";
 
 export const metadata: Metadata = {
@@ -18,7 +17,6 @@ export default function LoginLayout({
     <>
       {children}
       <Toast />
-      <ConfirmModal />
     </>
   );
 }
