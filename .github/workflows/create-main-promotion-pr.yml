@@ -17,9 +17,12 @@ jobs:
   create-pr:
     name: Create production deploy PR
     runs-on: ubuntu-latest
+    outputs:
+      pr_url: ${{ steps.create.outputs.pr_url }}
 
     steps:
       - name: Create pull request
+        id: create
         env:
           GH_TOKEN: ${{ github.token }}
           DRAFT: ${{ inputs.draft }}
@@ -28,6 +31,7 @@ jobs:
 
           if [ "$ahead_by" = "0" ]; then
             echo "Dev has no commits ahead of main. Nothing to promote."
+            echo "Dev has no commits ahead of main. Nothing to promote." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -43,6 +47,10 @@ jobs:
 
           if [ -n "$existing_pr_url" ]; then
             echo "A dev to main pull request already exists: $existing_pr_url"
+            echo "pr_url=$existing_pr_url" >> "$GITHUB_OUTPUT"
+            echo "### Production deploy PR (already open)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "$existing_pr_url" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -52,20 +60,21 @@ jobs:
 
           Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
+          draft_flag=""
           if [ "$DRAFT" = "true" ]; then
-            gh pr create \
-              --repo "$GITHUB_REPOSITORY" \
-              --base main \
-              --head dev \
-              --title "[Production Deploy]: dev -> main" \
-              --body "$body" \
-              --draft
-            exit 0
+            draft_flag="--draft"
           fi
 
-          gh pr create \
+          pr_url=$(gh pr create \
             --repo "$GITHUB_REPOSITORY" \
             --base main \
             --head dev \
             --title "[Production Deploy]: dev -> main" \
-            --body "$body"
+            --body "$body" \
+            $draft_flag)
+
+          echo "Created pull request: $pr_url"
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          echo "### Production deploy PR" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "$pr_url" >> "$GITHUB_STEP_SUMMARY"
