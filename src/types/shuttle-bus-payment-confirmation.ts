@@ -1,4 +1,8 @@
-import { Gender, UserRetreatShuttleBusPaymentStatus } from "@/types";
+import {
+  Gender,
+  UserRetreatRegistrationType,
+  UserRetreatShuttleBusPaymentStatus,
+} from "@/types";
 
 export interface IShuttleBusTicketReceipt {
   shuttleBusId: number;
@@ -29,6 +33,9 @@ export interface IShuttleBusPaymentConfirmationRegistration {
 
   /** 이름 */
   name: string;
+
+  /** 본 수양회 신청의 userType (간사 식별용) */
+  userType?: UserRetreatRegistrationType | null;
 
   /** 전화번호 */
   userPhoneNumber?: string;

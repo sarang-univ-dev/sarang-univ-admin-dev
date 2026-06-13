@@ -10,7 +10,10 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { webAxios } from "@/lib/api/axios";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/store/toast-store";
-import { UserRetreatShuttleBusPaymentStatus } from "@/types";
+import {
+  UserRetreatRegistrationType,
+  UserRetreatShuttleBusPaymentStatus,
+} from "@/types";
 import { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
 import {
   generateShuttleBusScheduleColumns,
@@ -157,6 +160,45 @@ export function ShuttleBusPaymentConfirmationTableActions({
     });
   };
 
+  // 간사 확인 (버스비 0원 입금확인 처리)
+  const performConfirmStaff = async () => {
+    setLoading("staff", true);
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${registration.id}/confirm-staff`
+      );
+
+      await mutate(registrationsEndpoint);
+
+      addToast({
+        title: "성공",
+        description: "간사 확인(0원 입금) 처리가 완료되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "간사 확인 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading("staff", false);
+    }
+  };
+
+  const handleConfirmStaff = () => {
+    void confirmDialog.open({
+      title: "간사 확인",
+      description: `${registration.univGroupNumber}부 ${registration.gradeNumber}학년 ${registration.name} · 간사 — 버스비 0원으로 입금 확인 처리할까요?`,
+      onConfirm: performConfirmStaff,
+    });
+  };
+
   const performConfirmTicketReceipt = async (shuttleBusId: number) => {
     setPendingTicketReceiptShuttleBusId(shuttleBusId);
     try {
@@ -186,6 +228,60 @@ export function ShuttleBusPaymentConfirmationTableActions({
     } finally {
       setPendingTicketReceiptShuttleBusId(null);
     }
+  };
+
+  const handleConfirmTicketReceipt = (
+    shuttleBusId: number,
+    ticketLabel: string
+  ) => {
+    void confirmDialog.open({
+      title: "티켓 수령 확인",
+      description: `${registration.univGroupNumber}부 ${registration.gradeNumber}학년 ${registration.name} · ${ticketLabel} — 티켓 수령 처리하시겠습니까?`,
+      onConfirm: () => performConfirmTicketReceipt(shuttleBusId),
+    });
+  };
+
+  const performRevertTicketReceipt = async (shuttleBusId: number) => {
+    setPendingTicketReceiptShuttleBusId(shuttleBusId);
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${registration.id}/revert-ticket-receipt`,
+        { shuttleBusId }
+      );
+
+      await mutate(registrationsEndpoint);
+
+      addToast({
+        title: "성공",
+        description: "버스 티켓 수령이 취소되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "버스 티켓 수령 되돌리기 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setPendingTicketReceiptShuttleBusId(null);
+    }
+  };
+
+  const handleRevertTicketReceipt = (
+    shuttleBusId: number,
+    ticketLabel: string
+  ) => {
+    void confirmDialog.open({
+      title: "티켓 수령 되돌리기",
+      description: `${registration.univGroupNumber}부 ${registration.gradeNumber}학년 ${registration.name} · ${ticketLabel} — 티켓 수령을 취소할까요?`,
+      confirmVariant: "destructive",
+      onConfirm: () => performRevertTicketReceipt(shuttleBusId),
+    });
   };
 
   // 환불 처리 완료
@@ -253,6 +349,22 @@ export function ShuttleBusPaymentConfirmationTableActions({
             )}
             <span>입금 요청</span>
           </Button>
+          {registration.userType === UserRetreatRegistrationType.STAFF && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleConfirmStaff}
+              disabled={isLoading("staff")}
+              className="flex items-center gap-1.5 text-xs h-7 hover:bg-black hover:text-white transition-colors"
+            >
+              {isLoading("staff") ? (
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              )}
+              <span>간사 확인</span>
+            </Button>
+          )}
         </div>
       );
 
@@ -291,18 +403,54 @@ export function ShuttleBusPaymentConfirmationTableActions({
               (schedule) => schedule.id === ticketReceipt.shuttleBusId
             );
 
-            return (
+            return isReceived ? (
               <Button
                 key={ticketReceipt.shuttleBusId}
                 size="sm"
-                variant={isReceived ? "secondary" : "outline"}
+                variant="secondary"
                 onClick={() =>
-                  performConfirmTicketReceipt(ticketReceipt.shuttleBusId)
+                  handleRevertTicketReceipt(
+                    ticketReceipt.shuttleBusId,
+                    ticketLabel
+                  )
                 }
-                disabled={isReceived || isTicketReceiptPending}
-                title={`${ticketLabel} ${isReceived ? "수령 완료" : "티켓 수령"}`}
+                disabled={isTicketReceiptPending}
+                title={`${ticketLabel} 수령 완료 (클릭 시 되돌리기)`}
                 className={cn(
-                  "flex h-7 w-full items-center justify-center gap-1.5 px-3 text-center text-xs whitespace-nowrap disabled:cursor-default disabled:opacity-100",
+                  "group flex h-7 w-full items-center justify-center gap-1.5 px-3 text-center text-xs whitespace-nowrap",
+                  "border-emerald-500 bg-emerald-50 text-emerald-700",
+                  "hover:border-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                )}
+              >
+                {isTicketReceiptPending ? (
+                  <div className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <>
+                    <TicketCheck className="h-3.5 w-3.5 shrink-0 group-hover:hidden" />
+                    <RotateCcw className="hidden h-3.5 w-3.5 shrink-0 group-hover:block" />
+                  </>
+                )}
+                <span>{ticketLabel}</span>
+                <span className="shrink-0 group-hover:hidden">수령 완료</span>
+                <span className="hidden shrink-0 group-hover:inline">
+                  되돌리기
+                </span>
+              </Button>
+            ) : (
+              <Button
+                key={ticketReceipt.shuttleBusId}
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  handleConfirmTicketReceipt(
+                    ticketReceipt.shuttleBusId,
+                    ticketLabel
+                  )
+                }
+                disabled={isTicketReceiptPending}
+                title={`${ticketLabel} 티켓 수령`}
+                className={cn(
+                  "flex h-7 w-full items-center justify-center gap-1.5 px-3 text-center text-xs whitespace-nowrap",
                   getTicketButtonColorClass(ticketSchedule?.color)
                 )}
               >
@@ -312,9 +460,7 @@ export function ShuttleBusPaymentConfirmationTableActions({
                   <TicketCheck className="h-3.5 w-3.5 shrink-0" />
                 )}
                 <span>{ticketLabel}</span>
-                <span className="shrink-0">
-                  {isReceived ? "수령 완료" : "티켓 수령"}
-                </span>
+                <span className="shrink-0">티켓 수령</span>
               </Button>
             );
           })}
