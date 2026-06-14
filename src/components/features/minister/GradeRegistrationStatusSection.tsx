@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -31,15 +31,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { UserRetreatRegistrationPaymentStatus } from "@/types";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Gender, UserRetreatRegistrationPaymentStatus } from "@/types";
 import type { IUnivGroupAdminStaffRetreat } from "@/types/univ-group-admin-staff";
 import {
   attendanceChartConfig,
+  genderChartConfig,
   FULL_COLOR,
   PARTIAL_COLOR,
+  MALE_COLOR,
+  FEMALE_COLOR,
   GRADE_PALETTE,
   gradeSliceLabelColor,
 } from "./charts/chart-config";
+
+type BarMode = "attendance" | "gender";
 
 const RADIAN = Math.PI / 180;
 
@@ -64,6 +70,7 @@ export function GradeRegistrationStatusSection({
   schedules,
 }: GradeRegistrationStatusSectionProps) {
   const totalSchedules = schedules.length;
+  const [barMode, setBarMode] = useState<BarMode>("attendance");
 
   const { byGrade, byCount, summary } = useMemo(() => {
     const paid = registrations.filter(
@@ -72,17 +79,27 @@ export function GradeRegistrationStatusSection({
 
     const map = new Map<
       number,
-      { gradeNumber: number; count: number; full: number }
+      {
+        gradeNumber: number;
+        count: number;
+        full: number;
+        male: number;
+        female: number;
+      }
     >();
     for (const r of paid) {
       const cur = map.get(r.gradeNumber) ?? {
         gradeNumber: r.gradeNumber,
         count: 0,
         full: 0,
+        male: 0,
+        female: 0,
       };
       cur.count += 1;
       const selected = r.userRetreatRegistrationScheduleIds?.length ?? 0;
       if (totalSchedules > 0 && selected === totalSchedules) cur.full += 1;
+      if (r.gender === Gender.MALE) cur.male += 1;
+      else if (r.gender === Gender.FEMALE) cur.female += 1;
       map.set(r.gradeNumber, cur);
     }
 
@@ -92,24 +109,62 @@ export function GradeRegistrationStatusSection({
       count: x.count,
       full: x.full,
       partial: x.count - x.full,
+      male: x.male,
+      female: x.female,
     }));
 
     const totalCount = rows.reduce((s, x) => s + x.count, 0);
     const totalFull = rows.reduce((s, x) => s + x.full, 0);
     const totalPartial = totalCount - totalFull;
+    const totalMale = rows.reduce((s, x) => s + x.male, 0);
+    const totalFemale = rows.reduce((s, x) => s + x.female, 0);
 
     return {
       byGrade: [...rows].sort((a, b) => a.gradeNumber - b.gradeNumber),
       byCount: [...rows].sort((a, b) => b.count - a.count),
-      summary: { totalCount, totalFull, totalPartial },
+      summary: { totalCount, totalFull, totalPartial, totalMale, totalFemale },
     };
   }, [registrations, totalSchedules]);
+
+  // 막대 분류 모드(전참/부분참 ↔ 남/여)에 따른 차트 설정과 시리즈
+  const barConfig =
+    barMode === "attendance" ? attendanceChartConfig : genderChartConfig;
+  const barSeries =
+    barMode === "attendance"
+      ? [
+          {
+            key: "full",
+            label: "전체참여",
+            color: FULL_COLOR,
+            value: summary.totalFull,
+          },
+          {
+            key: "partial",
+            label: "부분참여",
+            color: PARTIAL_COLOR,
+            value: summary.totalPartial,
+          },
+        ]
+      : [
+          {
+            key: "male",
+            label: "남",
+            color: MALE_COLOR,
+            value: summary.totalMale,
+          },
+          {
+            key: "female",
+            label: "여",
+            color: FEMALE_COLOR,
+            value: summary.totalFemale,
+          },
+        ];
 
   if (summary.totalCount === 0) {
     return (
       <section className="space-y-4">
         <h2 className="text-xl font-semibold tracking-tight">
-          학년별 수양회 신청 현황
+          신청 현황 분석
         </h2>
         <div className="flex h-[160px] items-center justify-center rounded-md border text-sm text-muted-foreground">
           입금완료된 신청 데이터가 없습니다.
@@ -187,23 +242,31 @@ export function GradeRegistrationStatusSection({
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold tracking-tight">
-          학년별 수양회 신청 현황
-        </h2>
+        <h2 className="text-xl font-semibold tracking-tight">신청 현황 분석</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           입금완료 기준 · 전체참여 {summary.totalFull}명 / 부분참여{" "}
           {summary.totalPartial}명 (총 {summary.totalCount}명)
         </p>
       </div>
 
-      {/* Figure 1: 누적 막대 + 전체 요약 */}
+      {/* Figure 1: 누적 막대 + 전체 요약 (전참/부분참 ↔ 남/여 전환) */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          학년별 전체참여 / 부분참여
-        </h3>
-        <div className="grid gap-4 md:gap-6 lg:grid-cols-[1fr_240px]">
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
+          <Tabs value={barMode} onValueChange={(v) => setBarMode(v as BarMode)}>
+            <TabsList>
+              <TabsTrigger value="attendance">전참/부분참</TabsTrigger>
+              <TabsTrigger value="gender">남/여</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            {barMode === "attendance"
+              ? "학년별 전체참여 / 부분참여"
+              : "학년별 남 / 여"}
+          </h3>
+        </div>
+        <div className="grid items-center gap-4 md:gap-6 lg:grid-cols-[1fr_240px]">
           <ChartContainer
-            config={attendanceChartConfig}
+            config={barConfig}
             className="h-[300px] w-full md:h-[340px]"
           >
             <BarChart
@@ -229,35 +292,33 @@ export function GradeRegistrationStatusSection({
               />
               <ChartTooltip content={<ChartTooltipContent />} />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="full" stackId="a" fill="var(--color-full)">
-                <LabelList
-                  dataKey="full"
-                  position="center"
-                  fontSize={10}
-                  fill="#ffffff"
-                  formatter={(v: number) => (v > 0 ? v : "")}
-                />
-              </Bar>
-              <Bar
-                dataKey="partial"
-                stackId="a"
-                fill="var(--color-partial)"
-                radius={[4, 4, 0, 0]}
-              >
-                <LabelList
-                  dataKey="partial"
-                  position="center"
-                  fontSize={10}
-                  fill="#ffffff"
-                  formatter={(v: number) => (v > 0 ? v : "")}
-                />
-                <LabelList
-                  dataKey="count"
-                  position="top"
-                  fontSize={11}
-                  className="fill-foreground"
-                />
-              </Bar>
+              {barSeries.map((s, i) => (
+                <Bar
+                  key={s.key}
+                  dataKey={s.key}
+                  stackId="a"
+                  fill={`var(--color-${s.key})`}
+                  radius={
+                    i === barSeries.length - 1 ? [4, 4, 0, 0] : undefined
+                  }
+                >
+                  <LabelList
+                    dataKey={s.key}
+                    position="center"
+                    fontSize={10}
+                    fill="#ffffff"
+                    formatter={(v: number) => (v > 0 ? v : "")}
+                  />
+                  {i === barSeries.length - 1 && (
+                    <LabelList
+                      dataKey="count"
+                      position="top"
+                      fontSize={11}
+                      className="fill-foreground"
+                    />
+                  )}
+                </Bar>
+              ))}
             </BarChart>
           </ChartContainer>
 
@@ -269,33 +330,31 @@ export function GradeRegistrationStatusSection({
               value={`${summary.totalCount}명`}
               sub="(100%)"
             />
-            <SummaryStat
-              label="전체참여"
-              value={`${summary.totalFull}명`}
-              sub={`(${pct(summary.totalFull, summary.totalCount)}%)`}
-              color={FULL_COLOR}
-            />
-            <SummaryStat
-              label="부분참여"
-              value={`${summary.totalPartial}명`}
-              sub={`(${pct(summary.totalPartial, summary.totalCount)}%)`}
-              color={PARTIAL_COLOR}
-            />
+            {barSeries.map((s) => (
+              <SummaryStat
+                key={s.key}
+                label={s.label}
+                value={`${s.value}명`}
+                sub={`(${pct(s.value, summary.totalCount)}%)`}
+                color={s.color}
+              />
+            ))}
             <div className="h-[110px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={[
-                      { name: "전체참여", value: summary.totalFull },
-                      { name: "부분참여", value: summary.totalPartial },
-                    ]}
+                    data={barSeries.map((s) => ({
+                      name: s.label,
+                      value: s.value,
+                    }))}
                     dataKey="value"
                     nameKey="name"
                     innerRadius={30}
                     outerRadius={50}
                   >
-                    <Cell fill={FULL_COLOR} />
-                    <Cell fill={PARTIAL_COLOR} />
+                    {barSeries.map((s) => (
+                      <Cell key={s.key} fill={s.color} />
+                    ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
@@ -304,118 +363,127 @@ export function GradeRegistrationStatusSection({
         </div>
       </div>
 
-      {/* Figure 2: 학년별 신청 인원 비중 (도넛, 라벨은 차트에 직접 표시) */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          학년별 신청 인원 비중
-        </h3>
-        <div className="h-[420px] w-full md:h-[520px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart margin={{ top: 16, right: 80, bottom: 16, left: 80 }}>
-              <Pie
-                data={byCount}
-                dataKey="count"
-                nameKey="gradeLabel"
-                innerRadius="50%"
-                outerRadius="78%"
-                paddingAngle={1}
-                labelLine={false}
-                label={renderSliceLabel}
-                isAnimationActive={false}
-              >
-                {byCount.map((row, i) => (
-                  <Cell
-                    key={row.gradeNumber}
-                    fill={GRADE_PALETTE[i % GRADE_PALETTE.length]}
-                  />
-                ))}
-                <Label
-                  position="center"
-                  content={(props: { viewBox?: unknown }) => {
-                    const vb = props.viewBox as
-                      | { cx?: number; cy?: number }
-                      | undefined;
-                    if (!vb?.cx || !vb?.cy) return null;
-                    return (
-                      <text
-                        x={vb.cx}
-                        y={vb.cy}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                      >
-                        <tspan x={vb.cx} dy="-0.4em" fontSize="13" fill="#6b7280">
-                          총 신청 인원
-                        </tspan>
-                        <tspan
+      {/* Figure 2 & 3: 학년별 신청 인원 비중(도넛) + 인원 표 — 같은 row.
+          표는 위쪽 정렬(items-start), 도넛만 행 안에서 세로 가운데(self-center). */}
+      <div className="grid items-start gap-4 md:gap-6 lg:grid-cols-2">
+        {/* 비중 도넛 (라벨은 차트에 직접 표시) */}
+        <div className="space-y-3 self-center">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            학년별 신청 인원 비중
+          </h3>
+          <div className="h-[360px] w-full md:h-[460px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart margin={{ top: 16, right: 80, bottom: 16, left: 80 }}>
+                <Pie
+                  data={byCount}
+                  dataKey="count"
+                  nameKey="gradeLabel"
+                  innerRadius="50%"
+                  outerRadius="78%"
+                  paddingAngle={1}
+                  labelLine={false}
+                  label={renderSliceLabel}
+                  isAnimationActive={false}
+                >
+                  {byCount.map((row, i) => (
+                    <Cell
+                      key={row.gradeNumber}
+                      fill={GRADE_PALETTE[i % GRADE_PALETTE.length]}
+                    />
+                  ))}
+                  <Label
+                    position="center"
+                    content={(props: { viewBox?: unknown }) => {
+                      const vb = props.viewBox as
+                        | { cx?: number; cy?: number }
+                        | undefined;
+                      if (!vb?.cx || !vb?.cy) return null;
+                      return (
+                        <text
                           x={vb.cx}
-                          dy="1.5em"
-                          fontSize="26"
-                          fontWeight="700"
-                          fill="#111827"
+                          y={vb.cy}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
                         >
-                          {summary.totalCount}명
-                        </tspan>
-                      </text>
-                    );
-                  }}
-                />
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
+                          <tspan
+                            x={vb.cx}
+                            dy="-0.4em"
+                            fontSize="13"
+                            fill="#6b7280"
+                          >
+                            총 신청 인원
+                          </tspan>
+                          <tspan
+                            x={vb.cx}
+                            dy="1.5em"
+                            fontSize="26"
+                            fontWeight="700"
+                            fill="#111827"
+                          >
+                            {summary.totalCount}명
+                          </tspan>
+                        </text>
+                      );
+                    }}
+                  />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
 
-      {/* Figure 3: 학년별 신청 인원 테이블 */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          학년별 신청 인원
-        </h3>
-        <div className="overflow-x-auto rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="bg-gray-100 font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-4">
-                  학년
-                </TableHead>
-                <TableHead className="bg-gray-100 font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-4 text-right">
-                  신청 인원(명)
-                </TableHead>
-                <TableHead className="bg-gray-100 font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-4 text-right">
-                  비중(%)
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {byCount.map((row) => (
-                <TableRow key={row.gradeNumber}>
-                  <TableCell className="px-2 md:px-4 py-2 md:py-3">
-                    <span className="inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md bg-gray-100 text-gray-700 font-medium text-xs md:text-sm whitespace-nowrap">
-                      {row.gradeLabel}
+        {/* 인원 표 (텍스트 가운데 정렬) */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            학년별 신청 인원
+          </h3>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="bg-gray-100 font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-4 text-center">
+                    학년
+                  </TableHead>
+                  <TableHead className="bg-gray-100 font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-4 text-center">
+                    신청 인원(명)
+                  </TableHead>
+                  <TableHead className="bg-gray-100 font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-4 text-center">
+                    비중(%)
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {byCount.map((row) => (
+                  <TableRow key={row.gradeNumber}>
+                    <TableCell className="px-2 md:px-4 py-2 md:py-3 text-center">
+                      <span className="inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md bg-gray-100 text-gray-700 font-medium text-xs md:text-sm whitespace-nowrap">
+                        {row.gradeLabel}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 text-center">
+                      {row.count}
+                    </TableCell>
+                    <TableCell className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 text-center">
+                      {pct(row.count, summary.totalCount)}%
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="border-t-2 font-semibold">
+                  <TableCell className="px-2 md:px-4 py-2 md:py-3 text-center">
+                    <span className="inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md bg-gray-200 text-gray-800 font-semibold text-xs md:text-sm whitespace-nowrap">
+                      합계
                     </span>
                   </TableCell>
-                  <TableCell className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 text-right">
-                    {row.count}
+                  <TableCell className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 text-center">
+                    {summary.totalCount}
                   </TableCell>
-                  <TableCell className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 text-right">
-                    {pct(row.count, summary.totalCount)}%
+                  <TableCell className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 text-center">
+                    100.0%
                   </TableCell>
                 </TableRow>
-              ))}
-              <TableRow className="border-t-2 font-semibold">
-                <TableCell className="px-2 md:px-4 py-2 md:py-3">
-                  <span className="inline-flex px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md bg-gray-200 text-gray-800 font-semibold text-xs md:text-sm whitespace-nowrap">
-                    합계
-                  </span>
-                </TableCell>
-                <TableCell className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 text-right">
-                  {summary.totalCount}
-                </TableCell>
-                <TableCell className="text-xs md:text-sm px-2 md:px-4 py-2 md:py-3 text-right">
-                  100.0%
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </section>

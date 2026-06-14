@@ -20,7 +20,8 @@ interface TimeSlotStatisticsSectionProps {
 }
 
 interface MiniColumn {
-  id: keyof DaySlotCounts;
+  /** 컬럼 식별자 (요일 dateKey) */
+  id: string;
   header: string;
 }
 
@@ -32,8 +33,9 @@ interface MiniRow {
 /**
  * 시간대별 인원 통계 - Server Component
  *
- * 행정 총괄 / 부서 교역자 페이지 상단에 식사·숙박·집회 인원을 시간대(요일)별로
- * 보여주는 3개의 컴팩트 표를 한 row 에 배치한다. (입금 완료 기준 집계)
+ * 행정 총괄 / 부서 교역자 페이지 상단에 식사·숙박 인원을 표로 보여준다.
+ * 표는 피버팅 형태로 **열 = 요일(수/목/금...), 행 = 시간대(아침/점심/저녁, 숙박)**.
+ * (입금 완료 기준 집계)
  */
 export function TimeSlotStatisticsSection({
   registrations = [],
@@ -41,49 +43,36 @@ export function TimeSlotStatisticsSection({
 }: TimeSlotStatisticsSectionProps) {
   const { days, has } = computeTimeSlotStats(registrations, schedules);
 
-  // 식사 표: 아 / 점 / 저
-  const mealColumns: MiniColumn[] = [
-    has.breakfast && { id: "breakfast", header: "아" },
-    has.lunch && { id: "lunch", header: "점" },
-    has.dinner && { id: "dinner", header: "저" },
-  ].filter(Boolean) as MiniColumn[];
-  const mealRows = buildRows(
-    days.filter(
-      d => d.breakfast != null || d.lunch != null || d.dinner != null
-    ),
-    mealColumns
-  );
+  // 피버팅: 열 = 요일(수/목/금...), 행 = 시간대(아침/점심/저녁, 숙박)
 
-  // 숙박 표: 숙
-  const lodgingColumns: MiniColumn[] = [
-    has.sleep && { id: "sleep", header: "숙박" },
-  ].filter(Boolean) as MiniColumn[];
-  const lodgingRows = buildRows(
-    days.filter(d => d.sleep != null),
-    lodgingColumns
+  // 식사 표
+  const mealDays = days.filter(
+    d => d.breakfast != null || d.lunch != null || d.dinner != null
   );
+  const mealColumns = dayColumns(mealDays);
+  const mealRows: MiniRow[] = (
+    [
+      has.breakfast && { key: "breakfast", label: "아침" },
+      has.lunch && { key: "lunch", label: "점심" },
+      has.dinner && { key: "dinner", label: "저녁" },
+    ].filter(Boolean) as { key: keyof DaySlotCounts; label: string }[]
+  ).map(t => pivotRow(t.label, mealDays, t.key));
+
+  // 숙박 표
+  const lodgingDays = days.filter(d => d.sleep != null);
+  const lodgingColumns = dayColumns(lodgingDays);
+  const lodgingRows: MiniRow[] = has.sleep
+    ? [pivotRow("숙박", lodgingDays, "sleep")]
+    : [];
 
   // 집회 표: 오전 / 7-8시 / 8-10시 / 10시~
   // TODO: 수양회 날짜나 집회 시간대(저녁집회 7-8시 / 8-10시 / 10시~)가 달라졌을 때를 위한
   //       확장성 고민 필요. 현재 저녁집회 시간 구분이 코드에 고정되어 있어,
   //       일정/집회 시간이 바뀌면 로직 수정이 필요하다.
   //       확장성 검토 전까지 집회 인원 표는 임시 비활성화.
-  // const assemblyColumns: MiniColumn[] = [
-  //   has.breakfast && { id: "morning", header: "오전" },
-  //   has.dinner && { id: "evening78", header: "7-8시" },
-  //   (has.dinner || has.sleep) && { id: "evening810", header: "8-10시" },
-  //   has.sleep && { id: "evening10", header: "10시~" },
-  // ].filter(Boolean) as MiniColumn[];
-  // const assemblyRows = buildRows(
-  //   days.filter(
-  //     d =>
-  //       d.morning != null ||
-  //       d.evening78 != null ||
-  //       d.evening810 != null ||
-  //       d.evening10 != null
-  //   ),
-  //   assemblyColumns
-  // );
+  //       (재활성화 시에도 식사/숙박과 동일하게 열=요일, 행=시간대 로 피버팅할 것)
+  //       (집회 인원 산식은 time-slot-stats.ts 의 DaySlotCounts
+  //        morning/evening78/evening810/evening10 참고)
 
   return (
     <section className="space-y-3 md:space-y-4">
@@ -122,15 +111,20 @@ export function TimeSlotStatisticsSection({
   );
 }
 
-/** 날짜 행들을 컬럼 정의에 맞춰 표 행 데이터로 변환 */
-function buildRows(days: DaySlotCounts[], columns: MiniColumn[]): MiniRow[] {
-  return days.map(day => {
-    const cells: Record<string, number | null> = {};
-    for (const col of columns) {
-      cells[col.id] = day[col.id] as number | null;
-    }
-    return { label: day.dayLabel, cells };
-  });
+/** 날짜 목록을 표의 컬럼(요일 헤더)으로 변환 */
+function dayColumns(days: DaySlotCounts[]): MiniColumn[] {
+  return days.map(d => ({ id: d.dateKey, header: d.dayLabel }));
+}
+
+/** 한 시간대 타입을 날짜별 셀로 펼친 행으로 변환 */
+function pivotRow(
+  label: string,
+  days: DaySlotCounts[],
+  key: keyof DaySlotCounts
+): MiniRow {
+  const cells: Record<string, number | null> = {};
+  for (const d of days) cells[d.dateKey] = d[key] as number | null;
+  return { label, cells };
 }
 
 function StatMiniTable({
@@ -155,7 +149,7 @@ function StatMiniTable({
             <TableHeader>
               <TableRow>
                 <TableHead className="sticky left-0 bg-gray-100 z-10 text-center font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-3 whitespace-nowrap">
-                  요일
+                  구분
                 </TableHead>
                 {columns.map(col => (
                   <TableHead
