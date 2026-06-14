@@ -64,22 +64,26 @@ export function TimeSlotStatisticsSection({
   );
 
   // 집회 표: 오전 / 7-8시 / 8-10시 / 10시~
-  const assemblyColumns: MiniColumn[] = [
-    has.breakfast && { id: "morning", header: "오전" },
-    has.dinner && { id: "evening78", header: "7-8시" },
-    (has.dinner || has.sleep) && { id: "evening810", header: "8-10시" },
-    has.sleep && { id: "evening10", header: "10시~" },
-  ].filter(Boolean) as MiniColumn[];
-  const assemblyRows = buildRows(
-    days.filter(
-      d =>
-        d.morning != null ||
-        d.evening78 != null ||
-        d.evening810 != null ||
-        d.evening10 != null
-    ),
-    assemblyColumns
-  );
+  // TODO: 수양회 날짜나 집회 시간대(저녁집회 7-8시 / 8-10시 / 10시~)가 달라졌을 때를 위한
+  //       확장성 고민 필요. 현재 저녁집회 시간 구분이 코드에 고정되어 있어,
+  //       일정/집회 시간이 바뀌면 로직 수정이 필요하다.
+  //       확장성 검토 전까지 집회 인원 표는 임시 비활성화.
+  // const assemblyColumns: MiniColumn[] = [
+  //   has.breakfast && { id: "morning", header: "오전" },
+  //   has.dinner && { id: "evening78", header: "7-8시" },
+  //   (has.dinner || has.sleep) && { id: "evening810", header: "8-10시" },
+  //   has.sleep && { id: "evening10", header: "10시~" },
+  // ].filter(Boolean) as MiniColumn[];
+  // const assemblyRows = buildRows(
+  //   days.filter(
+  //     d =>
+  //       d.morning != null ||
+  //       d.evening78 != null ||
+  //       d.evening810 != null ||
+  //       d.evening10 != null
+  //   ),
+  //   assemblyColumns
+  // );
 
   return (
     <section className="space-y-3 md:space-y-4">
@@ -88,7 +92,7 @@ export function TimeSlotStatisticsSection({
           시간대별 인원 통계
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          입금 완료(PAID) 기준 집계 · 집회 인원은 식사·숙박 신청에서 산출
+          입금 완료(PAID) 기준 집계
         </p>
       </div>
 
@@ -97,18 +101,21 @@ export function TimeSlotStatisticsSection({
           스케줄 데이터가 없습니다.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        // 집회 인원 표 임시 비활성화로 2열 (재활성화 시 md:grid-cols-3 으로 복구)
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <StatMiniTable title="식사 인원" columns={mealColumns} rows={mealRows} />
           <StatMiniTable
             title="숙박 인원"
             columns={lodgingColumns}
             rows={lodgingRows}
           />
-          <StatMiniTable
+          {/* TODO: 수양회 날짜·집회 시간대 변경 시 확장성 고민 필요 (위 assembly 계산부 참고).
+              확장성 검토 전까지 집회 인원 표는 임시 비활성화. */}
+          {/* <StatMiniTable
             title="집회 인원"
             columns={assemblyColumns}
             rows={assemblyRows}
-          />
+          /> */}
         </div>
       )}
     </section>
