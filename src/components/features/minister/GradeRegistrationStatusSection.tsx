@@ -264,7 +264,7 @@ export function GradeRegistrationStatusSection({
               : "학년별 남 / 여"}
           </h3>
         </div>
-        <div className="grid gap-4 md:gap-6 lg:grid-cols-[1fr_240px]">
+        <div className="grid items-center gap-4 md:gap-6 lg:grid-cols-[1fr_240px]">
           <ChartContainer
             config={barConfig}
             className="h-[300px] w-full md:h-[340px]"
@@ -363,10 +363,11 @@ export function GradeRegistrationStatusSection({
         </div>
       </div>
 
-      {/* Figure 2 & 3: 학년별 신청 인원 비중(도넛) + 인원 표 — 같은 row */}
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
+      {/* Figure 2 & 3: 학년별 신청 인원 비중(도넛) + 인원 표 — 같은 row.
+          표는 위쪽 정렬(items-start), 도넛만 행 안에서 세로 가운데(self-center). */}
+      <div className="grid items-start gap-4 md:gap-6 lg:grid-cols-2">
         {/* 비중 도넛 (라벨은 차트에 직접 표시) */}
-        <div className="space-y-3">
+        <div className="space-y-3 self-center">
           <h3 className="text-sm font-medium text-muted-foreground">
             학년별 신청 인원 비중
           </h3>
