@@ -49,6 +49,18 @@ export const attendanceChartConfig: ChartConfig = {
   partial: { label: "부분참여", color: PARTIAL_COLOR },
 };
 
+/**
+ * 성별 색상 (남 / 여) — 막대 분류 전환용
+ */
+export const MALE_COLOR = "hsl(var(--chart-1))";
+export const FEMALE_COLOR = "hsl(var(--chart-4))";
+
+/** 학년별 누적 막대그래프 차트 설정 (남 / 여) */
+export const genderChartConfig: ChartConfig = {
+  male: { label: "남", color: MALE_COLOR },
+  female: { label: "여", color: FEMALE_COLOR },
+};
+
 /** 학년별 파이 차트 팔레트 — 테마 차트 토큰(--chart-1~5) 순환 */
 export const GRADE_PALETTE = [
   "hsl(var(--chart-1))",
