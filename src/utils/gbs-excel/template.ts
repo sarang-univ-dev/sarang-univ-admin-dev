@@ -117,7 +117,7 @@ export function buildTemplateWorkbook(
       row.isLeader ? "1" : "0",
       row.phone, // ID 컬럼(미사용) — 연락처로 채움
       String(row.gbsNumber),
-      String(row.univGroupNumber),
+      `${row.univGroupNumber}부`,
       String(row.gradeNumber),
       row.gender,
       row.name,
