@@ -10,6 +10,7 @@ import {
 import {
   MinisterViewTable,
   RegistrationStatisticsPanel,
+  TimeSlotStatisticsSection,
 } from "@/components/features/minister";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -41,6 +42,12 @@ export default async function AdminMinisterViewPage({ params }: PageProps) {
 
   return (
     <div className="space-y-4 md:space-y-8">
+      {/* 시간대별 인원 통계 (식사/숙박/집회) */}
+      <TimeSlotStatisticsSection
+        registrations={registrations}
+        schedules={schedules}
+      />
+
       {/* 입금 현황 요약 */}
       <PaymentSummary registrations={registrations} />
 

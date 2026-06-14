@@ -2,11 +2,13 @@ import { Suspense } from "react";
 import {
   fetchUnivGroupAdminStaffData,
   fetchRetreatSchedules,
+  fetchAccountStaffRegistrations,
 } from "@/lib/api/server-actions";
 import { PaymentSummary } from "@/components/features/retreat-payment-confirmation";
 import {
   MinisterViewTable,
   RegistrationStatisticsPanel,
+  TimeSlotStatisticsSection,
   GradeRegistrationStatusSection,
 } from "@/components/features/minister";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,13 +34,22 @@ export default async function UnivGroupMinisterViewPage({ params }: PageProps) {
   const { retreatSlug } = await params;
 
   // 서버에서 병렬 데이터 페칭 (Promise.all)
-  const [registrations, schedules] = await Promise.all([
+  // - registrations: 본인 부서 신청자 (표/입금요약/통계그래프용)
+  // - allRegistrations: 전체 수양회 신청자 (시간대별 인원 통계는 전체 기준)
+  const [registrations, schedules, allRegistrations] = await Promise.all([
     fetchUnivGroupAdminStaffData(retreatSlug),
     fetchRetreatSchedules(retreatSlug),
+    fetchAccountStaffRegistrations(retreatSlug),
   ]);
 
   return (
     <div className="space-y-4 md:space-y-8">
+      {/* 시간대별 인원 통계 (식사/숙박/집회) — 전체 수양회 기준 */}
+      <TimeSlotStatisticsSection
+        registrations={allRegistrations}
+        schedules={schedules}
+      />
+
       {/* 입금 현황 요약 */}
       <PaymentSummary registrations={registrations} />
 
