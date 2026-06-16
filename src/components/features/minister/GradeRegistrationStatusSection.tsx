@@ -33,7 +33,6 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gender, UserRetreatRegistrationPaymentStatus } from "@/types";
-import type { IUnivGroupAdminStaffRetreat } from "@/types/univ-group-admin-staff";
 import {
   attendanceChartConfig,
   genderChartConfig,
@@ -49,8 +48,19 @@ type BarMode = "attendance" | "gender";
 
 const RADIAN = Math.PI / 180;
 
+/**
+ * 학년별 통계에 필요한 최소 신청 데이터.
+ * 부서(IUnivGroupAdminStaffRetreat) / 전체(IRetreatRegistration) 양쪽 타입이 모두 만족한다.
+ */
+interface GradeStatRegistration {
+  gradeNumber: number;
+  gender: Gender;
+  userRetreatRegistrationScheduleIds?: number[] | null;
+  paymentStatus: UserRetreatRegistrationPaymentStatus;
+}
+
 interface GradeRegistrationStatusSectionProps {
-  registrations: IUnivGroupAdminStaffRetreat[];
+  registrations: GradeStatRegistration[];
   /** 수양회 전체 일정(스케줄). 길이로 전체참여 기준 산정 */
   schedules: unknown[];
 }
