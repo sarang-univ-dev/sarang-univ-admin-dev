@@ -11,6 +11,7 @@ import {
   MinisterViewTable,
   RegistrationStatisticsPanel,
   TimeSlotStatisticsSection,
+  GradeRegistrationStatusSection,
 } from "@/components/features/minister";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -59,6 +60,12 @@ export default async function AdminMinisterViewPage({ params }: PageProps) {
         registrations={registrations}
         showDepartmentFilter={true}
         title="전체 신청 현황 통계"
+      />
+
+      {/* 학년별 신청 현황 분석 (전체 인원 대상) */}
+      <GradeRegistrationStatusSection
+        registrations={registrations}
+        schedules={schedules}
       />
 
       {/* 조회 전용 테이블 */}
