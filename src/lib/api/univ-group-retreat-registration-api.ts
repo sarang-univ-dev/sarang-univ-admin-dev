@@ -93,6 +93,21 @@ export const UnivGroupRetreatRegistrationAPI = {
   },
 
   /**
+   * 셔틀버스 신청 안내 문자 전송
+   *
+   * @param retreatSlug - 수양회 슬러그
+   * @param registrationId - 수양회 신청 ID
+   */
+  sendShuttleBusRegistrationReminder: async (
+    retreatSlug: string,
+    registrationId: string
+  ): Promise<void> => {
+    await webAxios.post(
+      `/api/v1/retreat/${retreatSlug}/registration/${registrationId}/shuttle-bus-registration-reminder`
+    );
+  },
+
+  /**
    * 일정 변경 요청 메모 저장
    *
    * @param retreatSlug - 수양회 슬러그

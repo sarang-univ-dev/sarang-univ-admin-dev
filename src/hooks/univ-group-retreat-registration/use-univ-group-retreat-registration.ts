@@ -194,6 +194,33 @@ export function useUnivGroupRetreatRegistration(
   };
 
   /**
+   * 셔틀버스 신청 안내 문자 전송
+   *
+   * @param registrationId - 신청 ID
+   * @param userName - 확인 모달에 표시할 사용자 이름
+   */
+  const sendShuttleBusRegistrationReminder = async (
+    registrationId: string,
+    userName: string
+  ) => {
+    await confirm.open({
+      title: "셔틀버스 신청 안내 문자 전송",
+      description: `${userName}님에게 셔틀버스 신청 안내 문자를 전송하시겠습니까?\n\n수양회는 신청되었지만 셔틀버스 신청 내역이 확인되지 않았다는 안내가 전송됩니다.`,
+      confirmText: "문자 전송",
+      onConfirm: async () => {
+        await updateCache(
+          () =>
+            UnivGroupRetreatRegistrationAPI.sendShuttleBusRegistrationReminder(
+              retreatSlug,
+              registrationId
+            ),
+          "셔틀버스 신청 안내 문자가 전송되었습니다."
+        );
+      },
+    });
+  };
+
+  /**
    * 일정 변경 메모 저장
    *
    * @description
@@ -737,6 +764,7 @@ export function useUnivGroupRetreatRegistration(
     handleNewFamilyRequest,
     handleMilitaryRequest,
     sendPaymentRequest,
+    sendShuttleBusRegistrationReminder,
     saveScheduleMemo,
     updateScheduleMemo,
     deleteScheduleMemo,
