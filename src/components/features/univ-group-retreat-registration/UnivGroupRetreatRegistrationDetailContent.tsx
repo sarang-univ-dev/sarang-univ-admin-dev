@@ -9,7 +9,16 @@ import { QrDownloadButton } from "./QrDownloadButton";
 import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
 import { formatDate } from "@/utils/formatDate";
 import { useMemo, useState } from "react";
-import { UserCircle, CreditCard, Calendar, Info, FileText, Trash2, Pencil } from "lucide-react";
+import {
+  UserCircle,
+  CreditCard,
+  Calendar,
+  Info,
+  FileText,
+  Trash2,
+  Pencil,
+  MessageSquare,
+} from "lucide-react";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { Button } from "@/components/ui/button";
 import { UserRetreatRegistrationPaymentStatus } from "@/types";
@@ -33,6 +42,10 @@ interface UnivGroupRetreatRegistrationDetailContentProps {
   onUpdateAdminMemo: (memoId: number, memo: string) => Promise<unknown>;
   onDeleteAdminMemo: (memoId: number) => Promise<unknown>;
   onDeleteRegistration?: (id: string) => Promise<void>;
+  onSendShuttleBusRegistrationReminder?: (
+    id: string,
+    userName: string
+  ) => Promise<void>;
   onUpdateRegistrationInfo?: (
     id: string,
     data: {
@@ -66,6 +79,7 @@ export function UnivGroupRetreatRegistrationDetailContent({
   onUpdateAdminMemo,
   onDeleteAdminMemo,
   onDeleteRegistration,
+  onSendShuttleBusRegistrationReminder,
   onUpdateRegistrationInfo,
   isMutating,
 }: UnivGroupRetreatRegistrationDetailContentProps) {
@@ -74,6 +88,15 @@ export function UnivGroupRetreatRegistrationDetailContent({
 
   // 삭제 가능한 상태인지 확인
   const isDeletable = DELETABLE_STATUSES.includes(data.status);
+  const canSendShuttleBusRegistrationReminder =
+    !data.hadRegisteredShuttleBus &&
+    [
+      UserRetreatRegistrationPaymentStatus.PENDING,
+      UserRetreatRegistrationPaymentStatus.PAID,
+      UserRetreatRegistrationPaymentStatus.NEW_COMER_REQUEST,
+      UserRetreatRegistrationPaymentStatus.SOLDIER_REQUEST,
+    ].includes(data.status);
+
   // 선택된 스케줄 ID 추출
   const selectedScheduleIds = useMemo(() => {
     return schedules
@@ -216,7 +239,32 @@ export function UnivGroupRetreatRegistrationDetailContent({
       <InfoSection title="기타 정보" icon={Info}>
         <InfoItem
           label="셔틀버스"
-          value={<ShuttleBusStatusBadge hasRegistered={data.hadRegisteredShuttleBus} />}
+          value={
+            <div className="flex flex-col items-start gap-2">
+              <ShuttleBusStatusBadge
+                hasRegistered={data.hadRegisteredShuttleBus}
+              />
+              {canSendShuttleBusRegistrationReminder &&
+                onSendShuttleBusRegistrationReminder && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      onSendShuttleBusRegistrationReminder(data.id, data.name)
+                    }
+                    disabled={isMutating}
+                    className="h-8"
+                  >
+                    {isMutating ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                    ) : (
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                    )}
+                    셔틀 신청 안내 문자
+                  </Button>
+                )}
+            </div>
+          }
         />
         <InfoItem
           label="QR 코드"

@@ -72,6 +72,7 @@ export function UnivGroupRetreatRegistrationTable({
     updateAdminMemo,
     deleteAdminMemo,
     deleteRegistration,
+    sendShuttleBusRegistrationReminder,
     updateRegistrationInfo,
     isMutating
   } = useUnivGroupRetreatRegistration(retreatSlug, {
@@ -257,6 +258,9 @@ export function UnivGroupRetreatRegistrationTable({
                 sidebar.close();
               }
             }}
+            onSendShuttleBusRegistrationReminder={
+              sendShuttleBusRegistrationReminder
+            }
             onUpdateRegistrationInfo={updateRegistrationInfo}
             isMutating={isMutating}
           />
