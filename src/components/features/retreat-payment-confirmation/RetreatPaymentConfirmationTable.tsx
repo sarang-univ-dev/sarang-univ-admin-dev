@@ -24,8 +24,15 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRetreatPaymentConfirmation } from "@/hooks/retreat-payment-confirmation/use-retreat-payment-confirmation";
 import { IUserRetreatRegistration } from "@/hooks/use-user-retreat-registration";
-import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
+import {
+  PAYMENT_STATUS_LABELS,
+  USER_RETREAT_TYPE_LABELS,
+} from "@/lib/constant/labels";
 import { retreatPaymentConfirmationHelp } from "@/lib/help";
+import {
+  arrayIncludesValueFilterFn,
+  createGlobalSearchFilter,
+} from "@/lib/table";
 import { normalizeRetreatPaymentStatus } from "@/lib/utils/retreat-payment-status";
 import {
   Gender,
@@ -159,7 +166,7 @@ export function RetreatPaymentConfirmationTable({
             <GenderBadge gender={info.getValue()} />
           </div>
         ),
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
       columnHelper.accessor("grade", {
         id: "grade",
@@ -177,7 +184,7 @@ export function RetreatPaymentConfirmationTable({
             {info.getValue()}
           </div>
         ),
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
         sortingFn: gradeDescSortingFn,
       }),
       columnHelper.accessor("name", {
@@ -197,7 +204,7 @@ export function RetreatPaymentConfirmationTable({
           </div>
         ),
         enableHiding: false,
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
     ];
 
@@ -283,7 +290,7 @@ export function RetreatPaymentConfirmationTable({
             </div>
           );
         },
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
       // ✅ 상세 정보 버튼
       columnHelper.display({
@@ -345,13 +352,20 @@ export function RetreatPaymentConfirmationTable({
     // ✅ 모든 클릭을 multi-sort event로 처리 (Shift 키 불필요)
     isMultiSortEvent: () => true,
     // 전역 필터 함수 (통합 검색)
-    globalFilterFn: (row, columnId, filterValue) => {
-      const searchableFields = [row.original.name, row.original.grade];
-
-      return searchableFields.some(field =>
-        field?.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    },
+    globalFilterFn: createGlobalSearchFilter<TableRow>([
+      { value: row => row.name, mode: "contains" },
+      { value: row => row.original.phoneNumber, mode: "contains" },
+      { value: row => row.grade, mode: "token" },
+      {
+        value: row =>
+          row.type ? USER_RETREAT_TYPE_LABELS[row.type] || row.type : "",
+        mode: "contains",
+      },
+      {
+        value: row => PAYMENT_STATUS_LABELS[row.status] || row.status,
+        mode: "contains",
+      },
+    ]),
   });
 
   return (

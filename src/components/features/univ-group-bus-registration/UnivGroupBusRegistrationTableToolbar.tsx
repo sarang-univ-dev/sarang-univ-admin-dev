@@ -13,13 +13,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import debounce from "lodash/debounce";
 import { useIsMobile } from "@/hooks/use-media-query";
+import { getOrderedTableRowIds } from "@/lib/table";
 
 interface UnivGroupBusRegistrationTableToolbarProps {
   table: Table<any>;
   globalFilter: string;
   setGlobalFilter: (value: string) => void;
-  retreatSlug: string;
-  onDownloadExcel: () => Promise<void>;
+  onDownloadExcel: (rowIds?: number[]) => void | Promise<void>;
   isDownloading: boolean;
 }
 
@@ -32,11 +32,9 @@ export function UnivGroupBusRegistrationTableToolbar({
   table,
   globalFilter,
   setGlobalFilter,
-  retreatSlug,
   onDownloadExcel,
   isDownloading,
 }: UnivGroupBusRegistrationTableToolbarProps) {
-
   // ✅ Lodash debounce를 useMemo로 메모이제이션
   const debouncedSetGlobalFilter = useMemo(
     () =>
@@ -54,6 +52,11 @@ export function UnivGroupBusRegistrationTableToolbar({
   }, [debouncedSetGlobalFilter]);
 
   const isMobile = useIsMobile();
+
+  const handleDownloadExcel = () => {
+    const rowIds = getOrderedTableRowIds(table, row => row.id);
+    void onDownloadExcel(rowIds);
+  };
 
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-2 mb-4">
@@ -123,7 +126,7 @@ export function UnivGroupBusRegistrationTableToolbar({
           <Button
             variant="outline"
             size="sm"
-            onClick={onDownloadExcel}
+            onClick={handleDownloadExcel}
             disabled={isDownloading}
           >
             {isDownloading ? (

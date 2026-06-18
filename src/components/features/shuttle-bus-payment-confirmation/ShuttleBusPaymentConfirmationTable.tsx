@@ -36,6 +36,13 @@ import { ShuttleBusPaymentConfirmationTableToolbar } from "./ShuttleBusPaymentCo
 import { ShuttleBusPaymentConfirmationTableActions } from "./ShuttleBusPaymentConfirmationTableActions";
 import { ShuttleBusPaymentConfirmationDetailContent } from "./ShuttleBusPaymentConfirmationDetailContent";
 import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
+import {
+  USER_RETREAT_TYPE_LABELS,
+} from "@/lib/constant/labels";
+import {
+  arrayIncludesValueFilterFn,
+  createGlobalSearchFilter,
+} from "@/lib/table";
 
 interface ShuttleBusPaymentConfirmationTableProps {
   initialData: IShuttleBusPaymentConfirmationRegistration[];
@@ -123,8 +130,20 @@ export function ShuttleBusPaymentConfirmationTable({
       }),
       columnHelper.accessor("gender", {
         id: "gender",
-        header: "성별",
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="성별"
+            enableSorting
+            enableFiltering
+            formatFilterValue={(value) => (value === "MALE" ? "남자" : "여자")}
+          />
+        ),
         cell: (info) => <GenderBadge gender={info.getValue()} />,
+        enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: arrayIncludesValueFilterFn,
       }),
       columnHelper.accessor("gradeNumber", {
         id: "grade",
@@ -377,18 +396,22 @@ export function ShuttleBusPaymentConfirmationTable({
     enableColumnFilters: true,
     enableFilters: true,
     // 전역 필터 함수
-    globalFilterFn: (row, columnId, filterValue) => {
-      const searchableFields = [
-        row.original.name,
-        `${row.original.univGroupNumber}부`,
-        `${row.original.gradeNumber}학년`,
-        row.original.userPhoneNumber,
-      ];
-
-      return searchableFields.some((field) =>
-        field?.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    },
+    globalFilterFn:
+      createGlobalSearchFilter<IShuttleBusPaymentConfirmationRegistration>([
+        { value: row => row.name, mode: "contains" },
+        { value: row => row.userPhoneNumber, mode: "contains" },
+        { value: row => `${row.univGroupNumber}부`, mode: "token" },
+        { value: row => `${row.gradeNumber}학년`, mode: "token" },
+        {
+          value: row =>
+            row.userType ? USER_RETREAT_TYPE_LABELS[row.userType] || row.userType : "",
+          mode: "contains",
+        },
+        {
+          value: row => getPaymentStatusLabel(row.shuttleBusPaymentStatus),
+          mode: "contains",
+        },
+      ]),
   });
 
   const filteredData = table.getRowModel().rows.map((row) => row.original);

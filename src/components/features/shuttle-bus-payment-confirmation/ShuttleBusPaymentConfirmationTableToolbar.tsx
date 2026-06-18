@@ -7,8 +7,9 @@ import { useMemo, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToastStore } from "@/store/toast-store";
 import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
+import { getOrderedTableRowIds } from "@/lib/table";
+import { useToastStore } from "@/store/toast-store";
 
 interface ShuttleBusPaymentConfirmationTableToolbarProps {
   table: Table<any>;
@@ -48,11 +49,13 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
   }, [debouncedSetGlobalFilter]);
 
   const handleExcelDownload = async () => {
-    // TODO: 추후 다른 페이지로 이동 필요 - 현재는 임시로 입금 조회 페이지에 배치
     setIsDownloading(true);
     try {
-      const blob =
-        await ShuttleBusAPI.downloadAllUnivGroupPassengersExcel(retreatSlug);
+      const rowIds = getOrderedTableRowIds(table, row => row.id);
+      const blob = await ShuttleBusAPI.downloadAllUnivGroupPassengersExcel(
+        retreatSlug,
+        rowIds
+      );
 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -68,7 +71,7 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
 
       addToast({
         title: "성공",
-        description: "엑셀 파일이 다운로드되었습니다.",
+        description: "현재 필터와 정렬이 적용된 엑셀 파일이 다운로드되었습니다.",
         variant: "success"
       });
     } catch (error) {

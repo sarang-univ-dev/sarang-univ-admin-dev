@@ -27,6 +27,11 @@ import { TRetreatRegistrationSchedule } from "@/types";
 import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
 import { UnivGroupRetreatRegistrationDetailContent } from "./UnivGroupRetreatRegistrationDetailContent";
 import { webAxios } from "@/lib/api/axios";
+import {
+  PAYMENT_STATUS_LABELS,
+  USER_RETREAT_TYPE_LABELS,
+} from "@/lib/constant/labels";
+import { createGlobalSearchFilter } from "@/lib/table";
 
 interface Grade {
   gradeId: number;
@@ -165,19 +170,28 @@ export function UnivGroupRetreatRegistrationTable({
     // ✅ 모든 클릭을 multi-sort event로 처리 (Shift 키 불필요)
     isMultiSortEvent: () => true,
     // 전역 필터 함수 (통합 검색)
-    globalFilterFn: (row, columnId, filterValue) => {
-      const searchableFields = [
-        row.original.name,
-        row.original.grade,
-        row.original.phone,
-        row.original.currentLeaderName,
-        row.original.hadRegisteredShuttleBus ? "신청함" : "신청 안함",
-      ];
-
-      return searchableFields.some((field) =>
-        field?.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    },
+    globalFilterFn: createGlobalSearchFilter<UnivGroupAdminStaffData>([
+      { value: row => row.name, mode: "contains" },
+      { value: row => row.phone, mode: "contains" },
+      { value: row => row.currentLeaderName, mode: "contains" },
+      { value: row => row.memo, mode: "contains" },
+      { value: row => row.staffMemo, mode: "contains" },
+      { value: row => row.department, mode: "token" },
+      { value: row => row.grade, mode: "token" },
+      {
+        value: row =>
+          row.type ? USER_RETREAT_TYPE_LABELS[row.type] || row.type : "",
+        mode: "contains",
+      },
+      {
+        value: row => PAYMENT_STATUS_LABELS[row.status] || row.status,
+        mode: "contains",
+      },
+      {
+        value: row => (row.hadRegisteredShuttleBus ? "신청함" : "신청 안함"),
+        mode: "contains",
+      },
+    ]),
   });
 
   // ✅ 필터링된 데이터 (모바일 테이블과 공유)
