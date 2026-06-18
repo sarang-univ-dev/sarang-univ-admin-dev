@@ -28,7 +28,7 @@ export default function DormitoryRetreatRegistrationPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">숙소팀 수양회 신청 관리</h1>
+      <h1 className="text-2xl font-bold">인원관리팀 수양회 출석 체크</h1>
       <DormitoryRetreatRegistrationTable
         schedules={schedules}
         retreatSlug={retreatSlug}
