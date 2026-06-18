@@ -45,4 +45,8 @@ export interface IUnivGroupBusRegistration {
   adminMemo?: string | null;
   /** 관리자 메모 ID - 삭제용 (nullable) */
   adminMemoId?: number | null;
+  /** 버스간사 메모 내용 (nullable) */
+  busStaffMemo?: string | null;
+  /** 버스간사 메모 ID - 삭제용 (nullable) */
+  busStaffMemoId?: number | null;
 }

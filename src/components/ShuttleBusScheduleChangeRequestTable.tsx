@@ -32,6 +32,7 @@ import {
   // TRetreatRegistrationSchedule,
   TRetreatShuttleBus,
   TRetreatPaymentSchedule,
+  UserRetreatShuttleBusPaymentStatus,
 } from "@/types";
 import { formatDate, formatSimpleDate } from "@/utils/formatDate";
 
@@ -58,7 +59,7 @@ const transformScheduleChangeRequestForTable = (
     ),
     amount: req.price,
     createdAt: req.createdAt,
-    status: req.paymentStatus,
+    status: req.shuttleBusPaymentStatus,
     issuerName: req.issuerName,
     paymentConfirmedAt: req.paymentConfirmedAt,
     memo: req.memo,
@@ -94,6 +95,8 @@ export function ShuttleBusScheduleChangeRequestTable({
   const [memoText, setMemoText] = useState("");
   const [selectedSchedules, setSelectedSchedules] = useState<number[]>([]);
   const [calculatedPrice, setCalculatedPrice] = useState<number>(0);
+  const [isCancelMode, setIsCancelMode] = useState(false);
+  const [refundRequired, setRefundRequired] = useState(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // *** 엔드포인트: 서버 라우트와 일치하도록 수정 ***
@@ -157,6 +160,8 @@ export function ShuttleBusScheduleChangeRequestTable({
     setSelectedRow(row);
     setMemoText(row.memo || "");
     setSelectedSchedules(row.scheduleIds || []);
+    setIsCancelMode(false);
+    setRefundRequired(false);
     setIsModalOpen(true);
   };
 
@@ -165,11 +170,21 @@ export function ShuttleBusScheduleChangeRequestTable({
     setSelectedRow(null);
     setMemoText("");
     setSelectedSchedules([]);
+    setIsCancelMode(false);
+    setRefundRequired(false);
   };
 
   // 일정 변경 처리
   const handleConfirmScheduleChange = async () => {
     if (!selectedRow) return;
+    if (selectedSchedules.length === 0) {
+      addToast({
+        title: "오류",
+        description: "전체 신청 취소는 신청 취소 버튼으로 처리하세요.",
+        variant: "destructive",
+      });
+      return;
+    }
     void confirmDialog.open({
       title: "일정 변동 처리 완료",
       description: "해당 일정 변동 요청을 처리하시겠습니까?",
@@ -203,6 +218,48 @@ export function ShuttleBusScheduleChangeRequestTable({
         } finally {
           if (selectedRow) {
             setLoading(selectedRow.id, "confirm", false);
+          }
+        }
+      },
+    });
+  };
+
+  const handleCancelRegistration = async () => {
+    if (!selectedRow) return;
+    void confirmDialog.open({
+      title: "셔틀버스 신청 취소",
+      description: "해당 셔틀버스 신청을 취소 처리하시겠습니까?",
+      confirmVariant: "destructive",
+      onConfirm: async () => {
+        setLoading(selectedRow.id, "cancel", true);
+        try {
+          await webAxios.post(
+            `/api/v1/retreat/${retreatSlug}/shuttle-bus/${selectedRow.id}/cancel-registration`,
+            {
+              refundRequired,
+            }
+          );
+          await mutate(registrationsEndpoint);
+          addToast({
+            title: "성공",
+            description: "셔틀버스 신청 취소가 처리되었습니다.",
+            variant: "success",
+          });
+          handleCloseModal();
+        } catch (error) {
+          addToast({
+            title: "오류",
+            description:
+              error instanceof AxiosError
+                ? error.response?.data?.message || error.message
+                : error instanceof Error
+                  ? error.message
+                  : "셔틀버스 신청 취소 처리 중 오류가 발생했습니다.",
+            variant: "destructive",
+          });
+        } finally {
+          if (selectedRow) {
+            setLoading(selectedRow.id, "cancel", false);
           }
         }
       },
@@ -561,6 +618,7 @@ export function ShuttleBusScheduleChangeRequestTable({
                           <TableCell className="text-center">
                             <Checkbox
                               checked={selectedSchedules.includes(schedule.id)}
+                              disabled={isCancelMode}
                               onCheckedChange={() => {
                                 if (selectedSchedules.includes(schedule.id)) {
                                   setSelectedSchedules(
@@ -616,21 +674,81 @@ export function ShuttleBusScheduleChangeRequestTable({
                 <p className="font-medium">변경 후 금액:</p>
                 <p>{calculatedPrice.toLocaleString()}원</p>
               </div>
+              {isCancelMode && (
+                <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3">
+                  <label className="flex items-center gap-2 text-sm font-medium text-red-900">
+                    <Checkbox
+                      checked={refundRequired}
+                      onCheckedChange={checked =>
+                        setRefundRequired(checked === true)
+                      }
+                      disabled={isLoading(selectedRow.id, "cancel")}
+                    />
+                    환불 필요
+                  </label>
+                  <p className="mt-2 text-xs text-red-700">
+                    신청 취소는 모든 셔틀버스 일정을 제거하고 일정변경 이력에
+                    기록합니다. 환불이 필요한 경우 체크하면 환불 요청 상태로
+                    변경됩니다.
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={handleCloseModal}>
-                취소
-              </Button>
-              <Button
-                onClick={handleConfirmScheduleChange}
-                disabled={isLoading(selectedRow.id, "confirm")}
-                className="hover:bg-black hover:text-white transition-colors"
-              >
-                {isLoading(selectedRow.id, "confirm") ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : null}
-                일정 변동 처리 완료
-              </Button>
+            <div className="flex justify-between gap-2 mt-4">
+              <div>
+                {isCancelMode ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsCancelMode(false);
+                      setRefundRequired(false);
+                    }}
+                    disabled={isLoading(selectedRow.id, "cancel")}
+                  >
+                    일정 변경으로 돌아가기
+                  </Button>
+                ) : (
+                  <Button
+                    variant="destructive"
+                    onClick={() => setIsCancelMode(true)}
+                    disabled={
+                      isLoading(selectedRow.id, "confirm") ||
+                      selectedRow.status !==
+                        UserRetreatShuttleBusPaymentStatus.PAID
+                    }
+                  >
+                    신청 취소
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleCloseModal}>
+                  닫기
+                </Button>
+                {isCancelMode ? (
+                  <Button
+                    variant="destructive"
+                    onClick={handleCancelRegistration}
+                    disabled={isLoading(selectedRow.id, "cancel")}
+                  >
+                    {isLoading(selectedRow.id, "cancel") ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : null}
+                    취소 처리
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleConfirmScheduleChange}
+                    disabled={isLoading(selectedRow.id, "confirm")}
+                    className="hover:bg-black hover:text-white transition-colors"
+                  >
+                    {isLoading(selectedRow.id, "confirm") ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : null}
+                    일정 변동 처리 완료
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>

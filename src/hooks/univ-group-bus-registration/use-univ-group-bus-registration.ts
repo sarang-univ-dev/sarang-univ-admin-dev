@@ -10,7 +10,8 @@ import { useConfirm } from "@/hooks/use-confirm";
 
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
-  return response.data.univGroupShuttleBusRegistrations as IUnivGroupBusRegistration[];
+  return response.data
+    .univGroupShuttleBusRegistrations as IUnivGroupBusRegistration[];
 };
 
 interface UseUnivGroupBusRegistrationOptions {
@@ -36,7 +37,7 @@ export function useUnivGroupBusRegistration(
   options?: UseUnivGroupBusRegistrationOptions
 ) {
   const confirm = useConfirm();
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
   const [isMutating, setIsMutating] = useState(false);
 
   const endpoint = retreatSlug
@@ -70,7 +71,7 @@ export function useUnivGroupBusRegistration(
       // 2. 단일 item만 병합 (기존 데이터 유지 + 업데이트된 필드 적용)
       if (updated && data) {
         await mutate(
-          data.map((item) =>
+          data.map(item =>
             item.id === updated.id ? { ...item, ...updated } : item
           ),
           { revalidate: false }
@@ -221,7 +222,7 @@ export function useUnivGroupBusRegistration(
         setIsMutating(true);
         try {
           // 1. Optimistic update: 즉시 UI에서 제거
-          const optimisticData = data?.filter((item) => item.id !== numericId);
+          const optimisticData = data?.filter(item => item.id !== numericId);
 
           if (optimisticData) {
             await mutate(optimisticData, { revalidate: false });
@@ -325,8 +326,40 @@ export function useUnivGroupBusRegistration(
         `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/memo`,
         { memo }
       );
-      return response.data?.univGroupShuttleBusRegistration;
+      const savedMemo = response.data?.adminMemo;
+      return savedMemo
+        ? ({
+            id: Number(id),
+            adminMemo: savedMemo.memo,
+            adminMemoId: savedMemo.id,
+          } as IUnivGroupBusRegistration)
+        : undefined;
     }, "메모가 저장되었습니다.");
+  };
+
+  /**
+   * 버스간사 메모 생성 또는 수정
+   *
+   * @param id - 신청 ID
+   * @param memo - 메모 내용
+   */
+  const saveOrUpdateBusStaffMemo = async (id: string, memo: string) => {
+    if (!retreatSlug) return;
+
+    await updateCache(async () => {
+      const response = await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${id}/bus-staff-memo`,
+        { memo }
+      );
+      const savedMemo = response.data?.busStaffMemo;
+      return savedMemo
+        ? ({
+            id: Number(id),
+            busStaffMemo: savedMemo.memo,
+            busStaffMemoId: savedMemo.id,
+          } as IUnivGroupBusRegistration)
+        : undefined;
+    }, "버스간사 메모가 저장되었습니다.");
   };
 
   /**
@@ -352,6 +385,35 @@ export function useUnivGroupBusRegistration(
     });
   };
 
+  /**
+   * 버스간사 메모 삭제
+   *
+   * @param memoId - 메모 ID
+   */
+  const deleteBusStaffMemo = async (memoId: number) => {
+    if (!retreatSlug) return;
+
+    await confirm.open({
+      title: "메모 삭제",
+      description: "정말로 버스간사 메모를 삭제하시겠습니까?",
+      onConfirm: async () => {
+        await updateCache(async () => {
+          await webAxios.delete(
+            `/api/v1/retreat/${retreatSlug}/shuttle-bus/bus-staff-memo/${memoId}`
+          );
+          const target = data?.find(item => item.busStaffMemoId === memoId);
+          return target
+            ? ({
+                id: target.id,
+                busStaffMemo: null,
+                busStaffMemoId: null,
+              } as IUnivGroupBusRegistration)
+            : undefined;
+        }, "버스간사 메모가 삭제되었습니다.");
+      },
+    });
+  };
+
   return {
     // 데이터
     data: data ?? [],
@@ -371,5 +433,7 @@ export function useUnivGroupBusRegistration(
     updateRegistrationInfo,
     saveOrUpdateAdminMemo,
     deleteAdminMemo,
+    saveOrUpdateBusStaffMemo,
+    deleteBusStaffMemo,
   };
 }

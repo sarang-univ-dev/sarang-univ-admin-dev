@@ -53,13 +53,34 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
       // 실제 입금 금액: 입금 완료(PAID)인 항목의 금액 합계
-      const actualIncome = deptRegistrations
+      const paidIncome = deptRegistrations
         .filter(
           reg =>
             reg.shuttleBusPaymentStatus ===
             UserRetreatShuttleBusPaymentStatus.PAID
         )
         .reduce((sum, reg) => sum + (reg.price || 0), 0);
+
+      // 취소 완료 금액: 환불 없이 취소된 항목은 실제 입금액에 남는다.
+      const canceledIncome = deptRegistrations
+        .filter(
+          reg =>
+            reg.shuttleBusPaymentStatus ===
+            UserRetreatShuttleBusPaymentStatus.CANCELED
+        )
+        .reduce((sum, reg) => sum + (reg.price || 0), 0);
+
+      const refundIncome = deptRegistrations
+        .filter(
+          reg =>
+            reg.shuttleBusPaymentStatus ===
+              UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST ||
+            reg.shuttleBusPaymentStatus ===
+              UserRetreatShuttleBusPaymentStatus.REFUNDED
+        )
+        .reduce((sum, reg) => sum + (reg.refundAmount || reg.price || 0), 0);
+
+      const actualIncome = paidIncome + canceledIncome + refundIncome;
 
       // 예상 출금 금액: 환불 처리 중인 항목의 금액 합계
       const expectedRefund = deptRegistrations
@@ -68,7 +89,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
             reg.shuttleBusPaymentStatus ===
             UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST
         )
-        .reduce((sum, reg) => sum + (reg.price || 0), 0);
+        .reduce((sum, reg) => sum + (reg.refundAmount || reg.price || 0), 0);
 
       // 실제 출금 금액: 환불 완료(REFUNDED)인 항목의 금액 합계
       const actualRefund = deptRegistrations
@@ -77,7 +98,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
             reg.shuttleBusPaymentStatus ===
             UserRetreatShuttleBusPaymentStatus.REFUNDED
         )
-        .reduce((sum, reg) => sum + (reg.price || 0), 0);
+        .reduce((sum, reg) => sum + (reg.refundAmount || reg.price || 0), 0);
 
       // 현재 계좌 현황: 실제 입금액 - 실제 출금액
       const currentBalance = actualIncome - actualRefund;
@@ -93,6 +114,8 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
         id: deptId,
         name: departmentName,
         expectedIncome,
+        paidIncome,
+        canceledIncome,
         actualIncome,
         expectedRefund,
         actualRefund,
@@ -108,6 +131,11 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
         name: "전체",
         expectedIncome: stats.reduce(
           (sum, dept) => sum + dept.expectedIncome,
+          0
+        ),
+        paidIncome: stats.reduce((sum, dept) => sum + dept.paidIncome, 0),
+        canceledIncome: stats.reduce(
+          (sum, dept) => sum + dept.canceledIncome,
           0
         ),
         actualIncome: stats.reduce((sum, dept) => sum + dept.actualIncome, 0),
@@ -195,7 +223,17 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
                   />
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {dept.actualIncome.toLocaleString()}원
+                  {dept.paidIncome.toLocaleString()}원
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="flex items-center">
+                  <StatusBadge
+                    status={UserRetreatShuttleBusPaymentStatus.CANCELED}
+                  />
+                </TableCell>
+                <TableCell className="text-right font-medium">
+                  {dept.canceledIncome.toLocaleString()}원
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -220,7 +258,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
               </TableRow>
               <TableRow className="bg-gray-50">
                 <TableCell className="font-bold">
-                  현재 계좌 현황 (입금 완료 - 환불 완료)
+                  현재 계좌 현황 (입금 완료 + 취소 완료 - 환불 완료)
                 </TableCell>
                 <TableCell className="text-right font-bold">
                   {dept.currentBalance.toLocaleString()}원
@@ -228,7 +266,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
               </TableRow>
               <TableRow className="bg-gray-50">
                 <TableCell className="font-bold">
-                  예상 계좌 현황 (입금 대기 + 입금 완료 - 환불 처리 중 - 환불 완료)
+                  예상 계좌 현황 (입금 대기 + 입금 완료 + 취소 완료 - 환불 처리 중 - 환불 완료)
                 </TableCell>
                 <TableCell className="text-right font-bold">
                   {dept.expectedFutureBalance.toLocaleString()}원
@@ -301,7 +339,17 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
                       />
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {dept.actualIncome.toLocaleString()}원
+                      {dept.paidIncome.toLocaleString()}원
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="flex items-center">
+                      <StatusBadge
+                        status={UserRetreatShuttleBusPaymentStatus.CANCELED}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {dept.canceledIncome.toLocaleString()}원
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -328,7 +376,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
                   </TableRow>
                   <TableRow className="bg-gray-50">
                     <TableCell className="font-bold">
-                      현재 계좌 금액 (입금 완료 - 환불 완료)
+                      현재 계좌 금액 (입금 완료 + 취소 완료 - 환불 완료)
                     </TableCell>
                     <TableCell className="text-right font-bold">
                       {dept.currentBalance.toLocaleString()}원
@@ -336,8 +384,8 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
                   </TableRow>
                   <TableRow className="bg-gray-50">
                     <TableCell className="font-bold">
-                      목표 계좌 금액 (입금 대기 + 입금 완료 - 환불 처리 중 -
-                      환불 완료)
+                      목표 계좌 금액 (입금 대기 + 입금 완료 + 취소 완료 -
+                      환불 처리 중 - 환불 완료)
                     </TableCell>
                     <TableCell className="text-right font-bold">
                       {dept.expectedFutureBalance.toLocaleString()}원

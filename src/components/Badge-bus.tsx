@@ -6,6 +6,7 @@ import {
   RotateCcw,
   RefreshCcw,
   UserPlus,
+  XCircle,
 } from "lucide-react";
 
 import {
@@ -36,6 +37,13 @@ export const StatusBadge = ({
           <span className="text-xs font-medium text-green-700">
             입금 확인 완료
           </span>
+        </div>
+      );
+    case UserRetreatShuttleBusPaymentStatus.CANCELED:
+      return (
+        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
+          <XCircle className="h-3.5 w-3.5 text-gray-500 mr-1.5" />
+          <span className="text-xs font-medium text-gray-700">취소 완료</span>
         </div>
       );
     case UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST:

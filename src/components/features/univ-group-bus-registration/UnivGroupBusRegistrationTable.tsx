@@ -26,7 +26,10 @@ import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
 import { useUnivGroupBusRegistration } from "@/hooks/univ-group-bus-registration/use-univ-group-bus-registration";
 import { UnivGroupBusRegistrationTableToolbar } from "./UnivGroupBusRegistrationTableToolbar";
 import { UnivGroupBusRegistrationDetailContent } from "./UnivGroupBusRegistrationDetailContent";
-import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
+import {
+  DetailSidebar,
+  useDetailSidebar,
+} from "@/components/common/detail-sidebar";
 import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
 import { getPaymentStatusLabel } from "@/lib/constant/labels";
 import { useIsMobile } from "@/hooks/use-media-query";
@@ -73,6 +76,8 @@ export function UnivGroupBusRegistrationTable({
     updateRegistrationInfo,
     saveOrUpdateAdminMemo,
     deleteAdminMemo,
+    saveOrUpdateBusStaffMemo,
+    deleteBusStaffMemo,
     isMutating,
   } = useUnivGroupBusRegistration(retreatSlug, {
     initialData,
@@ -101,7 +106,8 @@ export function UnivGroupBusRegistrationTable({
         if (initialData.length > 0 && retreatInfo.univGroupAndGrade) {
           const univGroupNumber = initialData[0].univGroupNumber;
           const univGroup = retreatInfo.univGroupAndGrade.find(
-            (group: { univGroupNumber: number }) => group.univGroupNumber === univGroupNumber
+            (group: { univGroupNumber: number }) =>
+              group.univGroupNumber === univGroupNumber
           );
           if (univGroup) {
             setGrades(univGroup.grades);
@@ -152,10 +158,10 @@ export function UnivGroupBusRegistrationTable({
             title="성별"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => (value === "MALE" ? "남" : "여")}
+            formatFilterValue={value => (value === "MALE" ? "남" : "여")}
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="flex justify-center">
             <GenderBadge gender={info.getValue()} />
           </div>
@@ -163,7 +169,8 @@ export function UnivGroupBusRegistrationTable({
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.includes(row.getValue(id));
         },
       }),
@@ -176,14 +183,17 @@ export function UnivGroupBusRegistrationTable({
             title="학년"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => `${value}학년`}
+            formatFilterValue={value => `${value}학년`}
           />
         ),
-        cell: (info) => <div className="text-center">{`${info.getValue()}학년`}</div>,
+        cell: info => (
+          <div className="text-center">{`${info.getValue()}학년`}</div>
+        ),
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           const gradeNumber = row.getValue(id) as number;
           return value.includes(gradeNumber);
         },
@@ -199,11 +209,12 @@ export function UnivGroupBusRegistrationTable({
             enableFiltering
           />
         ),
-        cell: (info) => <div className="text-center">{info.getValue()}</div>,
+        cell: info => <div className="text-center">{info.getValue()}</div>,
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.includes(row.getValue(id));
         },
       }),
@@ -218,11 +229,14 @@ export function UnivGroupBusRegistrationTable({
             enableFiltering
           />
         ),
-        cell: (info) => <div className="text-center">{info.getValue() || "-"}</div>,
+        cell: info => (
+          <div className="text-center">{info.getValue() || "-"}</div>
+        ),
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.includes(row.getValue(id));
         },
       }),
@@ -240,7 +254,10 @@ export function UnivGroupBusRegistrationTable({
           const sortBusByTime = (a: number, b: number) => {
             const indexA = scheduleColumnsWithColor.findIndex(s => s.id === a);
             const indexB = scheduleColumnsWithColor.findIndex(s => s.id === b);
-            return (indexA === -1 ? Infinity : indexA) - (indexB === -1 ? Infinity : indexB);
+            return (
+              (indexA === -1 ? Infinity : indexA) -
+              (indexB === -1 ? Infinity : indexB)
+            );
           };
 
           return (
@@ -255,20 +272,24 @@ export function UnivGroupBusRegistrationTable({
             />
           );
         },
-        cell: (info) => {
+        cell: info => {
           const selectedIds = info.getValue() || [];
-          const selectedSchedules = scheduleColumnsWithColor.filter((s) =>
+          const selectedSchedules = scheduleColumnsWithColor.filter(s =>
             selectedIds.includes(s.id)
           );
 
           if (selectedSchedules.length === 0) {
-            return <div className="text-center"><span className="text-sm text-muted-foreground">-</span></div>;
+            return (
+              <div className="text-center">
+                <span className="text-sm text-muted-foreground">-</span>
+              </div>
+            );
           }
 
           return (
             <div className="flex justify-center py-1">
               <div className="grid grid-cols-2 gap-1">
-                {selectedSchedules.map((schedule) => (
+                {selectedSchedules.map(schedule => (
                   <Badge
                     key={schedule.id}
                     variant="outline"
@@ -306,14 +327,20 @@ export function UnivGroupBusRegistrationTable({
             const idB = idsB[i];
 
             // 한쪽이 버스가 없으면 (배열 길이가 다른 경우)
-            if (idA === undefined) return 1;  // A가 없으면 B가 앞
+            if (idA === undefined) return 1; // A가 없으면 B가 앞
             if (idB === undefined) return -1; // B가 없으면 A가 앞
 
             // schedules에서 각 ID의 인덱스를 찾아 시간 순서 비교
-            const indexA = scheduleColumnsWithColor.findIndex(s => s.id === idA);
-            const indexB = scheduleColumnsWithColor.findIndex(s => s.id === idB);
+            const indexA = scheduleColumnsWithColor.findIndex(
+              s => s.id === idA
+            );
+            const indexB = scheduleColumnsWithColor.findIndex(
+              s => s.id === idB
+            );
 
-            const diff = (indexA === -1 ? Infinity : indexA) - (indexB === -1 ? Infinity : indexB);
+            const diff =
+              (indexA === -1 ? Infinity : indexA) -
+              (indexB === -1 ? Infinity : indexB);
 
             // 다르면 그 결과 반환, 같으면 다음 버스 비교
             if (diff !== 0) {
@@ -324,7 +351,8 @@ export function UnivGroupBusRegistrationTable({
           return 0; // 모든 버스가 같으면 동일
         },
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           const userScheduleIds = row.getValue(id) as number[];
           if (!userScheduleIds || userScheduleIds.length === 0) return false;
           // 선택된 필터 값 중 하나라도 사용자의 스케줄에 포함되어 있으면 true
@@ -346,7 +374,7 @@ export function UnivGroupBusRegistrationTable({
             formatFilterValue={getPaymentStatusLabel}
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="flex justify-center">
             <StatusBadge status={info.getValue()} />
           </div>
@@ -354,17 +382,18 @@ export function UnivGroupBusRegistrationTable({
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.includes(row.getValue(id));
         },
       }),
       columnHelper.display({
         id: "detail",
         header: () => <div className="text-center">상세보기</div>,
-        cell: (props) => (
+        cell: props => (
           <div
             className="flex justify-center"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <Button
               size="sm"
@@ -409,9 +438,10 @@ export function UnivGroupBusRegistrationTable({
         `${row.original.univGroupNumber}부`,
         `${row.original.gradeNumber}학년`,
         row.original.userPhoneNumber,
+        row.original.adminMemo,
       ];
 
-      return searchableFields.some((field) =>
+      return searchableFields.some(field =>
         field?.toLowerCase().includes(filterValue.toLowerCase())
       );
     },
@@ -419,7 +449,8 @@ export function UnivGroupBusRegistrationTable({
 
   // ✅ 사이드바에 표시할 최신 데이터 (SWR 캐시와 동기화)
   const currentSidebarData = sidebar.selectedItem
-    ? registrations.find((item) => item.id === sidebar.selectedItem?.id) ?? sidebar.selectedItem
+    ? (registrations.find(item => item.id === sidebar.selectedItem?.id) ??
+      sidebar.selectedItem)
     : null;
 
   return (
@@ -452,9 +483,7 @@ export function UnivGroupBusRegistrationTable({
           overscan={10}
           className="max-h-[80vh]"
           emptyMessage={
-            globalFilter
-              ? "검색 결과가 없습니다."
-              : "표시할 데이터가 없습니다."
+            globalFilter ? "검색 결과가 없습니다." : "표시할 데이터가 없습니다."
           }
         />
       </div>
@@ -465,11 +494,13 @@ export function UnivGroupBusRegistrationTable({
         onOpenChange={sidebar.setIsOpen}
         data={currentSidebarData}
         title="신청자 상세 정보"
-        description={(data) => `${data.name} (${data.univGroupNumber}부) 버스 신청 내역`}
+        description={data =>
+          `${data.name} (${data.univGroupNumber}부) 버스 신청 내역`
+        }
         side={isMobile ? "bottom" : "right"}
         preventDismissWhenAlertDialogOpen
       >
-        {(data) => (
+        {data => (
           <UnivGroupBusRegistrationDetailContent
             data={data}
             schedules={schedules}
@@ -478,7 +509,7 @@ export function UnivGroupBusRegistrationTable({
             onSaveMemo={saveMemo}
             onUpdateMemo={updateMemo}
             onDeleteMemo={deleteMemo}
-            onDeleteRegistration={async (id) => {
+            onDeleteRegistration={async id => {
               const deleteSucceeded = await deleteRegistration(id);
               if (deleteSucceeded) {
                 sidebar.close();
@@ -491,6 +522,8 @@ export function UnivGroupBusRegistrationTable({
             }}
             onSaveOrUpdateAdminMemo={saveOrUpdateAdminMemo}
             onDeleteAdminMemo={deleteAdminMemo}
+            onSaveOrUpdateBusStaffMemo={saveOrUpdateBusStaffMemo}
+            onDeleteBusStaffMemo={deleteBusStaffMemo}
             isMutating={isMutating}
           />
         )}

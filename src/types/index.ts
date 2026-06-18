@@ -1,11 +1,11 @@
 // #region Common Types
 export type JSONValue =
-    | string
-    | number
-    | boolean
-    | null
-    | { [x: string]: JSONValue }
-    | Array<JSONValue>;
+  | string
+  | number
+  | boolean
+  | null
+  | { [x: string]: JSONValue }
+  | Array<JSONValue>;
 
 // #endregion
 
@@ -242,7 +242,7 @@ export type TUserRetreatShuttleBusRegistrationSchedule = {
 export type TRetreatGBS = {
   id: number;
   retreatId: number;
-  number: number| null;
+  number: number | null;
   memo?: string | null;
   location?: string;
   leaderUserIds: number[];
@@ -319,20 +319,20 @@ export type UserInfo = {
 
 export enum Gender {
   MALE = "MALE",
-  FEMALE = "FEMALE"
+  FEMALE = "FEMALE",
 }
 
 export enum UserRetreatRegistrationType {
   NEW_COMER = "NEW_COMER",
   STAFF = "STAFF",
-  SOLDIER = "SOLDIER"
+  SOLDIER = "SOLDIER",
 }
 
 export enum RetreatRegistrationScheduleType {
   BREAKFAST = "BREAKFAST",
   LUNCH = "LUNCH",
   DINNER = "DINNER",
-  SLEEP = "SLEEP"
+  SLEEP = "SLEEP",
 }
 
 export enum UserRetreatRegistrationPaymentStatus {
@@ -344,14 +344,14 @@ export enum UserRetreatRegistrationPaymentStatus {
   CANCELED = "CANCELED", // 취소 완료
   REFUND_REQUEST = "REFUND_REQUEST", // 환불 요청
   REFUND_ONGOING = "REFUND_ONGOING", // 환불 처리 중
-  REFUNDED = "REFUNDED" // 환불 완료
+  REFUNDED = "REFUNDED", // 환불 완료
 }
 
 export enum UserRetreatRegistrationMemoType {
   UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사
   ACCOUNT_STAFF = "ACCOUNT_STAFF", // 재정 간사
   LINEUP_STAFF = "LINEUP_STAFF", // 라인업 간사
-  DORMITORY_STAFF = "DORMITORY_STAFF" // 인원관리 간사
+  DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
 }
 
 export enum UserRetreatRegistrationHistoryMemoType {
@@ -359,7 +359,7 @@ export enum UserRetreatRegistrationHistoryMemoType {
   DORMITORY_TEAM_MEMBER = "DORMITORY_TEAM_MEMBER", // 인원관리 팀원
   ACCOUNT_STAFF = "ACCOUNT_STAFF", // 재정 간사
   LINEUP_STAFF = "LINEUP_STAFF", // 라인업 간사
-  DORMITORY_STAFF = "DORMITORY_STAFF" // 인원관리 간사
+  DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
 }
 
 // @deprecated RetreatAdminUserRole을 사용하세요
@@ -374,7 +374,7 @@ export enum UserRole {
   SHUTTLE_BUS_ACCOUNT_MEMBER = "SHUTTLE_BUS_ACCOUNT_MEMBER", // 총무 팀원
   SHUTTLE_BUS_ACCOUNT_STAFF = "SHUTTLE_BUS_ACCOUNT_STAFF", // 버스 간사
   UNIV_GROUP_MINISTER = "UNIV_GROUP_MINISTER", // 부서별 교역자
-  ADMIN_MINISTER = "ADMIN_MINISTER" // 행정 총괄 교역자
+  ADMIN_MINISTER = "ADMIN_MINISTER", // 행정 총괄 교역자
 }
 
 export enum RetreatAdminUserRole {
@@ -389,34 +389,36 @@ export enum RetreatAdminUserRole {
   SHUTTLE_BUS_ACCOUNT_STAFF = "SHUTTLE_BUS_ACCOUNT_STAFF", // 버스 간사
   SHUTTLE_BUS_ADMIN_STAFF = "SHUTTLE_BUS_ADMIN_STAFF", // 버스 총괄 간사
   UNIV_GROUP_MINISTER = "UNIV_GROUP_MINISTER", // 부서별 교역자
-  ADMIN_MINISTER = "ADMIN_MINISTER" // 행정 총괄 교역자
+  ADMIN_MINISTER = "ADMIN_MINISTER", // 행정 총괄 교역자
 }
 
 export enum RetreatShuttleBusDirection {
   FROM_CHURCH_TO_RETREAT = "FROM_CHURCH_TO_RETREAT",
-  FROM_RETREAT_TO_CHURCH = "FROM_RETREAT_TO_CHURCH"
+  FROM_RETREAT_TO_CHURCH = "FROM_RETREAT_TO_CHURCH",
 }
 
 export enum UserRetreatShuttleBusRegistrationMemoType {
   UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사
+  SHUTTLE_BUS_ACCOUNT_STAFF = "SHUTTLE_BUS_ACCOUNT_STAFF", // 버스 간사
   ACCOUNT_STAFF = "ACCOUNT_STAFF", // 재정 간사
   LINEUP_STAFF = "LINEUP_STAFF", // 라인업 간사
   DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
   SHUTTLE_BUS_ACCOUNT_MEMBER = "SHUTTLE_BUS_ACCOUNT_MEMBER", // 총무 팀원
-  SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF" // 부분참 선탑 간사
+  SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF", // 부분참 선탑 간사
 }
 
 export enum UserRetreatShuttleBusPaymentStatus {
   PENDING = "PENDING", // 입금 확인 대기
   PAID = "PAID", // 입금 확인 완료
+  CANCELED = "CANCELED", // 취소 완료
   REFUND_REQUEST = "REFUND_REQUEST", // 환불 요청
-  REFUNDED = "REFUNDED" // 환불 완료
+  REFUNDED = "REFUNDED", // 환불 완료
 }
 
 // TODO: 셔틀 버스 명단에 없는데 탑승한 경우 메모만 생성 (SHUTTLE_BUS_STAFF에 대해)
 export enum UserRetreatShuttleBusRegistrationHistoryMemoType {
   UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사
-  SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF" // 부분참 선탑 간사
+  SHUTTLE_BUS_BOARDING_STAFF = "SHUTTLE_BUS_BOARDING_STAFF", // 부분참 선탑 간사
 }
 
 // Sidebar related types

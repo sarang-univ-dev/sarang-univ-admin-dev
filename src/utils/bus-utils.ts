@@ -53,6 +53,7 @@ export function generateDepartmentStats(registrations: any[]) {
     cells: {
       waiting: 0,
       confirmed: 0,
+      canceled: 0,
       refund_requested: 0,
       refund_completed: 0,
     },
@@ -72,6 +73,9 @@ export function generateDepartmentStats(registrations: any[]) {
       case UserRetreatShuttleBusPaymentStatus.PAID:
         stats[deptIndex].cells.confirmed++;
         break;
+      case UserRetreatShuttleBusPaymentStatus.CANCELED:
+        stats[deptIndex].cells.canceled++;
+        break;
       case UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST:
         stats[deptIndex].cells.refund_requested++;
         break;
@@ -88,6 +92,7 @@ export function generateDepartmentStats(registrations: any[]) {
     cells: {
       waiting: stats.reduce((sum, dept) => sum + dept.cells.waiting, 0),
       confirmed: stats.reduce((sum, dept) => sum + dept.cells.confirmed, 0),
+      canceled: stats.reduce((sum, dept) => sum + dept.cells.canceled, 0),
       refund_requested: stats.reduce(
         (sum, dept) => sum + dept.cells.refund_requested,
         0
@@ -114,9 +119,26 @@ export function calculateAccountStatus(
   const expectedIncome = deptRegistrations
     .filter(
       reg =>
-        reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.PAID
+        reg.shuttleBusPaymentStatus ===
+          UserRetreatShuttleBusPaymentStatus.PAID ||
+        reg.shuttleBusPaymentStatus ===
+          UserRetreatShuttleBusPaymentStatus.CANCELED ||
+        reg.shuttleBusPaymentStatus ===
+          UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST ||
+        reg.shuttleBusPaymentStatus ===
+          UserRetreatShuttleBusPaymentStatus.REFUNDED
     )
-    .reduce((sum, reg) => sum + reg.price, 0);
+    .reduce((sum, reg) => {
+      if (
+        reg.shuttleBusPaymentStatus ===
+          UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST ||
+        reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.REFUNDED
+      ) {
+        return sum + (reg.refundAmount || reg.price || 0);
+      }
+
+      return sum + (reg.price || 0);
+    }, 0);
 
   // 예상 출금 금액 (환불 완료된 금액)
   const expectedExpense = deptRegistrations
@@ -125,7 +147,7 @@ export function calculateAccountStatus(
         reg.shuttleBusPaymentStatus ===
         UserRetreatShuttleBusPaymentStatus.REFUNDED
     )
-    .reduce((sum, reg) => sum + reg.price, 0);
+    .reduce((sum, reg) => sum + (reg.refundAmount || reg.price || 0), 0);
 
   // 예상 잔액
   const expectedBalance = expectedIncome - expectedExpense;

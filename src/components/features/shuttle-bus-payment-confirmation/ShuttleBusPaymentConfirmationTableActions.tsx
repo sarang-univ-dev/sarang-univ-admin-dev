@@ -284,14 +284,12 @@ export function ShuttleBusPaymentConfirmationTableActions({
     });
   };
 
-  // 환불 처리 완료
-  const handleCompleteRefund = async () => {
+  const performCompleteRefund = async () => {
     setLoading("refund", true);
     try {
-      // TODO: API가 구현되면 활성화
-      // await webAxios.post(
-      //   `/api/v1/retreat/${retreatSlug}/shuttle-bus/${registration.id}/refund-complete`
-      // );
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/shuttle-bus/${registration.id}/refund-complete`
+      );
 
       await mutate(registrationsEndpoint);
 
@@ -314,6 +312,15 @@ export function ShuttleBusPaymentConfirmationTableActions({
     } finally {
       setLoading("refund", false);
     }
+  };
+
+  // 환불 처리 완료
+  const handleCompleteRefund = () => {
+    void confirmDialog.open({
+      title: "환불 처리",
+      description: `${registration.univGroupNumber}부 ${registration.gradeNumber}학년 ${registration.name}의 환불 처리를 완료할까요?`,
+      onConfirm: performCompleteRefund,
+    });
   };
 
   // 상태에 따른 액션 버튼 렌더링
