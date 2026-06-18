@@ -34,7 +34,6 @@ export interface IUserRetreatGBSLineup {
   userRetreatRegistrationScheduleIds: number[];
   createdAt: string;
   unresolvedLineupHistoryMemo?: string | null;
-  adminMemo?: string | null;
 }
 
 const fetcher = async (url: string) => {

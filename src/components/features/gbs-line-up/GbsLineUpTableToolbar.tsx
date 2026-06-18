@@ -287,7 +287,6 @@ export function GbsLineUpTableToolbar({
       gbsAssign: "GBS 배정하기",
       gbsMemo: "GBS 메모",
       scheduleMemo: "일정변동 요청",
-      adminMemo: "행정간사 메모",
       detailInfo: "상세",
     };
 

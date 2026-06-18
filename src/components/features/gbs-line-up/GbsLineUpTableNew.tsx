@@ -163,7 +163,6 @@ export const GbsLineUpTable = React.memo(function GbsLineUpTable({
         lineupMemoId: registration.lineupMemoId?.toString(),
         lineupMemocolor: registration.lineupMemocolor ?? undefined,
         unresolvedLineupHistoryMemo: registration.unresolvedLineupHistoryMemo ?? undefined,
-        adminMemo: registration.adminMemo ?? undefined,
       } satisfies GBSLineupRow;
     });
 
