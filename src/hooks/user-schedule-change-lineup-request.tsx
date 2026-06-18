@@ -1,26 +1,48 @@
 import useSWR from "swr";
 
 import { webAxios } from "@/lib/api/axios";
-import { UserRetreatRegistrationType, Gender } from "@/types";
+import {
+  UserRetreatRegistrationType,
+  Gender,
+  UserRetreatRegistrationScheduleHistoryMemoType,
+} from "@/types";
+
+export type ScheduleHistoryRoleMemo = {
+  id: number;
+  memoType: UserRetreatRegistrationScheduleHistoryMemoType;
+  memo: string;
+  createdAdminUserName?: string | null;
+  updatedAdminUserName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export interface IUserScheduleChangeLineup {
-  id: number;
   userType: UserRetreatRegistrationType | null;
   createdAt: string;
   userName: string;
+  phoneNumber: string;
   gender: Gender;
-  userRetreatRegistrationScheduleIds: number[];
-  memo: string;
-  issuerName: string;
-  memoCreatedAt: string;
   userRetreatRegistrationId: number;
-  userRetreatRegistrationHistoryMemoId: number;
+  userRetreatRegistrationScheduleHistoryId: number;
+  beforeUserRetreatRegistrationScheduleIds: number[];
+  afterUserRetreatRegistrationScheduleIds: number[];
+  beforePrice: number;
+  afterPrice: number;
+  createdUserName: string;
+  historyCreatedAt: string;
+  resolvedUserName?: string | null;
+  resolvedAt?: string | null;
   univGroupNumber: number;
   gradeNumber: number;
   currentLeaderName: string;
   gbsNumber?: number;
   gbsLeaderNames?: string[];
-  lineupReviewerName?: string;
+  lineupReviewerName?: string | null;
+  lineupReviewedAt?: string | null;
+  scheduleHistoryMemos?: Partial<
+    Record<UserRetreatRegistrationScheduleHistoryMemoType, ScheduleHistoryRoleMemo>
+  >;
 }
 
 const fetcher = async (url: string) => {

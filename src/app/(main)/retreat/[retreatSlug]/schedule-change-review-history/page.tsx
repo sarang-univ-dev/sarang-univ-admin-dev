@@ -3,12 +3,12 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { RetreatScheduleChangeHistoryTable } from "@/components/DormStaffRetreatScheduleChangeHistoryTable";
-import { useUserScheduleChangeDormitory } from "@/hooks/user-schedule-change-dormitory-request";
+import { RetreatScheduleChangeHistoryTable } from "@/components/LineupStaffRetreatScheduleChangeHistoryTable";
+import { useUserScheduleChangeLineup } from "@/hooks/user-schedule-change-lineup-request";
 import { webAxios } from "@/lib/api/axios";
-import { TRetreatRegistrationSchedule, TRetreatUnivGroup } from "@/types";
+import { TRetreatRegistrationSchedule } from "@/types";
 
-export default function ScheduleChangeHistoryForDorm() {
+export default function ScheduleChangeHistoryReviewPage() {
   const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(
     []
   );
@@ -17,7 +17,7 @@ export default function ScheduleChangeHistoryForDorm() {
   const retreatSlug = params.retreatSlug as string;
 
   const { data, isLoading, error, mutate } =
-    useUserScheduleChangeDormitory(retreatSlug);
+    useUserScheduleChangeLineup(retreatSlug);
 
   useEffect(() => {
     const fetchSchedules = async () => {

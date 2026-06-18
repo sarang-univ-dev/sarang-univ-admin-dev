@@ -312,3 +312,251 @@ export async function fetchAccountPaymentConfirmationRegistrations(
   const data = await response.json();
   return data.userRetreatRegistrations;
 }
+
+/**
+ * 리더 일정 변경 요청 조회 (Server Action, DORMITORY 권한)
+ *
+ * @description
+ * 리더가 제출한 일정 변경 요청 목록을 서버에서 가져옵니다.
+ * - 인원관리(DORMITORY) 간사가 승인/거절 처리
+ * - Client Component의 SWR fallbackData로 사용
+ *
+ * @param retreatSlug - 수양회 슬러그
+ * @param status - 요청 상태 필터 (기본값: PENDING)
+ * @returns 리더 일정 변경 요청 배열
+ */
+export async function fetchLeaderScheduleChangeRequests(
+  retreatSlug: string,
+  status: "PENDING" | "APPROVED" | "REJECTED" = "PENDING"
+) {
+  const token = await getServerToken();
+
+  const query = new URLSearchParams({ status });
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/leader/admin/schedule-change-requests?${query.toString()}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch leader schedule change requests: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  return data.requests;
+}
+
+export async function fetchDepartmentLeaderScheduleChangeRequests(
+  retreatSlug: string,
+  status: "PENDING" | "APPROVED" | "REJECTED" = "PENDING"
+) {
+  const token = await getServerToken();
+
+  const query = new URLSearchParams({ status });
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/leader/department-admin/schedule-change-requests?${query.toString()}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch department leader schedule change requests: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  return data.requests;
+}
+
+/**
+ * 리더 리포트(은혜나눔/기도제목) 조회 (Server Action, EDUCATION_STAFF 권한)
+ *
+ * @param retreatSlug - 수양회 슬러그
+ * @param date - 조회 일자 (YYYY-MM-DD, optional)
+ * @returns 리더 리포트 배열
+ */
+export async function fetchLeaderReports(retreatSlug: string, date?: string) {
+  const token = await getServerToken();
+
+  const query = date ? `?date=${date}` : "";
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/leader/department-admin/reports${query}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch leader reports: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  return data.reports;
+}
+
+/**
+ * 리더 리포트 제출 현황 조회 (Server Action, EDUCATION_STAFF 권한)
+ *
+ * @param retreatSlug - 수양회 슬러그
+ * @param date - 조회 일자 (YYYY-MM-DD, optional, 기본값은 서버의 "오늘")
+ * @returns { submissionStatus, date }
+ */
+export async function fetchLeaderReportSubmissionStatus(
+  retreatSlug: string,
+  date?: string
+) {
+  const token = await getServerToken();
+
+  const query = date ? `?date=${date}` : "";
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/leader/admin/report-submission-status${query}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch leader report submission status: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+export async function fetchDepartmentLeaderReportSubmissionStatus(
+  retreatSlug: string,
+  date?: string
+) {
+  const token = await getServerToken();
+
+  const query = date ? `?date=${date}` : "";
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/leader/department-admin/report-submission-status${query}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch department leader report submission status: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+/**
+ * 리더 출석 현황 조회 (Server Action, EDUCATION_STAFF 권한)
+ *
+ * @param retreatSlug - 수양회 슬러그
+ * @param date - 조회 일자 (YYYY-MM-DD, optional, 기본값은 서버의 "오늘")
+ * @returns { attendance, date }
+ */
+export async function fetchLeaderAttendance(
+  retreatSlug: string,
+  date?: string
+) {
+  const token = await getServerToken();
+
+  const query = date ? `?date=${date}` : "";
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/leader/admin/attendance${query}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch leader attendance: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+export async function fetchDepartmentLeaderAttendance(
+  retreatSlug: string,
+  date?: string
+) {
+  const token = await getServerToken();
+
+  const query = date ? `?date=${date}` : "";
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/leader/department-admin/attendance${query}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch department leader attendance: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+/**
+ * 리더 리포트 - 오늘(일자) 정보 조회 (Server Action, EDUCATION_STAFF 권한)
+ *
+ * @param retreatSlug - 수양회 슬러그
+ * @returns { today, days, lastDay, isLastDay }
+ */
+export async function fetchLeaderToday(retreatSlug: string) {
+  const token = await getServerToken();
+
+  const url = `${API_BASE_URL}/api/v1/retreat/${retreatSlug}/leader/admin/today`;
+
+  const response = await fetch(url, {
+    headers: {
+      Cookie: `accessToken=${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch leader today info: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  return data;
+}

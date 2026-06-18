@@ -22,6 +22,9 @@ import {
   GraduationCap,
   UserCog,
   Eye,
+  BookOpen,
+  ClipboardList,
+  CheckSquare,
   type LucideIcon,
 } from "lucide-react";
 
@@ -53,6 +56,9 @@ export const iconMap: Record<string, LucideIcon> = {
   GraduationCap,
   UserCog,
   Eye,
+  BookOpen,
+  ClipboardList,
+  CheckSquare,
   BusIcon: Bus, // BusIcon은 Bus와 동일하게 처리
 };
 

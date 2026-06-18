@@ -1,12 +1,24 @@
 "use client";
 
-import { TRetreatRegistrationSchedule } from "@/types";
-import { useToastStore } from "@/store/toast-store";
 import { AxiosError } from "axios";
-import { Search, CheckCircle2 } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
-import { GenderBadge } from "@/components/Badge";
+import {
+  Calendar,
+  CheckCircle2,
+  CreditCard,
+  FileText,
+  Search,
+  UserCircle,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { GenderBadge } from "@/components/Badge";
+import {
+  DetailSidebar,
+  InfoItem,
+  InfoSection,
+} from "@/components/common/detail-sidebar";
+import { RetreatScheduleTable } from "@/components/common/retreat/RetreatScheduleTable";
+import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,67 +37,288 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useConfirm } from "@/hooks/use-confirm";
 import { IUserScheduleChangeLineup } from "@/hooks/user-schedule-change-lineup-request";
 import { webAxios } from "@/lib/api/axios";
-import { useConfirm } from "@/hooks/use-confirm";
+import useUserRole from "@/lib/hooks/swr/useUserRole";
+import { useToastStore } from "@/store/toast-store";
+import {
+  RetreatAdminUserRole,
+  TRetreatRegistrationSchedule,
+  UserRetreatRegistrationScheduleHistoryMemoType,
+} from "@/types";
 import { formatDate } from "@/utils/formatDate";
 
 import { generateScheduleColumns } from "../utils/retreat-utils";
 
-const transformScheduleChangeRequestsForTable = (
-  requests: IUserScheduleChangeLineup[],
+type ScheduleChangeHistoryRow = {
+  id: string;
+  historyId: number;
+  registrationId: number;
+  department: string;
+  gender: IUserScheduleChangeLineup["gender"];
+  grade: string;
+  name: string;
+  phone: string;
+  currentLeader: string;
+  gbsNumber?: number;
+  gbsLeaderNames?: string[];
+  schedule: Record<string, boolean>;
+  price: number;
+  userName?: string | null;
+  timestamp?: string | null;
+  type: "before" | "after";
+  rowIndex: number;
+  lineupReviewerName?: string | null;
+  lineupReviewedAt?: string | null;
+  history: IUserScheduleChangeLineup;
+};
+
+const scheduleHistoryMemoSections = [
+  {
+    label: "행정간사 메모",
+    memoType: UserRetreatRegistrationScheduleHistoryMemoType.UNIV_GROUP_ADMIN_STAFF,
+    role: RetreatAdminUserRole.UNIV_GROUP_ADMIN_STAFF,
+    placeholder: "행정간사 메모를 입력하세요",
+  },
+  {
+    label: "재정간사 메모",
+    memoType: UserRetreatRegistrationScheduleHistoryMemoType.ACCOUNT_STAFF,
+    role: RetreatAdminUserRole.ACCOUNT_STAFF,
+    placeholder: "재정간사 메모를 입력하세요",
+  },
+  {
+    label: "인원관리간사 메모",
+    memoType: UserRetreatRegistrationScheduleHistoryMemoType.DORMITORY_STAFF,
+    role: RetreatAdminUserRole.DORMITORY_STAFF,
+    placeholder: "인원관리간사 메모를 입력하세요",
+  },
+  {
+    label: "라인업간사 메모",
+    memoType: UserRetreatRegistrationScheduleHistoryMemoType.LINEUP_STAFF,
+    role: RetreatAdminUserRole.LINEUP_STAFF,
+    placeholder: "라인업간사 메모를 입력하세요",
+  },
+];
+
+const roleToScheduleHistoryMemoType: Partial<
+  Record<string, UserRetreatRegistrationScheduleHistoryMemoType>
+> = Object.fromEntries(
+  scheduleHistoryMemoSections.map(section => [section.role, section.memoType])
+);
+
+const buildScheduleMap = (
+  scheduleIds: number[],
+  schedules: TRetreatRegistrationSchedule[]
+) =>
+  schedules.reduce(
+    (acc, cur) => {
+      const scheduleId = cur.id;
+      const isIncluded =
+        scheduleIds.includes(scheduleId) ||
+        scheduleIds.includes(scheduleId.toString() as any) ||
+        scheduleIds.includes(parseInt(scheduleId.toString()));
+
+      acc[`schedule_${cur.id}`] = isIncluded;
+      return acc;
+    },
+    {} as Record<string, boolean>
+  );
+
+const transformScheduleChangeHistoriesForTable = (
+  histories: IUserScheduleChangeLineup[],
   schedules: TRetreatRegistrationSchedule[]
 ) => {
-  const transformedData: any[] = [];
+  const transformedData: ScheduleChangeHistoryRow[] = [];
 
-  requests.forEach((request, index) => {
-    // 현재 등록된 일정 처리
-    const currentScheduleIds = Array.isArray(
-      request.userRetreatRegistrationScheduleIds
+  histories.forEach((history, index) => {
+    const beforeScheduleIds = Array.isArray(
+      history.beforeUserRetreatRegistrationScheduleIds
     )
-      ? request.userRetreatRegistrationScheduleIds
+      ? history.beforeUserRetreatRegistrationScheduleIds
+      : [];
+    const afterScheduleIds = Array.isArray(
+      history.afterUserRetreatRegistrationScheduleIds
+    )
+      ? history.afterUserRetreatRegistrationScheduleIds
       : [];
 
-    // 현재 일정 스케줄 맵 생성
-    const currentScheduleMap = schedules.reduce(
-      (acc, cur) => {
-        const scheduleId = cur.id;
-        const isIncluded =
-          currentScheduleIds.includes(scheduleId) ||
-          currentScheduleIds.includes(scheduleId.toString() as any) ||
-          currentScheduleIds.includes(parseInt(scheduleId.toString()));
-        acc[`schedule_${cur.id}`] = isIncluded;
-        return acc;
-      },
-      {} as Record<string, boolean>
-    );
-
-    const row = {
-      id: `${request.userRetreatRegistrationId}_${index}`,
-      registrationId: request.userRetreatRegistrationId,
-      historyMemoId: request.userRetreatRegistrationHistoryMemoId,
-      department: `${request.univGroupNumber}부`,
-      gender: request.gender,
-      grade: `${request.gradeNumber}학년`,
-      name: request.userName,
-      currentLeader: request.currentLeaderName,
-      gbsNumber: request.gbsNumber,
-      gbsLeaderNames: request.gbsLeaderNames,
-      schedule: currentScheduleMap,
-      memo: request.memo,
-      issuerName: request.issuerName,
-      memoCreatedAt: request.memoCreatedAt,
-      userType: request.userType,
-      createdAt: request.createdAt,
-      lineupReviewerName: request.lineupReviewerName,
+    const common = {
+      historyId: history.userRetreatRegistrationScheduleHistoryId,
+      registrationId: history.userRetreatRegistrationId,
+      department: `${history.univGroupNumber}부`,
+      gender: history.gender,
+      grade: `${history.gradeNumber}학년`,
+      name: history.userName,
+      phone: history.phoneNumber,
+      currentLeader: history.currentLeaderName,
+      gbsNumber: history.gbsNumber,
+      gbsLeaderNames: history.gbsLeaderNames,
       rowIndex: index,
+      lineupReviewerName: history.lineupReviewerName,
+      lineupReviewedAt: history.lineupReviewedAt,
+      history,
     };
 
-    transformedData.push(row);
+    transformedData.push(
+      {
+        ...common,
+        id: `${history.userRetreatRegistrationScheduleHistoryId}_before`,
+        schedule: buildScheduleMap(beforeScheduleIds, schedules),
+        price: history.beforePrice,
+        userName: history.createdUserName,
+        timestamp: history.historyCreatedAt,
+        type: "before",
+      },
+      {
+        ...common,
+        id: `${history.userRetreatRegistrationScheduleHistoryId}_after`,
+        schedule: buildScheduleMap(afterScheduleIds, schedules),
+        price: history.afterPrice,
+        userName: history.resolvedUserName,
+        timestamp: history.resolvedAt,
+        type: "after",
+      }
+    );
   });
 
   return transformedData;
 };
+
+function ScheduleHistoryDetailContent({
+  history,
+  schedules,
+  editableMemoTypes,
+  onCreateMemo,
+  onUpdateMemo,
+  onDeleteMemo,
+}: {
+  history: IUserScheduleChangeLineup;
+  schedules: TRetreatRegistrationSchedule[];
+  editableMemoTypes: Set<UserRetreatRegistrationScheduleHistoryMemoType>;
+  onCreateMemo: (
+    historyId: number,
+    memoType: UserRetreatRegistrationScheduleHistoryMemoType,
+    memo: string
+  ) => Promise<void>;
+  onUpdateMemo: (memoId: number, memo: string) => Promise<void>;
+  onDeleteMemo: (memoId: number) => Promise<void>;
+}) {
+  return (
+    <>
+      <InfoSection title="기본 정보" icon={UserCircle} columns={2}>
+        <InfoItem label="이름" value={history.userName} />
+        <InfoItem label="부서" value={`${history.univGroupNumber}부`} />
+        <InfoItem label="학년" value={`${history.gradeNumber}학년`} />
+        <InfoItem label="성별" value={<GenderBadge gender={history.gender} />} />
+        <InfoItem label="전화번호" value={history.phoneNumber || "-"} />
+        <InfoItem label="현재 리더" value={history.currentLeaderName || "-"} />
+        <InfoItem label="GBS" value={history.gbsNumber ?? "-"} />
+      </InfoSection>
+
+      <InfoSection title="변경 정보" icon={CreditCard}>
+        <InfoItem
+          label="변경 전 금액"
+          value={`${history.beforePrice?.toLocaleString()}원`}
+        />
+        <InfoItem
+          label="변경 후 금액"
+          value={`${history.afterPrice?.toLocaleString()}원`}
+        />
+        <InfoItem label="처리자" value={history.resolvedUserName || "-"} />
+        <InfoItem
+          label="처리시각"
+          value={formatDate(history.resolvedAt ?? null) || "-"}
+        />
+        <InfoItem
+          label="라인업 확인"
+          value={
+            history.lineupReviewerName
+              ? `${history.lineupReviewerName} / ${
+                  formatDate(history.lineupReviewedAt ?? null) || "-"
+                }`
+              : "미확인"
+          }
+        />
+      </InfoSection>
+
+      <InfoSection title="변경 전 일정" icon={Calendar}>
+        <RetreatScheduleTable
+          schedules={schedules}
+          selectedScheduleIds={history.beforeUserRetreatRegistrationScheduleIds.map(
+            Number
+          )}
+          readonly
+        />
+      </InfoSection>
+
+      <InfoSection title="변경 후 일정" icon={Calendar}>
+        <RetreatScheduleTable
+          schedules={schedules}
+          selectedScheduleIds={history.afterUserRetreatRegistrationScheduleIds.map(
+            Number
+          )}
+          readonly
+        />
+      </InfoSection>
+
+      <InfoSection title="역할별 메모" icon={FileText}>
+        <div className="space-y-4">
+          {scheduleHistoryMemoSections.map(section => {
+            const memo = history.scheduleHistoryMemos?.[section.memoType];
+            const canEdit = editableMemoTypes.has(section.memoType);
+            const editorRow = {
+              id: `${history.userRetreatRegistrationScheduleHistoryId}-${section.memoType}`,
+            };
+
+            return (
+              <div key={section.memoType} className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-gray-700">
+                    {section.label}
+                  </p>
+                  {!canEdit && (
+                    <span className="text-xs text-gray-400">읽기 전용</span>
+                  )}
+                </div>
+
+                {canEdit ? (
+                  <MemoEditor
+                    row={editorRow}
+                    memoValue={memo?.memo}
+                    onSave={async (_, nextMemo) => {
+                      await onCreateMemo(
+                        history.userRetreatRegistrationScheduleHistoryId,
+                        section.memoType,
+                        nextMemo
+                      );
+                    }}
+                    onUpdate={async (_, nextMemo) => {
+                      if (memo?.id) {
+                        await onUpdateMemo(memo.id, nextMemo);
+                      }
+                    }}
+                    onDelete={async () => {
+                      if (memo?.id) {
+                        await onDeleteMemo(memo.id);
+                      }
+                    }}
+                    hasExistingMemo={() => Boolean(memo?.id)}
+                    placeholder={section.placeholder}
+                  />
+                ) : (
+                  <div className="rounded-md border bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap break-words min-h-[44px]">
+                    {memo?.memo || "메모가 없습니다."}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </InfoSection>
+    </>
+  );
+}
 
 export function RetreatScheduleChangeHistoryTable({
   scheduleChangeHistories = [],
@@ -99,36 +332,53 @@ export function RetreatScheduleChangeHistoryTable({
   mutate?: () => Promise<any>;
 }) {
   const addToast = useToastStore(state => state.add);
-  const [allData, setAllData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [allData, setAllData] = useState<ScheduleChangeHistoryRow[]>([]);
+  const [filteredData, setFilteredData] = useState<ScheduleChangeHistoryRow[]>(
+    []
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {}
   );
+  const tableContainerRef = useRef<HTMLDivElement>(null);
   const confirmDialog = useConfirm();
+  const { userRole } = useUserRole(retreatSlug);
+  const [selectedHistory, setSelectedHistory] =
+    useState<IUserScheduleChangeLineup | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // 로딩 상태 설정 함수
-  const setLoading = (id: string, action: string, isLoading: boolean) => {
-    setLoadingStates(prev => ({
-      ...prev,
-      [`${id}_${action}`]: isLoading,
-    }));
-  };
+  const scheduleColumns = useMemo(
+    () => generateScheduleColumns(schedules),
+    [schedules]
+  );
 
-  // 로딩 상태 확인 함수
-  const isLoading = (id: string, action: string) => {
-    return !!loadingStates[`${id}_${action}`];
-  };
+  const editableMemoTypes = useMemo(() => {
+    return new Set(
+      (userRole ?? [])
+        .map(role => roleToScheduleHistoryMemoType[role.role])
+        .filter(
+          (
+            memoType
+          ): memoType is UserRetreatRegistrationScheduleHistoryMemoType =>
+            Boolean(memoType)
+        )
+    );
+  }, [userRole]);
+  const canResolveLineupReview = useMemo(
+    () =>
+      userRole?.some(role => role.role === RetreatAdminUserRole.LINEUP_STAFF),
+    [userRole]
+  );
 
   useEffect(() => {
     if (scheduleChangeHistories.length > 0 && schedules.length > 0) {
       try {
-        const transformedData = transformScheduleChangeRequestsForTable(
-          scheduleChangeHistories,
-          schedules
+        setAllData(
+          transformScheduleChangeHistoriesForTable(
+            scheduleChangeHistories,
+            schedules
+          )
         );
-        setAllData(transformedData);
       } catch (error) {
         console.error("데이터 변환 중 오류 발생:", error);
         addToast({
@@ -148,65 +398,285 @@ export function RetreatScheduleChangeHistoryTable({
   }, [scheduleChangeHistories, schedules, addToast]);
 
   useEffect(() => {
-    let dataToFilter = [...allData];
+    if (!searchTerm) {
+      setFilteredData(allData);
+      return;
+    }
 
-    if (searchTerm) {
-      dataToFilter = dataToFilter.filter(row =>
-        [
-          row.name,
-          row.department,
-          row.grade?.toString(),
-          row.currentLeader?.toString(),
-          row.gbsNumber?.toString(),
-          row.memo?.toString(),
-          row.issuerName?.toString(),
-        ].some(field => field?.toLowerCase().includes(searchTerm.toLowerCase()))
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const matchedRowIndexes = new Set(
+      allData
+        .filter(row =>
+          [
+            row.name,
+            row.department,
+            row.grade,
+            row.phone,
+            row.currentLeader,
+            row.gbsNumber?.toString(),
+            row.userName,
+            row.lineupReviewerName,
+          ].some(field => field?.toLowerCase().includes(lowerSearchTerm))
+        )
+        .map(row => row.rowIndex)
+    );
+
+    setFilteredData(allData.filter(row => matchedRowIndexes.has(row.rowIndex)));
+  }, [allData, searchTerm]);
+
+  const setLoading = (id: string, action: string, isLoading: boolean) => {
+    setLoadingStates(prev => ({
+      ...prev,
+      [`${id}_${action}`]: isLoading,
+    }));
+  };
+
+  const isLoading = (id: string, action: string) => {
+    return !!loadingStates[`${id}_${action}`];
+  };
+
+  const refreshHistory = async (historyId: number) => {
+    const nextData = (await mutate?.()) as
+      | IUserScheduleChangeLineup[]
+      | undefined;
+    const nextHistory = nextData?.find(
+      item => item.userRetreatRegistrationScheduleHistoryId === historyId
+    );
+
+    if (nextHistory) {
+      setSelectedHistory(nextHistory);
+    }
+  };
+
+  const performResolveChange = async (historyId: number) => {
+    setLoading(historyId.toString(), "confirm", true);
+
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/line-up/schedule-history/resolve`,
+        {
+          userRetreatRegistrationScheduleHistoryId: historyId,
+        }
+      );
+
+      addToast({
+        title: "성공",
+        description: "일정 변경 이력이 읽음 처리되었습니다.",
+        variant: "success",
+      });
+
+      await refreshHistory(historyId);
+    } catch (error) {
+      console.error("일정 변경 이력 읽음 처리 중 오류 발생:", error);
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "일정 변경 이력 읽음 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(historyId.toString(), "confirm", false);
+    }
+  };
+
+  const handleResolveChange = (historyId: number) => {
+    void confirmDialog.open({
+      title: "일정 변경 이력 읽음 처리",
+      description: "정말로 이 일정 변경 이력을 읽음 처리하시겠습니까?",
+      onConfirm: () => performResolveChange(historyId),
+    });
+  };
+
+  const createScheduleHistoryMemo = async (
+    historyId: number,
+    memoType: UserRetreatRegistrationScheduleHistoryMemoType,
+    memo: string
+  ) => {
+    try {
+      await webAxios.post(
+        `/api/v1/retreat/${retreatSlug}/line-up/schedule-history/${historyId}/memo`,
+        { memoType, memo }
+      );
+      addToast({
+        title: "성공",
+        description: "메모가 저장되었습니다.",
+        variant: "success",
+      });
+      await refreshHistory(historyId);
+    } catch (error) {
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "메모 저장 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const updateScheduleHistoryMemo = async (memoId: number, memo: string) => {
+    const historyId = selectedHistory?.userRetreatRegistrationScheduleHistoryId;
+
+    try {
+      await webAxios.put(
+        `/api/v1/retreat/${retreatSlug}/line-up/schedule-history-memos/${memoId}`,
+        { memo }
+      );
+      addToast({
+        title: "성공",
+        description: "메모가 수정되었습니다.",
+        variant: "success",
+      });
+      if (historyId) {
+        await refreshHistory(historyId);
+      }
+    } catch (error) {
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "메모 수정 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deleteScheduleHistoryMemo = async (memoId: number) => {
+    const historyId = selectedHistory?.userRetreatRegistrationScheduleHistoryId;
+
+    try {
+      await webAxios.delete(
+        `/api/v1/retreat/${retreatSlug}/line-up/schedule-history-memos/${memoId}`
+      );
+      addToast({
+        title: "성공",
+        description: "메모가 삭제되었습니다.",
+        variant: "success",
+      });
+      if (historyId) {
+        await refreshHistory(historyId);
+      }
+    } catch (error) {
+      addToast({
+        title: "오류 발생",
+        description:
+          error instanceof AxiosError
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+              ? error.message
+              : "메모 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const renderLineupReviewCell = (row: ScheduleChangeHistoryRow) => {
+    if (row.lineupReviewerName) {
+      return (
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-sm font-medium text-green-600">
+            {row.lineupReviewerName}
+          </span>
+          <span className="text-xs text-gray-500">
+            {formatDate(row.lineupReviewedAt ?? null)}
+          </span>
+        </div>
       );
     }
 
-    setFilteredData(dataToFilter);
-  }, [allData, searchTerm]);
+    if (!canResolveLineupReview) {
+      return <span className="text-sm text-gray-500">미확인</span>;
+    }
 
-  const scheduleColumns = useMemo(
-    () => generateScheduleColumns(schedules),
-    [schedules]
-  );
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={event => {
+          event.stopPropagation();
+          handleResolveChange(row.historyId);
+        }}
+        disabled={isLoading(row.historyId.toString(), "confirm")}
+        className="inline-flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
+      >
+        {isLoading(row.historyId.toString(), "confirm") ? (
+          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        ) : (
+          <CheckCircle2 className="h-3.5 w-3.5" />
+        )}
+        <span>읽음 처리</span>
+      </Button>
+    );
+  };
 
-  const renderTableRow = (row: any, index: number) => {
+  const renderTableRow = (row: ScheduleChangeHistoryRow) => {
+    const isBeforeRow = row.type === "before";
+
     return (
       <TableRow
         key={row.id}
-        className="group hover:bg-gray-50 transition-colors duration-150"
+        onClick={() => {
+          setSelectedHistory(row.history);
+          setIsDetailOpen(true);
+        }}
+        className="group hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
       >
-        {/* 부서 */}
-        <TableCell className="text-center px-3 py-2.5">
-          {row.department}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.department}
+          </TableCell>
+        )}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            <GenderBadge gender={row.gender} />
+          </TableCell>
+        )}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.grade}
+          </TableCell>
+        )}
+        {isBeforeRow && (
+          <TableCell
+            className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5"
+            rowSpan={2}
+          >
+            {row.name}
+          </TableCell>
+        )}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.phone || "-"}
+          </TableCell>
+        )}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.currentLeader || "-"}
+          </TableCell>
+        )}
+        {isBeforeRow && (
+          <TableCell className="text-center px-3 py-2.5" rowSpan={2}>
+            {row.gbsNumber ?? "-"}
+          </TableCell>
+        )}
+
+        <TableCell className="text-center px-3 py-2.5 font-medium">
+          {isBeforeRow ? "변경 전" : "변경 후"}
         </TableCell>
 
-        {/* 성별 */}
-        <TableCell className="text-center px-3 py-2.5">
-          <GenderBadge gender={row.gender} />
-        </TableCell>
-
-        {/* 학년 */}
-        <TableCell className="text-center px-3 py-2.5">{row.grade}</TableCell>
-
-        {/* 이름 */}
-        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5">
-          {row.name}
-        </TableCell>
-
-        {/* 현재 리더 */}
-        <TableCell className="font-medium text-center px-3 py-2.5">
-          {row.currentLeader || "-"}
-        </TableCell>
-
-        {/* GBS */}
-        <TableCell className="text-center px-3 py-2.5">
-          {row.gbsNumber ? `${row.gbsNumber}` : "-"}
-        </TableCell>
-
-        {/* 일정 */}
         {scheduleColumns.map(col => {
           const isChecked = !!row.schedule?.[col.key];
 
@@ -221,120 +691,33 @@ export function RetreatScheduleChangeHistoryTable({
           );
         })}
 
-        {/* 변경 요청 메모 */}
-        <TableCell className="min-w-[200px] max-w-[400px] text-left px-3 py-2.5">
-          <div className="text-sm text-gray-600 whitespace-pre-wrap break-words p-2 bg-gray-50 rounded min-h-[24px]">
-            {row.memo || "-"}
-          </div>
-        </TableCell>
-
-        {/* 작성자 */}
-        <TableCell className="text-center px-3 py-2.5">
-          {row.issuerName || "-"}
-        </TableCell>
-
-        {/* 작성일시 */}
-        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
-          {formatDate(row.memoCreatedAt) || "-"}
-        </TableCell>
-
-        {/* 라인업 처리자 */}
         <TableCell className="font-medium text-center px-3 py-2.5">
-          {getActionButtons(row)}
+          {row.price?.toLocaleString()}원
         </TableCell>
+        <TableCell className="text-center px-3 py-2.5">
+          {row.userName || "-"}
+        </TableCell>
+        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
+          {formatDate(row.timestamp ?? null) || "-"}
+        </TableCell>
+
+        {isBeforeRow && (
+          <TableCell className="font-medium text-center px-3 py-2.5" rowSpan={2}>
+            {renderLineupReviewCell(row)}
+          </TableCell>
+        )}
       </TableRow>
     );
   };
 
-  // 액션 처리 함수들
-  const performResolveChange = async (historyMemoId: number) => {
-    setLoading(historyMemoId.toString(), "confirm", true);
-    try {
-      const response = await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/line-up/schedule-history/resolve-memo`,
-        {
-          userRetreatRegistrationHistoryMemoId: historyMemoId,
-        }
-      );
-
-      // 성공 토스트 메시지
-      addToast({
-        title: "성공",
-        description: "일정 변경 요청이 읽음 처리되었습니다.",
-        variant: "success",
-      });
-
-      // 데이터 새로고침
-      if (mutate) {
-        await mutate();
-      }
-    } catch (error) {
-      console.error("일정 변경 요청 읽음 처리 중 오류 발생:", error);
-
-      // 실패 토스트 메시지
-      addToast({
-        title: "오류 발생",
-        description:
-          error instanceof AxiosError
-            ? error.response?.data?.message || error.message
-            : error instanceof Error
-              ? error.message
-              : "일정 변경 요청 읽음 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(historyMemoId.toString(), "confirm", false);
-    }
-  };
-
-  const handleResolveChange = (historyMemoId: number) => {
-    void confirmDialog.open({
-      title: "일정 변경 요청 읽음 처리",
-      description: "정말로 이 일정 변경 요청을 읽음 처리하시겠습니까?",
-      onConfirm: () => performResolveChange(historyMemoId),
-    });
-  };
-
-  // 라인업 처리자 정보 렌더링
-  const getActionButtons = (row: any) => {
-    // 라인업 처리자가 있으면 이름 표시, 없으면 읽음 처리 버튼 표시
-    if (row.lineupReviewerName) {
-      return (
-        <div className="text-center px-3 py-2.5">
-          <span className="text-sm font-medium text-green-600">
-            {row.lineupReviewerName}
-          </span>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex flex-col gap-1">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => handleResolveChange(row.historyMemoId)}
-          disabled={isLoading(row.historyMemoId?.toString(), "confirm")}
-          className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
-        >
-          {isLoading(row.historyMemoId?.toString(), "confirm") ? (
-            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          ) : (
-            <CheckCircle2 className="h-3.5 w-3.5" />
-          )}
-          <span>읽음 처리</span>
-        </Button>
-      </div>
-    );
-  };
-
   return (
-    <Card className="shadow-sm">
+    <>
+      <Card className="shadow-sm">
       <CardHeader className="bg-gray-50 border-b px-4 py-3">
         <div>
-          <CardTitle className="text-lg">일정 변경 요청 조회</CardTitle>
+          <CardTitle className="text-lg">일정 변경 이력 조회</CardTitle>
           <CardDescription className="text-sm">
-            처리 대기 중인 일정 변경 요청 목록
+            라인업 확인이 필요한 일정 변경 이력 목록
           </CardDescription>
         </div>
       </CardHeader>
@@ -343,7 +726,7 @@ export function RetreatScheduleChangeHistoryTable({
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="통합 검색 (이름, 부서, 학년, 현재 리더, GBS, 메모, 작성자 등)..."
+              placeholder="통합 검색 (이름, 부서, 학년, 전화번호, 리더, GBS, 처리자 등)..."
               className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -383,7 +766,12 @@ export function RetreatScheduleChangeHistoryTable({
                     </TableHead>
                     <TableHead className="px-3 py-2.5" rowSpan={2}>
                       <div className="flex items-center space-x-1 justify-center">
-                        <span>부서 리더</span>
+                        <span>전화번호</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>현재 리더</span>
                       </div>
                     </TableHead>
                     <TableHead className="px-3 py-2.5" rowSpan={2}>
@@ -391,30 +779,35 @@ export function RetreatScheduleChangeHistoryTable({
                         <span>GBS</span>
                       </div>
                     </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>구분</span>
+                      </div>
+                    </TableHead>
                     <TableHead
                       colSpan={scheduleColumns.length}
                       className="text-center px-3 py-2.5"
                     >
-                      일정
+                      수양회 일정
                     </TableHead>
-                    <TableHead className="px-6 py-2.5" rowSpan={2}>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
                       <div className="flex items-center space-x-1 justify-center">
-                        <span>변경 요청 메모</span>
+                        <span>금액</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>처리자명</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="px-3 py-2.5" rowSpan={2}>
+                      <div className="flex items-center space-x-1 justify-center">
+                        <span>처리시각</span>
                       </div>
                     </TableHead>
                     <TableHead className="px-6 py-2.5" rowSpan={2}>
                       <div className="flex items-center space-x-1 justify-center">
-                        <span>작성자</span>
-                      </div>
-                    </TableHead>
-                    <TableHead className="px-8 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>작성일시</span>
-                      </div>
-                    </TableHead>
-                    <TableHead className="px-6 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>라인업 처리자</span>
+                        <span>라인업 확인</span>
                       </div>
                     </TableHead>
                   </TableRow>
@@ -437,7 +830,7 @@ export function RetreatScheduleChangeHistoryTable({
                   {filteredData.length === 0 && (
                     <TableRow>
                       <TableCell
-                        colSpan={11 + scheduleColumns.length}
+                        colSpan={12 + scheduleColumns.length}
                         className="text-center py-10 text-gray-500"
                       >
                         {allData.length > 0
@@ -446,13 +839,34 @@ export function RetreatScheduleChangeHistoryTable({
                       </TableCell>
                     </TableRow>
                   )}
-                  {filteredData.map((row, index) => renderTableRow(row, index))}
+                  {filteredData.map(row => renderTableRow(row))}
                 </TableBody>
               </Table>
             </div>
           </div>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+
+      <DetailSidebar
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        data={selectedHistory}
+        title="일정 변경 이력 상세"
+        className="!w-[680px] !max-w-[95vw]"
+        preventDismissWhenAlertDialogOpen
+      >
+        {history => (
+          <ScheduleHistoryDetailContent
+            history={history}
+            schedules={schedules}
+            editableMemoTypes={editableMemoTypes}
+            onCreateMemo={createScheduleHistoryMemo}
+            onUpdateMemo={updateScheduleHistoryMemo}
+            onDeleteMemo={deleteScheduleHistoryMemo}
+          />
+        )}
+      </DetailSidebar>
+    </>
   );
 }
