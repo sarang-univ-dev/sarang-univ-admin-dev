@@ -30,7 +30,6 @@ export interface IUserRetreatGBSLineup {
   userType: string | null;
   userRetreatRegistrationScheduleIds: number[];
   unresolvedLineupHistoryMemo?: string | null;
-  adminMemo?: string | null;
 }
 
 

@@ -33,7 +33,6 @@ export interface GBSLineupRow {
   lineupMemoId?: string;
   lineupMemocolor?: string;
   unresolvedLineupHistoryMemo?: string;
-  adminMemo?: string;
   memoError?: boolean;
   gbsNumberError?: boolean;
 }
@@ -111,7 +110,6 @@ export const useGBSLineup = (
         lineupMemoId: registration.lineupMemoId,
         lineupMemocolor: registration.lineupMemocolor,
         unresolvedLineupHistoryMemo: registration.unresolvedLineupHistoryMemo,
-        adminMemo: registration.adminMemo,
       };
     });
   }, [registrations, schedules]);
