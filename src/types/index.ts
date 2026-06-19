@@ -145,27 +145,6 @@ export type TUserRetreatRegistrationScheduleHistory = {
   createdAt: Date;
   resolvedAdminUserId?: number;
   resolvedAt?: Date;
-  lineupReviewerAdminUserId?: number;
-  lineupReviewedAt?: Date;
-};
-
-export enum UserRetreatRegistrationScheduleHistoryMemoType {
-  UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 행정 간사
-  ACCOUNT_STAFF = "ACCOUNT_STAFF", // 재정 간사
-  DORMITORY_STAFF = "DORMITORY_STAFF", // 인원관리 간사
-  LINEUP_STAFF = "LINEUP_STAFF", // 라인업 간사
-}
-
-export type TUserRetreatRegistrationScheduleHistoryMemo = {
-  id: number;
-  userRetreatRegistrationScheduleHistoryId: number;
-  memoType: UserRetreatRegistrationScheduleHistoryMemoType;
-  memo: string;
-  createdAdminUserId: number;
-  updatedAdminUserId?: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date | null;
 };
 
 export type TUserRetreatRegistrationHistoryMemo = {
