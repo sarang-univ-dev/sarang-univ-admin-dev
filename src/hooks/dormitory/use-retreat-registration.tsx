@@ -15,8 +15,9 @@ export interface IDormitoryRetreatRegistration {
   userRetreatRegistrationScheduleIds: number[];
   gbsNumber?: number | null;
   dormitoryLocation?: string | null;
-  dormitoryTeamMemberMemo?: string;
   isLeader: boolean;
+  attendanceConfirmedAt?: string | null;
+  attendanceConfirmedAdminUserName?: string | null;
 }
 
 const fetcher = async (url: string) => {
