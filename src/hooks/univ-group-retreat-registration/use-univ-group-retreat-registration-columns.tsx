@@ -10,6 +10,7 @@ import { ShuttleBusStatusBadge } from "@/components/features/univ-group-retreat-
 import { UnivGroupRetreatRegistrationTableActions } from "@/components/features/univ-group-retreat-registration/UnivGroupRetreatRegistrationTableActions";
 import { Button } from "@/components/ui/button";
 import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
+import { arrayIncludesValueFilterFn } from "@/lib/table";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 
@@ -59,7 +60,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             <GenderBadge gender={info.getValue()} />
           </div>
         ),
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       columnHelper.accessor("grade", {
@@ -78,7 +79,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             {info.getValue()}
           </div>
         ),
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
         sortingFn: (rowA, rowB, columnId) => {
           const gradeA = rowA.getValue(columnId) as string;
           const gradeB = rowB.getValue(columnId) as string;
@@ -108,7 +109,7 @@ export function useUnivGroupRetreatRegistrationColumns(
           </div>
         ),
         enableHiding: false,
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       columnHelper.accessor("phone", {
@@ -127,7 +128,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             {info.getValue() || "-"}
           </div>
         ),
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       columnHelper.accessor("currentLeaderName", {
@@ -146,7 +147,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             {info.getValue() || "-"}
           </div>
         ),
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
     ];
 
@@ -206,7 +207,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             </div>
           );
         },
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       columnHelper.accessor("hadRegisteredShuttleBus", {
@@ -269,7 +270,7 @@ export function useUnivGroupRetreatRegistrationColumns(
             </div>
           );
         },
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       columnHelper.display({
