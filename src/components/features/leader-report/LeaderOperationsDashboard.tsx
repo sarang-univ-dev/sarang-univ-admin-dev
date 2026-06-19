@@ -106,22 +106,17 @@ export function LeaderOperationsDashboard({
   );
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
 
-  const { attendance } = useLeaderAttendance(
-    retreatSlug,
-    selectedDate ?? undefined,
-    "all",
-    {
+  const attendanceOptions = useMemo(
+    () => ({
       fallbackData:
         selectedDate === initialAttendanceDate && initialAttendanceDate != null
           ? { attendance: initialAttendance, date: initialAttendanceDate }
           : undefined,
-    }
+    }),
+    [initialAttendance, initialAttendanceDate, selectedDate]
   );
-  const { submissionStatus } = useLeaderReportSubmissionStatus(
-    retreatSlug,
-    selectedDate ?? undefined,
-    "all",
-    {
+  const submissionStatusOptions = useMemo(
+    () => ({
       fallbackData:
         selectedDate === initialSubmissionDate && initialSubmissionDate != null
           ? {
@@ -129,15 +124,33 @@ export function LeaderOperationsDashboard({
               date: initialSubmissionDate,
             }
           : undefined,
-    }
+    }),
+    [initialSubmissionDate, initialSubmissionStatus, selectedDate]
+  );
+  const scheduleChangeRequestOptions = useMemo(
+    () => ({
+      fallbackData: initialScheduleChangeRequests,
+    }),
+    [initialScheduleChangeRequests]
+  );
+
+  const { attendance } = useLeaderAttendance(
+    retreatSlug,
+    selectedDate ?? undefined,
+    "all",
+    attendanceOptions
+  );
+  const { submissionStatus } = useLeaderReportSubmissionStatus(
+    retreatSlug,
+    selectedDate ?? undefined,
+    "all",
+    submissionStatusOptions
   );
   const { requests } = useLeaderScheduleChangeRequest(
     retreatSlug,
     "PENDING",
     "all",
-    {
-      fallbackData: initialScheduleChangeRequests,
-    }
+    scheduleChangeRequestOptions
   );
 
   const summary = useMemo(() => {

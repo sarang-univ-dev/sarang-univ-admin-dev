@@ -57,9 +57,18 @@ export function LeaderReportsTable({
   const activeDate = selectedDate ?? internalSelectedDate;
   const setActiveDate = onSelectedDateChange ?? setInternalSelectedDate;
 
-  const { reports } = useLeaderReports(retreatSlug, activeDate ?? undefined, {
-    fallbackData: activeDate === initialDate ? initialData : undefined,
-  });
+  const reportsOptions = useMemo(
+    () => ({
+      fallbackData: activeDate === initialDate ? initialData : undefined,
+    }),
+    [activeDate, initialData, initialDate]
+  );
+
+  const { reports } = useLeaderReports(
+    retreatSlug,
+    activeDate ?? undefined,
+    reportsOptions
+  );
 
   const filteredReports = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -72,7 +81,7 @@ export function LeaderReportsTable({
         `${report.gbsNumber} GBS`,
         report.authorName,
         report.graceSharing,
-        report.prayerTopics,
+        report.prayerRequests,
       ];
       return fields.some(field => normalizeText(field).includes(keyword));
     });
@@ -158,9 +167,9 @@ export function LeaderReportsTable({
                     <BookOpen className="h-4 w-4 text-blue-600" />
                     기도제목
                   </div>
-                  {report.prayerTopics?.trim() ? (
+                  {report.prayerRequests?.trim() ? (
                     <div className="min-h-[120px] rounded-md border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-gray-800">
-                      {report.prayerTopics}
+                      {report.prayerRequests}
                     </div>
                   ) : (
                     <EmptyText>작성된 기도제목이 없습니다.</EmptyText>

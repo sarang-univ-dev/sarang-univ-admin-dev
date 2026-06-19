@@ -24,6 +24,8 @@ export enum PagePath {
   UNIV_GROUP_MINISTER_VIEW = "/univ-group-minister-view",
   ADMIN_MINISTER_VIEW = "/admin-minister-view",
   LEADER_ATTENDANCE = "/leader-attendance",
+  LEADER_REPORTS = "/leader-reports",
+  LEADER_REPORT_SUBMISSION_STATUS = "/leader-report-submission-status",
   LEADER_SCHEDULE_CHANGE_REQUEST = "/leader-schedule-change-request",
 }
 
@@ -63,6 +65,12 @@ export const USER_ROLE_PAGES: Readonly<
     PagePath.MEAL_CHECK,
     PagePath.DORMITORY_ASSIGNMENT,
     PagePath.LEADER_ATTENDANCE,
+  ],
+
+  [RetreatAdminUserRole.LEADER_STAFF]: [
+    PagePath.LEADER_ATTENDANCE,
+    PagePath.LEADER_REPORTS,
+    PagePath.LEADER_REPORT_SUBMISSION_STATUS,
   ],
 
   [RetreatAdminUserRole.SHUTTLE_BUS_BOARDING_STAFF]: [],

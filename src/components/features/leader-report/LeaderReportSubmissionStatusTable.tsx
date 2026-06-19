@@ -46,7 +46,7 @@ interface LeaderReportSubmissionStatusTableProps {
 const columnHelper = createColumnHelper<ILeaderReportSubmissionStatus>();
 
 /**
- * 리더 리포트 제출 현황 테이블 (교육 간사 / EDUCATION_STAFF)
+ * 리더 리포트 제출 현황 테이블 (리더보고서 간사 / LEADER_STAFF)
  *
  * - GBS 별 제출 여부 / 리더 명단 / 제출 시각
  * - 상단 요약 "제출 X / 전체 Y"
@@ -67,16 +67,21 @@ export function LeaderReportSubmissionStatusTable({
   const activeDate = selectedDate ?? internalSelectedDate;
   const setActiveDate = onSelectedDateChange ?? setInternalSelectedDate;
 
-  const { submissionStatus, date } = useLeaderReportSubmissionStatus(
-    retreatSlug,
-    activeDate ?? undefined,
-    view,
-    {
+  const submissionStatusOptions = useMemo(
+    () => ({
       fallbackData:
         activeDate === initialDate && initialDate != null
           ? { submissionStatus: initialData, date: initialDate }
           : undefined,
-    }
+    }),
+    [activeDate, initialData, initialDate]
+  );
+
+  const { submissionStatus, date } = useLeaderReportSubmissionStatus(
+    retreatSlug,
+    activeDate ?? undefined,
+    view,
+    submissionStatusOptions
   );
 
   const [sorting, setSorting] = useState<SortingState>([]);

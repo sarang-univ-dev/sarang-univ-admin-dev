@@ -12,7 +12,7 @@ interface PageProps {
 }
 
 /**
- * 부서 보고서 제출현황 페이지 (교육 간사 / EDUCATION_STAFF)
+ * 부서 보고서 제출현황 페이지 (리더보고서 간사 / LEADER_STAFF)
  *
  * - 리더별 제출 여부 / 제출 시각
  * - 조회 기준일자를 오늘 일자 선택과 분리

@@ -85,6 +85,13 @@ export function LeaderScheduleChangeRequestTable({
   const statusLabel =
     STATUS_OPTIONS.find(option => option.value === status)?.label ?? "대기";
 
+  const requestOptions = useMemo(
+    () => ({
+      fallbackData: status === "PENDING" ? initialData : undefined,
+    }),
+    [initialData, status]
+  );
+
   const {
     requests,
     isMutating,
@@ -93,9 +100,7 @@ export function LeaderScheduleChangeRequestTable({
     saveMemo,
     updateMemo,
     deleteMemo,
-  } = useLeaderScheduleChangeRequest(retreatSlug, status, view, {
-    fallbackData: status === "PENDING" ? initialData : undefined,
-  });
+  } = useLeaderScheduleChangeRequest(retreatSlug, status, view, requestOptions);
 
   const scheduleColumns = useMemo(
     () => generateScheduleColumns(schedules),

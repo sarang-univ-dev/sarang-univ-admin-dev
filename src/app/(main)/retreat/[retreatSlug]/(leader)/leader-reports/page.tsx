@@ -9,7 +9,7 @@ interface PageProps {
 }
 
 /**
- * 부서 은혜나눔/기도제목 페이지 (교육 간사 / EDUCATION_STAFF)
+ * 부서 은혜나눔/기도제목 페이지 (리더보고서 간사 / LEADER_STAFF)
  *
  * - 현재 admin의 부서 리더 보고서 조회
  * - Server Component 로 초기 데이터 페칭, Client 가 SWR 폴링

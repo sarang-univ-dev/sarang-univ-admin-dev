@@ -167,7 +167,7 @@ export const LeaderAdminAPI = {
     return response.data.memo;
   },
 
-  /* -------------------------- EDUCATION_STAFF -------------------------- */
+  /* -------------------------- LEADER_STAFF -------------------------- */
 
   /**
    * 리더 리포트(은혜나눔/기도제목) 목록 조회

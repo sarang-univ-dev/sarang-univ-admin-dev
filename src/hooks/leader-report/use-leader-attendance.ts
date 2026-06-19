@@ -12,7 +12,7 @@ interface AttendanceResult {
 }
 
 /**
- * 리더 출석 현황 조회 훅 (교육 간사 / EDUCATION_STAFF)
+ * 리더 출석 현황 조회 훅 (리더보고서 간사 / LEADER_STAFF)
  *
  * - SWR 폴링으로 실시간 동기화
  * - date(optional, 기본값은 서버의 "오늘")

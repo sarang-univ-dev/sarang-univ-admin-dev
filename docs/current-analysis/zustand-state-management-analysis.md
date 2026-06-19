@@ -333,7 +333,7 @@ UserRole (다양한 역할 타입)
 | Confirm Bus Payment | `/confirm-bus-payment` | 결제 | 버스 결제 확인 |
 | Assign GBS Location | `/assign-gbs-location` | 장소 | GBS 모임 장소 배정 |
 | Dorm View Changes | `/dorm-view-changes` | 변경 관리 | 기숙사 변경 보기 |
-| Schedule Change Review History | `/schedule-change-review-history` | 변경 관리 | 일정 변경 이력 보기 |
+| Lineup View Changes | `/lineup-view-changes` | 변경 관리 | 라인업 변경 보기 |
 | Univ Group Staff Retreat | `/univ-group-staff-retreat` | 정보 | 대학부 스태프 수련회 정보 |
 | Univ Group Staff Bus | `/univ-group-staff-bus` | 버스 | 대학부 스태프 버스 정보 |
 | Login | `/login` | 인증 | Google OAuth 로그인 |

@@ -45,7 +45,7 @@ interface LeaderAttendanceTableProps {
 const columnHelper = createColumnHelper<ILeaderAttendance>();
 
 /**
- * 리더 출석 현황 (교육 간사 / EDUCATION_STAFF)
+ * 리더 출석 현황 (리더보고서 간사 / LEADER_STAFF)
  *
  * - 상단 Card: /admin/today.days 의 일자별 토글 버튼 (현재 today 강조)
  *   클릭 시 PUT /admin/today 후 revalidate
@@ -69,16 +69,21 @@ export function LeaderAttendanceTable({
   const activeDate = selectedDate ?? internalSelectedDate;
   const setActiveDate = onSelectedDateChange ?? setInternalSelectedDate;
 
-  const { attendance, date } = useLeaderAttendance(
-    retreatSlug,
-    activeDate ?? undefined,
-    view,
-    {
+  const attendanceOptions = useMemo(
+    () => ({
       fallbackData:
         activeDate === initialDate && initialDate != null
           ? { attendance: initialAttendance, date: initialDate }
           : undefined,
-    }
+    }),
+    [activeDate, initialAttendance, initialDate]
+  );
+
+  const { attendance, date } = useLeaderAttendance(
+    retreatSlug,
+    activeDate ?? undefined,
+    view,
+    attendanceOptions
   );
 
   const [sorting, setSorting] = useState<SortingState>([]);

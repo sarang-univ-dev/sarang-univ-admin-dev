@@ -37,7 +37,7 @@ export function LeaderReportDetailContent({
 
       <InfoSection title="기도제목" icon={MessageSquare}>
         <div className="whitespace-pre-wrap break-words text-sm text-gray-900">
-          {data.prayerTopics || "-"}
+          {data.prayerRequests || "-"}
         </div>
       </InfoSection>
     </>

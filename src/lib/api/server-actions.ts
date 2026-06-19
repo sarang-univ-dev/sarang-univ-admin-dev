@@ -380,7 +380,7 @@ export async function fetchDepartmentLeaderScheduleChangeRequests(
 }
 
 /**
- * 리더 리포트(은혜나눔/기도제목) 조회 (Server Action, EDUCATION_STAFF 권한)
+ * 리더 리포트(은혜나눔/기도제목) 조회 (Server Action, LEADER_STAFF 권한)
  *
  * @param retreatSlug - 수양회 슬러그
  * @param date - 조회 일자 (YYYY-MM-DD, optional)
@@ -411,7 +411,7 @@ export async function fetchLeaderReports(retreatSlug: string, date?: string) {
 }
 
 /**
- * 리더 리포트 제출 현황 조회 (Server Action, EDUCATION_STAFF 권한)
+ * 리더 리포트 제출 현황 조회 (Server Action, LEADER_STAFF 권한)
  *
  * @param retreatSlug - 수양회 슬러그
  * @param date - 조회 일자 (YYYY-MM-DD, optional, 기본값은 서버의 "오늘")
@@ -472,7 +472,7 @@ export async function fetchDepartmentLeaderReportSubmissionStatus(
 }
 
 /**
- * 리더 출석 현황 조회 (Server Action, EDUCATION_STAFF 권한)
+ * 리더 출석 현황 조회 (Server Action, LEADER_STAFF 권한)
  *
  * @param retreatSlug - 수양회 슬러그
  * @param date - 조회 일자 (YYYY-MM-DD, optional, 기본값은 서버의 "오늘")
@@ -533,7 +533,7 @@ export async function fetchDepartmentLeaderAttendance(
 }
 
 /**
- * 리더 리포트 - 오늘(일자) 정보 조회 (Server Action, EDUCATION_STAFF 권한)
+ * 리더 리포트 - 오늘(일자) 정보 조회 (Server Action, LEADER_STAFF 권한)
  *
  * @param retreatSlug - 수양회 슬러그
  * @returns { today, days, lastDay, isLastDay }

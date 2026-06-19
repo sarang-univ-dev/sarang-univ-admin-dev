@@ -17,7 +17,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 /**
- * 리더 리포트 - 오늘(일자) 정보 훅 (교육 간사 / EDUCATION_STAFF)
+ * 리더 리포트 - 오늘(일자) 정보 훅 (리더보고서 간사 / LEADER_STAFF)
  *
  * - days 목록 / 현재 today / lastDay 정보 조회
  * - today 변경 (PUT) 후 revalidate

@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarDays } from "lucide-react";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,9 +31,16 @@ export function LeaderDateControls({
   showTodayControl = true,
 }: LeaderDateControlsProps) {
   const confirmDialog = useConfirm();
-  const { today, days, isUpdating, updateToday } = useLeaderToday(retreatSlug, {
-    fallbackData: initialToday,
-  });
+  const todayOptions = useMemo(
+    () => ({
+      fallbackData: initialToday,
+    }),
+    [initialToday]
+  );
+  const { today, days, isUpdating, updateToday } = useLeaderToday(
+    retreatSlug,
+    todayOptions
+  );
 
   const handleSelectToday = async (day: string) => {
     if (day === today || isUpdating) return;

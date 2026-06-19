@@ -36,7 +36,7 @@ export interface ILeaderScheduleChangeRequest {
 }
 
 /**
- * 교육 간사(EDUCATION_STAFF) - 리더 리포트 (은혜나눔/기도제목)
+ * 리더보고서 간사(LEADER_STAFF) - 리더 리포트 (은혜나눔/기도제목)
  */
 export interface ILeaderReport {
   id: number;
@@ -46,13 +46,13 @@ export interface ILeaderReport {
   univGroupNumber: number;
   reportDate: string;
   graceSharing: string;
-  prayerTopics: string;
+  prayerRequests: string;
   authorName: string;
   updatedAt: string;
 }
 
 /**
- * 교육 간사(EDUCATION_STAFF) - 리포트 제출 현황
+ * 리더보고서 간사(LEADER_STAFF) - 리포트 제출 현황
  */
 export interface ILeaderReportSubmissionStatus {
   gbsId: number;
@@ -67,7 +67,7 @@ export interface ILeaderReportSubmissionStatus {
 export type LeaderAttendanceStatus = "PRESENT" | "ABSENT" | null;
 
 /**
- * 교육 간사(EDUCATION_STAFF) - 출석 현황
+ * 리더보고서 간사(LEADER_STAFF) - 출석 현황
  */
 export interface ILeaderAttendance {
   userRetreatRegistrationId: number;
@@ -81,7 +81,7 @@ export interface ILeaderAttendance {
 }
 
 /**
- * 교육 간사(EDUCATION_STAFF) - 오늘(일자) 정보
+ * 리더보고서 간사(LEADER_STAFF) - 오늘(일자) 정보
  */
 export interface ILeaderTodayInfo {
   today: string | null;

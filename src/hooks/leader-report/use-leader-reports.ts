@@ -4,7 +4,7 @@ import { LeaderAdminAPI } from "@/lib/api/leader-admin-api";
 import { ILeaderReport } from "@/types/leader-report";
 
 /**
- * 리더 리포트(은혜나눔/기도제목) 조회 훅 (교육 간사 / EDUCATION_STAFF)
+ * 리더 리포트(은혜나눔/기도제목) 조회 훅 (리더보고서 간사 / LEADER_STAFF)
  *
  * - SWR 폴링으로 실시간 동기화
  * - date(optional)로 일자 필터링
