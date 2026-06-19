@@ -9,7 +9,16 @@ import { LeaderScheduleChangeStatusBadge } from "@/components/common/retreat";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -18,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { useLeaderScheduleChangeRequest } from "@/hooks/leader-schedule-change-request/use-leader-schedule-change-request";
 import { useConfirm } from "@/hooks/use-confirm";
 import { LeaderAdminView } from "@/lib/api/leader-admin-api";
@@ -29,6 +39,7 @@ import {
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 import { LeaderScheduleChangeRequestDetailContent } from "./LeaderScheduleChangeRequestDetailContent";
+import { ScheduleChangeCheckboxRows } from "./schedule-slot-utils";
 
 interface LeaderScheduleChangeRequestTableProps {
   initialData: ILeaderScheduleChangeRequest[];
@@ -66,6 +77,9 @@ export function LeaderScheduleChangeRequestTable({
   const [sidebarData, setSidebarData] =
     useState<ILeaderScheduleChangeRequest | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [approvalTarget, setApprovalTarget] =
+    useState<ILeaderScheduleChangeRequest | null>(null);
+  const [approvalMemo, setApprovalMemo] = useState("");
 
   const isAllView = view === "all";
   const statusLabel =
@@ -117,14 +131,28 @@ export function LeaderScheduleChangeRequestTable({
 
   const handleApprove = useCallback(
     (row: ILeaderScheduleChangeRequest) => {
-      void confirmDialog.open({
-        title: "일정 변경 요청 승인",
-        description: `${row.memberName}님의 일정 변경 요청을 승인하시겠습니까?`,
-        onConfirm: () => approveRequest(row.id),
-      });
+      setApprovalTarget(row);
+      setApprovalMemo("");
     },
-    [approveRequest, confirmDialog]
+    []
   );
+
+  const handleCloseApprovalDialog = useCallback(() => {
+    if (isMutating) return;
+    setApprovalTarget(null);
+    setApprovalMemo("");
+  }, [isMutating]);
+
+  const handleSubmitApproval = useCallback(async () => {
+    if (!approvalTarget) return;
+
+    const memo = approvalMemo.trim();
+    if (!memo) return;
+
+    await approveRequest(approvalTarget.id, memo);
+    setApprovalTarget(null);
+    setApprovalMemo("");
+  }, [approvalMemo, approvalTarget, approveRequest]);
 
   const handleReject = useCallback(
     (row: ILeaderScheduleChangeRequest) => {
@@ -506,6 +534,111 @@ export function LeaderScheduleChangeRequestTable({
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={Boolean(approvalTarget)}
+        onOpenChange={open => {
+          if (!open) {
+            handleCloseApprovalDialog();
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-x-hidden overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>일정 변경 요청 승인</DialogTitle>
+            <DialogDescription>
+              승인할 일정 변경 내용을 확인하고 메모를 입력해주세요.
+            </DialogDescription>
+          </DialogHeader>
+
+          {approvalTarget ? (
+            <div className="space-y-5">
+              <div className="grid gap-3 rounded-md border bg-gray-50 p-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+                <div>
+                  <div className="text-xs text-muted-foreground">부서</div>
+                  <div className="mt-1 font-medium">
+                    {approvalTarget.univGroupNumber}부
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">성별</div>
+                  <div className="mt-1">
+                    <GenderBadge gender={approvalTarget.gender} />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">학년</div>
+                  <div className="mt-1 font-medium">
+                    {approvalTarget.gradeNumber}학년
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">이름</div>
+                  <div className="mt-1 font-medium">
+                    {approvalTarget.memberName}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">GBS</div>
+                  <div className="mt-1 font-medium">
+                    {approvalTarget.gbsNumber ?? "-"}
+                  </div>
+                </div>
+              </div>
+
+              <ScheduleChangeCheckboxRows
+                beforeScheduleIds={approvalTarget.beforeScheduleIds}
+                afterScheduleIds={approvalTarget.afterScheduleIds}
+                schedules={schedules}
+                fitContainer
+              />
+
+              {approvalTarget.reason ? (
+                <div className="rounded-md border bg-white p-3">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    리더 요청 사유
+                  </div>
+                  <div className="mt-1 whitespace-pre-wrap break-words text-sm">
+                    {approvalTarget.reason}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="space-y-2">
+                <Label htmlFor="leader-schedule-change-approval-memo">
+                  일정 변경 메모
+                </Label>
+                <Textarea
+                  id="leader-schedule-change-approval-memo"
+                  value={approvalMemo}
+                  onChange={event => setApprovalMemo(event.target.value)}
+                  placeholder="일정 변경 내용을 입력하세요."
+                  className="min-h-28"
+                  disabled={isMutating}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCloseApprovalDialog}
+              disabled={isMutating}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void handleSubmitApproval()}
+              disabled={!approvalMemo.trim() || isMutating}
+            >
+              {isMutating ? "승인 중..." : "승인"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <DetailSidebar
         open={isSidebarOpen}

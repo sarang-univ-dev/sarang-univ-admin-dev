@@ -1,12 +1,11 @@
 import useSWR from "swr";
 
 import { webAxios } from "@/lib/api/axios";
-import { UserRetreatRegistrationType, Gender } from "@/types";
+import { Gender, UserRetreatRegistrationType } from "@/types";
 
-export interface IUserScheduleChangeLineup {
+export interface IUserScheduleChangeDormitory {
   id: number;
   userType: UserRetreatRegistrationType | null;
-  createdAt: string;
   userName: string;
   gender: Gender;
   userRetreatRegistrationScheduleIds: number[];
@@ -17,10 +16,9 @@ export interface IUserScheduleChangeLineup {
   userRetreatRegistrationHistoryMemoId: number;
   univGroupNumber: number;
   gradeNumber: number;
-  currentLeaderName: string;
   gbsNumber?: number;
-  gbsLeaderNames?: string[];
-  lineupReviewerName?: string;
+  dormitoryLocation?: string;
+  dormitoryReviewerName?: string;
 }
 
 const fetcher = async (url: string) => {
@@ -28,13 +26,13 @@ const fetcher = async (url: string) => {
   return response.data.scheduleChangeRequests;
 };
 
-export function useUserScheduleChangeLineup(retreatSlug?: string) {
+export function useUserScheduleChangeDormitory(retreatSlug?: string) {
   const endpoint = retreatSlug
-    ? `/api/v1/retreat/${retreatSlug}/line-up/schedule-change-request`
+    ? `/api/v1/retreat/${retreatSlug}/dormitory/schedule-change-request`
     : null;
 
   const { data, error, isLoading, mutate } = useSWR<
-    IUserScheduleChangeLineup[],
+    IUserScheduleChangeDormitory[],
     Error
   >(endpoint, fetcher);
 

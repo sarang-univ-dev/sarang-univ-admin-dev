@@ -104,9 +104,14 @@ export function useLeaderScheduleChangeRequest(
     }
   };
 
-  const approveRequest = async (requestId: number) => {
+  const approveRequest = async (requestId: number, memo: string) => {
     await runMutation(
-      () => LeaderAdminAPI.approveScheduleChangeRequest(retreatSlug, requestId),
+      () =>
+        LeaderAdminAPI.approveScheduleChangeRequest(
+          retreatSlug,
+          requestId,
+          memo
+        ),
       requestId,
       "일정 변경 요청을 승인했습니다.",
       "일정 변경 요청 승인 중 오류가 발생했습니다."

@@ -33,7 +33,6 @@ export const USER_ROLE_PAGES: Readonly<
   [RetreatAdminUserRole.ACCOUNT_STAFF]: [
     PagePath.SCHEDULE_HISTORY,
     PagePath.SCHEDULE_CHANGE,
-    PagePath.SCHEDULE_CHANGE_REVIEW_HISTORY,
     PagePath.ACCOUNT_STAFF,
   ],
 
@@ -42,7 +41,6 @@ export const USER_ROLE_PAGES: Readonly<
   [RetreatAdminUserRole.UNIV_GROUP_ADMIN_STAFF]: [
     PagePath.UNIV_GROUP_RETREAT,
     PagePath.UNIV_GROUP_BUS,
-    PagePath.SCHEDULE_CHANGE_REVIEW_HISTORY,
   ],
 
   [RetreatAdminUserRole.LINEUP_STAFF]: [
@@ -65,7 +63,6 @@ export const USER_ROLE_PAGES: Readonly<
     PagePath.MEAL_CHECK,
     PagePath.DORMITORY_ASSIGNMENT,
     PagePath.LEADER_ATTENDANCE,
-    PagePath.SCHEDULE_CHANGE_REVIEW_HISTORY,
   ],
 
   [RetreatAdminUserRole.SHUTTLE_BUS_BOARDING_STAFF]: [],

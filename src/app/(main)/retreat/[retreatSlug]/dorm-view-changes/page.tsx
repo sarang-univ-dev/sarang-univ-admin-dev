@@ -3,12 +3,12 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { RetreatScheduleChangeHistoryTable } from "@/components/LineupStaffRetreatScheduleChangeHistoryTable";
-import { useUserScheduleChangeLineup } from "@/hooks/user-schedule-change-lineup-request";
+import { RetreatScheduleChangeHistoryTable } from "@/components/DormStaffRetreatScheduleChangeHistoryTable";
+import { useUserScheduleChangeDormitory } from "@/hooks/user-schedule-change-dormitory-request";
 import { webAxios } from "@/lib/api/axios";
 import { TRetreatRegistrationSchedule } from "@/types";
 
-export default function ScheduleChangeHistoryReviewPage() {
+export default function ScheduleChangeHistoryForDorm() {
   const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(
     []
   );
@@ -17,7 +17,7 @@ export default function ScheduleChangeHistoryReviewPage() {
   const retreatSlug = params.retreatSlug as string;
 
   const { data, isLoading, error, mutate } =
-    useUserScheduleChangeLineup(retreatSlug);
+    useUserScheduleChangeDormitory(retreatSlug);
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -46,7 +46,7 @@ export default function ScheduleChangeHistoryReviewPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">일정 변경 이력</h1>
+      <h1 className="text-3xl font-bold">인원관리 일정변경 이력</h1>
 
       <RetreatScheduleChangeHistoryTable
         scheduleChangeHistories={data || []}

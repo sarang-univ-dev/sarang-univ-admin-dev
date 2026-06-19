@@ -79,6 +79,7 @@ interface ScheduleChangeCheckboxRowsProps {
   beforeScheduleIds: number[];
   afterScheduleIds: number[];
   schedules: TRetreatRegistrationSchedule[];
+  fitContainer?: boolean;
 }
 
 function hasSchedule(scheduleIds: number[], scheduleId: number) {
@@ -92,6 +93,7 @@ export function ScheduleChangeCheckboxRows({
   beforeScheduleIds,
   afterScheduleIds,
   schedules,
+  fitContainer = false,
 }: ScheduleChangeCheckboxRowsProps) {
   const scheduleColumns = generateScheduleColumns(schedules);
 
@@ -105,18 +107,30 @@ export function ScheduleChangeCheckboxRows({
   ];
 
   return (
-    <div className="max-w-full overflow-x-auto rounded-md border bg-white">
-      <table className="min-w-max whitespace-nowrap text-sm">
+    <div
+      className={`max-w-full rounded-md border bg-white ${
+        fitContainer ? "overflow-hidden" : "overflow-x-auto"
+      }`}
+    >
+      <table
+        className={
+          fitContainer
+            ? "w-full table-fixed whitespace-normal text-xs sm:text-sm"
+            : "min-w-max whitespace-nowrap text-sm"
+        }
+      >
         <thead className="bg-gray-100">
           <tr>
             <th
-              className="sticky left-0 z-10 bg-gray-100 px-3 py-2 text-center text-xs font-medium text-gray-700"
+              className={`sticky left-0 z-10 bg-gray-100 py-2 text-center text-xs font-medium text-gray-700 ${
+                fitContainer ? "w-14 px-1 sm:w-16 sm:px-2" : "px-3"
+              }`}
               rowSpan={2}
             >
               구분
             </th>
             <th
-              className="px-3 py-2 text-center text-xs font-medium text-gray-700"
+              className="px-2 py-2 text-center text-xs font-medium text-gray-700"
               colSpan={scheduleColumns.length}
             >
               수양회 일정
@@ -126,9 +140,15 @@ export function ScheduleChangeCheckboxRows({
             {scheduleColumns.map(col => (
               <th
                 key={col.key}
-                className="px-2 py-2 text-center text-xs font-medium text-gray-600"
+                className={`py-2 text-center font-medium text-gray-600 ${
+                  fitContainer ? "px-0.5 text-[11px]" : "px-2 text-xs"
+                }`}
               >
-                <span className="block min-w-9 whitespace-normal leading-tight">
+                <span
+                  className={`block whitespace-normal leading-tight ${
+                    fitContainer ? "break-keep" : "min-w-9"
+                  }`}
+                >
                   {col.label}
                 </span>
               </th>
@@ -138,7 +158,11 @@ export function ScheduleChangeCheckboxRows({
         <tbody>
           {rows.map(row => (
             <tr key={row.label} className="border-t hover:bg-gray-50">
-              <th className="sticky left-0 z-10 bg-white px-3 py-2.5 text-center text-xs font-medium text-gray-700">
+              <th
+                className={`sticky left-0 z-10 bg-white py-2.5 text-center text-xs font-medium text-gray-700 ${
+                  fitContainer ? "px-1 sm:px-2" : "px-3"
+                }`}
+              >
                 {row.label}
               </th>
               {scheduleColumns.map(col => {
@@ -147,7 +171,9 @@ export function ScheduleChangeCheckboxRows({
                 return (
                   <td
                     key={`${row.label}-${col.key}`}
-                    className="px-2 py-2 text-center"
+                    className={`py-2 text-center ${
+                      fitContainer ? "px-0.5" : "px-2"
+                    }`}
                   >
                     <Checkbox
                       checked={checked}
