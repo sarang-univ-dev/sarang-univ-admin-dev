@@ -14,7 +14,6 @@ export interface IUserBusRegistration {
   gradeNumber: number;
   name: string;
   price: number;
-  refundAmount?: number | null;
   userRetreatShuttleBusRegistrationScheduleIds: number[];
   isAdminContact: boolean;
   shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus;

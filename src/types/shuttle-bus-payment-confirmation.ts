@@ -43,9 +43,6 @@ export interface IShuttleBusPaymentConfirmationRegistration {
   /** 금액 */
   price: number;
 
-  /** 환불 금액 */
-  refundAmount?: number | null;
-
   /** 선택한 셔틀버스 스케줄 ID 배열 */
   userRetreatShuttleBusRegistrationScheduleIds: number[];
 

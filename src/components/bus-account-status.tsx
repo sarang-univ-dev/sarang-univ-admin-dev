@@ -78,7 +78,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
             reg.shuttleBusPaymentStatus ===
               UserRetreatShuttleBusPaymentStatus.REFUNDED
         )
-        .reduce((sum, reg) => sum + (reg.refundAmount || reg.price || 0), 0);
+        .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
       const actualIncome = paidIncome + canceledIncome + refundIncome;
 
@@ -89,7 +89,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
             reg.shuttleBusPaymentStatus ===
             UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST
         )
-        .reduce((sum, reg) => sum + (reg.refundAmount || reg.price || 0), 0);
+        .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
       // 실제 출금 금액: 환불 완료(REFUNDED)인 항목의 금액 합계
       const actualRefund = deptRegistrations
@@ -98,7 +98,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
             reg.shuttleBusPaymentStatus ===
             UserRetreatShuttleBusPaymentStatus.REFUNDED
         )
-        .reduce((sum, reg) => sum + (reg.refundAmount || reg.price || 0), 0);
+        .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
       // 현재 계좌 현황: 실제 입금액 - 실제 출금액
       const currentBalance = actualIncome - actualRefund;

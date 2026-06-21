@@ -134,7 +134,7 @@ export function calculateAccountStatus(
           UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST ||
         reg.shuttleBusPaymentStatus === UserRetreatShuttleBusPaymentStatus.REFUNDED
       ) {
-        return sum + (reg.refundAmount || reg.price || 0);
+        return sum + (reg.price || 0);
       }
 
       return sum + (reg.price || 0);
@@ -147,7 +147,7 @@ export function calculateAccountStatus(
         reg.shuttleBusPaymentStatus ===
         UserRetreatShuttleBusPaymentStatus.REFUNDED
     )
-    .reduce((sum, reg) => sum + (reg.refundAmount || reg.price || 0), 0);
+    .reduce((sum, reg) => sum + (reg.price || 0), 0);
 
   // 예상 잔액
   const expectedBalance = expectedIncome - expectedExpense;
