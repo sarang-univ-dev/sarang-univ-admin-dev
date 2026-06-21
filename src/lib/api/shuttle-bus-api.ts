@@ -7,11 +7,14 @@ export const ShuttleBusAPI = {
    * @param retreatSlug - 수양회 슬러그
    * @returns Blob 데이터
    */
-  downloadUnivGroupExcel: async (retreatSlug: string): Promise<Blob> => {
-    const response = await webAxios.get(
-      `/api/v1/retreat/${retreatSlug}/shuttle-bus/download-univ-group-shuttle-bus-registration-excel`,
-      { responseType: "blob" }
-    );
+  downloadUnivGroupExcel: async (
+    retreatSlug: string,
+    rowIds?: number[]
+  ): Promise<Blob> => {
+    const url = `/api/v1/retreat/${retreatSlug}/shuttle-bus/download-univ-group-shuttle-bus-registration-excel`;
+    const response = rowIds
+      ? await webAxios.post(url, { rowIds }, { responseType: "blob" })
+      : await webAxios.get(url, { responseType: "blob" });
     return response.data;
   },
 
@@ -22,12 +25,13 @@ export const ShuttleBusAPI = {
    * @returns Blob 데이터
    */
   downloadAllUnivGroupPassengersExcel: async (
-    retreatSlug: string
+    retreatSlug: string,
+    rowIds?: number[]
   ): Promise<Blob> => {
-    const response = await webAxios.get(
-      `/api/v1/retreat/${retreatSlug}/shuttle-bus/download-all-univ-group-shuttle-bus-passengers-excel`,
-      { responseType: "blob" }
-    );
+    const url = `/api/v1/retreat/${retreatSlug}/shuttle-bus/download-all-univ-group-shuttle-bus-passengers-excel`;
+    const response = rowIds
+      ? await webAxios.post(url, { rowIds }, { responseType: "blob" })
+      : await webAxios.get(url, { responseType: "blob" });
     return response.data;
   }
 };

@@ -174,15 +174,6 @@ export function GbsLineUpDetailContent({
         </div>
       </InfoSection>
 
-      {/* 행정간사 메모 */}
-      {data.adminMemo && (
-        <InfoSection title="행정간사 메모" icon={Info}>
-          <div className="p-3 rounded-md border bg-gray-50">
-            <p className="text-sm whitespace-pre-wrap">{data.adminMemo}</p>
-          </div>
-        </InfoSection>
-      )}
-
       {/* 수정 모달 */}
       {onUpdateRegistrationInfo && (
         <RegistrationEditModal

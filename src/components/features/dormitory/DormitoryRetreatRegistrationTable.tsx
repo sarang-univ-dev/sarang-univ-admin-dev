@@ -15,6 +15,7 @@ import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { VirtualizedTable } from "@/components/common/table";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -31,7 +32,9 @@ import {
   useDormitoryRetreatRegistrationColumns,
   DormitoryRetreatRegistrationTableData,
 } from "@/hooks/dormitory/use-retreat-registration-columns";
+import { cn } from "@/lib/utils";
 import { TRetreatRegistrationSchedule } from "@/types";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 interface DormitoryRetreatRegistrationTableProps {
   schedules: TRetreatRegistrationSchedule[];
@@ -64,21 +67,22 @@ function transformRegistrationsForTable(
       name: registration.name,
       schedules: scheduleData,
       dormitoryName: registration.dormitoryLocation || "",
-      scheduleChangeRequestMemo: registration.dormitoryTeamMemberMemo || null,
       isLeader: registration.isLeader,
+      attendanceConfirmedAt: registration.attendanceConfirmedAt ?? null,
+      attendanceConfirmedAdminUserName:
+        registration.attendanceConfirmedAdminUserName ?? null,
     };
   });
 }
 
 /**
- * 숙소팀 수양회 신청 테이블 (TanStack Table + Virtualization)
+ * 인원관리팀 수양회 출석 체크 테이블 (TanStack Table + Virtualization)
  *
  * Features:
  * - 동적 스케줄 컬럼
  * - 열 가시성 토글
  * - 다중 정렬
  * - 통합 검색
- * - 일정변동 요청 메모 관리 (MemoEditor)
  * - 가상화를 통한 대용량 데이터 처리
  */
 export function DormitoryRetreatRegistrationTable({
@@ -96,6 +100,7 @@ export function DormitoryRetreatRegistrationTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
+  const [scheduleFilter, setScheduleFilter] = useState<Set<number>>(new Set());
 
   // 컬럼 훅으로 컬럼 정의 가져오기 (mutate 전달하여 캐시 갱신 가능하게)
   const columns = useDormitoryRetreatRegistrationColumns(
@@ -110,9 +115,61 @@ export function DormitoryRetreatRegistrationTable({
     [registrations, schedules]
   );
 
+  const scheduleFilterColumns = useMemo(
+    () => generateScheduleColumns(schedules),
+    [schedules]
+  );
+
+  const scheduleFilteredData = useMemo(() => {
+    if (scheduleFilter.size === 0) {
+      return data;
+    }
+
+    return data.filter(row =>
+      Array.from(scheduleFilter).some(
+        scheduleId => row.schedules[`schedule_${scheduleId}`]
+      )
+    );
+  }, [data, scheduleFilter]);
+
+  const attendanceSummary = useMemo(() => {
+    const totalCount = scheduleFilteredData.length;
+    const confirmedCount = scheduleFilteredData.filter(
+      row => !!row.attendanceConfirmedAt
+    ).length;
+
+    const scheduleCounts = scheduleFilterColumns.map(schedule => {
+      const registeredRows = data.filter(row => row.schedules[schedule.key]);
+      return {
+        ...schedule,
+        registeredCount: registeredRows.length,
+        confirmedCount: registeredRows.filter(row => !!row.attendanceConfirmedAt)
+          .length,
+      };
+    });
+
+    return {
+      totalCount,
+      confirmedCount,
+      scheduleCounts,
+    };
+  }, [data, scheduleFilteredData, scheduleFilterColumns]);
+
+  const toggleScheduleFilter = (scheduleId: number) => {
+    setScheduleFilter(prev => {
+      const next = new Set(prev);
+      if (next.has(scheduleId)) {
+        next.delete(scheduleId);
+      } else {
+        next.add(scheduleId);
+      }
+      return next;
+    });
+  };
+
   // TanStack Table 초기화
   const table = useReactTable<DormitoryRetreatRegistrationTableData>({
-    data,
+    data: scheduleFilteredData,
     columns,
     state: {
       sorting,
@@ -146,7 +203,6 @@ export function DormitoryRetreatRegistrationTable({
         row.original.department,
         row.original.grade,
         row.original.dormitoryName,
-        row.original.scheduleChangeRequestMemo,
       ];
 
       return searchableFields.some(field =>
@@ -200,20 +256,54 @@ export function DormitoryRetreatRegistrationTable({
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-lg font-semibold">
-          숙소팀 수양회 신청 관리
+          인원관리팀 수양회 출석 체크
         </CardTitle>
         <CardDescription>
-          숙소팀이 수양회 신청자 목록을 조회하고 일정변동 요청 메모를 작성할 수
-          있습니다. ({filteredRowCount}명)
+          출석 {attendanceSummary.confirmedCount}명 / 대상{" "}
+          {attendanceSummary.totalCount}명 · 현재 표시 {filteredRowCount}명
         </CardDescription>
       </CardHeader>
       <CardContent className="px-4 pt-4">
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={scheduleFilter.size === 0 ? "secondary" : "outline"}
+              onClick={() => setScheduleFilter(new Set())}
+              className="h-8 text-xs"
+            >
+              전체
+            </Button>
+            {attendanceSummary.scheduleCounts.map(schedule => {
+              const isSelected = scheduleFilter.has(schedule.id);
+
+              return (
+                <Button
+                  key={schedule.key}
+                  type="button"
+                  size="sm"
+                  variant={isSelected ? "secondary" : "outline"}
+                  onClick={() => toggleScheduleFilter(schedule.id)}
+                  className={cn(
+                    "h-8 gap-1.5 text-xs",
+                    isSelected && "border-primary"
+                  )}
+                >
+                  <span>{schedule.label}</span>
+                  <span className="text-muted-foreground">
+                    {schedule.confirmedCount}/{schedule.registeredCount}명
+                  </span>
+                </Button>
+              );
+            })}
+          </div>
+
           {/* 통합 검색 */}
           <div className="relative max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="GBS번호, 부서, 학년, 이름, 숙소, 메모로 검색..."
+              placeholder="GBS번호, 부서, 학년, 이름, 숙소로 검색..."
               className="pl-8 pr-4 py-2"
               value={globalFilter}
               onChange={e => setGlobalFilter(e.target.value)}

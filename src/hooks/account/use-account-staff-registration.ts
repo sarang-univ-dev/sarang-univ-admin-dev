@@ -369,10 +369,10 @@ export function useAccountStaffRegistration(
   /**
    * 엑셀 다운로드
    */
-  const downloadExcel = async () => {
+  const downloadExcel = async (rowIds?: number[]) => {
     setIsMutating(true);
     try {
-      const blob = await AccountStaffAPI.downloadExcel(retreatSlug);
+      const blob = await AccountStaffAPI.downloadExcel(retreatSlug, rowIds);
 
       // Blob을 다운로드
       const url = window.URL.createObjectURL(blob);

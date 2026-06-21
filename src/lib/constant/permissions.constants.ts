@@ -11,6 +11,7 @@ export enum PagePath {
   BUS_SCHEDULE_CHANGE = "/bus-schedule-change-request",
   ACCOUNT_STAFF = "/account-staff",
   LINEUP_VIEW_CHANGES = "/lineup-view-changes",
+  LINEUP_UNIV_GROUP_ADMIN_STAFF_MEMOS = "/lineup-univ-group-admin-staff-memos",
   DORM_VIEW_CHANGES = "/dorm-view-changes",
   GBS_LINE_UP = "/gbs-line-up",
   GBS_LINE_UP_MANAGEMENT = "/gbs-line-up-management",
@@ -41,6 +42,7 @@ export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
     PagePath.GBS_LINE_UP,
     PagePath.GBS_LINE_UP_MANAGEMENT,
     PagePath.LINEUP_VIEW_CHANGES,
+    PagePath.LINEUP_UNIV_GROUP_ADMIN_STAFF_MEMOS,
   ],
 
   [UserRole.UNIV_GROUP_DORMITORY_MEMBER]: [

@@ -168,12 +168,15 @@ export function useUnivGroupBusRegistration(
   /**
    * 부서 셔틀버스 신청 현황 엑셀 다운로드
    */
-  const downloadExcel = async () => {
+  const downloadExcel = async (rowIds?: number[]) => {
     if (!retreatSlug) return;
 
     setIsMutating(true);
     try {
-      const blob = await ShuttleBusAPI.downloadUnivGroupExcel(retreatSlug);
+      const blob = await ShuttleBusAPI.downloadUnivGroupExcel(
+        retreatSlug,
+        rowIds
+      );
 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");

@@ -26,7 +26,12 @@ import {
   AccountStaffTableData,
 } from "@/hooks/account/use-account-staff-columns";
 import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
+import {
+  PAYMENT_STATUS_LABELS,
+  USER_RETREAT_TYPE_LABELS,
+} from "@/lib/constant/labels";
 import { accountRetreatRegistrationHelp } from "@/lib/help";
+import { createGlobalSearchFilter } from "@/lib/table";
 import { TRetreatRegistrationSchedule } from "@/types";
 import { IRetreatRegistration } from "@/types/account";
 
@@ -110,20 +115,22 @@ export function AccountStaffRegistrationTable({
     // ✅ 모든 클릭을 multi-sort event로 처리 (Shift 키 불필요)
     isMultiSortEvent: () => true,
     // 전역 필터 함수 (통합 검색)
-    globalFilterFn: (row, columnId, filterValue) => {
-      const searchableFields = [
-        row.original.name,
-        row.original.department,
-        row.original.grade,
-        row.original.type?.toString(),
-        row.original.phoneNumber,
-        row.original.status,
-      ];
-
-      return searchableFields.some(field =>
-        field?.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    },
+    globalFilterFn: createGlobalSearchFilter<AccountStaffTableData>([
+      { value: row => row.name, mode: "contains" },
+      { value: row => row.phoneNumber, mode: "contains" },
+      { value: row => row.accountMemo, mode: "contains" },
+      { value: row => row.department, mode: "token" },
+      { value: row => row.grade, mode: "token" },
+      {
+        value: row =>
+          row.type ? USER_RETREAT_TYPE_LABELS[row.type] || row.type : "",
+        mode: "contains",
+      },
+      {
+        value: row => PAYMENT_STATUS_LABELS[row.status] || row.status,
+        mode: "contains",
+      },
+    ]),
   });
 
   // ✅ 필터링된 데이터 수

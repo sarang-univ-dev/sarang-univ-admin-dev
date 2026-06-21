@@ -145,11 +145,14 @@ export const AccountStaffAPI = {
    * @param retreatSlug - 수양회 슬러그
    * @returns Blob 데이터
    */
-  downloadExcel: async (retreatSlug: string): Promise<Blob> => {
-    const response = await webAxios.get(
-      `/api/v1/retreat/${retreatSlug}/account/download-retreat-registration-excel`,
-      { responseType: "blob" }
-    );
+  downloadExcel: async (
+    retreatSlug: string,
+    rowIds?: number[]
+  ): Promise<Blob> => {
+    const url = `/api/v1/retreat/${retreatSlug}/account/download-retreat-registration-excel`;
+    const response = rowIds
+      ? await webAxios.post(url, { rowIds }, { responseType: "blob" })
+      : await webAxios.get(url, { responseType: "blob" });
     return response.data;
   },
 };

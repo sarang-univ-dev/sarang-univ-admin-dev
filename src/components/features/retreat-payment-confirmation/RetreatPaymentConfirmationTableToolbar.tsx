@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-media-query";
 import { webAxios } from "@/lib/api/axios";
 import { SCHEDULE_TYPE_SHORT_LABELS } from "@/lib/constant/labels";
+import { getOrderedTableRowIds } from "@/lib/table";
 import { getKSTDay } from "@/lib/utils/date-utils";
 import { useToastStore } from "@/store/toast-store";
 import { TRetreatRegistrationSchedule } from "@/types";
@@ -63,8 +64,10 @@ export function RetreatPaymentConfirmationTableToolbar({
   const handleExcelDownload = async () => {
     setIsExporting(true);
     try {
-      const response = await webAxios.get(
+      const rowIds = getOrderedTableRowIds(table, row => row.id);
+      const response = await webAxios.post(
         `/api/v1/retreat/${retreatSlug}/registration/download-univ-group-registration-excel`,
+        { rowIds },
         { responseType: "blob" }
       );
 
@@ -78,10 +81,11 @@ export function RetreatPaymentConfirmationTableToolbar({
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
 
       addToast({
         title: "성공",
-        description: "엑셀 파일이 다운로드되었습니다.",
+        description: "현재 필터와 정렬이 적용된 엑셀 파일이 다운로드되었습니다.",
         variant: "success",
       });
     } catch (error) {

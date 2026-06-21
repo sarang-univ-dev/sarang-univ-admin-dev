@@ -34,6 +34,7 @@ import { generateShuttleBusScheduleColumns } from "@/utils/bus-utils";
 import { getPaymentStatusLabel } from "@/lib/constant/labels";
 import { useIsMobile } from "@/hooks/use-media-query";
 import { webAxios } from "@/lib/api/axios";
+import { createGlobalSearchFilter } from "@/lib/table";
 
 interface Grade {
   gradeId: number;
@@ -432,19 +433,19 @@ export function UnivGroupBusRegistrationTable({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     // 전역 필터 함수
-    globalFilterFn: (row, columnId, filterValue) => {
-      const searchableFields = [
-        row.original.name,
-        `${row.original.univGroupNumber}부`,
-        `${row.original.gradeNumber}학년`,
-        row.original.userPhoneNumber,
-        row.original.adminMemo,
-      ];
-
-      return searchableFields.some(field =>
-        field?.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    },
+    globalFilterFn: createGlobalSearchFilter<IUnivGroupBusRegistration>([
+      { value: row => row.name, mode: "contains" },
+      { value: row => row.userPhoneNumber, mode: "contains" },
+      { value: row => row.currentLeaderName, mode: "contains" },
+      { value: row => row.adminMemo, mode: "contains" },
+      { value: row => row.univGroupStaffShuttleBusHistoryMemo, mode: "contains" },
+      { value: row => `${row.univGroupNumber}부`, mode: "token" },
+      { value: row => `${row.gradeNumber}학년`, mode: "token" },
+      {
+        value: row => getPaymentStatusLabel(row.shuttleBusPaymentStatus),
+        mode: "contains",
+      },
+    ]),
   });
 
   // ✅ 사이드바에 표시할 최신 데이터 (SWR 캐시와 동기화)
@@ -471,7 +472,6 @@ export function UnivGroupBusRegistrationTable({
           table={table}
           globalFilter={globalFilter}
           setGlobalFilter={setGlobalFilter}
-          retreatSlug={retreatSlug}
           onDownloadExcel={downloadExcel}
           isDownloading={isMutating}
         />

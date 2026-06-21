@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useAccountStaffRegistration } from "@/hooks/account/use-account-staff-registration";
+import { getOrderedTableRowIds } from "@/lib/table";
 
 interface AccountStaffRegistrationTableToolbarProps {
   table: Table<any>;
@@ -52,6 +53,11 @@ export function AccountStaffRegistrationTableToolbar({
       debouncedSetGlobalFilter.cancel();
     };
   }, [debouncedSetGlobalFilter]);
+
+  const handleDownloadExcel = () => {
+    const rowIds = getOrderedTableRowIds(table, row => row.id);
+    void downloadExcel(rowIds);
+  };
 
   return (
     <div className="flex items-center justify-between space-x-2 mb-4">
@@ -120,7 +126,7 @@ export function AccountStaffRegistrationTableToolbar({
         <Button
           variant="outline"
           size="sm"
-          onClick={downloadExcel}
+          onClick={handleDownloadExcel}
           disabled={isMutating}
         >
           {isMutating ? (
