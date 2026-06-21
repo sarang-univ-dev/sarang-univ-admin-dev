@@ -8,7 +8,7 @@ import {
 
 export interface IUserScheduleChangeShuttleBus {
   price: number;
-  paymentStatus: UserRetreatShuttleBusPaymentStatus;
+  shuttleBusPaymentStatus: UserRetreatShuttleBusPaymentStatus;
   paymentConfirmedAt: string | null;
   userName: string;
   createdAt: string;

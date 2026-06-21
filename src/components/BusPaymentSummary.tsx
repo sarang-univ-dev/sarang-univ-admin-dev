@@ -38,6 +38,14 @@ export function PaymentSummary({
       ),
     },
     {
+      id: UserRetreatShuttleBusPaymentStatus.CANCELED,
+      header: (
+        <div className="flex justify-center">
+          <StatusBadge status={UserRetreatShuttleBusPaymentStatus.CANCELED} />
+        </div>
+      ),
+    },
+    {
       id: UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST,
       header: (
         <div className="flex justify-center">
@@ -103,6 +111,11 @@ export function PaymentSummary({
               <span className="font-semibold">{row.cells.confirmed}명</span>
             </div>
           ),
+          [UserRetreatShuttleBusPaymentStatus.CANCELED]: (
+            <div className="text-center">
+              <span className="font-semibold">{row.cells.canceled}명</span>
+            </div>
+          ),
           [UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST]: (
             <div className="text-center">
               <span className="font-semibold">
@@ -135,6 +148,9 @@ export function PaymentSummary({
         ),
         [UserRetreatShuttleBusPaymentStatus.PAID]: (
           <div className="text-center">{row.cells.confirmed}명</div>
+        ),
+        [UserRetreatShuttleBusPaymentStatus.CANCELED]: (
+          <div className="text-center">{row.cells.canceled}명</div>
         ),
         [UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST]: (
           <div className="text-center">{row.cells.refund_requested}명</div>

@@ -2,7 +2,11 @@
 
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { IUnivGroupBusRegistration } from "@/types/bus-registration";
-import { TRetreatShuttleBus, UserRetreatShuttleBusPaymentStatus, Gender } from "@/types";
+import {
+  TRetreatShuttleBus,
+  UserRetreatShuttleBusPaymentStatus,
+  Gender,
+} from "@/types";
 import { GenderBadge } from "@/components/Badge-bus";
 import { StatusBadge } from "@/components/Badge-bus";
 import { formatDate } from "@/utils/formatDate";
@@ -55,6 +59,8 @@ interface UnivGroupBusRegistrationDetailContentProps {
   ) => Promise<void>;
   onSaveOrUpdateAdminMemo: (id: string, memo: string) => Promise<void>;
   onDeleteAdminMemo: (memoId: number) => Promise<void>;
+  onSaveOrUpdateBusStaffMemo: (id: string, memo: string) => Promise<void>;
+  onDeleteBusStaffMemo: (memoId: number) => Promise<void>;
   isMutating: boolean;
 }
 
@@ -75,6 +81,8 @@ export function UnivGroupBusRegistrationDetailContent({
   onUpdateRegistrationInfo,
   onSaveOrUpdateAdminMemo,
   onDeleteAdminMemo,
+  onSaveOrUpdateBusStaffMemo,
+  onDeleteBusStaffMemo,
   isMutating,
 }: UnivGroupBusRegistrationDetailContentProps) {
   // 수정 모달 상태
@@ -97,9 +105,11 @@ export function UnivGroupBusRegistrationDetailContent({
   const getCheckboxColorClass = (color: string) => {
     const colorMap: Record<string, string> = {
       rose: "data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500",
-      amber: "data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500",
+      amber:
+        "data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500",
       teal: "data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500",
-      indigo: "data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500",
+      indigo:
+        "data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500",
     };
     return colorMap[color] || "";
   };
@@ -107,19 +117,23 @@ export function UnivGroupBusRegistrationDetailContent({
   // 선택된 스케줄 정보 추출 (색상 정보 포함)
   const selectedSchedules = useMemo(() => {
     return schedules
-      .filter((schedule) =>
+      .filter(schedule =>
         data.userRetreatShuttleBusRegistrationScheduleIds?.includes(schedule.id)
       )
-      .map((schedule) => {
+      .map(schedule => {
         const colorInfo = scheduleColumnsWithColor.find(
-          (s) => s.id === schedule.id
+          s => s.id === schedule.id
         );
         return {
           ...schedule,
           color: colorInfo?.color || "gray",
         };
       });
-  }, [schedules, scheduleColumnsWithColor, data.userRetreatShuttleBusRegistrationScheduleIds]);
+  }, [
+    schedules,
+    scheduleColumnsWithColor,
+    data.userRetreatShuttleBusRegistrationScheduleIds,
+  ]);
 
   return (
     <>
@@ -162,10 +176,7 @@ export function UnivGroupBusRegistrationDetailContent({
 
       {/* 버스 신청 정보 (처리 정보 포함) */}
       <InfoSection title="버스 신청 정보" icon={Bus}>
-        <InfoItem
-          label="신청시각"
-          value={formatDate(data.createdAt)}
-        />
+        <InfoItem label="신청시각" value={formatDate(data.createdAt)} />
         <InfoItem label="금액" value={`${data.price.toLocaleString()}원`} />
         <InfoItem
           label="입금 현황"
@@ -189,7 +200,7 @@ export function UnivGroupBusRegistrationDetailContent({
           <p className="text-sm text-gray-500">선택한 스케줄이 없습니다.</p>
         ) : (
           <div className="space-y-2">
-            {selectedSchedules.map((schedule) => (
+            {selectedSchedules.map(schedule => (
               <div
                 key={schedule.id}
                 className={cn(
@@ -229,10 +240,10 @@ export function UnivGroupBusRegistrationDetailContent({
             onUpdate={async (id, memo) => {
               await onUpdateMemo(id, memo);
             }}
-            onDelete={async (id) => {
+            onDelete={async id => {
               await onDeleteMemo(id);
             }}
-            hasExistingMemo={(row) => !!data.univGroupStaffShuttleBusHistoryMemo}
+            hasExistingMemo={row => !!data.univGroupStaffShuttleBusHistoryMemo}
             placeholder="일정 변경 요청 메모를 입력하세요... (예: 수 정발 -> 수 부분참 7시)"
           />
         </div>
@@ -260,6 +271,32 @@ export function UnivGroupBusRegistrationDetailContent({
             }}
             hasExistingMemo={() => !!data.adminMemo}
             placeholder="관리자 메모를 입력하세요"
+          />
+        </div>
+      </InfoSection>
+
+      {/* 버스간사 메모 */}
+      <InfoSection title="버스간사 메모" icon={FileText}>
+        <div className="space-y-2">
+          <p className="text-xs text-gray-500">
+            * 버스간사가 작성한 메모입니다
+          </p>
+          <MemoEditor
+            row={{ id: data.id.toString() }}
+            memoValue={data.busStaffMemo}
+            onSave={async (id, memo) => {
+              await onSaveOrUpdateBusStaffMemo(id, memo);
+            }}
+            onUpdate={async (id, memo) => {
+              await onSaveOrUpdateBusStaffMemo(id, memo);
+            }}
+            onDelete={async () => {
+              if (data.busStaffMemoId) {
+                await onDeleteBusStaffMemo(data.busStaffMemoId);
+              }
+            }}
+            hasExistingMemo={() => !!data.busStaffMemo}
+            placeholder="버스간사 메모를 입력하세요"
           />
         </div>
       </InfoSection>
@@ -292,7 +329,7 @@ export function UnivGroupBusRegistrationDetailContent({
         <RegistrationEditModal
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
-          onSave={async (editData) => {
+          onSave={async editData => {
             await onUpdateRegistrationInfo(data.id.toString(), editData);
           }}
           initialData={{
