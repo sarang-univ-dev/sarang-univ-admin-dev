@@ -68,7 +68,12 @@ interface DirectBusRegistrationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   retreatSlug: string;
-  grades: Grade[];
+  univGroupAndGrade: {
+    univGroupId: number;
+    univGroupName: string;
+    univGroupNumber: number;
+    grades: Grade[];
+  }[];
   schedules: TRetreatShuttleBus[];
   onSuccess: () => void;
 }
@@ -77,7 +82,7 @@ export function DirectBusRegistrationModal({
   open,
   onOpenChange,
   retreatSlug,
-  grades,
+  univGroupAndGrade,
   schedules,
   onSuccess,
 }: DirectBusRegistrationModalProps) {
@@ -86,6 +91,7 @@ export function DirectBusRegistrationModal({
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [gender, setGender] = useState<Gender | "">("");
+  const [univGroupNumber, setUnivGroupNumber] = useState<number | null>(null);
   const [gradeId, setGradeId] = useState<number | null>(null);
   const [selectedBusIds, setSelectedBusIds] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,10 +101,18 @@ export function DirectBusRegistrationModal({
       setName("");
       setPhoneNumber("");
       setGender("");
+      setUnivGroupNumber(null);
       setGradeId(null);
       setSelectedBusIds([]);
     }
   }, [open]);
+
+  const availableGrades = useMemo(
+    () =>
+      univGroupAndGrade.find((g) => g.univGroupNumber === univGroupNumber)
+        ?.grades ?? [],
+    [univGroupAndGrade, univGroupNumber]
+  );
 
   const price = useMemo(
     () =>
@@ -133,6 +147,12 @@ export function DirectBusRegistrationModal({
       return addToast({
         title: "오류",
         description: "성별을 선택해주세요.",
+        variant: "destructive",
+      });
+    if (univGroupNumber === null)
+      return addToast({
+        title: "오류",
+        description: "부서를 선택해주세요.",
         variant: "destructive",
       });
     if (!gradeId)
@@ -230,17 +250,43 @@ export function DirectBusRegistrationModal({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="univGroup">부서</Label>
+              <Select
+                value={univGroupNumber !== null ? univGroupNumber.toString() : ""}
+                onValueChange={(v) => {
+                  setUnivGroupNumber(Number(v));
+                  setGradeId(null);
+                }}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger id="univGroup">
+                  <SelectValue placeholder="부서 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {univGroupAndGrade.map((group) => (
+                    <SelectItem
+                      key={group.univGroupId}
+                      value={group.univGroupNumber.toString()}
+                    >
+                      {group.univGroupName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="grade">학년</Label>
               <Select
                 value={gradeId?.toString() ?? ""}
                 onValueChange={(value) => setGradeId(Number(value))}
-                disabled={isSubmitting}
+                disabled={isSubmitting || univGroupNumber === null}
               >
                 <SelectTrigger id="grade">
                   <SelectValue placeholder="학년 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {grades.map((grade) => (
+                  {availableGrades.map((grade) => (
                     <SelectItem
                       key={grade.gradeId}
                       value={grade.gradeId.toString()}

@@ -4,7 +4,7 @@ import { useMemo, useEffect } from "react";
 import { Table } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Download, Search, Settings, UserPlus } from "lucide-react";
+import { Download, Search, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -21,7 +21,6 @@ interface UnivGroupBusRegistrationTableToolbarProps {
   setGlobalFilter: (value: string) => void;
   onDownloadExcel: (rowIds?: number[]) => void | Promise<void>;
   isDownloading: boolean;
-  onAddRegistration: () => void;
 }
 
 /**
@@ -35,7 +34,6 @@ export function UnivGroupBusRegistrationTableToolbar({
   setGlobalFilter,
   onDownloadExcel,
   isDownloading,
-  onAddRegistration,
 }: UnivGroupBusRegistrationTableToolbarProps) {
   // ✅ Lodash debounce를 useMemo로 메모이제이션
   const debouncedSetGlobalFilter = useMemo(
@@ -139,11 +137,6 @@ export function UnivGroupBusRegistrationTableToolbar({
             엑셀 다운로드
           </Button>
 
-          {/* 신청 추가 */}
-          <Button size="sm" onClick={onAddRegistration}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            신청 추가
-          </Button>
         </div>
       )}
     </div>

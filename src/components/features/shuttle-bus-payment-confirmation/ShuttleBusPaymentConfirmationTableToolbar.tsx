@@ -2,7 +2,7 @@
 
 import { Table } from "@tanstack/react-table";
 import debounce from "lodash/debounce";
-import { Download, Search } from "lucide-react";
+import { Download, Search, UserPlus } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface ShuttleBusPaymentConfirmationTableToolbarProps {
   globalFilter: string;
   setGlobalFilter: (value: string) => void;
   retreatSlug: string;
+  onAddRegistration: () => void;
 }
 
 /**
@@ -28,6 +29,7 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
   globalFilter,
   setGlobalFilter,
   retreatSlug,
+  onAddRegistration,
 }: ShuttleBusPaymentConfirmationTableToolbarProps) {
   const addToast = useToastStore(state => state.add);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -98,20 +100,28 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
         />
       </div>
 
-      {/* 엑셀 다운로드 */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleExcelDownload}
-        disabled={isDownloading}
-      >
-        {isDownloading ? (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-        ) : (
-          <Download className="h-4 w-4 mr-2" />
-        )}
-        엑셀 다운로드
-      </Button>
+      <div className="flex items-center space-x-2">
+        {/* 엑셀 다운로드 */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExcelDownload}
+          disabled={isDownloading}
+        >
+          {isDownloading ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+          ) : (
+            <Download className="h-4 w-4 mr-2" />
+          )}
+          엑셀 다운로드
+        </Button>
+
+        {/* 신청 추가 */}
+        <Button size="sm" onClick={onAddRegistration}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          신청 추가
+        </Button>
+      </div>
     </div>
   );
 }

@@ -25,7 +25,6 @@ import { TRetreatShuttleBus } from "@/types";
 import { GenderBadge, StatusBadge } from "@/components/Badge-bus";
 import { useUnivGroupBusRegistration } from "@/hooks/univ-group-bus-registration/use-univ-group-bus-registration";
 import { UnivGroupBusRegistrationTableToolbar } from "./UnivGroupBusRegistrationTableToolbar";
-import { DirectBusRegistrationModal } from "./DirectBusRegistrationModal";
 import { UnivGroupBusRegistrationDetailContent } from "./UnivGroupBusRegistrationDetailContent";
 import {
   DetailSidebar,
@@ -80,7 +79,6 @@ export function UnivGroupBusRegistrationTable({
     deleteAdminMemo,
     saveOrUpdateBusStaffMemo,
     deleteBusStaffMemo,
-    mutate,
     isMutating,
   } = useUnivGroupBusRegistration(retreatSlug, {
     initialData,
@@ -95,9 +93,6 @@ export function UnivGroupBusRegistrationTable({
 
   // ✅ 부서 학년 목록 (수정 모달용)
   const [grades, setGrades] = useState<Grade[]>([]);
-
-  // ✅ 직접 신청 추가 모달 열림 상태
-  const [isAddOpen, setIsAddOpen] = useState(false);
 
   // ✅ 부서 학년 정보 가져오기
   useEffect(() => {
@@ -479,7 +474,6 @@ export function UnivGroupBusRegistrationTable({
           setGlobalFilter={setGlobalFilter}
           onDownloadExcel={downloadExcel}
           isDownloading={isMutating}
-          onAddRegistration={() => setIsAddOpen(true)}
         />
 
         {/* ✅ 가상화 테이블 - 사이드바는 상세보기 버튼에서만 열림 */}
@@ -535,15 +529,6 @@ export function UnivGroupBusRegistrationTable({
         )}
       </DetailSidebar>
 
-      {/* ✅ 직접 신청 추가 모달 */}
-      <DirectBusRegistrationModal
-        open={isAddOpen}
-        onOpenChange={setIsAddOpen}
-        retreatSlug={retreatSlug}
-        grades={grades}
-        schedules={schedules}
-        onSuccess={() => mutate()}
-      />
     </>
   );
 }
