@@ -217,10 +217,10 @@ export function UnivGroupRetreatRegistrationTableToolbar({
             엑셀 다운로드
           </Button>
 
-          {/* 직접 신청 추가 */}
+          {/* 신청 추가 */}
           <Button size="sm" onClick={onAddRegistration}>
             <UserPlus className="h-4 w-4 mr-2" />
-            직접 신청 추가
+            신청 추가
           </Button>
         </div>
       )}
