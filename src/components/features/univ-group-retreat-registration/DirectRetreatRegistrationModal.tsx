@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -20,13 +21,8 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScheduleSelectionTable } from "@/components/common/retreat";
-import {
-  ParticipantInfoFields,
-  type Grade,
-} from "@/components/features/common/ParticipantInfoFields";
 import { useScheduleChangePrice } from "@/hooks/retreat/use-schedule-change-price";
 import { webAxios } from "@/lib/api/axios";
-import { getErrorMessage } from "@/lib/getErrorMessage";
 import { useToastStore } from "@/store/toast-store";
 import { formatSimpleDate } from "@/utils/formatDate";
 import {
@@ -35,6 +31,41 @@ import {
   TRetreatRegistrationSchedule,
   UserRetreatRegistrationType,
 } from "@/types";
+
+interface Grade {
+  gradeId: number;
+  gradeName: string;
+  gradeNumber: number;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof (error as { response?: unknown }).response === "object" &&
+    (error as { response: unknown }).response !== null &&
+    "data" in (error as { response: { data?: unknown } }).response &&
+    typeof (error as { response: { data?: unknown } }).response.data ===
+      "object" &&
+    (error as { response: { data: unknown } }).response.data !== null &&
+    "message" in
+      (error as { response: { data: { message?: unknown } } }).response.data
+  ) {
+    return String(
+      (error as { response: { data: { message: unknown } } }).response.data
+        .message
+    );
+  }
+  return fallback;
+}
+
+function formatPhoneNumber(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length < 4) return digits;
+  if (digits.length < 8) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+}
 
 interface DirectRetreatRegistrationModalProps {
   open: boolean;
@@ -217,21 +248,80 @@ export function DirectRetreatRegistrationModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          <ParticipantInfoFields
-            name={name}
-            onNameChange={setName}
-            phoneNumber={phoneNumber}
-            onPhoneChange={setPhoneNumber}
-            gender={gender}
-            onGenderChange={setGender}
-            gradeId={gradeId}
-            onGradeChange={setGradeId}
-            grades={grades}
-            showLeaderName
-            currentLeaderName={currentLeaderName}
-            onLeaderChange={setCurrentLeaderName}
-            disabled={isSubmitting}
-          />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">이름</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="이름"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">전화번호</Label>
+              <Input
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                placeholder="010-0000-0000"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">성별</Label>
+              <Select
+                value={gender}
+                onValueChange={(value) => setGender(value as Gender)}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="성별 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={Gender.MALE}>남성</SelectItem>
+                  <SelectItem value={Gender.FEMALE}>여성</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="grade">학년</Label>
+              <Select
+                value={gradeId?.toString() ?? ""}
+                onValueChange={(value) => setGradeId(Number(value))}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger id="grade">
+                  <SelectValue placeholder="학년 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {grades.map((grade) => (
+                    <SelectItem
+                      key={grade.gradeId}
+                      value={grade.gradeId.toString()}
+                    >
+                      {grade.gradeName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="currentLeaderName">GBS 리더명</Label>
+              <Input
+                id="currentLeaderName"
+                value={currentLeaderName}
+                onChange={(e) => setCurrentLeaderName(e.target.value)}
+                placeholder="리더명"
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
 
           <div className="space-y-2">
             <Label>지체 구분</Label>
