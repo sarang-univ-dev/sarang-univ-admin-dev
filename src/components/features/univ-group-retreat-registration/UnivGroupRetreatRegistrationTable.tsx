@@ -31,6 +31,8 @@ import {
   PAYMENT_STATUS_LABELS,
   USER_RETREAT_TYPE_LABELS,
 } from "@/lib/constant/labels";
+import { DirectRetreatRegistrationModal } from "./DirectRetreatRegistrationModal";
+import { TRetreatPaymentSchedule } from "@/types";
 import { createGlobalSearchFilter } from "@/lib/table";
 
 interface Grade {
@@ -79,6 +81,7 @@ export function UnivGroupRetreatRegistrationTable({
     deleteRegistration,
     sendShuttleBusRegistrationReminder,
     updateRegistrationInfo,
+    mutate,
     isMutating
   } = useUnivGroupRetreatRegistration(retreatSlug, {
     fallbackData: initialData,
@@ -93,32 +96,42 @@ export function UnivGroupRetreatRegistrationTable({
   // ✅ 부서 학년 목록 (수정 모달용)
   const [grades, setGrades] = useState<Grade[]>([]);
 
-  // ✅ 부서 학년 정보 가져오기
+  // ✅ 결제 일정 목록 (직접 신청 추가 모달용)
+  const [payments, setPayments] = useState<TRetreatPaymentSchedule[]>([]);
+
+  // ✅ 직접 신청 추가 모달 열림 상태
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  // ✅ 수양회 정보 가져오기 (학년 + 결제 일정)
   useEffect(() => {
-    const fetchGrades = async () => {
+    const fetchInfo = async () => {
       try {
         const response = await webAxios.get(
           `/api/v1/retreat/${retreatSlug}/info`
         );
         const retreatInfo = response.data.retreatInfo;
 
+        // 결제 일정 세팅 (등록 0명이어도 로드)
+        setPayments(retreatInfo.payment ?? []);
+
         // 첫 번째 데이터의 부서 번호로 학년 목록 필터링
         if (initialData.length > 0 && retreatInfo.univGroupAndGrade) {
           const univGroupNumber = initialData[0].univGroupNumber;
           const univGroup = retreatInfo.univGroupAndGrade.find(
-            (group: { univGroupNumber: number }) => group.univGroupNumber === univGroupNumber
+            (group: { univGroupNumber: number }) =>
+              group.univGroupNumber === univGroupNumber
           );
           if (univGroup) {
             setGrades(univGroup.grades);
           }
         }
       } catch (error) {
-        console.error("학년 정보 조회 중 오류 발생:", error);
+        console.error("수양회 정보 조회 중 오류 발생:", error);
       }
     };
 
-    if (retreatSlug && initialData.length > 0) {
-      fetchGrades();
+    if (retreatSlug) {
+      fetchInfo();
     }
   }, [retreatSlug, initialData]);
 
@@ -217,6 +230,7 @@ export function UnivGroupRetreatRegistrationTable({
           setGlobalFilter={setGlobalFilter}
           retreatSlug={retreatSlug}
           schedules={schedules}
+          onAddRegistration={() => setIsAddOpen(true)}
         />
 
         {/* ✅ 모바일: 컴팩트 테이블 - 사이드바는 상세보기 버튼에서만 열림 */}
@@ -280,6 +294,17 @@ export function UnivGroupRetreatRegistrationTable({
           />
         )}
       </DetailSidebar>
+
+      {/* ✅ 직접 신청 추가 모달 */}
+      <DirectRetreatRegistrationModal
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        retreatSlug={retreatSlug}
+        grades={grades}
+        schedules={schedules}
+        payments={payments}
+        onSuccess={() => mutate()}
+      />
     </>
   );
 }
