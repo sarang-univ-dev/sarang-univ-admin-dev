@@ -215,7 +215,6 @@ export function DirectBusRegistrationModal({
             <div className="space-y-2">
               <Label htmlFor="gender">성별</Label>
               <Select
-                modal={false}
                 value={gender}
                 onValueChange={(value) => setGender(value as Gender)}
                 disabled={isSubmitting}
@@ -233,7 +232,6 @@ export function DirectBusRegistrationModal({
             <div className="space-y-2">
               <Label htmlFor="grade">학년</Label>
               <Select
-                modal={false}
                 value={gradeId?.toString() ?? ""}
                 onValueChange={(value) => setGradeId(Number(value))}
                 disabled={isSubmitting}
