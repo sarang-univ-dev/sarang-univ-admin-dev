@@ -274,6 +274,7 @@ export function DirectRetreatRegistrationModal({
             <div className="space-y-2">
               <Label htmlFor="gender">성별</Label>
               <Select
+                modal={false}
                 value={gender}
                 onValueChange={(value) => setGender(value as Gender)}
                 disabled={isSubmitting}
@@ -291,6 +292,7 @@ export function DirectRetreatRegistrationModal({
             <div className="space-y-2">
               <Label htmlFor="grade">학년</Label>
               <Select
+                modal={false}
                 value={gradeId?.toString() ?? ""}
                 onValueChange={(value) => setGradeId(Number(value))}
                 disabled={isSubmitting}
@@ -326,6 +328,7 @@ export function DirectRetreatRegistrationModal({
           <div className="space-y-2">
             <Label>지체 구분</Label>
             <Select
+              modal={false}
               value={userType}
               onValueChange={(value) =>
                 setUserType(
