@@ -205,7 +205,7 @@ export function DirectBusRegistrationModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>직접 신청 추가 (셔틀버스)</DialogTitle>
+          <DialogTitle>셔틀버스 신청 추가</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -291,7 +291,7 @@ export function DirectBusRegistrationModal({
                       key={grade.gradeId}
                       value={grade.gradeId.toString()}
                     >
-                      {grade.gradeName}
+                      {`${grade.gradeNumber}학년 ${grade.gradeName}`}
                     </SelectItem>
                   ))}
                 </SelectContent>

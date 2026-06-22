@@ -244,7 +244,7 @@ export function DirectRetreatRegistrationModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>직접 신청 추가 (수양회)</DialogTitle>
+          <DialogTitle>수양회 신청 추가</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -304,7 +304,7 @@ export function DirectRetreatRegistrationModal({
                       key={grade.gradeId}
                       value={grade.gradeId.toString()}
                     >
-                      {grade.gradeName}
+                      {`${grade.gradeNumber}학년 ${grade.gradeName}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
