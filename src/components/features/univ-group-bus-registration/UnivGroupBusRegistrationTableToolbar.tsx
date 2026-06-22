@@ -136,7 +136,6 @@ export function UnivGroupBusRegistrationTableToolbar({
             )}
             엑셀 다운로드
           </Button>
-
         </div>
       )}
     </div>

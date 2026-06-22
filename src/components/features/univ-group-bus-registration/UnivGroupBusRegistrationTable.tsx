@@ -528,7 +528,6 @@ export function UnivGroupBusRegistrationTable({
           />
         )}
       </DetailSidebar>
-
     </>
   );
 }
