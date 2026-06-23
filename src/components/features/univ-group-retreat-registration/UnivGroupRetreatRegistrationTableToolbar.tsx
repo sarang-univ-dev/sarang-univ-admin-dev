@@ -2,7 +2,7 @@
 
 import { Table } from "@tanstack/react-table";
 import debounce from "lodash/debounce";
-import { Download, Search, Settings } from "lucide-react";
+import { Download, Search, Settings, UserPlus } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ interface UnivGroupRetreatRegistrationTableToolbarProps {
   setGlobalFilter: (value: string) => void;
   retreatSlug: string;
   schedules: TRetreatRegistrationSchedule[];
+  onAddRegistration: () => void;
 }
 
 /**
@@ -42,6 +43,7 @@ export function UnivGroupRetreatRegistrationTableToolbar({
   setGlobalFilter,
   retreatSlug,
   schedules,
+  onAddRegistration,
 }: UnivGroupRetreatRegistrationTableToolbarProps) {
   const addToast = useToastStore(state => state.add);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -213,6 +215,12 @@ export function UnivGroupRetreatRegistrationTableToolbar({
               <Download className="h-4 w-4 mr-2" />
             )}
             엑셀 다운로드
+          </Button>
+
+          {/* 신청 추가 */}
+          <Button size="sm" onClick={onAddRegistration}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            신청 추가
           </Button>
         </div>
       )}

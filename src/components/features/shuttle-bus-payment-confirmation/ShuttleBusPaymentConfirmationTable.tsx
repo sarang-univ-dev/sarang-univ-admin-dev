@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -43,6 +43,8 @@ import {
   arrayIncludesValueFilterFn,
   createGlobalSearchFilter,
 } from "@/lib/table";
+import { DirectBusRegistrationModal } from "./DirectBusRegistrationModal";
+import { webAxios } from "@/lib/api/axios";
 
 interface ShuttleBusPaymentConfirmationTableProps {
   initialData: IShuttleBusPaymentConfirmationRegistration[];
@@ -69,7 +71,7 @@ export function ShuttleBusPaymentConfirmationTable({
   retreatSlug,
 }: ShuttleBusPaymentConfirmationTableProps) {
   // ✅ SWR로 실시간 데이터 동기화
-  const { data: registrations = initialData } = useShuttleBusPaymentConfirmation(
+  const { data: registrations = initialData, mutate } = useShuttleBusPaymentConfirmation(
     retreatSlug,
     {
       initialData,
@@ -79,6 +81,34 @@ export function ShuttleBusPaymentConfirmationTable({
 
   // ✅ 사이드바 상태 관리
   const sidebar = useDetailSidebar<IShuttleBusPaymentConfirmationRegistration>();
+
+  // ✅ 직접 신청 추가 모달 열림 상태
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  // ✅ 전체 부서 + 학년 목록 (직접 신청 추가 모달용)
+  const [univGroupAndGrade, setUnivGroupAndGrade] = useState<
+    {
+      univGroupId: number;
+      univGroupName: string;
+      univGroupNumber: number;
+      grades: { gradeId: number; gradeName: string; gradeNumber: number }[];
+    }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchUnivGroupAndGrade = async () => {
+      try {
+        const res = await webAxios.get(`/api/v1/retreat/${retreatSlug}/info`);
+        setUnivGroupAndGrade(res.data.retreatInfo.univGroupAndGrade ?? []);
+      } catch (error) {
+        console.error("부서/학년 정보 조회 중 오류 발생:", error);
+      }
+    };
+
+    if (retreatSlug) {
+      fetchUnivGroupAndGrade();
+    }
+  }, [retreatSlug]);
 
   // ✅ TanStack Table State
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -437,6 +467,7 @@ export function ShuttleBusPaymentConfirmationTable({
               globalFilter={globalFilter}
               setGlobalFilter={setGlobalFilter}
               retreatSlug={retreatSlug}
+              onAddRegistration={() => setIsAddOpen(true)}
             />
 
             {/* 테이블 */}
@@ -509,6 +540,16 @@ export function ShuttleBusPaymentConfirmationTable({
           </div>
         </CardContent>
       </Card>
+
+      {/* ✅ 직접 신청 추가 모달 */}
+      <DirectBusRegistrationModal
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        retreatSlug={retreatSlug}
+        univGroupAndGrade={univGroupAndGrade}
+        schedules={schedules}
+        onSuccess={() => mutate()}
+      />
 
       {/* Detail Sidebar - Timestamp 정보는 여기에만 표시 */}
       <DetailSidebar
