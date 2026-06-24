@@ -154,7 +154,7 @@ export function LeaderReportsTable({
                     은혜나눔
                   </div>
                   {report.graceSharing?.trim() ? (
-                    <div className="min-h-[120px] rounded-md border border-green-100 bg-green-50/50 px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-gray-800">
+                    <div className="min-h-[120px] rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-gray-800">
                       {report.graceSharing}
                     </div>
                   ) : (
@@ -168,7 +168,7 @@ export function LeaderReportsTable({
                     기도제목
                   </div>
                   {report.prayerRequests?.trim() ? (
-                    <div className="min-h-[120px] rounded-md border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-gray-800">
+                    <div className="min-h-[120px] rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-gray-800">
                       {report.prayerRequests}
                     </div>
                   ) : (
