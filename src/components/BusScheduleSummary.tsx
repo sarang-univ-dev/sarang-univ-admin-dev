@@ -33,10 +33,23 @@ export function BusScheduleSummary({
   const tableRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // 취소완료·환불처리중·환불완료 인원은 실제 탑승 인원이 아니므로 집계에서 제외
+  const countedRegistrations = useMemo(() => {
+    return registrations.filter(
+      reg =>
+        reg.shuttleBusPaymentStatus !==
+          UserRetreatShuttleBusPaymentStatus.CANCELED &&
+        reg.shuttleBusPaymentStatus !==
+          UserRetreatShuttleBusPaymentStatus.REFUND_REQUEST &&
+        reg.shuttleBusPaymentStatus !==
+          UserRetreatShuttleBusPaymentStatus.REFUNDED
+    );
+  }, [registrations]);
+
   // 부서 수 계산
   const uniqueDepartments = useMemo(() => {
-    return new Set(registrations.map(reg => reg.univGroupNumber)).size;
-  }, [registrations]);
+    return new Set(countedRegistrations.map(reg => reg.univGroupNumber)).size;
+  }, [countedRegistrations]);
 
   // 요일별로 그룹화된 스케줄 컬럼
   const dayGroups = useMemo(() => {
@@ -48,14 +61,14 @@ export function BusScheduleSummary({
     return dayGroups.flatMap(group => group.schedules);
   }, [dayGroups]);
 
-  // 부서별 스케줄 통계 생성 (모든 등록자 기준)
+  // 부서별 스케줄 통계 생성 (집계 대상 인원 기준)
   const allRows = useMemo(() => {
-    if (!Array.isArray(registrations) || !Array.isArray(schedules)) {
+    if (!Array.isArray(countedRegistrations) || !Array.isArray(schedules)) {
       return [];
     }
 
-    // 부서 목록 추출 (모든 등록자 기준, 중복 제거)
-    const departments = registrations
+    // 부서 목록 추출 (집계 대상 인원 기준, 중복 제거)
+    const departments = countedRegistrations
       .map(reg => reg.univGroupNumber)
       .filter((value, index, self) => self.indexOf(value) === index)
       .sort((a, b) => a - b)
@@ -78,7 +91,7 @@ export function BusScheduleSummary({
     });
 
     // 각 등록에 대해 스케줄별로 카운트
-    registrations.forEach(reg => {
+    countedRegistrations.forEach(reg => {
       const deptIndex = stats.findIndex(
         s => s.label === `${reg.univGroupNumber}부`
       );
@@ -113,7 +126,7 @@ export function BusScheduleSummary({
     });
 
     return [...stats, totals];
-  }, [registrations, schedules]);
+  }, [countedRegistrations, schedules]);
 
   // 부서가 1개인 경우 전체 행 제외
   const rows = useMemo(() => {
@@ -123,25 +136,25 @@ export function BusScheduleSummary({
     return allRows;
   }, [allRows, uniqueDepartments]);
 
-  // 부서별 총 인원수 계산 (모든 등록자 기준)
+  // 부서별 총 인원수 계산 (집계 대상 인원 기준)
   const calculateDepartmentTotals = useMemo(() => {
     const departmentCounts: Record<string, number> = {};
 
     // 부서별 초기화
     const departments = [
-      ...new Set(registrations.map(reg => reg.univGroupNumber)),
+      ...new Set(countedRegistrations.map(reg => reg.univGroupNumber)),
     ];
     departments.forEach(dept => {
       departmentCounts[dept] = 0;
     });
 
-    // 부서별 총 인원 계산 (모든 등록자)
-    registrations.forEach(reg => {
+    // 부서별 총 인원 계산 (집계 대상 인원)
+    countedRegistrations.forEach(reg => {
       departmentCounts[reg.univGroupNumber]++;
     });
 
     return departmentCounts;
-  }, [registrations]);
+  }, [countedRegistrations]);
 
   const formattedRows = useMemo(() => {
     return rows.map(row => {
@@ -225,7 +238,8 @@ export function BusScheduleSummary({
   };
 
   // 데이터가 없어도 기본 테이블 구조는 보여주기
-  const showEmptyMessage = schedules.length === 0 || registrations.length === 0;
+  const showEmptyMessage =
+    schedules.length === 0 || countedRegistrations.length === 0;
 
   return (
     <div className="space-y-3 md:space-y-4">
@@ -236,6 +250,9 @@ export function BusScheduleSummary({
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
             수양회 버스 인원 현황
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            각 셀 인원 = 입금대기 + 입금완료 - 취소완료 - 환불처리중 - 환불완료
           </p>
         </div>
         <Button

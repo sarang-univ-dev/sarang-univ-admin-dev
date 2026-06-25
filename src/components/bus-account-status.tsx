@@ -223,7 +223,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
                   />
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {dept.paidIncome.toLocaleString()}원
+                  {dept.actualIncome.toLocaleString()}원
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -258,7 +258,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
               </TableRow>
               <TableRow className="bg-gray-50">
                 <TableCell className="font-bold">
-                  현재 계좌 현황 (입금 완료 + 취소 완료 - 환불 완료)
+                  현재 계좌 금액 (입금 완료 - 환불 완료)
                 </TableCell>
                 <TableCell className="text-right font-bold">
                   {dept.currentBalance.toLocaleString()}원
@@ -266,7 +266,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
               </TableRow>
               <TableRow className="bg-gray-50">
                 <TableCell className="font-bold">
-                  예상 계좌 현황 (입금 대기 + 입금 완료 + 취소 완료 - 환불 처리 중 - 환불 완료)
+                  목표 계좌 금액 (입금 대기 + 입금 완료 - 환불 처리 중 - 환불 완료)
                 </TableCell>
                 <TableCell className="text-right font-bold">
                   {dept.expectedFutureBalance.toLocaleString()}원
@@ -339,7 +339,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
                       />
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {dept.paidIncome.toLocaleString()}원
+                      {dept.actualIncome.toLocaleString()}원
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -376,7 +376,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
                   </TableRow>
                   <TableRow className="bg-gray-50">
                     <TableCell className="font-bold">
-                      현재 계좌 금액 (입금 완료 + 취소 완료 - 환불 완료)
+                      현재 계좌 금액 (입금 완료 - 환불 완료)
                     </TableCell>
                     <TableCell className="text-right font-bold">
                       {dept.currentBalance.toLocaleString()}원
@@ -384,8 +384,7 @@ export function AccountStatus({ registrations = [] }: AccountStatusProps) {
                   </TableRow>
                   <TableRow className="bg-gray-50">
                     <TableCell className="font-bold">
-                      목표 계좌 금액 (입금 대기 + 입금 완료 + 취소 완료 -
-                      환불 처리 중 - 환불 완료)
+                      목표 계좌 금액 (입금 대기 + 입금 완료 - 환불 처리 중 - 환불 완료)
                     </TableCell>
                     <TableCell className="text-right font-bold">
                       {dept.expectedFutureBalance.toLocaleString()}원
