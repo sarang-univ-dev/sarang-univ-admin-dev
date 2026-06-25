@@ -37,7 +37,19 @@ export function LeaderScheduleChangeRequestDetailContent({
         <InfoItem label="이름" value={data.memberName} />
         <InfoItem label="성별" value={<GenderBadge gender={data.gender} />} />
         <InfoItem label="GBS" value={`${data.gbsNumber}`} />
-        <InfoItem label="요청자" value={data.requesterName} />
+        <InfoItem
+          label="리더 부서"
+          value={
+            data.requesterUnivGroupNumber
+              ? `${data.requesterUnivGroupNumber}부`
+              : "-"
+          }
+        />
+        <InfoItem label="리더" value={data.requesterName} />
+        <InfoItem
+          label="리더 연락처"
+          value={data.requesterPhoneNumber || "-"}
+        />
       </InfoSection>
 
       <InfoSection title="일정 변경 내역" icon={Calendar}>

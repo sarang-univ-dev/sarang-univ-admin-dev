@@ -227,7 +227,7 @@ export function LeaderScheduleChangeRequestTable({
   );
 
   const emptyColSpan =
-    10 +
+    12 +
     scheduleColumns.length +
     1 +
     (isAllView ? 1 : 0);
@@ -278,6 +278,21 @@ export function LeaderScheduleChangeRequestTable({
                 <TableRow>
                   <TableHead className="px-3 py-2.5" rowSpan={2}>
                     <div className="flex items-center justify-center">
+                      <span>리더 부서</span>
+                    </div>
+                  </TableHead>
+                  <TableHead className="px-3 py-2.5" rowSpan={2}>
+                    <div className="flex items-center justify-center">
+                      <span>리더</span>
+                    </div>
+                  </TableHead>
+                  <TableHead className="px-3 py-2.5" rowSpan={2}>
+                    <div className="flex items-center justify-center">
+                      <span>리더 연락처</span>
+                    </div>
+                  </TableHead>
+                  <TableHead className="px-3 py-2.5" rowSpan={2}>
+                    <div className="flex items-center justify-center">
                       <span>부서</span>
                     </div>
                   </TableHead>
@@ -314,11 +329,6 @@ export function LeaderScheduleChangeRequestTable({
                     className="text-center px-3 py-2.5"
                   >
                     수양회 일정
-                  </TableHead>
-                  <TableHead className="px-3 py-2.5" rowSpan={2}>
-                    <div className="flex items-center justify-center">
-                      <span>요청자</span>
-                    </div>
                   </TableHead>
                   <TableHead className="px-3 py-2.5" rowSpan={2}>
                     <div className="flex items-center justify-center">
@@ -390,6 +400,26 @@ export function LeaderScheduleChangeRequestTable({
                             className="text-center px-3 py-2.5"
                             rowSpan={2}
                           >
+                            {request.requesterUnivGroupNumber
+                              ? `${request.requesterUnivGroupNumber}부`
+                              : "-"}
+                          </TableCell>
+                          <TableCell
+                            className="text-center px-3 py-2.5"
+                            rowSpan={2}
+                          >
+                            {request.requesterName}
+                          </TableCell>
+                          <TableCell
+                            className="text-center px-3 py-2.5"
+                            rowSpan={2}
+                          >
+                            {request.requesterPhoneNumber || "-"}
+                          </TableCell>
+                          <TableCell
+                            className="text-center px-3 py-2.5"
+                            rowSpan={2}
+                          >
                             {request.univGroupNumber}부
                           </TableCell>
                           <TableCell
@@ -420,12 +450,6 @@ export function LeaderScheduleChangeRequestTable({
                             변경 전
                           </TableCell>
                           {renderScheduleCells("before", request)}
-                          <TableCell
-                            className="text-center px-3 py-2.5"
-                            rowSpan={2}
-                          >
-                            {request.requesterName}
-                          </TableCell>
                           <TableCell
                             className="text-center text-sm whitespace-pre-wrap break-words min-w-[140px] max-w-[260px] px-3 py-2.5"
                             rowSpan={2}

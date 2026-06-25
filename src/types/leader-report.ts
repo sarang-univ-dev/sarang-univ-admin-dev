@@ -28,6 +28,8 @@ export interface ILeaderScheduleChangeRequest {
   reason: string;
   status: LeaderScheduleChangeRequestStatus;
   requesterName: string;
+  requesterPhoneNumber: string | null;
+  requesterUnivGroupNumber: number | null;
   reviewerName: string | null;
   memoId: number | null;
   memo: string | null;
