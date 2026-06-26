@@ -8,7 +8,6 @@ import {
   Users,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import useSWR from "swr";
 
 import {
   Card,
@@ -20,11 +19,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLeaderAttendance } from "@/hooks/leader-report/use-leader-attendance";
 import { useLeaderReportSubmissionStatus } from "@/hooks/leader-report/use-leader-report-submission-status";
 import { useLeaderScheduleChangeRequest } from "@/hooks/leader-schedule-change-request/use-leader-schedule-change-request";
-import { LeaderAdminAPI } from "@/lib/api/leader-admin-api";
 import { TRetreatRegistrationSchedule } from "@/types";
 import {
   ILeaderAttendance,
-  ILeaderMemberMemo,
   ILeaderReportSubmissionStatus,
   ILeaderScheduleChangeRequest,
   ILeaderTodayInfo,
@@ -33,6 +30,7 @@ import {
 import { LeaderScheduleChangeRequestTable } from "../leader-schedule-change-request";
 import { LeaderAttendanceTable } from "./LeaderAttendanceTable";
 import { LeaderDateControls } from "./LeaderDateControls";
+import { LeaderMemberMemoTable } from "./LeaderMemberMemoTable";
 import { LeaderReportSubmissionStatusTable } from "./LeaderReportSubmissionStatusTable";
 
 interface LeaderOperationsDashboardProps {
@@ -162,17 +160,6 @@ export function LeaderOperationsDashboard({
     scheduleChangeRequestOptions
   );
 
-  // 비고 모아보기 — 한 곳에서만 쓰므로 인라인 (해당 일자 비고 있는 전 조원)
-  const { data: memoData } = useSWR(
-    selectedDate
-      ? `/api/v1/retreat/${retreatSlug}/leader/admin/member-memos?date=${selectedDate}`
-      : null,
-    () =>
-      LeaderAdminAPI.getMemberMemos(retreatSlug, selectedDate ?? undefined),
-    { revalidateOnFocus: false, refreshInterval: 15000, dedupingInterval: 5000 }
-  );
-  const memos: ILeaderMemberMemo[] = memoData?.memos ?? [];
-
   const summary = useMemo(() => {
     const present = attendance.filter(
       member => member.attendanceStatus === "PRESENT"
@@ -283,47 +270,12 @@ export function LeaderOperationsDashboard({
           />
         </TabsContent>
 
-        <TabsContent value="memo" className="space-y-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight">전체 비고</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                해당 일자 비고가 있는 전체 조원 기준 · 기준 일자:{" "}
-                {summary.selectedDate}
-              </p>
-            </div>
-            <div className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
-              <span className="whitespace-nowrap text-sm font-medium text-gray-700">
-                비고 {memos.length}건
-              </span>
-            </div>
-          </div>
-
-          {memos.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              해당 일자에 등록된 비고가 없습니다.
-            </p>
-          ) : (
-            <div className="divide-y rounded-md border">
-              {memos.map(m => (
-                <div
-                  key={m.userRetreatRegistrationId}
-                  className="flex flex-col gap-1 p-3 sm:flex-row sm:items-start sm:gap-4"
-                >
-                  <div className="shrink-0 text-sm sm:w-56">
-                    <span className="font-medium">{m.name}</span>
-                    <span className="ml-2 text-muted-foreground">
-                      {m.univGroupNumber}부 · {m.gradeNumber}학년 ·{" "}
-                      {m.gbsNumber ?? "-"}GBS
-                    </span>
-                  </div>
-                  <div className="flex-1 whitespace-pre-wrap break-keep text-sm">
-                    {m.memo}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <TabsContent value="memo">
+          <LeaderMemberMemoTable
+            retreatSlug={retreatSlug}
+            selectedDate={selectedDate}
+            title="전체 비고"
+          />
         </TabsContent>
       </Tabs>
     </div>
