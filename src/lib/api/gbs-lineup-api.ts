@@ -122,7 +122,9 @@ export const GbsLineupAPI = {
         gbsNumber: number;
         isLeader: boolean;
         currentLeaderName: string;
+        lineupNumber: number | null;
       }[];
+      applyLineupNumber: boolean;
     }
   ): Promise<{ updatedCount: number; createdGbsNumbers: number[] }> => {
     const response = await webAxios.post(

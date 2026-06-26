@@ -159,6 +159,7 @@ function validate(people: SheetPerson[]) {
     fileFormatErrors: errors,
     lineups: LINEUPS,
     schedules: SCHEDULES,
+    hasLineupColumn: layout?.noColIndex != null,
   });
 }
 
