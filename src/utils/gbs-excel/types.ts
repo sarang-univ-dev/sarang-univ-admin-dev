@@ -24,6 +24,8 @@ export interface ParsedSheetRow {
   currentLeaderName: string;
   /** "1" 인 스케줄 컬럼 → schedule id 집합 */
   selectedScheduleIds: Set<number>;
+  /** No. 열(라인업 순번) — 열 없거나 빈칸이면 null */
+  lineupNumber: number | null;
   matchKey: string;
 }
 
@@ -31,6 +33,8 @@ export interface ColumnLayout {
   headerRowIndex: number;
   colOffset: number;
   scheduleLabelsInOrder: string[];
+  /** "No." 헤더 열 인덱스 (없으면 null) */
+  noColIndex: number | null;
 }
 
 /** 오류/경고 리스트에 표시하는 사람 정보 */
