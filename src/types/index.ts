@@ -257,7 +257,21 @@ export type TRetreatDormitory = {
   gender: Gender;
   optimalCapacity: number;
   maxCapacity?: number;
+  isDisabled?: boolean;
   createdAt: Date;
+};
+
+export type TDormitoryManagementRow = {
+  id: number;
+  retreatId: number;
+  name: string;
+  memo?: string | null;
+  gender: Gender;
+  optimalCapacity: number;
+  maxCapacity?: number | null;
+  isDisabled: boolean;
+  assignedCount: number;
+  createdAt: string;
 };
 
 export type TAdminUser = {
