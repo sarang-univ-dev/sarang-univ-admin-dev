@@ -1,7 +1,7 @@
 import useSWR from "swr";
 
 import { webAxios } from "@/lib/api/axios";
-import { Gender } from "@/types";
+import { Gender, UserRetreatRegistrationType } from "@/types";
 
 // 인원관리 간사 전용 인터페이스 - 필요한 필드만 정의
 export interface IDormitoryStaffRegistration {
@@ -11,9 +11,11 @@ export interface IDormitoryStaffRegistration {
   gender: Gender;
   name: string;
   phoneNumber: string;
+  userType?: UserRetreatRegistrationType | "";
   userRetreatRegistrationScheduleIds: number[];
   gbsNumber?: number | null;
   gbsMemo?: string | null;
+  gbsLeaderCount?: number;
   dormitoryLocation?: string;
   dormitoryStaffMemo?: string; // 인원관리 간사 메모
   dormitoryStaffMemoId?: string; // 인원관리 간사 메모 ID
@@ -25,11 +27,24 @@ export interface IDormitoryStaffRegistration {
   partialAttendanceCount?: number;
 }
 
+export interface DormitorySummaryCustomRow {
+  id: number;
+  label: string;
+  rangeText: string;
+  sortOrder: number;
+}
+
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
 
   // 새로운 dormitory 엔드포인트 응답 구조 사용
   return response.data.dormitoryStaffRegistrations;
+};
+
+const summaryCustomRowsFetcher = async (url: string) => {
+  const response = await webAxios.get(url);
+
+  return response.data.customRows;
 };
 
 export function useDormitoryStaff(retreatSlug?: string) {
@@ -38,4 +53,16 @@ export function useDormitoryStaff(retreatSlug?: string) {
     : null;
 
   return useSWR<IDormitoryStaffRegistration[], Error>(endpoint, fetcher, {});
+}
+
+export function useDormitorySummaryCustomRows(retreatSlug?: string) {
+  const endpoint = retreatSlug
+    ? `/api/v1/retreat/${retreatSlug}/dormitory/summary-custom-rows`
+    : null;
+
+  return useSWR<DormitorySummaryCustomRow[], Error>(
+    endpoint,
+    summaryCustomRowsFetcher,
+    {}
+  );
 }
