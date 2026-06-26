@@ -297,4 +297,18 @@ export const LeaderAdminAPI = {
     );
     return response.data;
   },
+
+  /**
+   * 리더 폼 열기 토글 (DORMITORY_STAFF)
+   */
+  setLeaderReportOpen: async (
+    retreatSlug: string,
+    open: boolean
+  ): Promise<{ leaderReportOpen: boolean }> => {
+    const response = await webAxios.put(
+      `/api/v1/retreat/${retreatSlug}/leader/admin/leader-report-open`,
+      { open }
+    );
+    return response.data;
+  },
 };

@@ -102,4 +102,5 @@ export interface ILeaderTodayInfo {
   days: string[];
   lastDay: string | null;
   isLastDay: boolean;
+  leaderReportOpen: boolean;
 }

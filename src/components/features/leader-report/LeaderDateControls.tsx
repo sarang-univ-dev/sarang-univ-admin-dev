@@ -37,10 +37,14 @@ export function LeaderDateControls({
     }),
     [initialToday]
   );
-  const { today, days, isUpdating, updateToday } = useLeaderToday(
-    retreatSlug,
-    todayOptions
-  );
+  const {
+    today,
+    days,
+    isUpdating,
+    updateToday,
+    leaderReportOpen,
+    setLeaderReportOpen,
+  } = useLeaderToday(retreatSlug, todayOptions);
 
   const handleSelectToday = async (day: string) => {
     if (day === today || isUpdating) return;
@@ -77,24 +81,45 @@ export function LeaderDateControls({
       </CardHeader>
       <CardContent className="space-y-4">
         {showTodayControl ? (
-          <div className="space-y-2">
-            <div className="text-sm font-medium">오늘 일자 선택</div>
-            <div className="flex flex-wrap gap-2">
-              {days.map(day => (
-                <Button
-                  key={day}
-                  type="button"
-                  size="sm"
-                  variant={day === today ? "default" : "outline"}
-                  disabled={isUpdating}
-                  onClick={() => handleSelectToday(day)}
-                  className="whitespace-nowrap"
-                >
-                  {day}
-                </Button>
-              ))}
+          <>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">오늘 일자 선택</div>
+              <div className="flex flex-wrap gap-2">
+                {days.map(day => (
+                  <Button
+                    key={day}
+                    type="button"
+                    size="sm"
+                    variant={day === today ? "default" : "outline"}
+                    disabled={isUpdating}
+                    onClick={() => handleSelectToday(day)}
+                    className="whitespace-nowrap"
+                  >
+                    {day}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <div className="text-sm font-medium">리더보고서 작성 열기</div>
+                <div className="text-xs text-muted-foreground">
+                  {leaderReportOpen
+                    ? "리더가 작성할 수 있습니다."
+                    : "닫힘 — 리더가 접근할 수 없습니다."}
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant={leaderReportOpen ? "default" : "outline"}
+                onClick={() => void setLeaderReportOpen(!leaderReportOpen)}
+              >
+                {leaderReportOpen ? "열림" : "닫힘"}
+              </Button>
+            </div>
+          </>
         ) : null}
 
         <div className="space-y-2">

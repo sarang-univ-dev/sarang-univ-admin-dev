@@ -76,15 +76,26 @@ export function useLeaderToday(
     }
   };
 
+  const setLeaderReportOpen = async (open: boolean) => {
+    await mutate(
+      current => (current ? { ...current, leaderReportOpen: open } : current),
+      { revalidate: false }
+    );
+    await LeaderAdminAPI.setLeaderReportOpen(retreatSlug, open);
+    await mutate();
+  };
+
   return {
     today: data?.today ?? null,
     days: data?.days ?? [],
     lastDay: data?.lastDay ?? null,
     isLastDay: data?.isLastDay ?? false,
+    leaderReportOpen: data?.leaderReportOpen ?? false,
     error,
     isLoading,
     isUpdating,
     mutate,
     updateToday,
+    setLeaderReportOpen,
   };
 }
