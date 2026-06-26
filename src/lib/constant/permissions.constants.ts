@@ -1,4 +1,4 @@
-import { UserRole } from "@/types";
+import { RetreatAdminUserRole } from "@/types";
 
 export enum PagePath {
   UNIV_GROUP_RETREAT = "/univ-group-retreat-registration",
@@ -13,6 +13,7 @@ export enum PagePath {
   LINEUP_VIEW_CHANGES = "/lineup-view-changes",
   LINEUP_UNIV_GROUP_ADMIN_STAFF_MEMOS = "/lineup-univ-group-admin-staff-memos",
   DORM_VIEW_CHANGES = "/dorm-view-changes",
+  SCHEDULE_CHANGE_REVIEW_HISTORY = "/schedule-change-review-history",
   GBS_LINE_UP = "/gbs-line-up",
   GBS_LINE_UP_MANAGEMENT = "/gbs-line-up-management",
   DORMITORY_TEAM_MEMBER = "/dormitory-team-member",
@@ -22,57 +23,72 @@ export enum PagePath {
   SHUTTLE_CHECK = "/shuttle-check",
   UNIV_GROUP_MINISTER_VIEW = "/univ-group-minister-view",
   ADMIN_MINISTER_VIEW = "/admin-minister-view",
+  LEADER_ATTENDANCE = "/leader-attendance",
+  LEADER_REPORTS = "/leader-reports",
+  LEADER_REPORT_SUBMISSION_STATUS = "/leader-report-submission-status",
+  LEADER_SCHEDULE_CHANGE_REQUEST = "/leader-schedule-change-request",
 }
 
-export const USER_ROLE_PAGES: Readonly<Record<UserRole, PagePath[]>> = {
-  [UserRole.ACCOUNT_STAFF]: [
+export const USER_ROLE_PAGES: Readonly<
+  Partial<Record<RetreatAdminUserRole, PagePath[]>>
+> = {
+  [RetreatAdminUserRole.ACCOUNT_STAFF]: [
     PagePath.SCHEDULE_HISTORY,
     PagePath.SCHEDULE_CHANGE,
     PagePath.ACCOUNT_STAFF,
   ],
 
-  [UserRole.UNIV_GROUP_ACCOUNT_MEMBER]: [PagePath.COMFIRM_PAYMENT],
+  [RetreatAdminUserRole.UNIV_GROUP_ACCOUNT_MEMBER]: [PagePath.COMFIRM_PAYMENT],
 
-  [UserRole.UNIV_GROUP_ADMIN_STAFF]: [
+  [RetreatAdminUserRole.UNIV_GROUP_ADMIN_STAFF]: [
     PagePath.UNIV_GROUP_RETREAT,
     PagePath.UNIV_GROUP_BUS,
   ],
 
-  [UserRole.LINEUP_STAFF]: [
+  [RetreatAdminUserRole.LINEUP_STAFF]: [
     PagePath.GBS_LINE_UP,
     PagePath.GBS_LINE_UP_MANAGEMENT,
     PagePath.LINEUP_VIEW_CHANGES,
     PagePath.LINEUP_UNIV_GROUP_ADMIN_STAFF_MEMOS,
+    PagePath.SCHEDULE_CHANGE_REVIEW_HISTORY,
   ],
 
-  [UserRole.UNIV_GROUP_DORMITORY_MEMBER]: [
+  [RetreatAdminUserRole.UNIV_GROUP_DORMITORY_MEMBER]: [
     PagePath.DORMITORY_TEAM_MEMBER,
     PagePath.MEAL_CHECK,
     PagePath.SHUTTLE_CHECK,
+    PagePath.LEADER_SCHEDULE_CHANGE_REQUEST,
   ],
 
-  [UserRole.DORMITORY_STAFF]: [
+  [RetreatAdminUserRole.DORMITORY_STAFF]: [
     PagePath.ASSIGN_GBS_LOCATION,
-    PagePath.DORM_VIEW_CHANGES,
     PagePath.MEAL_CHECK,
     PagePath.DORMITORY_ASSIGNMENT,
+    PagePath.LEADER_ATTENDANCE,
   ],
 
-  [UserRole.SHUTTLE_BUS_BOARDING_STAFF]: [],
+  [RetreatAdminUserRole.LEADER_STAFF]: [
+    PagePath.LEADER_ATTENDANCE,
+    PagePath.LEADER_REPORTS,
+    PagePath.LEADER_REPORT_SUBMISSION_STATUS,
+  ],
 
-  [UserRole.SHUTTLE_BUS_ACCOUNT_MEMBER]: [
+  [RetreatAdminUserRole.SHUTTLE_BUS_BOARDING_STAFF]: [],
+
+  [RetreatAdminUserRole.SHUTTLE_BUS_ACCOUNT_MEMBER]: [
     PagePath.CONFIRM_BUS_PAYMENT,
     PagePath.BUS_SCHEDULE_HISTORY,
     PagePath.BUS_SCHEDULE_CHANGE,
   ],
 
-  [UserRole.SHUTTLE_BUS_ACCOUNT_STAFF]: [],
+  [RetreatAdminUserRole.SHUTTLE_BUS_ACCOUNT_STAFF]: [],
+  [RetreatAdminUserRole.SHUTTLE_BUS_ADMIN_STAFF]: [],
 
-  [UserRole.UNIV_GROUP_MINISTER]: [
+  [RetreatAdminUserRole.UNIV_GROUP_MINISTER]: [
     PagePath.UNIV_GROUP_MINISTER_VIEW,
   ],
 
-  [UserRole.ADMIN_MINISTER]: [
+  [RetreatAdminUserRole.ADMIN_MINISTER]: [
     PagePath.ADMIN_MINISTER_VIEW,
   ],
 };

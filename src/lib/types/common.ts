@@ -1,6 +1,6 @@
 import { ComponentProps } from "react";
 
-import { UserRole } from "@/types";
+import { RetreatAdminUserRole } from "@/types";
 
 export interface IconProps extends ComponentProps<"svg"> {
   size?: number | string;
@@ -43,7 +43,7 @@ export interface UserRetreatMapping {
   userId: number;
   email: string;
   retreatId: number;
-  role: UserRole;
+  role: RetreatAdminUserRole;
   createdAt: string;
   deletedAt: string | null;
 }

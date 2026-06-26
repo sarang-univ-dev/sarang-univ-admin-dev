@@ -71,6 +71,7 @@ export default function RetreatListClient({
           {retreats.map(retreat => {
             const registrationLink = `${retreatWebHost}/retreat/${retreat.slug}/retreat`;
             const shuttleBusLink = `${retreatWebHost}/retreat/${retreat.slug}/shuttle-bus`;
+            const leaderReportLink = `${retreatWebHost}/retreat/${retreat.slug}/leader/login`;
 
             return (
               <Card key={retreat.id}>
@@ -124,6 +125,14 @@ export default function RetreatListClient({
                     >
                       <Copy className="h-4 w-4" />
                       셔틀버스 신청 링크 복사
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => copyLink("리더보고서", leaderReportLink)}
+                    >
+                      <Copy className="h-4 w-4" />
+                      리더보고서 링크 복사
                     </Button>
                   </div>
                 </CardContent>

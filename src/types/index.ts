@@ -390,6 +390,7 @@ export enum RetreatAdminUserRole {
   SHUTTLE_BUS_ADMIN_STAFF = "SHUTTLE_BUS_ADMIN_STAFF", // 버스 총괄 간사
   UNIV_GROUP_MINISTER = "UNIV_GROUP_MINISTER", // 부서별 교역자
   ADMIN_MINISTER = "ADMIN_MINISTER", // 행정 총괄 교역자
+  LEADER_STAFF = "LEADER_STAFF" // 리더보고서 간사
 }
 
 export enum RetreatShuttleBusDirection {

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { RetreatScheduleChangeHistoryTable } from "@/components/LineupStaffRetreatScheduleChangeHistoryTable";
 import { useUserScheduleChangeLineup } from "@/hooks/user-schedule-change-lineup-request";
 import { webAxios } from "@/lib/api/axios";
-import { TRetreatRegistrationSchedule, TRetreatUnivGroup } from "@/types";
+import { TRetreatRegistrationSchedule } from "@/types";
 
 export default function ScheduleChangeHistoryForLineup() {
   const [schedules, setSchedules] = useState<TRetreatRegistrationSchedule[]>(

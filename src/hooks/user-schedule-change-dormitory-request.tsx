@@ -1,7 +1,7 @@
 import useSWR from "swr";
 
 import { webAxios } from "@/lib/api/axios";
-import { UserRetreatRegistrationType, Gender } from "@/types";
+import { Gender, UserRetreatRegistrationType } from "@/types";
 
 export interface IUserScheduleChangeDormitory {
   id: number;

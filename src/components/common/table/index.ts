@@ -6,3 +6,4 @@ export { SortableHeader } from "./SortableHeader";
 export { FilterableHeader } from "./FilterableHeader";
 export { MobileColumnHeader } from "./MobileColumnHeader";
 export { MobileAllFiltersDrawer } from "./MobileAllFiltersDrawer";
+export { RejectReasonDialog } from "./RejectReasonDialog";

@@ -1,12 +1,10 @@
 "use client";
 
-import { TRetreatRegistrationSchedule } from "@/types";
-import { useToastStore } from "@/store/toast-store";
 import { AxiosError } from "axios";
-import { Search, CheckCircle2 } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
-import { GenderBadge } from "@/components/Badge";
+import { CheckCircle2, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { GenderBadge } from "@/components/Badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,65 +23,73 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useConfirm } from "@/hooks/use-confirm";
 import { IUserScheduleChangeDormitory } from "@/hooks/user-schedule-change-dormitory-request";
 import { webAxios } from "@/lib/api/axios";
-import { useConfirm } from "@/hooks/use-confirm";
+import { useToastStore } from "@/store/toast-store";
+import { TRetreatRegistrationSchedule } from "@/types";
 import { formatDate } from "@/utils/formatDate";
 
 import { generateScheduleColumns } from "../utils/retreat-utils";
 
+type DormitoryScheduleChangeRow = {
+  id: string;
+  registrationId: number;
+  historyMemoId: number;
+  department: string;
+  gender: IUserScheduleChangeDormitory["gender"];
+  grade: string;
+  name: string;
+  gbsNumber?: number;
+  dormitoryLocation?: string;
+  schedule: Record<string, boolean>;
+  memo?: string;
+  issuerName?: string;
+  memoCreatedAt?: string;
+  dormitoryReviewerName?: string;
+};
+
+const buildScheduleMap = (
+  scheduleIds: number[],
+  schedules: TRetreatRegistrationSchedule[]
+) =>
+  schedules.reduce(
+    (acc, cur) => {
+      const scheduleId = cur.id;
+      acc[`schedule_${cur.id}`] =
+        scheduleIds.includes(scheduleId) ||
+        scheduleIds.includes(scheduleId.toString() as any) ||
+        scheduleIds.includes(parseInt(scheduleId.toString()));
+      return acc;
+    },
+    {} as Record<string, boolean>
+  );
+
 const transformScheduleChangeRequestsForTable = (
   requests: IUserScheduleChangeDormitory[],
   schedules: TRetreatRegistrationSchedule[]
-) => {
-  const transformedData: any[] = [];
-
-  requests.forEach((request, index) => {
-    // 현재 등록된 일정 처리
-    const currentScheduleIds = Array.isArray(
-      request.userRetreatRegistrationScheduleIds
-    )
-      ? request.userRetreatRegistrationScheduleIds
-      : [];
-
-    // 현재 일정 스케줄 맵 생성
-    const currentScheduleMap = schedules.reduce(
-      (acc, cur) => {
-        const scheduleId = cur.id;
-        const isIncluded =
-          currentScheduleIds.includes(scheduleId) ||
-          currentScheduleIds.includes(scheduleId.toString() as any) ||
-          currentScheduleIds.includes(parseInt(scheduleId.toString()));
-        acc[`schedule_${cur.id}`] = isIncluded;
-        return acc;
-      },
-      {} as Record<string, boolean>
-    );
-
-    const row = {
-      id: `${request.userRetreatRegistrationId}_${index}`,
-      registrationId: request.userRetreatRegistrationId,
-      historyMemoId: request.userRetreatRegistrationHistoryMemoId,
-      department: `${request.univGroupNumber}부`,
-      gender: request.gender,
-      grade: `${request.gradeNumber}학년`,
-      name: request.userName,
-      gbsNumber: request.gbsNumber,
-      dormitoryLocation: request.dormitoryLocation,
-      schedule: currentScheduleMap,
-      memo: request.memo,
-      issuerName: request.issuerName,
-      memoCreatedAt: request.memoCreatedAt,
-      userType: request.userType,
-      dormitoryReviewerName: request.dormitoryReviewerName,
-      rowIndex: index,
-    };
-
-    transformedData.push(row);
-  });
-
-  return transformedData;
-};
+): DormitoryScheduleChangeRow[] =>
+  requests.map((request, index) => ({
+    id: `${request.userRetreatRegistrationId}_${index}`,
+    registrationId: request.userRetreatRegistrationId,
+    historyMemoId: request.userRetreatRegistrationHistoryMemoId,
+    department: `${request.univGroupNumber}부`,
+    gender: request.gender,
+    grade: `${request.gradeNumber}학년`,
+    name: request.userName,
+    gbsNumber: request.gbsNumber,
+    dormitoryLocation: request.dormitoryLocation,
+    schedule: buildScheduleMap(
+      Array.isArray(request.userRetreatRegistrationScheduleIds)
+        ? request.userRetreatRegistrationScheduleIds
+        : [],
+      schedules
+    ),
+    memo: request.memo,
+    issuerName: request.issuerName,
+    memoCreatedAt: request.memoCreatedAt,
+    dormitoryReviewerName: request.dormitoryReviewerName,
+  }));
 
 export function RetreatScheduleChangeHistoryTable({
   scheduleChangeHistories = [],
@@ -94,39 +100,34 @@ export function RetreatScheduleChangeHistoryTable({
   scheduleChangeHistories: IUserScheduleChangeDormitory[];
   schedules: TRetreatRegistrationSchedule[];
   retreatSlug: string;
-  mutate?: () => Promise<any>;
+  mutate?: () => void | Promise<unknown>;
 }) {
   const addToast = useToastStore(state => state.add);
-  const [allData, setAllData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [allData, setAllData] = useState<DormitoryScheduleChangeRow[]>([]);
+  const [filteredData, setFilteredData] = useState<
+    DormitoryScheduleChangeRow[]
+  >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {}
   );
+  const tableContainerRef = useRef<HTMLDivElement>(null);
   const confirmDialog = useConfirm();
 
-  // 로딩 상태 설정 함수
-  const setLoading = (id: string, action: string, isLoading: boolean) => {
-    setLoadingStates(prev => ({
-      ...prev,
-      [`${id}_${action}`]: isLoading,
-    }));
-  };
-
-  // 로딩 상태 확인 함수
-  const isLoading = (id: string, action: string) => {
-    return !!loadingStates[`${id}_${action}`];
-  };
+  const scheduleColumns = useMemo(
+    () => generateScheduleColumns(schedules),
+    [schedules]
+  );
 
   useEffect(() => {
     if (scheduleChangeHistories.length > 0 && schedules.length > 0) {
       try {
-        const transformedData = transformScheduleChangeRequestsForTable(
-          scheduleChangeHistories,
-          schedules
+        setAllData(
+          transformScheduleChangeRequestsForTable(
+            scheduleChangeHistories,
+            schedules
+          )
         );
-        setAllData(transformedData);
       } catch (error) {
         console.error("데이터 변환 중 오류 발생:", error);
         addToast({
@@ -146,134 +147,58 @@ export function RetreatScheduleChangeHistoryTable({
   }, [scheduleChangeHistories, schedules, addToast]);
 
   useEffect(() => {
-    let dataToFilter = [...allData];
+    if (!searchTerm) {
+      setFilteredData(allData);
+      return;
+    }
 
-    if (searchTerm) {
-      dataToFilter = dataToFilter.filter(row =>
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    setFilteredData(
+      allData.filter(row =>
         [
           row.name,
           row.department,
-          row.grade?.toString(),
-          row.phone?.toString(),
-          row.userName?.toString(),
-        ].some(field => field?.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    setFilteredData(dataToFilter);
+          row.grade,
+          row.gbsNumber?.toString(),
+          row.dormitoryLocation,
+          row.memo,
+          row.issuerName,
+          row.dormitoryReviewerName,
+        ].some(field => field?.toLowerCase().includes(lowerSearchTerm))
+      )
+    );
   }, [allData, searchTerm]);
 
-  const scheduleColumns = useMemo(
-    () => generateScheduleColumns(schedules),
-    [schedules]
-  );
-
-  const renderTableRow = (row: any, index: number) => {
-    return (
-      <TableRow
-        key={row.id}
-        className="group hover:bg-gray-50 transition-colors duration-150"
-      >
-        {/* 부서 */}
-        <TableCell className="text-center px-3 py-2.5">
-          {row.department}
-        </TableCell>
-
-        {/* 성별 */}
-        <TableCell className="text-center px-3 py-2.5">
-          <GenderBadge gender={row.gender} />
-        </TableCell>
-
-        {/* 학년 */}
-        <TableCell className="text-center px-3 py-2.5">{row.grade}</TableCell>
-
-        {/* 이름 */}
-        <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5">
-          {row.name}
-        </TableCell>
-
-        {/* GBS 번호 */}
-        <TableCell className="text-center px-3 py-2.5">
-          {row.gbsNumber || "-"}
-        </TableCell>
-
-        {/* 숙소 */}
-        <TableCell className="text-center px-3 py-2.5">
-          {row.dormitoryLocation || "-"}
-        </TableCell>
-
-        {/* 스케줄 컬럼들 */}
-        {scheduleColumns.map(col => {
-          const isChecked = !!row.schedule?.[col.key];
-
-          return (
-            <TableCell key={`${row.id}-${col.key}`} className="p-2 text-center">
-              <Checkbox
-                checked={isChecked}
-                disabled
-                className={isChecked ? col.bgColorClass : ""}
-              />
-            </TableCell>
-          );
-        })}
-
-        {/* 변경 요청 메모 */}
-        <TableCell className="min-w-[200px] max-w-[400px] text-left px-3 py-2.5">
-          <div className="text-sm text-gray-600 whitespace-pre-wrap break-words p-2 bg-gray-50 rounded min-h-[24px]">
-            {row.memo || "-"}
-          </div>
-        </TableCell>
-
-        {/* 작성자 */}
-        <TableCell className="text-center px-3 py-2.5">
-          {row.issuerName || "-"}
-        </TableCell>
-
-        {/* 작성일시 */}
-        <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
-          {formatDate(row.memoCreatedAt) || "-"}
-        </TableCell>
-
-        {/* 처리자명 또는 액션버튼 */}
-        <TableCell className="text-center px-6 py-2.5">
-          {row.dormitoryReviewerName ? (
-            <span className="text-green-700 font-medium">
-              {row.dormitoryReviewerName}
-            </span>
-          ) : (
-            getActionButtons(row)
-          )}
-        </TableCell>
-      </TableRow>
-    );
+  const setLoading = (id: string, action: string, isLoading: boolean) => {
+    setLoadingStates(prev => ({
+      ...prev,
+      [`${id}_${action}`]: isLoading,
+    }));
   };
 
-  // 액션 처리 함수들
+  const isLoading = (id: string, action: string) =>
+    !!loadingStates[`${id}_${action}`];
+
   const performResolveChange = async (historyMemoId: number) => {
     setLoading(historyMemoId.toString(), "confirm", true);
+
     try {
-      const response = await webAxios.post(
+      await webAxios.post(
         `/api/v1/retreat/${retreatSlug}/dormitory/schedule-history/resolve-memo`,
         {
           userRetreatRegistrationHistoryMemoId: historyMemoId,
         }
       );
 
-      // 성공 토스트 메시지
       addToast({
         title: "성공",
         description: "수양회 일정 변경이 읽음 처리되었습니다.",
         variant: "success",
       });
 
-      // 데이터 새로고침
-      if (mutate) {
-        await mutate();
-      }
+      await mutate?.();
     } catch (error) {
       console.error("수양회 일정 변경 읽음 처리 중 오류 발생:", error);
-
-      // 실패 토스트 메시지
       addToast({
         title: "오류 발생",
         description:
@@ -297,47 +222,50 @@ export function RetreatScheduleChangeHistoryTable({
     });
   };
 
-  // 액션 버튼 렌더링
-  const getActionButtons = (row: any) => {
+  const renderReviewCell = (row: DormitoryScheduleChangeRow) => {
+    if (row.dormitoryReviewerName) {
+      return (
+        <span className="text-sm font-medium text-green-600">
+          {row.dormitoryReviewerName}
+        </span>
+      );
+    }
+
     return (
-      <div className="flex flex-col gap-1">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => handleResolveChange(row.historyMemoId)}
-          disabled={isLoading(row.historyMemoId.toString(), "confirm")}
-          className="flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
-        >
-          {isLoading(row.historyMemoId.toString(), "confirm") ? (
-            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          ) : (
-            <CheckCircle2 className="h-3.5 w-3.5" />
-          )}
-          <span>읽음 처리</span>
-        </Button>
-      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => handleResolveChange(row.historyMemoId)}
+        disabled={isLoading(row.historyMemoId.toString(), "confirm")}
+        className="inline-flex items-center gap-1.5 hover:bg-black hover:text-white transition-colors"
+      >
+        {isLoading(row.historyMemoId.toString(), "confirm") ? (
+          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        ) : (
+          <CheckCircle2 className="h-3.5 w-3.5" />
+        )}
+        <span>읽음 처리</span>
+      </Button>
     );
   };
 
   return (
     <Card className="shadow-sm">
       <CardHeader className="bg-gray-50 border-b px-4 py-3">
-        <div>
-          <CardTitle className="text-lg">일정 변경 이력 조회</CardTitle>
-          <CardDescription className="text-sm">
-            일정 변경 이력 목록
-          </CardDescription>
-        </div>
+        <CardTitle className="text-lg">인원관리 일정변경 이력</CardTitle>
+        <CardDescription className="text-sm">
+          인원관리 간사가 확인해야 하는 기존 수양회 신청 일정변경 메모 목록
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-4">
         <div className="space-y-4">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder="통합 검색 (이름, 부서, 학년, 전화번호, 처리자 등)..."
-              className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
+              placeholder="통합 검색"
+              className="pl-8"
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={event => setSearchTerm(event.target.value)}
             />
           </div>
 
@@ -349,38 +277,26 @@ export function RetreatScheduleChangeHistoryTable({
               <Table className="min-w-full whitespace-nowrap relative text-sm">
                 <TableHeader className="bg-gray-100 sticky top-0 z-10 select-none">
                   <TableRow>
-                    <TableHead className="px-3 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>부서</span>
-                      </div>
+                    <TableHead className="text-center px-3 py-2.5" rowSpan={2}>
+                      부서
                     </TableHead>
-                    <TableHead className="px-3 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>성별</span>
-                      </div>
+                    <TableHead className="text-center px-3 py-2.5" rowSpan={2}>
+                      성별
                     </TableHead>
-                    <TableHead className="px-3 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>학년</span>
-                      </div>
+                    <TableHead className="text-center px-3 py-2.5" rowSpan={2}>
+                      학년
                     </TableHead>
                     <TableHead
-                      className="sticky left-0 bg-gray-100 z-20 px-3 py-2.5"
+                      className="sticky left-0 bg-gray-100 z-20 text-center px-3 py-2.5"
                       rowSpan={2}
                     >
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>이름</span>
-                      </div>
+                      이름
                     </TableHead>
-                    <TableHead className="px-3 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>GBS 번호</span>
-                      </div>
+                    <TableHead className="text-center px-3 py-2.5" rowSpan={2}>
+                      GBS 번호
                     </TableHead>
-                    <TableHead className="px-3 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>숙소</span>
-                      </div>
+                    <TableHead className="text-center px-3 py-2.5" rowSpan={2}>
+                      숙소
                     </TableHead>
                     <TableHead
                       colSpan={scheduleColumns.length}
@@ -388,25 +304,17 @@ export function RetreatScheduleChangeHistoryTable({
                     >
                       수양회 일정
                     </TableHead>
-                    <TableHead className="px-3 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>메모</span>
-                      </div>
+                    <TableHead className="text-center px-3 py-2.5" rowSpan={2}>
+                      메모
                     </TableHead>
-                    <TableHead className="px-3 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>작성자</span>
-                      </div>
+                    <TableHead className="text-center px-3 py-2.5" rowSpan={2}>
+                      작성자
                     </TableHead>
-                    <TableHead className="px-3 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>작성일시</span>
-                      </div>
+                    <TableHead className="text-center px-3 py-2.5" rowSpan={2}>
+                      작성일시
                     </TableHead>
-                    <TableHead className="px-6 py-2.5" rowSpan={2}>
-                      <div className="flex items-center space-x-1 justify-center">
-                        <span>처리자명/액션</span>
-                      </div>
+                    <TableHead className="text-center px-6 py-2.5" rowSpan={2}>
+                      처리자/액션
                     </TableHead>
                   </TableRow>
                   <TableRow>
@@ -415,11 +323,9 @@ export function RetreatScheduleChangeHistoryTable({
                         key={scheduleCol.key}
                         className="p-2 text-center"
                       >
-                        <div className="flex items-center justify-center">
-                          <span className="text-xs whitespace-normal">
-                            {scheduleCol.label}
-                          </span>
-                        </div>
+                        <span className="text-xs whitespace-normal">
+                          {scheduleCol.label}
+                        </span>
                       </TableHead>
                     ))}
                   </TableRow>
@@ -437,7 +343,61 @@ export function RetreatScheduleChangeHistoryTable({
                       </TableCell>
                     </TableRow>
                   )}
-                  {filteredData.map((row, index) => renderTableRow(row, index))}
+                  {filteredData.map(row => (
+                    <TableRow
+                      key={row.id}
+                      className="group hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      <TableCell className="text-center px-3 py-2.5">
+                        {row.department}
+                      </TableCell>
+                      <TableCell className="text-center px-3 py-2.5">
+                        <GenderBadge gender={row.gender} />
+                      </TableCell>
+                      <TableCell className="text-center px-3 py-2.5">
+                        {row.grade}
+                      </TableCell>
+                      <TableCell className="sticky left-0 bg-white hover:bg-gray-50 transition-colors duration-150 z-20 font-medium text-center px-3 py-2.5">
+                        {row.name}
+                      </TableCell>
+                      <TableCell className="text-center px-3 py-2.5">
+                        {row.gbsNumber || "-"}
+                      </TableCell>
+                      <TableCell className="text-center px-3 py-2.5">
+                        {row.dormitoryLocation || "-"}
+                      </TableCell>
+                      {scheduleColumns.map(col => {
+                        const isChecked = !!row.schedule?.[col.key];
+
+                        return (
+                          <TableCell
+                            key={`${row.id}-${col.key}`}
+                            className="p-2 text-center"
+                          >
+                            <Checkbox
+                              checked={isChecked}
+                              disabled
+                              className={isChecked ? col.bgColorClass : ""}
+                            />
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="min-w-[200px] max-w-[400px] text-left px-3 py-2.5">
+                        <div className="text-sm text-gray-600 whitespace-pre-wrap break-words p-2 bg-gray-50 rounded min-h-[24px]">
+                          {row.memo || "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center px-3 py-2.5">
+                        {row.issuerName || "-"}
+                      </TableCell>
+                      <TableCell className="text-gray-600 text-xs text-center whitespace-nowrap px-3 py-2.5">
+                        {formatDate(row.memoCreatedAt ?? null) || "-"}
+                      </TableCell>
+                      <TableCell className="text-center px-6 py-2.5">
+                        {renderReviewCell(row)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
