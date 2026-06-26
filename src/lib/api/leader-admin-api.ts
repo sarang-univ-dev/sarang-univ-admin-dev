@@ -1,5 +1,6 @@
 import {
   ILeaderAttendance,
+  ILeaderMemberMemo,
   ILeaderReport,
   ILeaderReportSubmissionStatus,
   ILeaderScheduleChangeRequest,
@@ -254,6 +255,20 @@ export const LeaderAdminAPI = {
   ): Promise<{ attendance: ILeaderAttendance[]; date: string }> => {
     const response = await webAxios.get(
       `/api/v1/retreat/${retreatSlug}/leader/department-admin/attendance`,
+      { params: date ? { date } : undefined }
+    );
+    return response.data;
+  },
+
+  /**
+   * 리더 비고(특이사항) 모아보기 — 해당 일자에 비고가 있는 전체 조원 (오늘 일정 무관)
+   */
+  getMemberMemos: async (
+    retreatSlug: string,
+    date?: string
+  ): Promise<{ memos: ILeaderMemberMemo[]; date: string }> => {
+    const response = await webAxios.get(
+      `/api/v1/retreat/${retreatSlug}/leader/admin/member-memos`,
       { params: date ? { date } : undefined }
     );
     return response.data;

@@ -82,6 +82,18 @@ export interface ILeaderAttendance {
   attendanceStatus: LeaderAttendanceStatus;
 }
 
+export interface ILeaderMemberMemo {
+  userRetreatRegistrationId: number;
+  gbsId: number | null;
+  gbsNumber: number | null;
+  name: string;
+  gender: Gender;
+  gradeNumber: number;
+  univGroupNumber: number;
+  attendanceStatus: LeaderAttendanceStatus;
+  memo: string;
+}
+
 /**
  * 리더보고서 간사(LEADER_STAFF) - 오늘(일자) 정보
  */
