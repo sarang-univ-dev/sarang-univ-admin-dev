@@ -102,7 +102,7 @@ export function GbsLineUpTableToolbar({
     setLoadingStates(prev => ({ ...prev, exportExcel: true }));
     try {
       const response = await webAxios.get(
-        `/api/v1/retreat/${retreatSlug}/line-up/full-lineup-excel`,
+        `/api/v1/retreat/${retreatSlug}/line-up/registration-roster-excel`,
         { responseType: "blob" }
       );
 
@@ -111,7 +111,7 @@ export function GbsLineUpTableToolbar({
       link.href = url;
       link.setAttribute(
         "download",
-        `수양회 GBS 라인업_${formatDate(new Date().toISOString())
+        `등록명단_${formatDate(new Date().toISOString())
           .replace(/[: ]/g, "_")
           .replace(/\(/g, "")
           .replace(/\)/g, "")}.xlsx`
@@ -453,7 +453,7 @@ export function GbsLineUpTableToolbar({
           수양회 GBS 꼬리표
         </Button>
 
-        {/* 엑셀 내보내기 */}
+        {/* 등록 명단 */}
         <Button
           variant="outline"
           size="sm"
@@ -465,7 +465,7 @@ export function GbsLineUpTableToolbar({
           ) : (
             <Download className="h-4 w-4 mr-2" />
           )}
-          엑셀로 내보내기
+          등록 명단
         </Button>
 
         {/* 엑셀 가져오기 (진한색으로 구별, 맨 오른쪽) */}
