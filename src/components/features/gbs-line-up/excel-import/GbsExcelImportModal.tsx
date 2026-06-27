@@ -20,7 +20,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -30,15 +29,18 @@ import {
 } from "@/components/ui/select";
 import { IUserRetreatGBSLineup } from "@/hooks/gbs-line-up/use-retreat-gbs-lineup-data";
 import { TRetreatRegistrationSchedule } from "@/types";
-import { generateScheduleColumns } from "@/utils/retreat-utils";
-
+import {
+  downloadChangeWarningReport,
+  downloadPersonListReport,
+  downloadScheduleMismatchReport,
+} from "@/utils/gbs-excel/mismatch-report";
+import { downloadTemplate } from "@/utils/gbs-excel/template";
 import {
   PersonRef,
   ScheduleMismatchRow,
   ValidationResult,
 } from "@/utils/gbs-excel/types";
-
-import { downloadTemplate } from "@/utils/gbs-excel/template";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 import { useGbsExcelImport } from "./use-gbs-excel-import";
 
@@ -60,13 +62,9 @@ const CATEGORY_TITLES: Record<number, string> = {
   6: "신청 일정이 시트와 다른 인원",
 };
 
-function PersonList({
-  people,
-}: {
-  people: PersonRef[];
-}) {
+function PersonList({ people }: { people: PersonRef[] }) {
   return (
-    <ScrollArea className="max-h-72 rounded-md border">
+    <div className="max-h-72 max-w-full overflow-auto rounded-md border">
       <table className="w-full text-sm text-center">
         <thead className="sticky top-0 bg-gray-100">
           <tr>
@@ -87,7 +85,7 @@ function PersonList({
           ))}
         </tbody>
       </table>
-    </ScrollArea>
+    </div>
   );
 }
 
@@ -102,8 +100,8 @@ function ScheduleMismatchList({
   const cols = useMemo(() => generateScheduleColumns(schedules), [schedules]);
 
   return (
-    <ScrollArea className="max-h-80 rounded-md border">
-      <table className="w-full text-sm text-center">
+    <div className="max-h-72 max-w-full overflow-auto rounded-md border">
+      <table className="min-w-max text-sm text-center">
         <thead className="sticky top-0 bg-gray-100">
           <tr>
             <th className="px-2 py-1.5 font-medium whitespace-nowrap">부서</th>
@@ -171,8 +169,7 @@ function ScheduleMismatchList({
           })}
         </tbody>
       </table>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    </div>
   );
 }
 
@@ -204,10 +201,25 @@ function ResultBody({
   if (cat === 6) {
     return (
       <div className="space-y-2">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
-          <AlertTriangle className="h-4 w-4" />
-          {CATEGORY_TITLES[6]} ({validation.scheduleMismatches.length}명)
-        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            {CATEGORY_TITLES[6]} ({validation.scheduleMismatches.length}명)
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              downloadScheduleMismatchReport(
+                validation.scheduleMismatches,
+                schedules
+              )
+            }
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            엑셀 다운로드
+          </Button>
+        </div>
         <ScheduleMismatchList
           rows={validation.scheduleMismatches}
           schedules={schedules}
@@ -220,10 +232,22 @@ function ResultBody({
       cat === 2 ? validation.sheetDuplicates : validation.unmatchedSheetPeople;
     return (
       <div className="space-y-2">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
-          <AlertTriangle className="h-4 w-4" />
-          {CATEGORY_TITLES[cat]} ({people.length}명)
-        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            {CATEGORY_TITLES[cat]} ({people.length}명)
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              downloadPersonListReport(people, CATEGORY_TITLES[cat])
+            }
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            엑셀 다운로드
+          </Button>
+        </div>
         <PersonList people={people} />
       </div>
     );
@@ -244,31 +268,73 @@ function ResultBody({
 
       {validation.missingDbRegistrants.length > 0 && (
         <div className="space-y-1.5">
-          <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
-            <AlertTriangle className="h-4 w-4" />
-            {CATEGORY_TITLES[4]} ({validation.missingDbRegistrants.length}명) —
-            적용에서 제외
-          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
+              <AlertTriangle className="h-4 w-4" />
+              {CATEGORY_TITLES[4]} ({validation.missingDbRegistrants.length}명)
+              — 적용에서 제외
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                downloadPersonListReport(
+                  validation.missingDbRegistrants,
+                  CATEGORY_TITLES[4]
+                )
+              }
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              엑셀 다운로드
+            </Button>
+          </div>
           <PersonList people={validation.missingDbRegistrants} />
         </div>
       )}
       {validation.matchedButNoGbs.length > 0 && (
         <div className="space-y-1.5">
-          <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
-            <AlertTriangle className="h-4 w-4" />
-            {CATEGORY_TITLES[5]} ({validation.matchedButNoGbs.length}명) —
-            적용에서 제외
-          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
+              <AlertTriangle className="h-4 w-4" />
+              {CATEGORY_TITLES[5]} ({validation.matchedButNoGbs.length}명) —
+              적용에서 제외
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                downloadPersonListReport(
+                  validation.matchedButNoGbs,
+                  CATEGORY_TITLES[5]
+                )
+              }
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              엑셀 다운로드
+            </Button>
+          </div>
           <PersonList people={validation.matchedButNoGbs} />
         </div>
       )}
 
       {validation.changeWarnings.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-yellow-700">
-            변경 내역 ({validation.changeWarnings.length}건)
-          </p>
-          <ScrollArea className="max-h-60 rounded-md border">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium text-yellow-700">
+              변경 내역 ({validation.changeWarnings.length}건)
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                downloadChangeWarningReport(validation.changeWarnings)
+              }
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              엑셀 다운로드
+            </Button>
+          </div>
+          <div className="max-h-60 max-w-full overflow-auto rounded-md border">
             <table className="w-full text-sm text-center">
               <thead className="sticky top-0 bg-gray-100">
                 <tr>
@@ -291,7 +357,7 @@ function ResultBody({
                 ))}
               </tbody>
             </table>
-          </ScrollArea>
+          </div>
         </div>
       )}
     </div>
@@ -329,12 +395,13 @@ export function GbsExcelImportModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-hidden sm:max-w-5xl">
         <DialogHeader>
           <DialogTitle>GBS 라인업 엑셀 가져오기</DialogTitle>
           <DialogDescription>
-            마스터 워크북의 「{`(꼬리표) 수양회GBS`}」 시트를 업로드해 GBS 배정·리더
-            정보를 일괄 반영합니다. (일정/개인정보/메모는 변경되지 않습니다.)
+            마스터 워크북의 「{`(꼬리표) 수양회GBS`}」 시트를 업로드해 GBS
+            배정·리더 정보를 일괄 반영합니다. (일정/개인정보/메모는 변경되지
+            않습니다.)
           </DialogDescription>
         </DialogHeader>
 
@@ -363,7 +430,7 @@ export function GbsExcelImportModal({
                 type="file"
                 accept=".xlsx,.xls"
                 className="hidden"
-                onChange={(e) => {
+                onChange={e => {
                   const file = e.target.files?.[0];
                   if (file) imp.handleFile(file);
                   e.target.value = "";
@@ -400,7 +467,7 @@ export function GbsExcelImportModal({
                   <SelectValue placeholder="시트를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  {imp.sheetNames.map((name) => (
+                  {imp.sheetNames.map(name => (
                     <SelectItem key={name} value={name}>
                       {name}
                     </SelectItem>
@@ -424,7 +491,7 @@ export function GbsExcelImportModal({
               <Checkbox
                 id="ack-warnings"
                 checked={imp.acknowledgedWarnings}
-                onCheckedChange={(v) => imp.setAcknowledgedWarnings(v === true)}
+                onCheckedChange={v => imp.setAcknowledgedWarnings(v === true)}
                 className="mt-0.5"
               />
               <Label
