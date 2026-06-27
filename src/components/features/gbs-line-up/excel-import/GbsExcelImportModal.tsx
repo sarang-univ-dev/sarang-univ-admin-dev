@@ -64,7 +64,7 @@ const CATEGORY_TITLES: Record<number, string> = {
 
 function PersonList({ people }: { people: PersonRef[] }) {
   return (
-    <div className="max-h-72 max-w-full overflow-auto rounded-md border">
+    <div className="max-h-72 min-w-0 max-w-full overflow-auto rounded-md border">
       <table className="w-full text-sm text-center">
         <thead className="sticky top-0 bg-gray-100">
           <tr>
@@ -100,7 +100,7 @@ function ScheduleMismatchList({
   const cols = useMemo(() => generateScheduleColumns(schedules), [schedules]);
 
   return (
-    <div className="max-h-72 max-w-full overflow-auto rounded-md border">
+    <div className="max-h-72 min-w-0 max-w-full overflow-auto rounded-md border">
       <table className="min-w-max text-sm text-center">
         <thead className="sticky top-0 bg-gray-100">
           <tr>
@@ -200,7 +200,7 @@ function ResultBody({
   }
   if (cat === 6) {
     return (
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -231,7 +231,7 @@ function ResultBody({
     const people =
       cat === 2 ? validation.sheetDuplicates : validation.unmatchedSheetPeople;
     return (
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -255,7 +255,7 @@ function ResultBody({
 
   // ── 차단 없음: 적용 예정 + 경고(4·5) + 변경 내역 ──
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <p className="flex items-center gap-1.5 text-sm font-medium text-green-700">
         <CheckCircle2 className="h-4 w-4" />
         {validation.assignments.length}명 적용 예정
@@ -267,7 +267,7 @@ function ResultBody({
       )}
 
       {validation.missingDbRegistrants.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
               <AlertTriangle className="h-4 w-4" />
@@ -292,7 +292,7 @@ function ResultBody({
         </div>
       )}
       {validation.matchedButNoGbs.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
               <AlertTriangle className="h-4 w-4" />
@@ -318,7 +318,7 @@ function ResultBody({
       )}
 
       {validation.changeWarnings.length > 0 && (
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium text-yellow-700">
               변경 내역 ({validation.changeWarnings.length}건)
@@ -334,7 +334,7 @@ function ResultBody({
               엑셀 다운로드
             </Button>
           </div>
-          <div className="max-h-60 max-w-full overflow-auto rounded-md border">
+          <div className="max-h-60 min-w-0 max-w-full overflow-auto rounded-md border">
             <table className="w-full text-sm text-center">
               <thead className="sticky top-0 bg-gray-100">
                 <tr>
@@ -395,8 +395,8 @@ export function GbsExcelImportModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden sm:max-w-5xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden">
+        <DialogHeader className="min-w-0">
           <DialogTitle>GBS 라인업 엑셀 가져오기</DialogTitle>
           <DialogDescription>
             마스터 워크북의 「{`(꼬리표) 수양회GBS`}」 시트를 업로드해 GBS
@@ -405,9 +405,9 @@ export function GbsExcelImportModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-1">
+        <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-hidden py-1">
           {/* 템플릿 다운로드 */}
-          <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 p-2.5">
+          <div className="flex min-w-0 items-center justify-between gap-2 rounded-md border bg-muted/40 p-2.5">
             <span className="text-xs text-muted-foreground">
               예시가 채워진 템플릿을 받아 본인 명단으로 바꾼 뒤 업로드하세요.
               (일정 컬럼은 이 수양회에 맞게 채워져 있습니다.)
@@ -457,7 +457,7 @@ export function GbsExcelImportModal({
 
           {/* 2) 시트 선택 */}
           {imp.sheetNames.length > 0 && (
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <Label>2. 시트 선택</Label>
               <Select
                 value={imp.selectedSheet}
