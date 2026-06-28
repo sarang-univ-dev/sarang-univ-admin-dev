@@ -562,48 +562,48 @@ const PersonSelectionTable = memo(function PersonSelectionTable({
           <span className="font-medium text-foreground">{rows.length}</span>명
         </div>
       </div>
-      <div className="max-h-[60vh] overflow-auto rounded-md border lg:max-h-[520px]">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[48px] text-center">
-              <Checkbox
-                checked={allSelected ? true : someSelected ? "indeterminate" : false}
-                onCheckedChange={(value) => toggleAll(!!value)}
-                aria-label="모든 인원 선택"
-              />
-            </TableHead>
-            <TableHead className="text-center">GBS</TableHead>
-            <TableHead className="text-center">부서</TableHead>
-            <TableHead className="text-center">학년</TableHead>
-            <TableHead className="text-center">이름</TableHead>
-            {scheduleColumns.map((schedule) => (
-              <TableHead key={schedule.key} className="text-center">
-                <div className="flex flex-col items-center gap-1">
-                  <span>{schedule.label}</span>
-                  <Checkbox
-                    checked={scheduleFilter.has(schedule.id)}
-                    onCheckedChange={() => toggleScheduleFilter(schedule.id)}
-                    aria-label={`${schedule.label} 필터`}
-                    className="h-3 w-3"
-                  />
-                </div>
+      <div className="max-h-[70vh] overflow-auto border rounded-lg">
+        <table className="relative w-full caption-bottom text-sm">
+          <TableHeader className="sticky top-0 z-10 bg-gray-100">
+            <TableRow>
+              <TableHead className="w-[48px] text-center bg-gray-100 whitespace-nowrap">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={(value) => toggleAll(!!value)}
+                  aria-label="모든 인원 선택"
+                />
               </TableHead>
+              <TableHead className="text-center bg-gray-100 whitespace-nowrap">GBS</TableHead>
+              <TableHead className="text-center bg-gray-100 whitespace-nowrap">부서</TableHead>
+              <TableHead className="text-center bg-gray-100 whitespace-nowrap">학년</TableHead>
+              <TableHead className="text-center bg-gray-100 whitespace-nowrap">이름</TableHead>
+              {scheduleColumns.map((schedule) => (
+                <TableHead key={schedule.key} className="text-center bg-gray-100 whitespace-nowrap">
+                  <div className="flex flex-col items-center gap-1">
+                    <span>{schedule.label}</span>
+                    <Checkbox
+                      checked={scheduleFilter.has(schedule.id)}
+                      onCheckedChange={() => toggleScheduleFilter(schedule.id)}
+                      aria-label={`${schedule.label} 필터`}
+                      className="h-3 w-3"
+                    />
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredRows.map((row) => (
+              <PersonSelectionRow
+                key={row.id}
+                row={row}
+                scheduleColumns={scheduleColumns}
+                isSelected={selectedIds.has(row.id)}
+                onRowClick={handleRowClick}
+              />
             ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredRows.map((row) => (
-            <PersonSelectionRow
-              key={row.id}
-              row={row}
-              scheduleColumns={scheduleColumns}
-              isSelected={selectedIds.has(row.id)}
-              onRowClick={handleRowClick}
-            />
-          ))}
-        </TableBody>
-      </Table>
+          </TableBody>
+        </table>
       </div>
     </div>
   );
@@ -820,23 +820,23 @@ const DormitorySelectionTable = memo(function DormitorySelectionTable({
         </div>
       </div>
 
-      <div className="max-h-[60vh] overflow-auto rounded-md border lg:max-h-[520px]">
-        <Table>
-          <TableHeader>
+      <div className="max-h-[70vh] overflow-auto border rounded-lg">
+        <table className="relative w-full caption-bottom text-sm">
+          <TableHeader className="sticky top-0 z-10 bg-gray-100">
             <TableRow>
-              <TableHead className="w-[48px] text-center">
+              <TableHead className="w-[48px] text-center bg-gray-100 whitespace-nowrap">
                 <Checkbox
                   checked={allSelected ? true : someSelected ? "indeterminate" : false}
                   onCheckedChange={(value) => toggleAll(!!value)}
                   aria-label="모든 숙소 선택"
                 />
               </TableHead>
-              <TableHead className="text-center">숙소</TableHead>
-              <TableHead className="text-center">메모</TableHead>
-              <TableHead className="text-center">정원</TableHead>
-              <TableHead className="text-center">최대 인원</TableHead>
+              <TableHead className="text-center bg-gray-100 whitespace-nowrap">숙소</TableHead>
+              <TableHead className="text-center bg-gray-100 whitespace-nowrap">메모</TableHead>
+              <TableHead className="text-center bg-gray-100 whitespace-nowrap">정원</TableHead>
+              <TableHead className="text-center bg-gray-100 whitespace-nowrap">최대 인원</TableHead>
               {scheduleColumns.map((schedule) => (
-                <TableHead key={schedule.key} className="text-center">
+                <TableHead key={schedule.key} className="text-center bg-gray-100 whitespace-nowrap">
                   {schedule.label}
                 </TableHead>
               ))}
@@ -853,7 +853,7 @@ const DormitorySelectionTable = memo(function DormitorySelectionTable({
               />
             ))}
           </TableBody>
-        </Table>
+        </table>
       </div>
     </div>
   );
