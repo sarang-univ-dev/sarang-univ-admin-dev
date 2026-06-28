@@ -86,6 +86,12 @@ const parseUnivGroupNumber = (raw: string): number => {
   return digits === "" ? NaN : Number(digits);
 };
 
+const parseLeaderFlag = (raw: string): boolean => {
+  if (raw === "") return false;
+  const value = Number(raw);
+  return !Number.isNaN(value) && value > 0;
+};
+
 /**
  * 컬럼/헤더 감지 + 파일 형식(카테고리1) 검증.
  * 반환: layout(성공 시) 또는 errors(파일 형식 오류).
@@ -223,7 +229,9 @@ export function parseSheetRows(
     const gradeNumber = Number(cell(matrix, r, colOffset + IDX_GRADE));
     const phoneRaw = cell(matrix, r, colOffset + IDX_PHONE);
     const phoneNorm = normalizePhone(phoneRaw);
-    const isLeaderFlag = cell(matrix, r, colOffset + IDX_LEADER) === "1";
+    const isLeaderFlag = parseLeaderFlag(
+      cell(matrix, r, colOffset + IDX_LEADER)
+    );
     const currentLeaderName = cell(matrix, r, colOffset + IDX_CUR_LEADER);
 
     let lineupNumber: number | null = null;
