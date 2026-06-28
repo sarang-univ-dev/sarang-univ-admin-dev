@@ -14,6 +14,7 @@ import { ColumnHeader } from "@/components/common/table/ColumnHeader";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import { Button } from "@/components/ui/button";
 import { gradeDescSortingFn, departmentSortingFn } from "@/utils/sorting";
+import { arrayIncludesValueFilterFn, EMPTY_FILTER_VALUE } from "@/lib/table";
 
 const columnHelper = createColumnHelper<GBSLineupRow>();
 
@@ -154,7 +155,9 @@ export function useGbsLineupColumns(
             title="GBS 번호"
             enableFiltering
             enableSorting
-            formatFilterValue={(value) => (value === null ? "미배정" : `${value}`)}
+            formatFilterValue={(value) =>
+              value === EMPTY_FILTER_VALUE ? "미배정" : `${value}`
+            }
           />
         ),
         cell: (info) => {
@@ -179,13 +182,7 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-        filterFn: (row, columnId, filterValue) => {
-          const value = row.getValue(columnId);
-          if (filterValue.includes("미배정")) {
-            return value === null;
-          }
-          return filterValue.includes(String(value));
-        },
+        filterFn: arrayIncludesValueFilterFn,
         /**
          * 복잡한 다단계 정렬 로직
          *
@@ -257,11 +254,7 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-        // 숫자 필터링 (정확히 일치하는 값만 표시)
-        filterFn: (row, columnId, filterValue) => {
-          const value = row.getValue(columnId) as number;
-          return filterValue.includes(String(value));
-        },
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       // ✅ 부분참 (리더 행에만 표시, 필터링만 가능)
@@ -297,11 +290,7 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-        // 숫자 필터링
-        filterFn: (row, columnId, filterValue) => {
-          const value = row.getValue(columnId) as number;
-          return filterValue.includes(String(value));
-        },
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       // ✅ 남 (리더 행에만 표시, 필터링만 가능)
@@ -337,11 +326,7 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-        // 숫자 필터링
-        filterFn: (row, columnId, filterValue) => {
-          const value = row.getValue(columnId) as number;
-          return filterValue.includes(String(value));
-        },
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       // ✅ 여 (리더 행에만 표시, 필터링만 가능)
@@ -377,11 +362,7 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-        // 숫자 필터링
-        filterFn: (row, columnId, filterValue) => {
-          const value = row.getValue(columnId) as number;
-          return filterValue.includes(String(value));
-        },
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       // 라인업 메모 (✅ V2: 버퍼링 + Debounce 지원)
@@ -432,7 +413,7 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
         sortingFn: departmentSortingFn,
       }),
 
@@ -449,7 +430,7 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
       }),
 
       // 학년
@@ -471,7 +452,7 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
         sortingFn: gradeDescSortingFn,
       }),
 
@@ -496,7 +477,7 @@ export function useGbsLineupColumns(
             </div>
           );
         },
-        filterFn: "arrIncludesSome",
+        filterFn: arrayIncludesValueFilterFn,
         sortingFn: (rowA, rowB, columnId) => {
           const nameA = rowA.getValue(columnId) as string;
           const nameB = rowB.getValue(columnId) as string;
@@ -614,7 +595,7 @@ export function useGbsLineupColumns(
               </div>
             );
           },
-          filterFn: "arrIncludesSome",
+          filterFn: arrayIncludesValueFilterFn,
         }
       ),
 
