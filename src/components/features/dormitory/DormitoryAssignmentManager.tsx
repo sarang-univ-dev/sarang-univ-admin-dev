@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AxiosError } from "axios";
+import { Search } from "lucide-react";
 import { useSWRConfig } from "swr";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -69,10 +71,27 @@ type PersonRow = {
 type DormitoryRow = {
   id: number;
   name: string;
+  memo: string;
   optimalCapacity: number;
   maxCapacity: number;
   remainingBySchedule: Record<string, number>;
 };
+
+function useDebounce<T>(value: T, delay = 300): T {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const handler = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(handler);
+  }, [value, delay]);
+
+  return debounced;
+}
+
+const normalizeSearchText = (value: unknown) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase();
 
 type PreviewGroupMode = "gbs" | "dormitory";
 
@@ -227,59 +246,54 @@ const resolveCapacityBasisLabel = (
   basis: DormitoryAssignmentPreview["capacityBasis"]
 ) => (basis === "OPTIMAL" ? "정원 기준" : "최대 인원 기준");
 
-const useDragSelection = <T extends number>(
+const useShiftRangeSelection = <T extends number>(
+  orderedIds: T[],
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<T>>>
 ) => {
-  const dragStateRef = useRef({ active: false, shouldSelect: true });
+  const anchorIdRef = useRef<T | null>(null);
+  const orderedIndexMap = useMemo(
+    () => new Map(orderedIds.map((id, index) => [id, index])),
+    [orderedIds]
+  );
 
-  const stopDragging = useCallback(() => {
-    dragStateRef.current.active = false;
-  }, []);
+  const handleRowClick = useCallback(
+    (id: T, event: React.MouseEvent) => {
+      if (event.button !== 0) return;
 
-  useEffect(() => {
-    window.addEventListener("pointerup", stopDragging);
-    window.addEventListener("pointercancel", stopDragging);
-    return () => {
-      window.removeEventListener("pointerup", stopDragging);
-      window.removeEventListener("pointercancel", stopDragging);
-    };
-  }, [stopDragging]);
+      if (event.shiftKey && anchorIdRef.current != null) {
+        const anchorIndex = orderedIndexMap.get(anchorIdRef.current);
+        const currentIndex = orderedIndexMap.get(id);
 
-  const updateSelection = useCallback(
-    (id: T, shouldSelect: boolean) => {
+        if (anchorIndex != null && currentIndex != null) {
+          event.preventDefault();
+          const start = Math.min(anchorIndex, currentIndex);
+          const end = Math.max(anchorIndex, currentIndex);
+          const rangeIds = orderedIds.slice(start, end + 1);
+
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            rangeIds.forEach((rangeId) => next.add(rangeId));
+            return next;
+          });
+          return;
+        }
+      }
+
+      anchorIdRef.current = id;
       setSelectedIds((prev) => {
         const next = new Set(prev);
-        if (shouldSelect) {
-          next.add(id);
-        } else {
+        if (next.has(id)) {
           next.delete(id);
+        } else {
+          next.add(id);
         }
         return next;
       });
     },
-    [setSelectedIds]
+    [orderedIds, orderedIndexMap, setSelectedIds]
   );
 
-  const handlePointerDown = useCallback(
-    (id: T, isSelected: boolean, event: React.PointerEvent) => {
-      if (event.button !== 0) return;
-      event.preventDefault();
-      dragStateRef.current.active = true;
-      dragStateRef.current.shouldSelect = !isSelected;
-      updateSelection(id, dragStateRef.current.shouldSelect);
-    },
-    [updateSelection]
-  );
-
-  const handlePointerEnter = useCallback(
-    (id: T) => {
-      if (!dragStateRef.current.active) return;
-      updateSelection(id, dragStateRef.current.shouldSelect);
-    },
-    [updateSelection]
-  );
-
-  return { handlePointerDown, handlePointerEnter };
+  return { handleRowClick };
 };
 
 type CapacityBasis = "OPTIMAL" | "MAX";
@@ -289,6 +303,7 @@ const buildDormitoryRows = (
   dormitories: {
     id: number;
     name: string;
+    memo?: string | null;
     optimalCapacity: number;
     maxCapacity?: number;
   }[],
@@ -333,6 +348,7 @@ const buildDormitoryRows = (
       return {
         id: dormitory.id,
         name: dormitory.name,
+        memo: dormitory.memo ?? "",
         optimalCapacity: dormitory.optimalCapacity,
         maxCapacity,
         remainingBySchedule,
@@ -341,7 +357,7 @@ const buildDormitoryRows = (
     .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 };
 
-function PersonSelectionSummary({
+const PersonSelectionSummary = memo(function PersonSelectionSummary({
   rows,
   selectedIds,
   scheduleColumns,
@@ -400,9 +416,54 @@ function PersonSelectionSummary({
       ))}
     </div>
   );
-}
+});
 
-function PersonSelectionTable({
+const PersonSelectionRow = memo(function PersonSelectionRow({
+  row,
+  scheduleColumns,
+  isSelected,
+  onRowClick,
+}: {
+  row: PersonRow;
+  scheduleColumns: ScheduleColumn[];
+  isSelected: boolean;
+  onRowClick: (id: number, event: React.MouseEvent) => void;
+}) {
+  return (
+    <TableRow
+      data-state={isSelected ? "selected" : undefined}
+      className="cursor-pointer select-none"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={(event) => onRowClick(row.id, event)}
+    >
+      <TableCell className="text-center">
+        <Checkbox
+          checked={isSelected}
+          tabIndex={-1}
+          className="pointer-events-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          aria-label={`${row.name} 선택`}
+        />
+      </TableCell>
+      <TableCell className="text-center">
+        {row.gbsNumber != null ? row.gbsNumber : <Badge variant="outline">미배정</Badge>}
+      </TableCell>
+      <TableCell className="text-center">{row.department}</TableCell>
+      <TableCell className="text-center">{row.grade}</TableCell>
+      <TableCell className="text-center">{row.name}</TableCell>
+      {scheduleColumns.map((schedule) => (
+        <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
+          <Checkbox
+            checked={row.scheduleMap[schedule.key]}
+            disabled
+            className={row.scheduleMap[schedule.key] ? schedule.bgColorClass : ""}
+          />
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+});
+
+const PersonSelectionTable = memo(function PersonSelectionTable({
   rows,
   scheduleColumns,
   selectedIds,
@@ -413,11 +474,9 @@ function PersonSelectionTable({
   selectedIds: Set<number>;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<number>>>;
 }) {
-  const { handlePointerDown, handlePointerEnter } = useDragSelection(
-    setSelectedIds
-  );
-
   const [scheduleFilter, setScheduleFilter] = useState<Set<number>>(new Set());
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const toggleScheduleFilter = useCallback((scheduleId: number) => {
     setScheduleFilter((prev) => {
@@ -431,7 +490,7 @@ function PersonSelectionTable({
     });
   }, []);
 
-  const filteredRows = useMemo(() => {
+  const scheduleFilteredRows = useMemo(() => {
     if (scheduleFilter.size === 0) return rows;
     return rows.filter((row) => {
       return Array.from(scheduleFilter).some((scheduleId) => {
@@ -440,6 +499,27 @@ function PersonSelectionTable({
       });
     });
   }, [rows, scheduleFilter, scheduleColumns]);
+  const filteredRows = useMemo(() => {
+    const query = normalizeSearchText(debouncedSearchTerm);
+    if (!query) return scheduleFilteredRows;
+
+    return scheduleFilteredRows.filter((row) =>
+      [
+        row.gbsNumber,
+        row.department,
+        row.grade,
+        row.name,
+      ].some((value) => normalizeSearchText(value).includes(query))
+    );
+  }, [debouncedSearchTerm, scheduleFilteredRows]);
+  const filteredRowIds = useMemo(
+    () => filteredRows.map((row) => row.id),
+    [filteredRows]
+  );
+  const { handleRowClick } = useShiftRangeSelection(
+    filteredRowIds,
+    setSelectedIds
+  );
 
   const allSelected =
     filteredRows.length > 0 && filteredRows.every((row) => selectedIds.has(row.id));
@@ -465,7 +545,24 @@ function PersonSelectionTable({
         selectedIds={selectedIds}
         scheduleColumns={scheduleColumns}
       />
-      <div className="overflow-auto rounded-md border">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative min-w-[240px] flex-1">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="GBS/부서/학년/이름 검색"
+            className="pl-8"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+        </div>
+        <div className="text-sm text-muted-foreground">
+          표시{" "}
+          <span className="font-medium text-foreground">{filteredRows.length}</span>
+          명 / 전체{" "}
+          <span className="font-medium text-foreground">{rows.length}</span>명
+        </div>
+      </div>
+      <div className="max-h-[60vh] overflow-auto rounded-md border lg:max-h-[520px]">
       <Table>
         <TableHeader>
           <TableRow>
@@ -477,7 +574,6 @@ function PersonSelectionTable({
               />
             </TableHead>
             <TableHead className="text-center">GBS</TableHead>
-            <TableHead className="text-center">GBS 메모</TableHead>
             <TableHead className="text-center">부서</TableHead>
             <TableHead className="text-center">학년</TableHead>
             <TableHead className="text-center">이름</TableHead>
@@ -497,56 +593,23 @@ function PersonSelectionTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredRows.map((row) => {
-            const isSelected = selectedIds.has(row.id);
-            return (
-              <TableRow
-                key={row.id}
-                data-state={isSelected ? "selected" : undefined}
-                className="cursor-pointer select-none"
-                onPointerDown={(event) =>
-                  handlePointerDown(row.id, isSelected, event)
-                }
-                onPointerEnter={() => handlePointerEnter(row.id)}
-              >
-                <TableCell className="text-center">
-                  <Checkbox checked={isSelected} aria-label={`${row.name} 선택`} />
-                </TableCell>
-                <TableCell className="text-center">
-                  {row.gbsNumber != null ? (
-                    row.gbsNumber
-                  ) : (
-                    <Badge variant="outline">미배정</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-center">
-                  {row.gbsMemo ? row.gbsMemo : "-"}
-                </TableCell>
-                <TableCell className="text-center">{row.department}</TableCell>
-                <TableCell className="text-center">{row.grade}</TableCell>
-                <TableCell className="text-center">{row.name}</TableCell>
-                {scheduleColumns.map((schedule) => (
-                  <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
-                    <Checkbox
-                      checked={row.scheduleMap[schedule.key]}
-                      disabled
-                      className={
-                        row.scheduleMap[schedule.key] ? schedule.bgColorClass : ""
-                      }
-                    />
-                  </TableCell>
-                ))}
-              </TableRow>
-            );
-          })}
+          {filteredRows.map((row) => (
+            <PersonSelectionRow
+              key={row.id}
+              row={row}
+              scheduleColumns={scheduleColumns}
+              isSelected={selectedIds.has(row.id)}
+              onRowClick={handleRowClick}
+            />
+          ))}
         </TableBody>
       </Table>
       </div>
     </div>
   );
-}
+});
 
-function DormitorySelectionSummary({
+const DormitorySelectionSummary = memo(function DormitorySelectionSummary({
   rows,
   selectedIds,
   scheduleColumns,
@@ -600,9 +663,48 @@ function DormitorySelectionSummary({
       ))}
     </div>
   );
-}
+});
 
-function DormitorySelectionTable({
+const DormitorySelectionRow = memo(function DormitorySelectionRow({
+  row,
+  scheduleColumns,
+  isSelected,
+  onRowClick,
+}: {
+  row: DormitoryRow;
+  scheduleColumns: ScheduleColumn[];
+  isSelected: boolean;
+  onRowClick: (id: number, event: React.MouseEvent) => void;
+}) {
+  return (
+    <TableRow
+      data-state={isSelected ? "selected" : undefined}
+      className="cursor-pointer select-none"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={(event) => onRowClick(row.id, event)}
+    >
+      <TableCell className="text-center">
+        <Checkbox
+          checked={isSelected}
+          tabIndex={-1}
+          className="pointer-events-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          aria-label={`${row.name} 선택`}
+        />
+      </TableCell>
+      <TableCell className="text-center">{row.name}</TableCell>
+      <TableCell className="text-center">{row.memo || "-"}</TableCell>
+      <TableCell className="text-center">{row.optimalCapacity}</TableCell>
+      <TableCell className="text-center">{row.maxCapacity}</TableCell>
+      {scheduleColumns.map((schedule) => (
+        <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
+          {row.remainingBySchedule[schedule.key]}
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+});
+
+const DormitorySelectionTable = memo(function DormitorySelectionTable({
   rows,
   scheduleColumns,
   selectedIds,
@@ -617,13 +719,11 @@ function DormitorySelectionTable({
   capacityBasis: CapacityBasis;
   setCapacityBasis: React.Dispatch<React.SetStateAction<CapacityBasis>>;
 }) {
-  const { handlePointerDown, handlePointerEnter } = useDragSelection(
-    setSelectedIds
-  );
-
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const filteredRows = useMemo(() => {
+  const availabilityFilteredRows = useMemo(() => {
     if (!showOnlyAvailable) return rows;
     return rows.filter((row) => {
       return scheduleColumns.some(
@@ -631,6 +731,27 @@ function DormitorySelectionTable({
       );
     });
   }, [rows, showOnlyAvailable, scheduleColumns]);
+  const filteredRows = useMemo(() => {
+    const query = normalizeSearchText(debouncedSearchTerm);
+    if (!query) return availabilityFilteredRows;
+
+    return availabilityFilteredRows.filter((row) =>
+      [
+        row.name,
+        row.memo,
+        row.optimalCapacity,
+        row.maxCapacity,
+      ].some((value) => normalizeSearchText(value).includes(query))
+    );
+  }, [availabilityFilteredRows, debouncedSearchTerm]);
+  const filteredRowIds = useMemo(
+    () => filteredRows.map((row) => row.id),
+    [filteredRows]
+  );
+  const { handleRowClick } = useShiftRangeSelection(
+    filteredRowIds,
+    setSelectedIds
+  );
 
   const allSelected =
     filteredRows.length > 0 && filteredRows.every((row) => selectedIds.has(row.id));
@@ -681,7 +802,25 @@ function DormitorySelectionTable({
         capacityBasis={capacityBasis}
       />
 
-      <div className="overflow-auto rounded-md border">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative min-w-[240px] flex-1">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="숙소/메모/정원/최대 인원 검색"
+            className="pl-8"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+        </div>
+        <div className="text-sm text-muted-foreground">
+          표시{" "}
+          <span className="font-medium text-foreground">{filteredRows.length}</span>
+          개 / 전체{" "}
+          <span className="font-medium text-foreground">{rows.length}</span>개
+        </div>
+      </div>
+
+      <div className="max-h-[60vh] overflow-auto rounded-md border lg:max-h-[520px]">
         <Table>
           <TableHeader>
             <TableRow>
@@ -693,6 +832,7 @@ function DormitorySelectionTable({
                 />
               </TableHead>
               <TableHead className="text-center">숙소</TableHead>
+              <TableHead className="text-center">메모</TableHead>
               <TableHead className="text-center">정원</TableHead>
               <TableHead className="text-center">최대 인원</TableHead>
               {scheduleColumns.map((schedule) => (
@@ -703,43 +843,21 @@ function DormitorySelectionTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredRows.map((row) => {
-              const isSelected = selectedIds.has(row.id);
-              return (
-                <TableRow
-                  key={row.id}
-                  data-state={isSelected ? "selected" : undefined}
-                  className="cursor-pointer select-none"
-                  onPointerDown={(event) =>
-                    handlePointerDown(row.id, isSelected, event)
-                  }
-                  onPointerEnter={() => handlePointerEnter(row.id)}
-                >
-                  <TableCell className="text-center">
-                    <Checkbox
-                      checked={isSelected}
-                      aria-label={`${row.name} 선택`}
-                    />
-                  </TableCell>
-                  <TableCell className="text-center">{row.name}</TableCell>
-                  <TableCell className="text-center">
-                    {row.optimalCapacity}
-                  </TableCell>
-                  <TableCell className="text-center">{row.maxCapacity}</TableCell>
-                  {scheduleColumns.map((schedule) => (
-                    <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
-                      {row.remainingBySchedule[schedule.key]}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              );
-            })}
+            {filteredRows.map((row) => (
+              <DormitorySelectionRow
+                key={row.id}
+                row={row}
+                scheduleColumns={scheduleColumns}
+                isSelected={selectedIds.has(row.id)}
+                onRowClick={handleRowClick}
+              />
+            ))}
           </TableBody>
         </Table>
       </div>
     </div>
   );
-}
+});
 
 type DormitoryOption = {
   id: number;
@@ -982,6 +1100,7 @@ function GenderAssignmentPanel({
   dormitories: {
     id: number;
     name: string;
+    memo?: string | null;
     optimalCapacity: number;
     maxCapacity?: number;
   }[];
@@ -1027,6 +1146,14 @@ function GenderAssignmentPanel({
 
   const canPreview =
     selectedUserIds.size > 0 && selectedDormitoryIds.size > 0;
+
+  const revalidateDormitories = useCallback(async () => {
+    await mutate(
+      (key) =>
+        typeof key === "string" &&
+        key.includes(`/api/v1/retreat/${retreatSlug}/dormitory`)
+    );
+  }, [mutate, retreatSlug]);
 
   useEffect(() => {
     setPreviewData(null);
@@ -1133,10 +1260,7 @@ function GenderAssignmentPanel({
         variant: "success",
       });
 
-      mutate((key) =>
-        typeof key === "string" &&
-        key.includes(`/api/v1/retreat/${retreatSlug}/dormitory`)
-      );
+      revalidateDormitories();
 
       setSelectedUserIds(new Set());
       setSelectedDormitoryIds(new Set());
@@ -1166,7 +1290,7 @@ function GenderAssignmentPanel({
           <CardHeader>
             <CardTitle>인원 표</CardTitle>
             <CardDescription>
-              숙소가 아직 배정되지 않은 인원만 조회됩니다. 행을 드래그하면 선택/해제할 수 있습니다.
+              숙소가 아직 배정되지 않은 인원만 조회됩니다. 행을 클릭한 뒤 Shift+클릭하면 사이의 행을 모두 선택할 수 있습니다.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1183,7 +1307,7 @@ function GenderAssignmentPanel({
           <CardHeader>
             <CardTitle>숙소 표</CardTitle>
             <CardDescription>
-              숙박 일정별 잔여 인원을 확인합니다. 행을 드래그하면 선택/해제할 수 있습니다.
+              숙박 일정별 잔여 인원을 확인합니다. 행을 클릭한 뒤 Shift+클릭하면 사이의 행을 모두 선택할 수 있습니다.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1335,7 +1459,12 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
     return <div className="py-10 text-center">데이터를 불러오는 중...</div>;
   }
 
-  if (error || scheduleError || maleDormitoryError || femaleDormitoryError) {
+  if (
+    error ||
+    scheduleError ||
+    maleDormitoryError ||
+    femaleDormitoryError
+  ) {
     return (
       <div className="py-10 text-center text-red-600">
         데이터를 불러오는 중 오류가 발생했습니다.
@@ -1344,15 +1473,17 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>숙소 배정</CardTitle>
-        <CardDescription>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">숙소 배정</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           인원과 숙소를 선택한 뒤 배정 결과를 조회하고 일괄 배정할 수 있습니다.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="male" className="w-full">
+        </p>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <Tabs defaultValue="male" className="w-full">
           <TabsList className="grid w-fit grid-cols-2">
             <TabsTrigger value="male" className="px-8">
               형제
@@ -1362,7 +1493,10 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="male" className="mt-6">
+          <TabsContent
+            value="male"
+            className="mt-6 focus-visible:ring-0 focus-visible:ring-offset-0"
+          >
             <GenderAssignmentPanel
               retreatSlug={retreatSlug}
               gender={Gender.MALE}
@@ -1373,7 +1507,10 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
             />
           </TabsContent>
 
-          <TabsContent value="female" className="mt-6">
+          <TabsContent
+            value="female"
+            className="mt-6 focus-visible:ring-0 focus-visible:ring-offset-0"
+          >
             <GenderAssignmentPanel
               retreatSlug={retreatSlug}
               gender={Gender.FEMALE}
@@ -1384,7 +1521,8 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
             />
           </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

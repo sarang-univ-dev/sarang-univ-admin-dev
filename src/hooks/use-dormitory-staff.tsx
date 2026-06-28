@@ -1,7 +1,7 @@
 import useSWR from "swr";
 
 import { webAxios } from "@/lib/api/axios";
-import { Gender } from "@/types";
+import { Gender, UserRetreatRegistrationType } from "@/types";
 
 // 인원관리 간사 전용 인터페이스 - 필요한 필드만 정의
 export interface IDormitoryStaffRegistration {
@@ -11,9 +11,11 @@ export interface IDormitoryStaffRegistration {
   gender: Gender;
   name: string;
   phoneNumber: string;
+  userType?: UserRetreatRegistrationType | "";
   userRetreatRegistrationScheduleIds: number[];
   gbsNumber?: number | null;
   gbsMemo?: string | null;
+  gbsLeaderCount?: number;
   dormitoryLocation?: string;
   dormitoryStaffMemo?: string; // 인원관리 간사 메모
   dormitoryStaffMemoId?: string; // 인원관리 간사 메모 ID
