@@ -99,41 +99,43 @@ export function DormitoryManagementTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="숙소명 / 메모 검색"
           value={searchTerm}
           onChange={event => setSearchTerm(event.target.value)}
           className="max-w-xs"
         />
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              downloadDormitoriesAsTemplate(dormitories.map(toTemplateRow))
-            }
-          >
-            <Download className="mr-1.5 h-4 w-4" />
-            엑셀 내보내기
-          </Button>
-          <Button type="button" size="sm" onClick={() => setImportOpen(true)}>
-            <Upload className="mr-1.5 h-4 w-4" />
-            엑셀 가져오기
-          </Button>
-        </div>
       </div>
 
       <Tabs defaultValue="male" className="w-full">
-        <TabsList className="grid w-fit grid-cols-2">
-          <TabsTrigger value="male" className="px-8">
-            형제 ({maleRows.length})
-          </TabsTrigger>
-          <TabsTrigger value="female" className="px-8">
-            자매 ({femaleRows.length})
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <TabsList className="grid w-fit grid-cols-2">
+            <TabsTrigger value="male" className="px-8">
+              형제 ({maleRows.length})
+            </TabsTrigger>
+            <TabsTrigger value="female" className="px-8">
+              자매 ({femaleRows.length})
+            </TabsTrigger>
+          </TabsList>
+          <div className="ml-auto flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                downloadDormitoriesAsTemplate(dormitories.map(toTemplateRow))
+              }
+            >
+              <Download className="mr-1.5 h-4 w-4" />
+              엑셀 내보내기
+            </Button>
+            <Button type="button" size="sm" onClick={() => setImportOpen(true)}>
+              <Upload className="mr-1.5 h-4 w-4" />
+              엑셀 가져오기
+            </Button>
+          </div>
+        </div>
 
         <TabsContent value="male" className="mt-4">
           <DormitoryGenderTable

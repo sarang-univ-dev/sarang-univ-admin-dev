@@ -119,29 +119,21 @@ function DormitoryCapacityCell({
   );
 }
 
-/** 활성 토글(per-row pending) + 삭제 버튼. 배정 인원이 있으면 삭제 비활성. */
-function DormitoryActionsCell({
+function DormitoryDisabledToggleCell({
   row,
   toggleDisabled,
-  deleteDormitory,
 }: {
   row: TDormitoryManagementRow;
   toggleDisabled: (id: number, isDisabled: boolean) => Promise<void>;
-  deleteDormitory: (
-    id: number,
-    name: string,
-    assignedCount: number
-  ) => Promise<void>;
 }) {
   const [pending, setPending] = useState(false);
-  const hasAssignments = row.assignedCount > 0;
 
   return (
-    <div className="flex items-center justify-center gap-2 px-1">
+    <div className="flex items-center justify-center px-1">
       <Switch
         checked={!row.isDisabled}
         disabled={pending}
-        aria-label="활성 여부"
+        aria-label="숙소 활성 여부"
         onCheckedChange={async checked => {
           setPending(true);
           try {
@@ -151,6 +143,25 @@ function DormitoryActionsCell({
           }
         }}
       />
+    </div>
+  );
+}
+
+function DormitoryDeleteCell({
+  row,
+  deleteDormitory,
+}: {
+  row: TDormitoryManagementRow;
+  deleteDormitory: (
+    id: number,
+    name: string,
+    assignedCount: number
+  ) => Promise<void>;
+}) {
+  const hasAssignments = row.assignedCount > 0;
+
+  return (
+    <div className="flex items-center justify-center px-1">
       <Button
         type="button"
         variant="ghost"
@@ -268,16 +279,26 @@ export function useDormitoryManagementColumns({
         size: 100,
       }),
       columnHelper.display({
-        id: "actions",
-        header: () => <div className="text-center text-sm">관리</div>,
+        id: "disabledToggle",
+        header: () => <div className="text-center text-sm">활성</div>,
         cell: ({ row }) => (
-          <DormitoryActionsCell
+          <DormitoryDisabledToggleCell
             row={row.original}
             toggleDisabled={toggleDisabled}
+          />
+        ),
+        size: 80,
+      }),
+      columnHelper.display({
+        id: "delete",
+        header: () => <div className="text-center text-sm">삭제</div>,
+        cell: ({ row }) => (
+          <DormitoryDeleteCell
+            row={row.original}
             deleteDormitory={deleteDormitory}
           />
         ),
-        size: 140,
+        size: 72,
       }),
     ],
     [updateDormitory, toggleDisabled, deleteDormitory]
