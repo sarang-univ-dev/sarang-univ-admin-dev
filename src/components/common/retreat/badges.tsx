@@ -257,3 +257,33 @@ export const LeaderAttendanceBadge = ({
       );
   }
 };
+
+/**
+ * 숙소 활성/비활성 상태 배지
+ * @description 숙소가 방배정 대상으로 사용 가능한지(활성) 여부를 표시합니다
+ */
+export const DormitoryStatusBadge = ({
+  isDisabled,
+}: {
+  isDisabled: boolean;
+}) => {
+  if (isDisabled) {
+    return (
+      <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
+        <XCircle className="h-3.5 w-3.5 text-gray-500 mr-1.5 flex-shrink-0" />
+        <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+          비활성
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
+      <CheckCheck className="h-3.5 w-3.5 text-green-500 mr-1.5 flex-shrink-0" />
+      <span className="text-xs font-medium text-green-700 whitespace-nowrap">
+        활성
+      </span>
+    </div>
+  );
+};

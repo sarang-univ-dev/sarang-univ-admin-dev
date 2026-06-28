@@ -20,6 +20,7 @@ export enum PagePath {
   ASSIGN_GBS_LOCATION = "/assign-gbs-location",
   MEAL_CHECK = "/meal-check",
   DORMITORY_ASSIGNMENT = "/dormitory-assignment",
+  DORMITORY_MANAGEMENT = "/dormitory-management",
   SHUTTLE_CHECK = "/shuttle-check",
   UNIV_GROUP_MINISTER_VIEW = "/univ-group-minister-view",
   ADMIN_MINISTER_VIEW = "/admin-minister-view",
@@ -64,6 +65,7 @@ export const USER_ROLE_PAGES: Readonly<
     PagePath.ASSIGN_GBS_LOCATION,
     PagePath.MEAL_CHECK,
     PagePath.DORMITORY_ASSIGNMENT,
+    PagePath.DORMITORY_MANAGEMENT,
     PagePath.LEADER_ATTENDANCE,
   ],
 
