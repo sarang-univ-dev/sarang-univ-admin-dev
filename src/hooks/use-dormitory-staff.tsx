@@ -27,24 +27,11 @@ export interface IDormitoryStaffRegistration {
   partialAttendanceCount?: number;
 }
 
-export interface DormitorySummaryCustomRow {
-  id: number;
-  label: string;
-  rangeText: string;
-  sortOrder: number;
-}
-
 const fetcher = async (url: string) => {
   const response = await webAxios.get(url);
 
   // 새로운 dormitory 엔드포인트 응답 구조 사용
   return response.data.dormitoryStaffRegistrations;
-};
-
-const summaryCustomRowsFetcher = async (url: string) => {
-  const response = await webAxios.get(url);
-
-  return response.data.customRows;
 };
 
 export function useDormitoryStaff(retreatSlug?: string) {
@@ -53,16 +40,4 @@ export function useDormitoryStaff(retreatSlug?: string) {
     : null;
 
   return useSWR<IDormitoryStaffRegistration[], Error>(endpoint, fetcher, {});
-}
-
-export function useDormitorySummaryCustomRows(retreatSlug?: string) {
-  const endpoint = retreatSlug
-    ? `/api/v1/retreat/${retreatSlug}/dormitory/summary-custom-rows`
-    : null;
-
-  return useSWR<DormitorySummaryCustomRow[], Error>(
-    endpoint,
-    summaryCustomRowsFetcher,
-    {}
-  );
 }

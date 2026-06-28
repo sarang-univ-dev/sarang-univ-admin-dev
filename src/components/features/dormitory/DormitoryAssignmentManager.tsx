@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AxiosError } from "axios";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Search } from "lucide-react";
 import { useSWRConfig } from "swr";
 
 import { Badge } from "@/components/ui/badge";
@@ -35,18 +35,13 @@ import {
 } from "@/components/ui/select";
 
 import { useAllDormitories } from "@/hooks/use-available-dormitories";
-import {
-  DormitorySummaryCustomRow,
-  useDormitoryStaff,
-  useDormitorySummaryCustomRows,
-} from "@/hooks/use-dormitory-staff";
+import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
 import { useRetreatSchedules } from "@/hooks/use-retreat-schedules";
 import { webAxios } from "@/lib/api/axios";
 import { useToastStore } from "@/store/toast-store";
 import {
   Gender,
   RetreatRegistrationScheduleType,
-  UserRetreatRegistrationType,
 } from "@/types";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import type { DormitoryAssignmentPreview } from "@/types/dormitory-assignment";
@@ -81,26 +76,6 @@ type DormitoryRow = {
   maxCapacity: number;
   remainingBySchedule: Record<string, number>;
 };
-
-type SummaryCount = {
-  male: number;
-  female: number;
-};
-
-type CustomSummaryRow = {
-  id: number;
-  label: string;
-  rangeText: string;
-};
-
-const toCustomSummaryRows = (
-  rows: DormitorySummaryCustomRow[] = []
-): CustomSummaryRow[] =>
-  rows.map((row) => ({
-    id: row.id,
-    label: row.label,
-    rangeText: row.rangeText,
-  }));
 
 function useDebounce<T>(value: T, delay = 300): T {
   const [debounced, setDebounced] = useState(value);
@@ -168,196 +143,6 @@ const compareByGbs = (a: PersonRow, b: PersonRow) => {
 };
 
 const UNASSIGNED_LABEL = "미배정";
-
-const createEmptySummaryCount = (): SummaryCount => ({ male: 0, female: 0 });
-
-const addGenderCount = (count: SummaryCount, gender: Gender) => {
-  if (gender === Gender.MALE) count.male += 1;
-  else if (gender === Gender.FEMALE) count.female += 1;
-};
-
-const parseGbsRangeText = (value: string) => {
-  const numbers = new Set<number>();
-  const normalized = value.replace(/[~–—]/g, "-");
-
-  normalized
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .forEach((part) => {
-      const wildcardRangeMatch = part.match(/^[xX](\d{2})\s*-\s*[xX](\d{2})$/);
-      if (wildcardRangeMatch) {
-        const start = Number(wildcardRangeMatch[1]);
-        const end = Number(wildcardRangeMatch[2]);
-        const min = Math.min(start, end);
-        const max = Math.max(start, end);
-        for (let hundreds = 1; hundreds <= 9; hundreds += 1) {
-          for (let suffix = min; suffix <= max; suffix += 1) {
-            numbers.add(hundreds * 100 + suffix);
-          }
-        }
-        return;
-      }
-
-      const wildcardMatch = part.match(/^[xX](\d{2})$/);
-      if (wildcardMatch) {
-        const suffix = Number(wildcardMatch[1]);
-        for (let hundreds = 1; hundreds <= 9; hundreds += 1) {
-          numbers.add(hundreds * 100 + suffix);
-        }
-        return;
-      }
-
-      const rangeMatch = part.match(/^(\d+)\s*-\s*(\d+)$/);
-      if (rangeMatch) {
-        const start = Number(rangeMatch[1]);
-        const end = Number(rangeMatch[2]);
-        const min = Math.min(start, end);
-        const max = Math.max(start, end);
-        for (let n = min; n <= max; n += 1) {
-          numbers.add(n);
-        }
-        return;
-      }
-
-      if (/^\d+$/.test(part)) {
-        numbers.add(Number(part));
-      }
-    });
-
-  return numbers;
-};
-
-function CustomSummaryRowsEditor({
-  retreatSlug,
-  savedRows,
-  onSaved,
-}: {
-  retreatSlug: string;
-  savedRows?: DormitorySummaryCustomRow[];
-  onSaved: (rows: CustomSummaryRow[]) => void;
-}) {
-  const addToast = useToastStore((state) => state.add);
-  const [draftRows, setDraftRows] = useState<CustomSummaryRow[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    setDraftRows(toCustomSummaryRows(savedRows));
-  }, [savedRows]);
-
-  const addRow = useCallback(() => {
-    setDraftRows((prev) => {
-      const nextIndex = prev.length + 1;
-      const nextId = prev.reduce((max, row) => Math.max(max, row.id), 0) + 1;
-      return [
-        ...prev,
-        {
-          id: nextId,
-          label: `사용자 구분 ${nextIndex}`,
-          rangeText: "",
-        },
-      ];
-    });
-  }, []);
-
-  const updateRow = useCallback(
-    (id: number, field: "label" | "rangeText", value: string) => {
-      setDraftRows((prev) =>
-        prev.map((row) => (row.id === id ? { ...row, [field]: value } : row))
-      );
-    },
-    []
-  );
-
-  const removeRow = useCallback((id: number) => {
-    setDraftRows((prev) => prev.filter((row) => row.id !== id));
-  }, []);
-
-  const saveRows = useCallback(async () => {
-    setIsSaving(true);
-    try {
-      const rows = draftRows
-        .filter((row) => row.rangeText.trim())
-        .map((row) => ({
-          label: row.label.trim() || "사용자 구분",
-          rangeText: row.rangeText.trim(),
-        }));
-
-      const response = await webAxios.put(
-        `/api/v1/retreat/${retreatSlug}/dormitory/summary-custom-rows`,
-        { rows }
-      );
-      const saved = toCustomSummaryRows(response.data.customRows);
-      setDraftRows(saved);
-      onSaved(saved);
-      addToast({
-        title: "저장 완료",
-        description: "인원 요약 구분이 저장되었습니다.",
-        variant: "success",
-      });
-    } catch {
-      addToast({
-        title: "저장 실패",
-        description: "인원 요약 구분 저장에 실패했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [addToast, draftRows, onSaved, retreatSlug]);
-
-  return (
-    <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={addRow}>
-          <Plus className="mr-2 h-4 w-4" />
-          구분 추가
-        </Button>
-        <Button type="button" size="sm" onClick={saveRows} disabled={isSaving}>
-          {isSaving ? "저장 중..." : "구분 저장"}
-        </Button>
-      </div>
-      {draftRows.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {draftRows.map((row) => (
-            <div
-              key={row.id}
-              className="flex min-w-0 items-center gap-2"
-            >
-              <Input
-                className="h-9 w-[140px] shrink-0 px-2 text-sm"
-                value={row.label}
-                onChange={(event) =>
-                  updateRow(row.id, "label", event.target.value)
-                }
-                aria-label="구분 이름"
-              />
-              <Input
-                className="h-9 min-w-[130px] flex-1 px-2 text-sm"
-                value={row.rangeText}
-                onChange={(event) =>
-                  updateRow(row.id, "rangeText", event.target.value)
-                }
-                placeholder="901, 903-910"
-                aria-label="GBS 번호 범위"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 shrink-0"
-                onClick={() => removeRow(row.id)}
-                aria-label="구분 삭제"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 const isPreviewGroupRow = (row: PreviewTableRow): row is PreviewGroupRow =>
   row.kind === "group";
@@ -1592,10 +1377,6 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
     error,
   } = useDormitoryStaff(retreatSlug);
   const {
-    data: savedCustomSummaryRows,
-    isLoading: isCustomSummaryRowsLoading,
-  } = useDormitorySummaryCustomRows(retreatSlug);
-  const {
     data: schedules = [],
     isLoading: isSchedulesLoading,
     error: scheduleError,
@@ -1606,18 +1387,6 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
   );
   const { data: femaleDormitories, error: femaleDormitoryError } =
     useAllDormitories(retreatSlug, Gender.FEMALE);
-
-  // 인원 요약 표: 선택한 숙박 밤(SLEEP 일정). null 이면 첫 밤.
-  const [selectedSleepId, setSelectedSleepId] = useState<number | null>(null);
-  const [appliedCustomSummaryRows, setAppliedCustomSummaryRows] = useState<
-    CustomSummaryRow[]
-  >([]);
-
-  useEffect(() => {
-    if (!savedCustomSummaryRows) return;
-    const rows = toCustomSummaryRows(savedCustomSummaryRows);
-    setAppliedCustomSummaryRows(rows);
-  }, [savedCustomSummaryRows]);
 
   const sleepSchedules = useMemo(
     () =>
@@ -1681,68 +1450,9 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
     [registrations]
   );
 
-  // 상단 인원 요약: 사용자 구분 / 기타 / 간사 (배타적 분류) × 남/여. dormitoryStaff(useDormitoryStaff) 원본 사용.
-  const summary = useMemo(() => {
-    const sleepId = selectedSleepId ?? scheduleColumns[0]?.id ?? null;
-    const rows = {
-      other: createEmptySummaryCount(),
-      staff: createEmptySummaryCount(),
-      both: createEmptySummaryCount(),
-    };
-    const customRows = appliedCustomSummaryRows.map((row) => ({
-      ...row,
-      count: createEmptySummaryCount(),
-      gbsNumbers: parseGbsRangeText(row.rangeText),
-    }));
-
-    for (const r of dormitoryStaff) {
-      if (
-        sleepId != null &&
-        !(r.userRetreatRegistrationScheduleIds ?? []).includes(sleepId)
-      ) {
-        continue;
-      }
-      const gbsNumber = r.gbsNumber;
-      const isStaff = r.userType === UserRetreatRegistrationType.STAFF;
-
-      if (isStaff && gbsNumber != null) {
-        addGenderCount(rows.both, r.gender);
-        continue;
-      }
-      if (isStaff) {
-        addGenderCount(rows.staff, r.gender);
-        continue;
-      }
-      const customRow =
-        gbsNumber != null
-          ? customRows.find((row) => row.gbsNumbers.has(gbsNumber))
-          : null;
-      if (customRow) {
-        addGenderCount(customRow.count, r.gender);
-        continue;
-      }
-
-      addGenderCount(rows.other, r.gender);
-    }
-    const total = {
-      male:
-        rows.other.male +
-        rows.staff.male +
-        rows.both.male +
-        customRows.reduce((sum, row) => sum + row.count.male, 0),
-      female:
-        rows.other.female +
-        rows.staff.female +
-        rows.both.female +
-        customRows.reduce((sum, row) => sum + row.count.female, 0),
-    };
-    return { rows, customRows, total };
-  }, [appliedCustomSummaryRows, dormitoryStaff, selectedSleepId, scheduleColumns]);
-
   if (
     isLoading ||
     isSchedulesLoading ||
-    isCustomSummaryRowsLoading ||
     maleDormitories == null ||
     femaleDormitories == null
   ) {
@@ -1762,8 +1472,6 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
     );
   }
 
-  const effectiveSleepId = selectedSleepId ?? scheduleColumns[0]?.id ?? null;
-
   return (
     <div className="space-y-6">
       <div>
@@ -1771,95 +1479,6 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
         <p className="text-sm text-muted-foreground mt-1">
           인원과 숙소를 선택한 뒤 배정 결과를 조회하고 일괄 배정할 수 있습니다.
         </p>
-      </div>
-
-      <div className="space-y-3">
-        <div className="space-y-2">
-          <h2 className="text-base font-semibold tracking-tight">인원 요약</h2>
-          {scheduleColumns.length > 0 && (
-            <ToggleGroup
-              className="justify-start"
-              type="single"
-              value={effectiveSleepId != null ? String(effectiveSleepId) : ""}
-              onValueChange={value => {
-                if (value) setSelectedSleepId(Number(value));
-              }}
-            >
-              {scheduleColumns.map(col => (
-                <ToggleGroupItem key={col.id} value={String(col.id)}>
-                  {col.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          )}
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 md:items-start">
-          <div className="overflow-x-auto rounded-md border w-full">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="bg-gray-100 font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-3 whitespace-nowrap">
-                    구분
-                  </TableHead>
-                  <TableHead className="bg-gray-100 text-center font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-3 whitespace-nowrap">
-                    남
-                  </TableHead>
-                  <TableHead className="bg-gray-100 text-center font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-3 whitespace-nowrap">
-                    여
-                  </TableHead>
-                  <TableHead className="bg-gray-100 text-center font-semibold text-gray-800 text-xs md:text-sm px-2 md:px-3 whitespace-nowrap">
-                    계
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[
-                  ...summary.customRows.map((row) => ({
-                    label: row.label.trim() || "사용자 구분",
-                    v: row.count,
-                  })),
-                  { label: "기타", v: summary.rows.other },
-                  { label: "간사 (GBS 제외)", v: summary.rows.staff },
-                  { label: "간사 ∩ GBS", v: summary.rows.both },
-                ].map(row => (
-                  <TableRow key={row.label}>
-                    <TableCell className="text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-2 whitespace-nowrap">
-                      {row.label}
-                    </TableCell>
-                    <TableCell className="text-center text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-2 whitespace-nowrap tabular-nums">
-                      {row.v.male}
-                    </TableCell>
-                    <TableCell className="text-center text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-2 whitespace-nowrap tabular-nums">
-                      {row.v.female}
-                    </TableCell>
-                    <TableCell className="text-center text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-2 whitespace-nowrap tabular-nums">
-                      {row.v.male + row.v.female}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="font-semibold">
-                  <TableCell className="text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-2 whitespace-nowrap">
-                    총계
-                  </TableCell>
-                  <TableCell className="text-center text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-2 whitespace-nowrap tabular-nums">
-                    {summary.total.male}
-                  </TableCell>
-                  <TableCell className="text-center text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-2 whitespace-nowrap tabular-nums">
-                    {summary.total.female}
-                  </TableCell>
-                  <TableCell className="text-center text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-2 whitespace-nowrap tabular-nums">
-                    {summary.total.male + summary.total.female}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-          <CustomSummaryRowsEditor
-            retreatSlug={retreatSlug}
-            savedRows={savedCustomSummaryRows}
-            onSaved={setAppliedCustomSummaryRows}
-          />
-        </div>
       </div>
 
       <Card>
