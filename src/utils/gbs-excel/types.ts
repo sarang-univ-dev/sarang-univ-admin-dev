@@ -24,6 +24,8 @@ export interface ParsedSheetRow {
   currentLeaderName: string;
   /** "1" 인 스케줄 컬럼 → schedule id 집합 */
   selectedScheduleIds: Set<number>;
+  /** No. 열(라인업 순번) — 열 없거나 빈칸이면 null */
+  lineupNumber: number | null;
   matchKey: string;
 }
 
@@ -31,6 +33,8 @@ export interface ColumnLayout {
   headerRowIndex: number;
   colOffset: number;
   scheduleLabelsInOrder: string[];
+  /** "No." 헤더 열 인덱스 (없으면 null) */
+  noColIndex: number | null;
 }
 
 /** 오류/경고 리스트에 표시하는 사람 정보 */
@@ -69,6 +73,7 @@ export interface AssignmentPayloadItem {
   gbsNumber: number;
   isLeader: boolean;
   currentLeaderName: string;
+  lineupNumber: number | null;
 }
 
 export type BlockingCategory = 1 | 2 | 3 | 6 | null;
@@ -93,6 +98,8 @@ export interface ValidationResult {
   blockingCategory: BlockingCategory;
   /** 경고(카테고리4·5) 존재 여부 — 확인 체크 시 제출 가능 */
   hasWarnings: boolean;
+  /** 시트에 No. 열이 있어 lineup_number 를 갱신할지 */
+  applyLineupNumber: boolean;
   /** 제출 payload (매칭 + 조번호 있는 행) */
   assignments: AssignmentPayloadItem[];
   /** 정보성: 새로 생성될 것으로 보이는 GBS 번호 */

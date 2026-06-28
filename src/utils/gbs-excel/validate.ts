@@ -34,6 +34,7 @@ function emptyResult(): ValidationResult {
     changeWarnings: [],
     blockingCategory: null,
     hasWarnings: false,
+    applyLineupNumber: false,
     assignments: [],
     newGbsNumbers: [],
   };
@@ -44,8 +45,9 @@ export function runValidation(input: {
   fileFormatErrors: string[];
   lineups: IUserRetreatGBSLineup[];
   schedules: TRetreatRegistrationSchedule[];
+  hasLineupColumn: boolean;
 }): ValidationResult {
-  const { parsedRows, fileFormatErrors, lineups, schedules } = input;
+  const { parsedRows, fileFormatErrors, lineups, schedules, hasLineupColumn } = input;
   const result = emptyResult();
 
   // ── 카테고리1: 파일 형식 (🔒 비우회) ──
@@ -173,6 +175,7 @@ export function runValidation(input: {
       gbsNumber: row.gbsNumber,
       isLeader: row.isLeaderFlag,
       currentLeaderName: row.currentLeaderName,
+      lineupNumber: row.lineupNumber,
     });
   }
 
@@ -195,6 +198,7 @@ export function runValidation(input: {
   result.scheduleMismatches = scheduleMismatches;
   result.changeWarnings = changeWarnings;
   result.assignments = assignments;
+  result.applyLineupNumber = hasLineupColumn;
 
   // 정보성: 기존 라인업에 없던 GBS 번호(서버가 자동 생성)
   const existingGbsNumbers = new Set<number>(

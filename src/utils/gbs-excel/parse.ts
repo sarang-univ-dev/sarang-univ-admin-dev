@@ -172,11 +172,14 @@ export function detectLayout(
     return { layout: null, errors };
   }
 
+  const noColIndex = headerRow.indexOf("No.");
+
   return {
     layout: {
       headerRowIndex,
       colOffset,
       scheduleLabelsInOrder: sheetScheduleLabels,
+      noColIndex: noColIndex >= 0 ? noColIndex : null,
     },
     errors: [],
   };
@@ -223,6 +226,13 @@ export function parseSheetRows(
     const isLeaderFlag = cell(matrix, r, colOffset + IDX_LEADER) === "1";
     const currentLeaderName = cell(matrix, r, colOffset + IDX_CUR_LEADER);
 
+    let lineupNumber: number | null = null;
+    if (layout.noColIndex != null) {
+      const raw = cell(matrix, r, layout.noColIndex);
+      const n = raw === "" ? null : Number(raw);
+      lineupNumber = n != null && !Number.isNaN(n) ? n : null;
+    }
+
     const selectedScheduleIds = new Set<number>();
     for (let i = 0; i < scheduleLabelsInOrder.length; i++) {
       const v = cell(matrix, r, colOffset + SCHEDULE_START + i);
@@ -242,6 +252,7 @@ export function parseSheetRows(
       phoneRaw,
       phoneNorm,
       currentLeaderName,
+      lineupNumber,
       selectedScheduleIds,
       matchKey: buildMatchKey(univGroupNumber, gradeNumber, name, phoneNorm),
     });

@@ -6,7 +6,7 @@
  * GBS 번호·리더가 아직 존재하지 않으므로 라이브 데이터를 채울 수 없다.
  * 운영자는 예시 행을 지우고 본인 명단으로 채운다.
  * 일정(스케줄) 컬럼만 해당 retreat 의 실제 스케줄에서 가져와 정확히 맞춘다.
- * 헤더/스케줄 컬럼 순서는 parse(detectLayout)가 기대하는 것과 동일.
+ * A열 No.(라인업 순번) + B열부터 고정 헤더 — 순서는 parse(detectLayout)가 기대하는 것과 동일.
  * 가독성을 위해 xlsx-js-style 로 셀 서식(헤더 회색, 일정 컬럼 날짜별 색,
  * 리더 행 하늘색, 테두리, 가운데 정렬)을 적용한다.
  */
@@ -35,7 +35,7 @@ const FIXED_HEADERS = [
   "현리더",
   "새돌/군인/새가족",
 ];
-const COL_OFFSET = 1; // A열 비움 → B열부터
+const COL_OFFSET = 1; // A열 No. → B열부터 고정 헤더
 const LEADER_FLAG_COL = COL_OFFSET; // B열 = 리더 플래그
 const HEADER_ROW = 1; // row0 빈 행, row1 헤더
 
@@ -110,10 +110,10 @@ export function buildTemplateWorkbook(
 
   const aoa: Cell[][] = [];
   aoa.push([]);
-  aoa.push([null, ...header]);
-  for (const row of SAMPLE_ROWS) {
+  aoa.push(["No.", ...header]);
+  SAMPLE_ROWS.forEach((row, i) => {
     aoa.push([
-      null,
+      String(i + 1),
       row.isLeader ? "1" : "0",
       row.phone, // ID 컬럼(미사용) — 연락처로 채움
       String(row.gbsNumber),
@@ -127,7 +127,7 @@ export function buildTemplateWorkbook(
       "",
       ...scheduleCellsFor(row),
     ]);
-  }
+  });
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const lastCol = COL_OFFSET + header.length - 1;
@@ -138,8 +138,8 @@ export function buildTemplateWorkbook(
     ws[addr].s = s;
   };
 
-  // 헤더 행
-  for (let c = COL_OFFSET; c <= lastCol; c++) {
+  // 헤더 행 (A열 No. 포함)
+  for (let c = 0; c <= lastCol; c++) {
     const isSchedule = c >= scheduleStart;
     setStyle(HEADER_ROW, c, {
       fill: {
@@ -158,7 +158,7 @@ export function buildTemplateWorkbook(
     const r = HEADER_ROW + 1 + i;
     const isLeaderRow =
       (ws[XLSX.utils.encode_cell({ r, c: LEADER_FLAG_COL })]?.v ?? "") === "1";
-    for (let c = COL_OFFSET; c <= lastCol; c++) {
+    for (let c = 0; c <= lastCol; c++) {
       const isSchedule = c >= scheduleStart;
       let fill: string | undefined;
       if (isSchedule) {
@@ -179,7 +179,7 @@ export function buildTemplateWorkbook(
 
   // 컬럼 너비
   ws["!cols"] = [
-    { wch: 2 }, // A
+    { wch: 5 }, // A = No.
     { wch: 5 }, // 리더
     { wch: 15 }, // ID
     { wch: 7 }, // 조번호

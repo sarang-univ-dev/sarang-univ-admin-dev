@@ -102,6 +102,7 @@ export function useGbsExcelImport({
         fileFormatErrors: errors,
         lineups,
         schedules,
+        hasLineupColumn: layout?.noColIndex != null,
       });
       setValidation(result);
       setStep("result");
@@ -125,6 +126,7 @@ export function useGbsExcelImport({
     try {
       const result = await GbsLineupAPI.bulkAssignGbs(retreatSlug, {
         assignments: validation.assignments,
+        applyLineupNumber: validation.applyLineupNumber,
       });
       onImported();
       addToast({
@@ -159,7 +161,9 @@ export function useGbsExcelImport({
     const count = validation.assignments.length;
     void confirmDialog.open({
       title: "GBS 라인업 일괄 적용",
-      description: `${count}명의 GBS 배정·리더 정보를 덮어씁니다. 일정/개인정보/메모는 변경되지 않습니다. 계속할까요?`,
+      description: `${count}명의 GBS 배정·리더${
+        validation.applyLineupNumber ? "·라인업 번호(No.)" : ""
+      } 정보를 덮어씁니다. 일정/개인정보/메모는 변경되지 않습니다. 계속할까요?`,
       onConfirm: doSubmit,
     });
   }, [validation, canSubmit, confirmDialog, doSubmit]);
