@@ -217,6 +217,33 @@ describe("parseSheetRows", () => {
     expect(parsed[1].gbsNumber).toBe(101);
     expect([...parsed[1].selectedScheduleIds].sort()).toEqual([31, 32]);
   });
+
+  it("리더 플래그는 0보다 큰 숫자만 true 로 파싱한다", () => {
+    const leaderOne = rowCells({ gbs: 101, dep: 2, grade: 4, name: "김바울", phone: "010-1000-0001" });
+    const leaderTwo = rowCells({ gbs: 101, dep: 2, grade: 1, name: "이디모데", phone: "010-1000-0002" });
+    const notLeaderZero = rowCells({ gbs: 101, dep: 5, grade: 2, name: "박마리아", phone: "010-1000-0003" });
+    const notLeaderBlank = rowCells({ gbs: 101, dep: 6, grade: 3, name: "최누가", phone: "010-1000-0004" });
+
+    leaderOne[0] = "1";
+    leaderTwo[0] = "2";
+    notLeaderZero[0] = "0";
+    notLeaderBlank[0] = "";
+
+    const matrix = sheetMatrix([
+      leaderOne,
+      leaderTwo,
+      notLeaderZero,
+      notLeaderBlank,
+    ]);
+    const parsed = parseSheetRows(matrix, layoutOf(matrix), SCHEDULES);
+
+    expect(parsed.map((row) => row.isLeaderFlag)).toEqual([
+      true,
+      true,
+      false,
+      false,
+    ]);
+  });
 });
 
 describe("runValidation", () => {
