@@ -33,6 +33,12 @@ export type AddShuttleBusRequest = {
   arrivalTime?: string;
 };
 
+export type AddShuttleBusPaymentScheduleRequest = {
+  name: string;
+  startAt: string;
+  endAt: string;
+};
+
 export type CreateRetreatRequest = {
   retreat: {
     slug: string;
@@ -140,6 +146,15 @@ export type ManagedRetreatShuttleBus = {
   createdAt: string;
 };
 
+export type ManagedRetreatShuttleBusPaymentSchedule = {
+  id: number;
+  retreatId: number;
+  name: string;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+};
+
 export type ManagedRetreatRegistrationSchedule = {
   id: number;
   retreatId: number;
@@ -191,6 +206,8 @@ export type UpdateRetreatAdminUserRequest = {
 };
 
 export type UpdatePaymentScheduleRequest = Partial<AddPaymentScheduleRequest>;
+export type UpdateShuttleBusPaymentScheduleRequest =
+  Partial<AddShuttleBusPaymentScheduleRequest>;
 export type UpdateShuttleBusRequest = Partial<
   Omit<AddShuttleBusRequest, "arrivalTime">
 > & { arrivalTime?: string | null };
@@ -208,6 +225,7 @@ export type ManagedRetreatDetail = ManagedRetreat & {
   })[];
   paymentSchedules: ManagedRetreatPaymentSchedule[];
   shuttleBuses: ManagedRetreatShuttleBus[];
+  shuttleBusPaymentSchedules: ManagedRetreatShuttleBusPaymentSchedule[];
   registrationSchedules: ManagedRetreatRegistrationSchedule[];
 };
 

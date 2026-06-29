@@ -11,6 +11,7 @@ import type {
   AddPaymentScheduleRequest,
   AddRegistrationScheduleRequest,
   AddShuttleBusRequest,
+  AddShuttleBusPaymentScheduleRequest,
   AdminGrade,
   AdminUnivGroup,
   AdminUnivGroupWithGrades,
@@ -29,6 +30,7 @@ import type {
   UpdateRegistrationScheduleRequest,
   UpdateRetreatRequest,
   UpdateShuttleBusRequest,
+  UpdateShuttleBusPaymentScheduleRequest,
   UploadRetreatAssetResponse,
 } from "@/types/retreat-create";
 import type {
@@ -208,6 +210,18 @@ export async function addShuttleBus(
   return response.data;
 }
 
+export async function addShuttleBusPaymentSchedule(
+  retreatId: number,
+  request: AddShuttleBusPaymentScheduleRequest
+) {
+  const response = await webAxios.post(
+    `/api/v1/admin/retreats/${retreatId}/shuttle-bus-payment-schedules`,
+    request
+  );
+
+  return response.data;
+}
+
 export async function updateUnivGroupInformation(
   retreatId: number,
   univGroupId: number,
@@ -239,6 +253,27 @@ export async function deletePaymentSchedule(
 ) {
   await webAxios.delete(
     `/api/v1/admin/retreats/${retreatId}/payment-schedules/${paymentScheduleId}`
+  );
+}
+
+export async function updateShuttleBusPaymentSchedule(
+  retreatId: number,
+  shuttleBusPaymentScheduleId: number,
+  request: UpdateShuttleBusPaymentScheduleRequest
+) {
+  const response = await webAxios.patch(
+    `/api/v1/admin/retreats/${retreatId}/shuttle-bus-payment-schedules/${shuttleBusPaymentScheduleId}`,
+    request
+  );
+  return response.data;
+}
+
+export async function deleteShuttleBusPaymentSchedule(
+  retreatId: number,
+  shuttleBusPaymentScheduleId: number
+) {
+  await webAxios.delete(
+    `/api/v1/admin/retreats/${retreatId}/shuttle-bus-payment-schedules/${shuttleBusPaymentScheduleId}`
   );
 }
 
