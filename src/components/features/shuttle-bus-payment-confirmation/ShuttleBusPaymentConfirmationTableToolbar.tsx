@@ -2,7 +2,7 @@
 
 import { Table } from "@tanstack/react-table";
 import debounce from "lodash/debounce";
-import { Download, Search, UserPlus } from "lucide-react";
+import { Download, Search, Upload, UserPlus } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,21 @@ import { Input } from "@/components/ui/input";
 import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
 import { getOrderedTableRowIds } from "@/lib/table";
 import { useToastStore } from "@/store/toast-store";
+import type { TRetreatShuttleBus } from "@/types";
+import type { IShuttleBusPaymentConfirmationRegistration } from "@/types/shuttle-bus-payment-confirmation";
+import type { ShuttleBusExcelUnivGroup } from "@/utils/shuttle-bus-excel/types";
+
+import { ShuttleBusExcelImportModal } from "./ShuttleBusExcelImportModal";
 
 interface ShuttleBusPaymentConfirmationTableToolbarProps {
   table: Table<any>;
   globalFilter: string;
   setGlobalFilter: (value: string) => void;
   retreatSlug: string;
+  schedules: TRetreatShuttleBus[];
+  univGroupAndGrade: ShuttleBusExcelUnivGroup[];
+  existingRegistrations: IShuttleBusPaymentConfirmationRegistration[];
+  onImportSuccess: () => void;
   onAddRegistration: () => void;
 }
 
@@ -29,10 +38,15 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
   globalFilter,
   setGlobalFilter,
   retreatSlug,
+  schedules,
+  univGroupAndGrade,
+  existingRegistrations,
+  onImportSuccess,
   onAddRegistration,
 }: ShuttleBusPaymentConfirmationTableToolbarProps) {
   const addToast = useToastStore(state => state.add);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isExcelImportOpen, setIsExcelImportOpen] = useState(false);
 
   // ✅ Lodash debounce를 useMemo로 메모이제이션
   const debouncedSetGlobalFilter = useMemo(
@@ -73,14 +87,15 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
 
       addToast({
         title: "성공",
-        description: "현재 필터와 정렬이 적용된 엑셀 파일이 다운로드되었습니다.",
-        variant: "success"
+        description:
+          "현재 필터와 정렬이 적용된 엑셀 파일이 다운로드되었습니다.",
+        variant: "success",
       });
     } catch (error) {
       addToast({
         title: "오류",
         description: "엑셀 다운로드 중 오류가 발생했습니다.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsDownloading(false);
@@ -88,40 +103,61 @@ export function ShuttleBusPaymentConfirmationTableToolbar({
   };
 
   return (
-    <div className="flex items-center justify-between gap-2 mb-4">
-      {/* 검색 (Lodash Debounce) */}
-      <div className="relative flex-1 max-w-sm">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="통합 검색 (이름, 부서, 학년 등)..."
-          defaultValue={globalFilter ?? ""}
-          onChange={e => debouncedSetGlobalFilter(e.target.value)}
-          className="pl-8 text-sm"
-        />
+    <>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        {/* 검색 (Lodash Debounce) */}
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="통합 검색 (이름, 부서, 학년 등)..."
+            defaultValue={globalFilter ?? ""}
+            onChange={e => debouncedSetGlobalFilter(e.target.value)}
+            className="pl-8 text-sm"
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          {/* 엑셀 다운로드 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExcelDownload}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            엑셀 다운로드
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={() => setIsExcelImportOpen(true)}
+            className="bg-gray-900 text-white hover:bg-gray-800"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            엑셀 가져오기
+          </Button>
+
+          {/* 신청 추가 */}
+          <Button size="sm" onClick={onAddRegistration}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            신청 추가
+          </Button>
+        </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        {/* 엑셀 다운로드 */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExcelDownload}
-          disabled={isDownloading}
-        >
-          {isDownloading ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-          ) : (
-            <Download className="h-4 w-4 mr-2" />
-          )}
-          엑셀 다운로드
-        </Button>
-
-        {/* 신청 추가 */}
-        <Button size="sm" onClick={onAddRegistration}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          신청 추가
-        </Button>
-      </div>
-    </div>
+      <ShuttleBusExcelImportModal
+        open={isExcelImportOpen}
+        onOpenChange={setIsExcelImportOpen}
+        retreatSlug={retreatSlug}
+        schedules={schedules}
+        univGroupAndGrade={univGroupAndGrade}
+        existingRegistrations={existingRegistrations}
+        onSuccess={onImportSuccess}
+      />
+    </>
   );
 }

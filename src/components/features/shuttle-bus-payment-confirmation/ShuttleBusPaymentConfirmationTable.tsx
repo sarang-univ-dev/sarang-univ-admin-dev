@@ -35,10 +35,11 @@ import { useShuttleBusPaymentConfirmation } from "@/hooks/shuttle-bus-payment-co
 import { ShuttleBusPaymentConfirmationTableToolbar } from "./ShuttleBusPaymentConfirmationTableToolbar";
 import { ShuttleBusPaymentConfirmationTableActions } from "./ShuttleBusPaymentConfirmationTableActions";
 import { ShuttleBusPaymentConfirmationDetailContent } from "./ShuttleBusPaymentConfirmationDetailContent";
-import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
 import {
-  USER_RETREAT_TYPE_LABELS,
-} from "@/lib/constant/labels";
+  DetailSidebar,
+  useDetailSidebar,
+} from "@/components/common/detail-sidebar";
+import { USER_RETREAT_TYPE_LABELS } from "@/lib/constant/labels";
 import {
   arrayIncludesValueFilterFn,
   createGlobalSearchFilter,
@@ -52,7 +53,8 @@ interface ShuttleBusPaymentConfirmationTableProps {
   retreatSlug: string;
 }
 
-const columnHelper = createColumnHelper<IShuttleBusPaymentConfirmationRegistration>();
+const columnHelper =
+  createColumnHelper<IShuttleBusPaymentConfirmationRegistration>();
 
 /**
  * 셔틀버스 재정 팀원 - 입금 확인 테이블 (TanStack Table)
@@ -71,16 +73,15 @@ export function ShuttleBusPaymentConfirmationTable({
   retreatSlug,
 }: ShuttleBusPaymentConfirmationTableProps) {
   // ✅ SWR로 실시간 데이터 동기화
-  const { data: registrations = initialData, mutate } = useShuttleBusPaymentConfirmation(
-    retreatSlug,
-    {
+  const { data: registrations = initialData, mutate } =
+    useShuttleBusPaymentConfirmation(retreatSlug, {
       initialData,
       revalidateOnFocus: true,
-    }
-  );
+    });
 
   // ✅ 사이드바 상태 관리
-  const sidebar = useDetailSidebar<IShuttleBusPaymentConfirmationRegistration>();
+  const sidebar =
+    useDetailSidebar<IShuttleBusPaymentConfirmationRegistration>();
 
   // ✅ 직접 신청 추가 모달 열림 상태
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -145,16 +146,17 @@ export function ShuttleBusPaymentConfirmationTable({
             title="부서"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => `${value}부`}
+            formatFilterValue={value => `${value}부`}
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="text-center">{`${info.getValue()}부`}</div>
         ),
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.includes(row.getValue(id));
         },
       }),
@@ -167,10 +169,10 @@ export function ShuttleBusPaymentConfirmationTable({
             title="성별"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => (value === "MALE" ? "남자" : "여자")}
+            formatFilterValue={value => (value === "MALE" ? "남자" : "여자")}
           />
         ),
-        cell: (info) => <GenderBadge gender={info.getValue()} />,
+        cell: info => <GenderBadge gender={info.getValue()} />,
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: arrayIncludesValueFilterFn,
@@ -184,16 +186,17 @@ export function ShuttleBusPaymentConfirmationTable({
             title="학년"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => `${value}학년`}
+            formatFilterValue={value => `${value}학년`}
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="text-center">{`${info.getValue()}학년`}</div>
         ),
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.includes(row.getValue(id));
         },
       }),
@@ -208,7 +211,7 @@ export function ShuttleBusPaymentConfirmationTable({
             enableFiltering
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <button
             onClick={() => sidebar.open(info.row.original)}
             className="font-medium hover:underline text-blue-600"
@@ -219,7 +222,8 @@ export function ShuttleBusPaymentConfirmationTable({
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.includes(row.getValue(id));
         },
       }),
@@ -229,17 +233,17 @@ export function ShuttleBusPaymentConfirmationTable({
         header: ({ column, table }) => {
           const formatBusValue = (value: number) => {
             const schedule = scheduleColumnsWithColor.find(
-              (schedule) => schedule.id === value
+              schedule => schedule.id === value
             );
             return schedule ? schedule.label : String(value);
           };
 
           const sortBusByTime = (a: number, b: number) => {
             const indexA = scheduleColumnsWithColor.findIndex(
-              (schedule) => schedule.id === a
+              schedule => schedule.id === a
             );
             const indexB = scheduleColumnsWithColor.findIndex(
-              (schedule) => schedule.id === b
+              schedule => schedule.id === b
             );
             return (
               (indexA === -1 ? Infinity : indexA) -
@@ -259,9 +263,9 @@ export function ShuttleBusPaymentConfirmationTable({
             />
           );
         },
-        cell: (info) => {
+        cell: info => {
           const selectedIds = info.getValue() || [];
-          const selectedSchedules = scheduleColumnsWithColor.filter((s) =>
+          const selectedSchedules = scheduleColumnsWithColor.filter(s =>
             selectedIds.includes(s.id)
           );
 
@@ -274,14 +278,14 @@ export function ShuttleBusPaymentConfirmationTable({
           }
 
           return (
-            <div className="flex justify-center py-1">
-              <div className="grid grid-cols-2 gap-1">
-                {selectedSchedules.map((schedule) => (
+            <div className="flex min-w-0 justify-center py-1">
+              <div className="flex min-w-0 max-w-full flex-wrap justify-center gap-1">
+                {selectedSchedules.map(schedule => (
                   <Badge
                     key={schedule.id}
                     variant="outline"
                     className={cn(
-                      "text-xs whitespace-nowrap shrink-0 justify-center",
+                      "h-auto min-h-5 max-w-full justify-center whitespace-normal break-words px-2 py-0.5 text-center text-xs leading-tight",
                       getChipColorClass(schedule.color)
                     )}
                   >
@@ -313,10 +317,10 @@ export function ShuttleBusPaymentConfirmationTable({
             if (idB === undefined) return -1;
 
             const scheduleIndexA = scheduleColumnsWithColor.findIndex(
-              (schedule) => schedule.id === idA
+              schedule => schedule.id === idA
             );
             const scheduleIndexB = scheduleColumnsWithColor.findIndex(
-              (schedule) => schedule.id === idB
+              schedule => schedule.id === idB
             );
 
             const diff =
@@ -331,10 +335,11 @@ export function ShuttleBusPaymentConfirmationTable({
           return 0;
         },
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           const userScheduleIds = row.getValue(id) as number[];
           if (!userScheduleIds || userScheduleIds.length === 0) return false;
-          return value.some((filterId) => userScheduleIds.includes(filterId));
+          return value.some(filterId => userScheduleIds.includes(filterId));
         },
       }),
     ];
@@ -349,16 +354,17 @@ export function ShuttleBusPaymentConfirmationTable({
             title="금액"
             enableSorting
             enableFiltering
-            formatFilterValue={(value) => `${Number(value).toLocaleString()}원`}
+            formatFilterValue={value => `${Number(value).toLocaleString()}원`}
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="text-center">{`${info.getValue().toLocaleString()}원`}</div>
         ),
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.includes(row.getValue(id));
         },
       }),
@@ -374,7 +380,7 @@ export function ShuttleBusPaymentConfirmationTable({
             formatFilterValue={getPaymentStatusLabel}
           />
         ),
-        cell: (info) => (
+        cell: info => (
           <div className="flex justify-center">
             <StatusBadge status={info.getValue()} />
           </div>
@@ -382,7 +388,8 @@ export function ShuttleBusPaymentConfirmationTable({
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, id, value) => {
-          if (!value || !Array.isArray(value) || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.includes(row.getValue(id));
         },
       }),
@@ -390,7 +397,7 @@ export function ShuttleBusPaymentConfirmationTable({
       columnHelper.display({
         id: "actions",
         header: "액션",
-        cell: (props) => (
+        cell: props => (
           <ShuttleBusPaymentConfirmationTableActions
             registration={props.row.original}
             retreatSlug={retreatSlug}
@@ -434,7 +441,9 @@ export function ShuttleBusPaymentConfirmationTable({
         { value: row => `${row.gradeNumber}학년`, mode: "token" },
         {
           value: row =>
-            row.userType ? USER_RETREAT_TYPE_LABELS[row.userType] || row.userType : "",
+            row.userType
+              ? USER_RETREAT_TYPE_LABELS[row.userType] || row.userType
+              : "",
           mode: "contains",
         },
         {
@@ -444,7 +453,7 @@ export function ShuttleBusPaymentConfirmationTable({
       ]),
   });
 
-  const filteredData = table.getRowModel().rows.map((row) => row.original);
+  const filteredData = table.getRowModel().rows.map(row => row.original);
 
   return (
     <>
@@ -467,6 +476,10 @@ export function ShuttleBusPaymentConfirmationTable({
               globalFilter={globalFilter}
               setGlobalFilter={setGlobalFilter}
               retreatSlug={retreatSlug}
+              schedules={schedules}
+              univGroupAndGrade={univGroupAndGrade}
+              existingRegistrations={registrations}
+              onImportSuccess={() => mutate()}
               onAddRegistration={() => setIsAddOpen(true)}
             />
 
@@ -475,9 +488,9 @@ export function ShuttleBusPaymentConfirmationTable({
               <div className="max-h-[70vh] overflow-auto">
                 <Table>
                   <TableHeader className="bg-gray-100 sticky top-0 z-10">
-                    {table.getHeaderGroups().map((headerGroup) => (
+                    {table.getHeaderGroups().map(headerGroup => (
                       <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
+                        {headerGroup.headers.map(header => (
                           <TableHead
                             key={header.id}
                             className={cn(
@@ -510,12 +523,12 @@ export function ShuttleBusPaymentConfirmationTable({
                         </TableCell>
                       </TableRow>
                     ) : (
-                      table.getRowModel().rows.map((row) => (
+                      table.getRowModel().rows.map(row => (
                         <TableRow
                           key={row.id}
                           className="hover:bg-gray-50 transition-colors"
                         >
-                          {row.getVisibleCells().map((cell) => (
+                          {row.getVisibleCells().map(cell => (
                             <TableCell
                               key={cell.id}
                               className={cn(
@@ -562,7 +575,7 @@ export function ShuttleBusPaymentConfirmationTable({
             : "상세 정보"
         }
       >
-        {(data) => (
+        {data => (
           <ShuttleBusPaymentConfirmationDetailContent
             data={data}
             schedules={schedules}

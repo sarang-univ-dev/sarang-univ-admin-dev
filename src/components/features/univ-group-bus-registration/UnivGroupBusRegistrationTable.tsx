@@ -288,14 +288,14 @@ export function UnivGroupBusRegistrationTable({
           }
 
           return (
-            <div className="flex justify-center py-1">
-              <div className="grid grid-cols-2 gap-1">
+            <div className="flex min-w-0 justify-center py-1">
+              <div className="flex min-w-0 max-w-full flex-wrap justify-center gap-1">
                 {selectedSchedules.map(schedule => (
                   <Badge
                     key={schedule.id}
                     variant="outline"
                     className={cn(
-                      "text-xs whitespace-nowrap shrink-0 justify-center",
+                      "h-auto min-h-5 max-w-full justify-center whitespace-normal break-words px-2 py-0.5 text-center text-xs leading-tight",
                       getChipColorClass(schedule.color)
                     )}
                   >
