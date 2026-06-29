@@ -5,7 +5,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { Trash2 } from "lucide-react";
 
 import { MemoEditor } from "@/components/common/table/MemoEditor";
-import { DormitoryStatusBadge } from "@/components/common/retreat/badges";
+import { FilterableHeader } from "@/components/common/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -268,26 +268,30 @@ export function useDormitoryManagementColumns({
         ),
         size: 280,
       }),
-      columnHelper.display({
-        id: "status",
-        header: () => <div className="text-center text-sm">상태</div>,
-        cell: ({ row }) => (
-          <div className="flex justify-center px-1">
-            <DormitoryStatusBadge isDisabled={row.original.isDisabled} />
+      columnHelper.accessor("isDisabled", {
+        id: "disabledToggle",
+        header: ({ column, table }) => (
+          <div className="flex items-center justify-center gap-1">
+            <span className="text-sm">활성</span>
+            <FilterableHeader
+              column={column}
+              table={table}
+              title="활성"
+              formatValue={value => (value ? "비활성" : "활성")}
+            />
           </div>
         ),
-        size: 100,
-      }),
-      columnHelper.display({
-        id: "disabledToggle",
-        header: () => <div className="text-center text-sm">활성</div>,
         cell: ({ row }) => (
           <DormitoryDisabledToggleCell
             row={row.original}
             toggleDisabled={toggleDisabled}
           />
         ),
-        size: 80,
+        filterFn: (row, id, value) =>
+          !Array.isArray(value) ||
+          value.length === 0 ||
+          value.includes(row.getValue(id)),
+        size: 90,
       }),
       columnHelper.display({
         id: "delete",
