@@ -24,10 +24,12 @@ import {
   addPaymentSchedule,
   addRegistrationSchedule,
   addShuttleBus,
+  addShuttleBusPaymentSchedule,
   createRetreatAdminAssignment,
   deletePaymentSchedule,
   deleteRegistrationSchedule,
   deleteShuttleBus,
+  deleteShuttleBusPaymentSchedule,
   downloadRetreatAsset,
   getRetreatAdminAssignmentOptions,
   getRetreatAdminAssignments,
@@ -36,6 +38,7 @@ import {
   updateRegistrationSchedule,
   updateRetreat,
   updateShuttleBus,
+  updateShuttleBusPaymentSchedule,
   uploadRetreatAsset,
 } from "@/lib/api/admin-api";
 import { useToastStore } from "@/store/toast-store";
@@ -45,6 +48,7 @@ import type {
   ManagedRetreatPaymentSchedule,
   ManagedRetreatRegistrationSchedule,
   ManagedRetreatShuttleBus,
+  ManagedRetreatShuttleBusPaymentSchedule,
   RetreatAdminAssignment,
   RetreatUnivGroupInformation,
   UpdateRetreatAdminUserRequest,
@@ -448,6 +452,11 @@ export default function RetreatEditForm({
             retreatId={retreat.id}
             shuttleBuses={retreat.shuttleBuses}
           />
+          <ShuttleBusPaymentSchedulesCard
+            retreatId={retreat.id}
+            paymentSchedules={retreat.shuttleBusPaymentSchedules}
+          />
+          <AddShuttleBusPaymentScheduleCard retreatId={retreat.id} />
           <AddShuttleBusCard retreatId={retreat.id} />
         </>
       ) : null}
@@ -697,9 +706,7 @@ function RetreatAdminAssignmentsCard({ retreatSlug }: { retreatSlug: string }) {
     <Card>
       <CardHeader>
         <CardTitle>권한</CardTitle>
-        <CardDescription>
-          수양회 팀별 권한을 관리합니다.
-        </CardDescription>
+        <CardDescription>수양회 팀별 권한을 관리합니다.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -1011,7 +1018,12 @@ function RetreatAdminAssignmentRow({
               </Button>
             </>
           ) : (
-            <Button type="button" size="sm" variant="outline" onClick={startEditing}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={startEditing}
+            >
               <Pencil className="h-4 w-4" />
               수정
             </Button>
@@ -1162,6 +1174,116 @@ function AddPaymentScheduleCard({ retreatId }: { retreatId: number }) {
             >
               <Plus className="h-4 w-4" />
               {submitting ? "추가 중" : "결제 일정 추가"}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AddShuttleBusPaymentScheduleCard({
+  retreatId,
+}: {
+  retreatId: number;
+}) {
+  const router = useRouter();
+  const addToast = useToastStore(state => state.add);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    startAt: "",
+    endAt: "",
+  });
+
+  const reset = () =>
+    setForm({
+      name: "",
+      startAt: "",
+      endAt: "",
+    });
+
+  const handleAdd = async () => {
+    setSubmitting(true);
+    try {
+      await addShuttleBusPaymentSchedule(retreatId, {
+        name: form.name,
+        startAt: toIsoDateTime(form.startAt),
+        endAt: toIsoDateTime(form.endAt),
+      });
+      addToast({
+        title: "셔틀버스 결제 일정을 추가했습니다.",
+        variant: "success",
+      });
+      reset();
+      router.refresh();
+    } catch (error) {
+      addToast({
+        title: "셔틀버스 결제 일정 추가 실패",
+        description: getErrorMessage(
+          error,
+          "셔틀버스 결제 일정을 추가하지 못했습니다."
+        ),
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>셔틀버스 결제 일정 추가</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Field label="셔틀버스 결제 일정 이름">
+              <Input
+                value={form.name}
+                onChange={event =>
+                  setForm(current => ({ ...current, name: event.target.value }))
+                }
+                placeholder="셔틀버스 신청 기간"
+                required
+              />
+            </Field>
+            <Field label="신청 시작 시간">
+              <Input
+                type="datetime-local"
+                value={form.startAt}
+                onChange={event =>
+                  setForm(current => ({
+                    ...current,
+                    startAt: event.target.value,
+                  }))
+                }
+                required
+              />
+            </Field>
+            <Field label="신청 종료 시간">
+              <Input
+                type="datetime-local"
+                value={form.endAt}
+                onChange={event =>
+                  setForm(current => ({
+                    ...current,
+                    endAt: event.target.value,
+                  }))
+                }
+                required
+              />
+            </Field>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              disabled={submitting}
+              onClick={() => void handleAdd()}
+            >
+              <Plus className="h-4 w-4" />
+              {submitting ? "추가 중" : "셔틀버스 결제 일정 추가"}
             </Button>
           </div>
         </div>
@@ -1537,6 +1659,201 @@ function PaymentScheduleRow({
         </Field>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
+        <Field label="시작">
+          <Input
+            type="datetime-local"
+            value={form.startAt}
+            onChange={event =>
+              setForm(current => ({ ...current, startAt: event.target.value }))
+            }
+          />
+        </Field>
+        <Field label="종료">
+          <Input
+            type="datetime-local"
+            value={form.endAt}
+            onChange={event =>
+              setForm(current => ({ ...current, endAt: event.target.value }))
+            }
+          />
+        </Field>
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            reset();
+            setEditing(false);
+          }}
+          disabled={busy}
+        >
+          <X className="h-4 w-4" />
+          취소
+        </Button>
+        <Button type="button" onClick={handleSave} disabled={busy}>
+          <Save className="h-4 w-4" />
+          {busy ? "저장 중" : "저장"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ShuttleBusPaymentSchedulesCard({
+  retreatId,
+  paymentSchedules,
+}: {
+  retreatId: number;
+  paymentSchedules: ManagedRetreatShuttleBusPaymentSchedule[];
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>셔틀버스 결제 일정 목록</CardTitle>
+        <CardDescription>
+          셔틀버스 등록 폼에 적용되는 결제 일정입니다.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {paymentSchedules.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            등록된 셔틀버스 결제 일정이 없습니다.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {paymentSchedules.map(schedule => (
+              <ShuttleBusPaymentScheduleRow
+                key={schedule.id}
+                retreatId={retreatId}
+                schedule={schedule}
+              />
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ShuttleBusPaymentScheduleRow({
+  retreatId,
+  schedule,
+}: {
+  retreatId: number;
+  schedule: ManagedRetreatShuttleBusPaymentSchedule;
+}) {
+  const router = useRouter();
+  const addToast = useToastStore(state => state.add);
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    name: schedule.name,
+    startAt: toDateTimeLocalInput(schedule.startAt),
+    endAt: toDateTimeLocalInput(schedule.endAt),
+  });
+
+  const reset = () => {
+    setForm({
+      name: schedule.name,
+      startAt: toDateTimeLocalInput(schedule.startAt),
+      endAt: toDateTimeLocalInput(schedule.endAt),
+    });
+  };
+
+  const handleSave = async () => {
+    setBusy(true);
+    try {
+      await updateShuttleBusPaymentSchedule(retreatId, schedule.id, {
+        name: form.name,
+        startAt: toIsoDateTime(form.startAt),
+        endAt: toIsoDateTime(form.endAt),
+      });
+      addToast({
+        title: "셔틀버스 결제 일정을 수정했습니다.",
+        variant: "success",
+      });
+      setEditing(false);
+      router.refresh();
+    } catch (error) {
+      addToast({
+        title: "셔틀버스 결제 일정 수정 실패",
+        description: getErrorMessage(error, "수정에 실패했습니다."),
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("이 셔틀버스 결제 일정을 삭제하시겠습니까?")) return;
+    setBusy(true);
+    try {
+      await deleteShuttleBusPaymentSchedule(retreatId, schedule.id);
+      addToast({
+        title: "셔틀버스 결제 일정을 삭제했습니다.",
+        variant: "success",
+      });
+      router.refresh();
+    } catch (error) {
+      addToast({
+        title: "셔틀버스 결제 일정 삭제 실패",
+        description: getErrorMessage(error, "삭제에 실패했습니다."),
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <div className="rounded-md border p-3 text-sm">
+        <div className="flex items-start justify-between gap-2">
+          <div className="font-medium">{schedule.name}</div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setEditing(true)}
+              disabled={busy}
+            >
+              <Pencil className="h-3 w-3" />
+              수정
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleDelete}
+              disabled={busy}
+            >
+              <Trash2 className="h-3 w-3" />
+              삭제
+            </Button>
+          </div>
+        </div>
+        <div className="mt-1 grid gap-1 text-muted-foreground md:grid-cols-2">
+          <div>시작: {formatDateTime(schedule.startAt)}</div>
+          <div>종료: {formatDateTime(schedule.endAt)}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border bg-muted/20 p-3 text-sm space-y-3">
+      <div className="grid gap-3 md:grid-cols-3">
+        <Field label="이름">
+          <Input
+            value={form.name}
+            onChange={event =>
+              setForm(current => ({ ...current, name: event.target.value }))
+            }
+          />
+        </Field>
         <Field label="시작">
           <Input
             type="datetime-local"
