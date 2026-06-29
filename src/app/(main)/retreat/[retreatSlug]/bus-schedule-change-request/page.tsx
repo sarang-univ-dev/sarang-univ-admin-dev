@@ -6,27 +6,11 @@ import { useEffect, useState } from "react";
 import { ShuttleBusScheduleChangeRequestTable } from "@/components/ShuttleBusScheduleChangeRequestTable";
 import { useUserScheduleChangeShuttleBus } from "@/hooks/user-schedule-change-bus-request";
 import { webAxios } from "@/lib/api/axios";
-import {
-  TRetreatShuttleBus,
-  TRetreatUnivGroup,
-  TRetreatPaymentSchedule,
-} from "@/types";
+import { TRetreatShuttleBus } from "@/types";
 
 export default function BusScheduleChangeRequestPage() {
   const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>([]);
-  const [payments, setPayments] = useState<TRetreatPaymentSchedule[]>([]);
   const [retreatLocation, setRetreatLocation] = useState("");
-  const [retreatUnivGroup, setRetreatUnivGroup] = useState<TRetreatUnivGroup[]>(
-    []
-  );
-  const [univGroupAndGrade, setUnivGroupAndGrade] = useState<
-    {
-      univGroupId: number;
-      univGroupName: string;
-      univGroupNumber: number;
-      grades: { gradeId: number; gradeName: string; gradeNumber: number }[];
-    }[]
-  >([]);
 
   const params = useParams();
   const retreatSlug = params.retreatSlug as string;
@@ -44,23 +28,7 @@ export default function BusScheduleChangeRequestPage() {
       setRetreatLocation(response.data.shuttleBusInfo.retreat.location);
     };
 
-    const fetchRetreatUnivGroup = async () => {
-      const response = await webAxios.get(
-        `/api/v1/retreat/${retreatSlug}/univ-group-info`
-      );
-      setRetreatUnivGroup(response.data.retreatUnivGroup);
-    };
-
-    const fetchUnivGroupAndGrade = async () => {
-      const response = await webAxios.get(
-        `/api/v1/retreat/${retreatSlug}/info`
-      );
-      setUnivGroupAndGrade(response.data.retreatInfo.univGroupAndGrade ?? []);
-    };
-
     fetchSchedules();
-    fetchRetreatUnivGroup();
-    fetchUnivGroupAndGrade();
   }, [retreatSlug]);
 
   if (error) {
@@ -79,8 +47,6 @@ export default function BusScheduleChangeRequestPage() {
         schedules={schedules}
         retreatLocation={retreatLocation}
         retreatSlug={retreatSlug}
-        payments={payments}
-        univGroupAndGrade={univGroupAndGrade}
       />
     </div>
     // <div className="flex items-center justify-center min-h-screen">
