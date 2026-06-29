@@ -33,8 +33,8 @@ interface MiniRow {
 /**
  * 시간대별 인원 통계 - Server Component
  *
- * 행정 총괄 / 부서 교역자 페이지 상단에 식사·숙박 인원을 표로 보여준다.
- * 표는 피버팅 형태로 **열 = 요일(수/목/금...), 행 = 시간대(아침/점심/저녁, 숙박)**.
+ * 행정 총괄 / 부서 교역자 페이지 상단에 식사·집회·숙박 인원을 한 표로 보여준다.
+ * 피버팅 형태로 **열 = 요일(수/목/금...), 행 = 아침/점심/저녁/집회/숙박**.
  * (입금 완료 기준 집계)
  */
 export function TimeSlotStatisticsSection({
@@ -43,43 +43,19 @@ export function TimeSlotStatisticsSection({
 }: TimeSlotStatisticsSectionProps) {
   const { days, has } = computeTimeSlotStats(registrations, schedules);
 
-  // 피버팅: 열 = 요일(수/목/금...), 행 = 시간대(아침/점심/저녁, 숙박)
-
-  // 식사 표
-  const mealDays = days.filter(
-    d => d.breakfast != null || d.lunch != null || d.dinner != null
-  );
-  const mealColumns = dayColumns(mealDays);
-  const mealRows: MiniRow[] = (
+  // 피버팅: 열 = 요일(수/목/금...), 행 = 아침 / 점심 / 저녁 / 집회 / 숙박
+  // "집회" 행 = 저녁 ∪ 숙박 (dinnerOrSleep). 저녁·숙박을 둘 다 신청한 사람은 저녁·숙박
+  //        행 양쪽에 집계되고, 집회 행만 그 둘을 중복 제외한 union 인원이다.
+  const tableColumns = dayColumns(days);
+  const tableRows: MiniRow[] = (
     [
       has.breakfast && { key: "breakfast", label: "아침" },
       has.lunch && { key: "lunch", label: "점심" },
       has.dinner && { key: "dinner", label: "저녁" },
-    ].filter(Boolean) as { key: keyof DaySlotCounts; label: string }[]
-  ).map(t => pivotRow(t.label, mealDays, t.key));
-
-  // 숙박 표
-  const lodgingDays = days.filter(d => d.sleep != null);
-  const lodgingColumns = dayColumns(lodgingDays);
-  const lodgingRows: MiniRow[] = has.sleep
-    ? [pivotRow("숙박", lodgingDays, "sleep")]
-    : [];
-
-  // 집회 표: 저녁 / 저녁 U 숙박 / 숙박 (식사·숙박에서 파생)
-  // 주의: "저녁" = 저녁 일정 있는 사람 전원, "숙박" = 숙박 일정 있는 사람 전원이라
-  //       둘 다 신청한 사람은 양쪽에 집계된다("저녁 U 숙박" 행만 중복 제외한 union).
-  const assemblyDays = days.filter(d => d.dinnerOrSleep != null);
-  const assemblyColumns = dayColumns(assemblyDays);
-  const assemblyRows: MiniRow[] = (
-    [
-      has.dinner && { key: "dinner", label: "저녁" },
-      (has.dinner || has.sleep) && {
-        key: "dinnerOrSleep",
-        label: "저녁 U 숙박",
-      },
+      (has.dinner || has.sleep) && { key: "dinnerOrSleep", label: "집회" },
       has.sleep && { key: "sleep", label: "숙박" },
     ].filter(Boolean) as { key: keyof DaySlotCounts; label: string }[]
-  ).map(t => pivotRow(t.label, assemblyDays, t.key));
+  ).map(t => pivotRow(t.label, days, t.key));
 
   return (
     <section className="space-y-3 md:space-y-4">
@@ -97,19 +73,7 @@ export function TimeSlotStatisticsSection({
           스케줄 데이터가 없습니다.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <StatMiniTable title="식사 인원" columns={mealColumns} rows={mealRows} />
-          <StatMiniTable
-            title="숙박 인원"
-            columns={lodgingColumns}
-            rows={lodgingRows}
-          />
-          <StatMiniTable
-            title="집회 인원"
-            columns={assemblyColumns}
-            rows={assemblyRows}
-          />
-        </div>
+        <StatMiniTable columns={tableColumns} rows={tableRows} />
       )}
     </section>
   );
@@ -136,13 +100,15 @@ function StatMiniTable({
   columns,
   rows,
 }: {
-  title: string;
+  title?: string;
   columns: MiniColumn[];
   rows: MiniRow[];
 }) {
   return (
     <div className="space-y-2">
-      <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+      {title && (
+        <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+      )}
       {columns.length === 0 || rows.length === 0 ? (
         <div className="p-4 text-center text-gray-400 text-xs rounded-md border">
           해당 일정이 없습니다.
