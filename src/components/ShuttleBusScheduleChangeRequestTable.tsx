@@ -5,6 +5,7 @@ import { Search, X, PenLine, Loader2, Check } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { mutate } from "swr";
 
+import { AddBusScheduleChangeRequestModal } from "@/components/AddBusScheduleChangeRequestModal";
 import { StatusBadge } from "@/components/Badge-bus";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +55,13 @@ type ShuttleBusScheduleChangeRow = {
   scheduleIds: number[];
 };
 
+type UnivGroupAndGrade = {
+  univGroupId: number;
+  univGroupName: string;
+  univGroupNumber: number;
+  grades: { gradeId: number; gradeName: string; gradeNumber: number }[];
+};
+
 // 테이블에 필요한 데이터 변환 함수
 const transformScheduleChangeRequestForTable = (
   requests: IUserScheduleChangeShuttleBus[],
@@ -94,11 +102,13 @@ export function ShuttleBusScheduleChangeRequestTable({
   schedules = [],
   retreatSlug,
   retreatLocation,
+  univGroupAndGrade = [],
 }: {
   registrations: IUserScheduleChangeShuttleBus[];
   schedules: TRetreatShuttleBus[];
   retreatSlug: string;
   retreatLocation: string;
+  univGroupAndGrade: UnivGroupAndGrade[];
 }) {
   const addToast = useToastStore(state => state.add);
   const confirmDialog = useConfirm();
@@ -108,6 +118,7 @@ export function ShuttleBusScheduleChangeRequestTable({
   >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedRow, setSelectedRow] =
     useState<ShuttleBusScheduleChangeRow | null>(null);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
@@ -366,6 +377,13 @@ export function ShuttleBusScheduleChangeRequestTable({
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
+            {/* TODO: 셔틀버스 전체 신청 조회/수정 플로우가 정리되면 행 단위 일정 변경 요청 액션으로 옮긴다. */}
+            <Button
+              className="whitespace-nowrap"
+              onClick={() => setIsAddOpen(true)}
+            >
+              일정 변경 추가
+            </Button>
           </div>
           <div
             className="min-h-0 rounded-md border"
@@ -567,6 +585,14 @@ export function ShuttleBusScheduleChangeRequestTable({
           </div>
         </div>
       </CardContent>
+
+      <AddBusScheduleChangeRequestModal
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        retreatSlug={retreatSlug}
+        univGroupAndGrade={univGroupAndGrade}
+        onSuccess={() => void mutate(registrationsEndpoint)}
+      />
 
       {isModalOpen && selectedRow && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">

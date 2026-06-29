@@ -11,6 +11,14 @@ import { TRetreatShuttleBus } from "@/types";
 export default function BusScheduleChangeRequestPage() {
   const [schedules, setSchedules] = useState<TRetreatShuttleBus[]>([]);
   const [retreatLocation, setRetreatLocation] = useState("");
+  const [univGroupAndGrade, setUnivGroupAndGrade] = useState<
+    {
+      univGroupId: number;
+      univGroupName: string;
+      univGroupNumber: number;
+      grades: { gradeId: number; gradeName: string; gradeNumber: number }[];
+    }[]
+  >([]);
 
   const params = useParams();
   const retreatSlug = params.retreatSlug as string;
@@ -28,7 +36,15 @@ export default function BusScheduleChangeRequestPage() {
       setRetreatLocation(response.data.shuttleBusInfo.retreat.location);
     };
 
+    const fetchUnivGroupAndGrade = async () => {
+      const response = await webAxios.get(
+        `/api/v1/retreat/${retreatSlug}/info`
+      );
+      setUnivGroupAndGrade(response.data.retreatInfo.univGroupAndGrade ?? []);
+    };
+
     fetchSchedules();
+    fetchUnivGroupAndGrade();
   }, [retreatSlug]);
 
   if (error) {
@@ -47,6 +63,7 @@ export default function BusScheduleChangeRequestPage() {
         schedules={schedules}
         retreatLocation={retreatLocation}
         retreatSlug={retreatSlug}
+        univGroupAndGrade={univGroupAndGrade}
       />
     </div>
     // <div className="flex items-center justify-center min-h-screen">
