@@ -65,25 +65,19 @@ export function TimeSlotStatisticsSection({
     ? [pivotRow("숙박", lodgingDays, "sleep")]
     : [];
 
-  // 집회 표: 오전 / 7-8시 / 8-10시 / 10시~ (식사·숙박에서 파생)
-  // 주의: 7-8시 = 저녁 신청 전원, 10시~ = 숙박 신청 전원이라 둘 다 신청한 인원은
-  //       양쪽에 중복 집계된다(8-10시만 저녁 ∪ 숙박 중복 제외). 시간대별 점유 인원 모델.
-  // TODO: 저녁집회 시간 구분(7-8/8-10/10~)이 코드에 고정돼 있어, 수양회 일정이 바뀌면
-  //       time-slot-stats.ts 의 evening 산식을 함께 손봐야 한다.
-  const assemblyDays = days.filter(
-    d =>
-      d.morning != null ||
-      d.evening78 != null ||
-      d.evening810 != null ||
-      d.evening10 != null
-  );
+  // 집회 표: 저녁 / 저녁 U 숙박 / 숙박 (식사·숙박에서 파생)
+  // 주의: "저녁" = 저녁 일정 있는 사람 전원, "숙박" = 숙박 일정 있는 사람 전원이라
+  //       둘 다 신청한 사람은 양쪽에 집계된다("저녁 U 숙박" 행만 중복 제외한 union).
+  const assemblyDays = days.filter(d => d.dinnerOrSleep != null);
   const assemblyColumns = dayColumns(assemblyDays);
   const assemblyRows: MiniRow[] = (
     [
-      has.breakfast && { key: "morning", label: "오전" },
-      has.dinner && { key: "evening78", label: "7-8시" },
-      (has.dinner || has.sleep) && { key: "evening810", label: "8-10시" },
-      has.sleep && { key: "evening10", label: "10시~" },
+      has.dinner && { key: "dinner", label: "저녁" },
+      (has.dinner || has.sleep) && {
+        key: "dinnerOrSleep",
+        label: "저녁 U 숙박",
+      },
+      has.sleep && { key: "sleep", label: "숙박" },
     ].filter(Boolean) as { key: keyof DaySlotCounts; label: string }[]
   ).map(t => pivotRow(t.label, assemblyDays, t.key));
 
