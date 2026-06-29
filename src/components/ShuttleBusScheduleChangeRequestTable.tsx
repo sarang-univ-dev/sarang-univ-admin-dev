@@ -5,7 +5,6 @@ import { Search, X, PenLine, Loader2, Check } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { mutate } from "swr";
 
-import { AddBusScheduleChangeRequestModal } from "@/components/AddBusScheduleChangeRequestModal";
 import { StatusBadge } from "@/components/Badge-bus";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,8 +31,6 @@ import { useToastStore } from "@/store/toast-store";
 import {
   // TRetreatRegistrationSchedule,
   TRetreatShuttleBus,
-  TRetreatPaymentSchedule,
-  UserRetreatShuttleBusRegistrationHistoryMemoType,
   UserRetreatShuttleBusPaymentStatus,
 } from "@/types";
 import { formatDate } from "@/utils/formatDate";
@@ -52,7 +49,6 @@ type ShuttleBusScheduleChangeRow = {
   issuerName: string;
   paymentConfirmedAt: string | null;
   memo: string;
-  memoType: UserRetreatShuttleBusRegistrationHistoryMemoType;
   memoCreatedAt: string;
   memoId: number;
   scheduleIds: number[];
@@ -86,7 +82,6 @@ const transformScheduleChangeRequestForTable = (
       issuerName: req.issuerName,
       paymentConfirmedAt: req.paymentConfirmedAt,
       memo: req.memo,
-      memoType: req.memoType,
       memoCreatedAt: req.memoCreatedAt,
       memoId: req.userRetreatShuttleBusRegistrationHistoryMemoId,
       scheduleIds,
@@ -98,21 +93,12 @@ export function ShuttleBusScheduleChangeRequestTable({
   registrations = [],
   schedules = [],
   retreatSlug,
-  payments: _payments = [],
   retreatLocation,
-  univGroupAndGrade = [],
 }: {
   registrations: IUserScheduleChangeShuttleBus[];
   schedules: TRetreatShuttleBus[];
   retreatSlug: string;
-  payments: TRetreatPaymentSchedule[];
   retreatLocation: string;
-  univGroupAndGrade: {
-    univGroupId: number;
-    univGroupName: string;
-    univGroupNumber: number;
-    grades: { gradeId: number; gradeName: string; gradeNumber: number }[];
-  }[];
 }) {
   const addToast = useToastStore(state => state.add);
   const confirmDialog = useConfirm();
@@ -122,7 +108,6 @@ export function ShuttleBusScheduleChangeRequestTable({
   >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedRow, setSelectedRow] =
     useState<ShuttleBusScheduleChangeRow | null>(null);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
@@ -381,19 +366,17 @@ export function ShuttleBusScheduleChangeRequestTable({
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button
-              onClick={() => setIsAddOpen(true)}
-              className="bg-gray-900 text-white hover:bg-gray-800 whitespace-nowrap"
-            >
-              일정 변경 추가
-            </Button>
           </div>
           <div
-            className="rounded-md border flex flex-col h-[calc(100vh-300px)]"
+            className="min-h-0 rounded-md border"
             ref={tableContainerRef}
+            style={{ height: "calc(100vh - 320px)" }}
           >
-            <div className="overflow-auto flex-grow">
-              <Table className="w-full whitespace-nowrap relative">
+            <div
+              className="h-full min-h-0 overflow-y-auto [scrollbar-gutter:stable]"
+              style={{ overflowX: "scroll" }}
+            >
+              <table className="relative min-w-max caption-bottom whitespace-nowrap text-sm">
                 <TableHeader className="bg-gray-50 sticky top-0 z-10">
                   <TableRow>
                     <TableHead
@@ -493,7 +476,7 @@ export function ShuttleBusScheduleChangeRequestTable({
                   ) : (
                     filteredData.map(row => (
                       <TableRow
-                        key={row.id}
+                        key={`${row.id}-${row.memoId}`}
                         className="group hover:bg-gray-50 transition-colors duration-150"
                       >
                         <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
@@ -529,15 +512,7 @@ export function ShuttleBusScheduleChangeRequestTable({
                           <StatusBadge status={row.status} />
                         </TableCell>
                         <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          <div className="flex flex-col items-center gap-1">
-                            <span>{row.issuerName || "-"}</span>
-                            {row.memoType ===
-                            UserRetreatShuttleBusRegistrationHistoryMemoType.SHUTTLE_BUS_BOARDING_STAFF ? (
-                              <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-700">
-                                부분참 선탑
-                              </span>
-                            ) : null}
-                          </div>
+                          {row.issuerName || "-"}
                         </TableCell>
                         <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
                           {formatDate(row.paymentConfirmedAt)}
@@ -587,7 +562,7 @@ export function ShuttleBusScheduleChangeRequestTable({
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </table>
             </div>
           </div>
         </div>
@@ -792,14 +767,6 @@ export function ShuttleBusScheduleChangeRequestTable({
           </div>
         </div>
       )}
-
-      <AddBusScheduleChangeRequestModal
-        open={isAddOpen}
-        onOpenChange={setIsAddOpen}
-        retreatSlug={retreatSlug}
-        univGroupAndGrade={univGroupAndGrade}
-        onSuccess={() => mutate(registrationsEndpoint)}
-      />
     </Card>
   );
 }
