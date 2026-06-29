@@ -476,6 +476,7 @@ const PersonSelectionTable = memo(function PersonSelectionTable({
 }) {
   const [scheduleFilter, setScheduleFilter] = useState<Set<number>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<"person" | "gbs">("person");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const toggleScheduleFilter = useCallback((scheduleId: number) => {
@@ -538,8 +539,78 @@ const PersonSelectionTable = memo(function PersonSelectionTable({
     });
   };
 
+  const gbsGroups = useMemo(() => {
+    const map = new Map<
+      number,
+      { gbsNumber: number; memberIds: number[]; counts: number[] }
+    >();
+    for (const row of rows) {
+      if (row.gbsNumber == null) continue;
+      let g = map.get(row.gbsNumber);
+      if (!g) {
+        g = {
+          gbsNumber: row.gbsNumber,
+          memberIds: [],
+          counts: scheduleColumns.map(() => 0),
+        };
+        map.set(row.gbsNumber, g);
+      }
+      g.memberIds.push(row.id);
+      scheduleColumns.forEach((s, i) => {
+        if (row.scheduleMap[s.key]) g!.counts[i] += 1;
+      });
+    }
+    return Array.from(map.values())
+      .map((g) => ({
+        gbsNumber: g.gbsNumber,
+        memberIds: g.memberIds,
+        min: g.counts.length ? Math.min(...g.counts) : g.memberIds.length,
+        max: g.counts.length ? Math.max(...g.counts) : g.memberIds.length,
+      }))
+      .sort((a, b) => a.gbsNumber - b.gbsNumber);
+  }, [rows, scheduleColumns]);
+
+  const visibleGbs = useMemo(() => {
+    const query = normalizeSearchText(debouncedSearchTerm);
+    if (!query) return gbsGroups;
+    return gbsGroups.filter((g) => String(g.gbsNumber).includes(query));
+  }, [gbsGroups, debouncedSearchTerm]);
+
+  const gbsIsSelected = (memberIds: number[]) =>
+    memberIds.length > 0 && memberIds.every((id) => selectedIds.has(id));
+  const toggleGbs = (memberIds: number[], checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      memberIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  };
+  const allGbsMemberIds = visibleGbs.flatMap((g) => g.memberIds);
+  const allGbsSelected =
+    allGbsMemberIds.length > 0 &&
+    allGbsMemberIds.every((id) => selectedIds.has(id));
+  const someGbsSelected = allGbsMemberIds.some((id) => selectedIds.has(id));
+  const toggleAllGbs = (checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      allGbsMemberIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  };
+
   return (
     <div className="space-y-4">
+      <ToggleGroup
+        type="single"
+        value={viewMode}
+        onValueChange={(v) => v && setViewMode(v as "person" | "gbs")}
+        variant="outline"
+        size="sm"
+        className="justify-start"
+      >
+        <ToggleGroupItem value="person">인원별</ToggleGroupItem>
+        <ToggleGroupItem value="gbs">GBS별</ToggleGroupItem>
+      </ToggleGroup>
       <PersonSelectionSummary
         rows={filteredRows}
         selectedIds={selectedIds}
@@ -562,6 +633,7 @@ const PersonSelectionTable = memo(function PersonSelectionTable({
           <span className="font-medium text-foreground">{rows.length}</span>명
         </div>
       </div>
+      {viewMode === "person" ? (
       <div className="max-h-[70vh] overflow-auto border rounded-lg">
         <table className="relative w-full caption-bottom text-sm">
           <TableHeader className="sticky top-0 z-10 bg-gray-100">
@@ -605,6 +677,63 @@ const PersonSelectionTable = memo(function PersonSelectionTable({
           </TableBody>
         </table>
       </div>
+      ) : (
+        <div className="max-h-[70vh] overflow-auto border rounded-lg">
+          <table className="relative w-full caption-bottom text-sm">
+            <TableHeader className="sticky top-0 z-10 bg-gray-100">
+              <TableRow>
+                <TableHead className="w-[48px] text-center bg-gray-100 whitespace-nowrap">
+                  <Checkbox
+                    checked={
+                      allGbsSelected
+                        ? true
+                        : someGbsSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={(value) => toggleAllGbs(!!value)}
+                    aria-label="모든 GBS 선택"
+                  />
+                </TableHead>
+                <TableHead className="text-center bg-gray-100 whitespace-nowrap">
+                  GBS
+                </TableHead>
+                <TableHead className="text-center bg-gray-100 whitespace-nowrap">
+                  최소 인원
+                </TableHead>
+                <TableHead className="text-center bg-gray-100 whitespace-nowrap">
+                  최대 인원
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visibleGbs.map((g) => (
+                <TableRow
+                  key={g.gbsNumber}
+                  className="cursor-pointer select-none"
+                  onClick={() =>
+                    toggleGbs(g.memberIds, !gbsIsSelected(g.memberIds))
+                  }
+                >
+                  <TableCell className="text-center">
+                    <Checkbox
+                      checked={gbsIsSelected(g.memberIds)}
+                      tabIndex={-1}
+                      className="pointer-events-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                      aria-label={`GBS ${g.gbsNumber} 선택`}
+                    />
+                  </TableCell>
+                  <TableCell className="text-center font-medium">
+                    {g.gbsNumber}
+                  </TableCell>
+                  <TableCell className="text-center">{g.min}</TableCell>
+                  <TableCell className="text-center">{g.max}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </table>
+        </div>
+      )}
     </div>
   );
 });
