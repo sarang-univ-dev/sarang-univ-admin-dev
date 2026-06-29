@@ -1277,6 +1277,10 @@ function GenderAssignmentPanel({
       ),
     [registrations, dormitories, scheduleColumns, scheduleIds, capacityBasis]
   );
+  const availableRegistrations = useMemo(
+    () => registrations.filter((r) => r.dormitoryLocation === null),
+    [registrations]
+  );
   const scheduleMapById = useMemo(() => {
     const map = new Map<number, Record<string, boolean>>();
     registrations.forEach((registration) => {
@@ -1436,7 +1440,7 @@ function GenderAssignmentPanel({
           </CardHeader>
           <CardContent>
             <PersonSelectionTable
-              rows={registrations}
+              rows={availableRegistrations}
               scheduleColumns={scheduleColumns}
               selectedIds={selectedUserIds}
               setSelectedIds={setSelectedUserIds}
@@ -1571,11 +1575,7 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
   const maleRegistrations = useMemo(
     () =>
       registrations
-        .filter(
-          (registration) =>
-            registration.gender === Gender.MALE &&
-            registration.dormitoryLocation === null
-        )
+        .filter((registration) => registration.gender === Gender.MALE)
         .sort(compareByGbs),
     [registrations]
   );
@@ -1583,11 +1583,7 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
   const femaleRegistrations = useMemo(
     () =>
       registrations
-        .filter(
-          (registration) =>
-            registration.gender === Gender.FEMALE &&
-            registration.dormitoryLocation === null
-        )
+        .filter((registration) => registration.gender === Gender.FEMALE)
         .sort(compareByGbs),
     [registrations]
   );
