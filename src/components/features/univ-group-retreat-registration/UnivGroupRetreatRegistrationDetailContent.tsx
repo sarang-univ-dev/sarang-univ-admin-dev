@@ -238,11 +238,11 @@ export function UnivGroupRetreatRegistrationDetailContent({
       {/* 기타 정보 */}
       <InfoSection title="기타 정보" icon={Info}>
         <InfoItem
-          label="셔틀버스"
+          label="셔틀 신청 현황"
           value={
             <div className="flex flex-col items-start gap-2">
               <ShuttleBusStatusBadge
-                hasRegistered={data.hadRegisteredShuttleBus}
+                status={data.shuttleBusStatus}
               />
               {canSendShuttleBusRegistrationReminder &&
                 onSendShuttleBusRegistrationReminder && (

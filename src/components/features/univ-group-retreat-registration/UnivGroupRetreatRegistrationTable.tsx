@@ -30,6 +30,7 @@ import { webAxios } from "@/lib/api/axios";
 import {
   PAYMENT_STATUS_LABELS,
   USER_RETREAT_TYPE_LABELS,
+  SHUTTLE_BUS_STATUS_LABELS,
 } from "@/lib/constant/labels";
 import { DirectRetreatRegistrationModal } from "./DirectRetreatRegistrationModal";
 import { TRetreatPaymentSchedule } from "@/types";
@@ -201,7 +202,9 @@ export function UnivGroupRetreatRegistrationTable({
         mode: "contains",
       },
       {
-        value: row => (row.hadRegisteredShuttleBus ? "신청함" : "신청 안함"),
+        value: row =>
+          SHUTTLE_BUS_STATUS_LABELS[row.shuttleBusStatus] ||
+          row.shuttleBusStatus,
         mode: "contains",
       },
     ]),

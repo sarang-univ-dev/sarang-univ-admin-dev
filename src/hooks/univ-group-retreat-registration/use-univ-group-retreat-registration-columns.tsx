@@ -9,9 +9,12 @@ import { AttendanceBadge } from "@/components/features/univ-group-retreat-regist
 import { ShuttleBusStatusBadge } from "@/components/features/univ-group-retreat-registration/ShuttleBusStatusBadge";
 import { UnivGroupRetreatRegistrationTableActions } from "@/components/features/univ-group-retreat-registration/UnivGroupRetreatRegistrationTableActions";
 import { Button } from "@/components/ui/button";
-import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
+import {
+  PAYMENT_STATUS_LABELS,
+  SHUTTLE_BUS_STATUS_LABELS,
+} from "@/lib/constant/labels";
 import { arrayIncludesValueFilterFn } from "@/lib/table";
-import { TRetreatRegistrationSchedule } from "@/types";
+import { TRetreatRegistrationSchedule, UserRetreatShuttleBusStatus } from "@/types";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 
 import { useUnivGroupRetreatRegistration } from "./use-univ-group-retreat-registration";
@@ -210,21 +213,25 @@ export function useUnivGroupRetreatRegistrationColumns(
         filterFn: arrayIncludesValueFilterFn,
       }),
 
-      columnHelper.accessor("hadRegisteredShuttleBus", {
+      columnHelper.accessor("shuttleBusStatus", {
         id: "shuttleBus",
         header: ({ column, table }) => (
           <ColumnHeader
             column={column}
             table={table}
-            title="셔틀버스 신청 여부"
+            title="셔틀 신청 현황"
             enableSorting
             enableFiltering
-            formatFilterValue={value => (value ? "신청함" : "신청 안함")}
+            formatFilterValue={value =>
+              SHUTTLE_BUS_STATUS_LABELS[
+                value as UserRetreatShuttleBusStatus
+              ] || value
+            }
           />
         ),
         cell: info => (
           <div className="flex justify-center shrink-0 px-1">
-            <ShuttleBusStatusBadge hasRegistered={info.getValue()} />
+            <ShuttleBusStatusBadge status={info.getValue()} />
           </div>
         ),
         filterFn: (row, columnId, filterValue) => {

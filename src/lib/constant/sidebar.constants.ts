@@ -10,6 +10,16 @@ export const STATIC_SIDEBAR_ITEMS = [
     path: "schedule-change-request",
   },
   {
+    label: "shuttle-bus-registration",
+    text: "셔틀 구매 일정",
+    path: "univ-group-bus-registration",
+  },
+  {
+    label: "bus-schedule-change-request",
+    text: "셔틀 일정 변동",
+    path: "bus-schedule-change-request",
+  },
+  {
     label: "schedule-change-history",
     text: "일정 변동 이력",
     path: "schedule-change-history",

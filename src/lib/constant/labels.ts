@@ -2,6 +2,7 @@ import {
   UserRetreatRegistrationType,
   UserRetreatRegistrationPaymentStatus,
   RetreatRegistrationScheduleType,
+  UserRetreatShuttleBusStatus,
 } from "@/types";
 
 /**
@@ -44,6 +45,15 @@ export const getPaymentStatusLabel = (
     PAYMENT_STATUS_LABELS[status as UserRetreatRegistrationPaymentStatus] ||
     status
   );
+};
+
+export const SHUTTLE_BUS_STATUS_LABELS: Record<
+  UserRetreatShuttleBusStatus,
+  string
+> = {
+  REGISTERED: "셔틀 신청 완료",
+  SCHEDULE_REVIEW_REQUIRED: "일정 확인 필요",
+  NOT_REGISTERED: "셔틀 신청 안 함",
 };
 
 /**
