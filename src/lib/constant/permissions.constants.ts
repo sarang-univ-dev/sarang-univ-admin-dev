@@ -9,6 +9,8 @@ export enum PagePath {
   UNIV_GROUP_BUS = "/univ-group-bus-registration",
   BUS_SCHEDULE_HISTORY = "/bus-schedule-change-history",
   BUS_SCHEDULE_CHANGE = "/bus-schedule-change-request",
+  SHUTTLE_BUS_BOARDING_STAFF_ASSIGNMENT = "/shuttle-bus-boarding-staff-assignment",
+  SHUTTLE_BUS_BOARDING = "/shuttle-bus-boarding",
   ACCOUNT_STAFF = "/account-staff",
   LINEUP_VIEW_CHANGES = "/lineup-view-changes",
   LINEUP_UNIV_GROUP_ADMIN_STAFF_MEMOS = "/lineup-univ-group-admin-staff-memos",
@@ -75,7 +77,9 @@ export const USER_ROLE_PAGES: Readonly<
     PagePath.LEADER_REPORT_SUBMISSION_STATUS,
   ],
 
-  [RetreatAdminUserRole.SHUTTLE_BUS_BOARDING_STAFF]: [],
+  [RetreatAdminUserRole.SHUTTLE_BUS_BOARDING_STAFF]: [
+    PagePath.SHUTTLE_BUS_BOARDING,
+  ],
 
   [RetreatAdminUserRole.SHUTTLE_BUS_ACCOUNT_MEMBER]: [
     PagePath.CONFIRM_BUS_PAYMENT,
@@ -84,13 +88,13 @@ export const USER_ROLE_PAGES: Readonly<
   ],
 
   [RetreatAdminUserRole.SHUTTLE_BUS_ACCOUNT_STAFF]: [],
-  [RetreatAdminUserRole.SHUTTLE_BUS_ADMIN_STAFF]: [],
+  [RetreatAdminUserRole.SHUTTLE_BUS_ADMIN_STAFF]: [
+    PagePath.SHUTTLE_BUS_BOARDING_STAFF_ASSIGNMENT,
+  ],
 
   [RetreatAdminUserRole.UNIV_GROUP_MINISTER]: [
     PagePath.UNIV_GROUP_MINISTER_VIEW,
   ],
 
-  [RetreatAdminUserRole.ADMIN_MINISTER]: [
-    PagePath.ADMIN_MINISTER_VIEW,
-  ],
+  [RetreatAdminUserRole.ADMIN_MINISTER]: [PagePath.ADMIN_MINISTER_VIEW],
 };

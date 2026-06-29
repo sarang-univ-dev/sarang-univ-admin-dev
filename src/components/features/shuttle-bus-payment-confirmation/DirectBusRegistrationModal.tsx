@@ -76,6 +76,8 @@ interface DirectBusRegistrationModalProps {
   }[];
   schedules: TRetreatShuttleBus[];
   onSuccess: () => void;
+  submitPath?: string;
+  defaultBusIds?: number[];
 }
 
 export function DirectBusRegistrationModal({
@@ -85,8 +87,10 @@ export function DirectBusRegistrationModal({
   univGroupAndGrade,
   schedules,
   onSuccess,
+  submitPath,
+  defaultBusIds,
 }: DirectBusRegistrationModalProps) {
-  const addToast = useToastStore((state) => state.add);
+  const addToast = useToastStore(state => state.add);
 
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -103,13 +107,13 @@ export function DirectBusRegistrationModal({
       setGender("");
       setUnivGroupNumber(null);
       setGradeId(null);
-      setSelectedBusIds([]);
+      setSelectedBusIds(defaultBusIds ?? []);
     }
-  }, [open]);
+  }, [defaultBusIds, open]);
 
   const availableGrades = useMemo(
     () =>
-      univGroupAndGrade.find((g) => g.univGroupNumber === univGroupNumber)
+      univGroupAndGrade.find(g => g.univGroupNumber === univGroupNumber)
         ?.grades ?? [],
     [univGroupAndGrade, univGroupNumber]
   );
@@ -117,16 +121,14 @@ export function DirectBusRegistrationModal({
   const price = useMemo(
     () =>
       schedules
-        .filter((bus) => selectedBusIds.includes(bus.id))
+        .filter(bus => selectedBusIds.includes(bus.id))
         .reduce((sum, bus) => sum + (bus.price || 0), 0),
     [schedules, selectedBusIds]
   );
 
   const toggleBus = (busId: number) => {
-    setSelectedBusIds((prev) =>
-      prev.includes(busId)
-        ? prev.filter((id) => id !== busId)
-        : [...prev, busId]
+    setSelectedBusIds(prev =>
+      prev.includes(busId) ? prev.filter(id => id !== busId) : [...prev, busId]
     );
   };
 
@@ -171,7 +173,8 @@ export function DirectBusRegistrationModal({
     setIsSubmitting(true);
     try {
       await webAxios.post(
-        `/api/v1/retreat/${retreatSlug}/shuttle-bus/admin-register`,
+        submitPath ??
+          `/api/v1/retreat/${retreatSlug}/shuttle-bus/admin-register`,
         {
           name: name.trim(),
           phoneNumber,
@@ -215,7 +218,7 @@ export function DirectBusRegistrationModal({
               <Input
                 id="name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={e => setName(e.target.value)}
                 placeholder="이름"
                 disabled={isSubmitting}
               />
@@ -226,7 +229,9 @@ export function DirectBusRegistrationModal({
               <Input
                 id="phoneNumber"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                onChange={e =>
+                  setPhoneNumber(formatPhoneNumber(e.target.value))
+                }
                 placeholder="010-0000-0000"
                 disabled={isSubmitting}
               />
@@ -236,7 +241,7 @@ export function DirectBusRegistrationModal({
               <Label htmlFor="gender">성별</Label>
               <Select
                 value={gender}
-                onValueChange={(value) => setGender(value as Gender)}
+                onValueChange={value => setGender(value as Gender)}
                 disabled={isSubmitting}
               >
                 <SelectTrigger id="gender">
@@ -252,8 +257,10 @@ export function DirectBusRegistrationModal({
             <div className="space-y-2">
               <Label htmlFor="univGroup">부서</Label>
               <Select
-                value={univGroupNumber !== null ? univGroupNumber.toString() : ""}
-                onValueChange={(v) => {
+                value={
+                  univGroupNumber !== null ? univGroupNumber.toString() : ""
+                }
+                onValueChange={v => {
                   setUnivGroupNumber(Number(v));
                   setGradeId(null);
                 }}
@@ -263,7 +270,7 @@ export function DirectBusRegistrationModal({
                   <SelectValue placeholder="부서 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {univGroupAndGrade.map((group) => (
+                  {univGroupAndGrade.map(group => (
                     <SelectItem
                       key={group.univGroupId}
                       value={group.univGroupNumber.toString()}
@@ -279,14 +286,14 @@ export function DirectBusRegistrationModal({
               <Label htmlFor="grade">학년</Label>
               <Select
                 value={gradeId?.toString() ?? ""}
-                onValueChange={(value) => setGradeId(Number(value))}
+                onValueChange={value => setGradeId(Number(value))}
                 disabled={isSubmitting || univGroupNumber === null}
               >
                 <SelectTrigger id="grade">
                   <SelectValue placeholder="학년 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableGrades.map((grade) => (
+                  {availableGrades.map(grade => (
                     <SelectItem
                       key={grade.gradeId}
                       value={grade.gradeId.toString()}
@@ -302,7 +309,7 @@ export function DirectBusRegistrationModal({
           <div className="space-y-2">
             <Label>셔틀버스 선택</Label>
             <div className="space-y-2">
-              {schedules.map((bus) => (
+              {schedules.map(bus => (
                 <label
                   key={bus.id}
                   className="flex items-center gap-3 p-2 rounded-md border cursor-pointer"
