@@ -5,7 +5,6 @@ import { Gender } from "@/types";
 
 const SHEET_NAME = "방배정";
 const FIXED_HEADERS = [
-  "ID",
   "부서",
   "학년",
   "성별",
@@ -20,19 +19,21 @@ const THIN = { style: "thin", color: { rgb: "B0B0B0" } } as const;
 const BORDER = { top: THIN, bottom: THIN, left: THIN, right: THIN };
 const CENTER = { horizontal: "center", vertical: "center" } as const;
 
-const genderLabel = (gender: Gender) => (gender === Gender.MALE ? "형제" : "자매");
+const genderLabel = (gender: Gender) =>
+  gender === Gender.MALE ? "형제" : "자매";
 
 type AssignmentTemplateSchedule = { id: number; label: string };
 
 // 배정 대상 전원을 현재 배정 숙소가 채워진 상태로 내보낸다 (편집 템플릿 겸용).
-// 'ID' 가 가져오기 매칭키, '숙소명' 이 편집 칸. 나머지 컬럼은 참고용.
+// '숙소명' 이 편집 칸이고, 가져오기 매칭은 부서/학년/성별/이름/연락처로 수행한다.
 export function downloadDormitoryAssignmentTemplate(
   people: IDormitoryStaffRegistration[],
-  scheduleColumns: AssignmentTemplateSchedule[]
+  scheduleColumns: AssignmentTemplateSchedule[],
+  options?: { fileNamePrefix?: string }
 ): void {
   const headers = [
     ...FIXED_HEADERS,
-    ...scheduleColumns.map((schedule) => schedule.label),
+    ...scheduleColumns.map(schedule => schedule.label),
     TRAILING_HEADER,
   ];
 
@@ -52,8 +53,7 @@ export function downloadDormitoryAssignmentTemplate(
     return a.name.localeCompare(b.name, "ko");
   });
 
-  const dataRows = sortedPeople.map((person) => [
-    person.id,
+  const dataRows = sortedPeople.map(person => [
     `${person.univGroupNumber}부`,
     `${person.gradeNumber}학년`,
     genderLabel(person.gender),
@@ -61,7 +61,7 @@ export function downloadDormitoryAssignmentTemplate(
     person.phoneNumber ?? "",
     person.gbsNumber ?? "",
     person.dormitoryLocation?.trim() ?? "",
-    ...scheduleColumns.map((schedule) =>
+    ...scheduleColumns.map(schedule =>
       (person.userRetreatRegistrationScheduleIds ?? []).includes(schedule.id)
         ? "O"
         : ""
@@ -87,7 +87,6 @@ export function downloadDormitoryAssignmentTemplate(
   }
 
   ws["!cols"] = [
-    { wch: 8 }, // ID
     { wch: 8 }, // 부서
     { wch: 8 }, // 학년
     { wch: 8 }, // 성별
@@ -102,5 +101,8 @@ export function downloadDormitoryAssignmentTemplate(
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, SHEET_NAME);
   const stamp = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `방배정_내보내기_${stamp}.xlsx`);
+  XLSX.writeFile(
+    wb,
+    `${options?.fileNamePrefix ?? "방배정_내보내기"}_${stamp}.xlsx`
+  );
 }
