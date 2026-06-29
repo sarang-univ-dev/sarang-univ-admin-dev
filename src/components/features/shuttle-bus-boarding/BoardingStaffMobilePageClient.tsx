@@ -67,7 +67,6 @@ interface BoardingStaffMobilePageClientProps {
 }
 
 const CHURCH_LOCATION = "서초 사랑의교회 참나리길";
-const DEFAULT_RETREAT_LOCATION = "수양회장";
 
 type UnivGroupAndGrade = {
   univGroupId: number;
@@ -153,13 +152,11 @@ export function BoardingStaffMobilePageClient({
   }>(`/api/v1/retreat/${retreatSlug}/info`, async () => {
     const response = await webAxios.get(`/api/v1/retreat/${retreatSlug}/info`);
     return {
-      retreatLocation:
-        response.data.retreatInfo.retreat?.location ?? DEFAULT_RETREAT_LOCATION,
+      retreatLocation: response.data.retreatInfo.retreat.location,
       univGroupAndGrade: response.data.retreatInfo.univGroupAndGrade ?? [],
     };
   });
-  const retreatLocation =
-    retreatInfo?.retreatLocation ?? DEFAULT_RETREAT_LOCATION;
+  const retreatLocation = retreatInfo?.retreatLocation;
   const univGroupAndGrade = retreatInfo?.univGroupAndGrade ?? [];
 
   useEffect(() => {
@@ -178,12 +175,13 @@ export function BoardingStaffMobilePageClient({
     () => assignedBuses.find(bus => bus.id === selectedBusId) ?? null,
     [assignedBuses, selectedBusId]
   );
-  const selectedBusDirectionLabel = selectedBus
-    ? selectedBus.direction ===
-      RetreatShuttleBusDirection.FROM_CHURCH_TO_RETREAT
-      ? `${CHURCH_LOCATION} → ${retreatLocation}`
-      : `${retreatLocation} → ${CHURCH_LOCATION}`
-    : "";
+  const selectedBusDirectionLabel =
+    selectedBus && retreatLocation
+      ? selectedBus.direction ===
+        RetreatShuttleBusDirection.FROM_CHURCH_TO_RETREAT
+        ? `${CHURCH_LOCATION} → ${retreatLocation}`
+        : `${retreatLocation} → ${CHURCH_LOCATION}`
+      : "";
 
   const registrationSchedules = useMemo(
     () => assignedBuses.map(toRegistrationSchedule),
@@ -373,7 +371,9 @@ export function BoardingStaffMobilePageClient({
             <h1 className="truncate text-lg font-semibold">부분참 선탑 확인</h1>
             <p className="mt-1 truncate text-xs text-muted-foreground">
               {selectedBus
-                ? `${selectedBus.name} · ${selectedBusDirectionLabel}`
+                ? selectedBusDirectionLabel
+                  ? `${selectedBus.name} · ${selectedBusDirectionLabel}`
+                  : selectedBus.name
                 : "배정된 셔틀버스가 없습니다."}
             </p>
           </div>

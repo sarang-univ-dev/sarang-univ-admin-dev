@@ -35,7 +35,6 @@ import {
 import { formatDate } from "@/utils/formatDate";
 
 const CHURCH_LOCATION = "서초 사랑의교회 참나리길";
-const DEFAULT_RETREAT_LOCATION = "수양회장";
 
 interface BoardingStaffAssignmentPageClientProps {
   retreatSlug: string;
@@ -80,15 +79,13 @@ export function BoardingStaffAssignmentPageClient({
     () => ShuttleBusAPI.getBoardingStaffCandidates(retreatSlug)
   );
 
-  const { data: retreatLocation = DEFAULT_RETREAT_LOCATION } = useSWR(
+  const { data: retreatLocation } = useSWR<string>(
     `/api/v1/retreat/${retreatSlug}/info`,
     async () => {
       const response = await webAxios.get(
         `/api/v1/retreat/${retreatSlug}/info`
       );
-      return (
-        response.data.retreatInfo.retreat?.location ?? DEFAULT_RETREAT_LOCATION
-      );
+      return response.data.retreatInfo.retreat.location;
     }
   );
 
@@ -204,12 +201,14 @@ export function BoardingStaffAssignmentPageClient({
                       <BusFront className="mt-0.5 h-4 w-4 text-muted-foreground" />
                       <div>
                         <div className="font-medium">{bus.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {bus.direction ===
-                          RetreatShuttleBusDirection.FROM_CHURCH_TO_RETREAT
-                            ? `${CHURCH_LOCATION} → ${retreatLocation}`
-                            : `${retreatLocation} → ${CHURCH_LOCATION}`}
-                        </div>
+                        {retreatLocation ? (
+                          <div className="text-xs text-muted-foreground">
+                            {bus.direction ===
+                            RetreatShuttleBusDirection.FROM_CHURCH_TO_RETREAT
+                              ? `${CHURCH_LOCATION} → ${retreatLocation}`
+                              : `${retreatLocation} → ${CHURCH_LOCATION}`}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </TableCell>
