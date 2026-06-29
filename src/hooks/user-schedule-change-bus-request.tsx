@@ -3,6 +3,7 @@ import useSWR from "swr";
 import { webAxios } from "@/lib/api/axios";
 import {
   // UserRetreatRegistrationType, >> 새가족, 군인, ...
+  UserRetreatShuttleBusRegistrationHistoryMemoType,
   UserRetreatShuttleBusPaymentStatus, // UserRetreatRegistrationPaymentStatus,
 } from "@/types";
 
@@ -18,6 +19,7 @@ export interface IUserScheduleChangeShuttleBus {
   gradeNumber: number;
   userRetreatShuttleBusRegistrationScheduleIds: number[];
   memo: string;
+  memoType: UserRetreatShuttleBusRegistrationHistoryMemoType;
   issuerName: string;
   memoCreatedAt: string;
 }

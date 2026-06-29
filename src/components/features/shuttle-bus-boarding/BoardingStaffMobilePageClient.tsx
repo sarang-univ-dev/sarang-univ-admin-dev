@@ -438,8 +438,9 @@ export function BoardingStaffMobilePageClient({
         <Table className="w-full table-fixed">
           <TableHeader>
             <TableRow className="bg-slate-50">
-              <TableHead className="w-[27%] px-2 py-2 text-xs">정보</TableHead>
-              <TableHead className="w-[24%] px-2 py-2 text-xs">이름</TableHead>
+              <TableHead className="w-[51%] px-2 py-2 text-xs">
+                탑승자
+              </TableHead>
               <TableHead className="w-[13%] px-1 py-2 text-center text-xs">
                 전화
               </TableHead>
@@ -454,25 +455,25 @@ export function BoardingStaffMobilePageClient({
           <TableBody>
             {isBusesLoading || isPassengersLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-28 text-center text-sm">
+                <TableCell colSpan={4} className="h-28 text-center text-sm">
                   불러오는 중입니다.
                 </TableCell>
               </TableRow>
             ) : hasError ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-28 text-center text-sm">
+                <TableCell colSpan={4} className="h-28 text-center text-sm">
                   데이터를 불러오지 못했습니다.
                 </TableCell>
               </TableRow>
             ) : assignedBuses.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-28 text-center text-sm">
+                <TableCell colSpan={4} className="h-28 text-center text-sm">
                   배정된 셔틀버스가 없습니다.
                 </TableCell>
               </TableRow>
             ) : filteredPassengers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-28 text-center text-sm">
+                <TableCell colSpan={4} className="h-28 text-center text-sm">
                   표시할 탑승자가 없습니다.
                 </TableCell>
               </TableRow>
@@ -480,46 +481,40 @@ export function BoardingStaffMobilePageClient({
               filteredPassengers.map(passenger => {
                 const isBoarded = Boolean(passenger.confirmedAt);
                 const hasMemo = Boolean(passenger.boardingStaffMemo);
+                const isConfirmed = isBoarded || hasMemo;
                 const isOperating = operatingPassengerId === passenger.id;
 
                 return (
                   <TableRow
                     key={passenger.shuttleBusRegistrationScheduleId}
                     className={cn(
-                      isBoarded && "bg-slate-50 text-muted-foreground",
-                      !isBoarded && hasMemo && "bg-amber-50/70"
+                      isConfirmed && "bg-slate-50 text-muted-foreground"
                     )}
                   >
                     <TableCell className="px-2 py-2 align-top">
-                      <div className="space-y-1">
-                        <div className="text-xs font-medium">
-                          {passenger.univGroupNumber}부
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          <Badge
-                            variant="outline"
-                            className="px-1.5 py-0 text-[10px]"
-                          >
-                            {getGenderLabel(passenger.gender)}
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className="px-1.5 py-0 text-[10px]"
-                          >
-                            {passenger.gradeNumber}학년
-                          </Badge>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-2 py-2 align-top">
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">
-                          {passenger.name}
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <span className="truncate text-sm font-medium">
+                            {passenger.name}
+                          </span>
+                          {hasMemo ? (
+                            <Badge
+                              variant="outline"
+                              className="shrink-0 px-1.5 py-0 text-[10px]"
+                            >
+                              메모
+                            </Badge>
+                          ) : null}
                         </div>
-                        <div className="mt-1 text-[11px] text-muted-foreground">
-                          {getPaymentStatusLabel(
-                            passenger.shuttleBusPaymentStatus
-                          )}
+                        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+                          <span>{passenger.univGroupNumber}부</span>
+                          <span>{passenger.gradeNumber}학년</span>
+                          <span>{getGenderLabel(passenger.gender)}</span>
+                          <span>
+                            {getPaymentStatusLabel(
+                              passenger.shuttleBusPaymentStatus
+                            )}
+                          </span>
                         </div>
                       </div>
                     </TableCell>

@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { mutate } from "swr";
 
 import { AddBusScheduleChangeRequestModal } from "@/components/AddBusScheduleChangeRequestModal";
-import { StatusBadge } from "@/components/Badge";
+import { StatusBadge } from "@/components/Badge-bus";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,56 +25,80 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useConfirm } from "@/hooks/use-confirm";
 import { IUserScheduleChangeShuttleBus } from "@/hooks/user-schedule-change-bus-request";
 import { webAxios } from "@/lib/api/axios";
-import { useConfirm } from "@/hooks/use-confirm";
 import { useToastStore } from "@/store/toast-store";
 import {
   // TRetreatRegistrationSchedule,
   TRetreatShuttleBus,
   TRetreatPaymentSchedule,
+  UserRetreatShuttleBusRegistrationHistoryMemoType,
   UserRetreatShuttleBusPaymentStatus,
 } from "@/types";
-import { formatDate, formatSimpleDate } from "@/utils/formatDate";
+import { formatDate } from "@/utils/formatDate";
 
 import { generateShuttleBusScheduleColumns } from "../utils/bus-utils";
+
+type ShuttleBusScheduleChangeRow = {
+  id: string;
+  department: string;
+  grade: string;
+  name: string;
+  schedule: Record<string, boolean>;
+  amount: number;
+  createdAt: string;
+  status: UserRetreatShuttleBusPaymentStatus;
+  issuerName: string;
+  paymentConfirmedAt: string | null;
+  memo: string;
+  memoType: UserRetreatShuttleBusRegistrationHistoryMemoType;
+  memoCreatedAt: string;
+  memoId: number;
+  scheduleIds: number[];
+};
 
 // 테이블에 필요한 데이터 변환 함수
 const transformScheduleChangeRequestForTable = (
   requests: IUserScheduleChangeShuttleBus[],
   schedules: TRetreatShuttleBus[]
-) => {
-  return requests.map(req => ({
-    id: req.userRetreatShuttleBusRegistrationId.toString(),
-    department: `${req.univGroupNumber}부`,
-    grade: `${req.gradeNumber}학년`,
-    name: req.userName,
-    schedule: schedules.reduce(
-      (acc, cur) => {
-        acc[`schedule_${cur.id}`] = (
-          req.userRetreatShuttleBusRegistrationScheduleIds || []
-        ).includes(cur.id);
-        return acc;
-      },
-      {} as Record<string, boolean>
-    ),
-    amount: req.price,
-    createdAt: req.createdAt,
-    status: req.shuttleBusPaymentStatus,
-    issuerName: req.issuerName,
-    paymentConfirmedAt: req.paymentConfirmedAt,
-    memo: req.memo,
-    memoCreatedAt: req.memoCreatedAt,
-    memoId: req.userRetreatShuttleBusRegistrationHistoryMemoId,
-    scheduleIds: req.userRetreatShuttleBusRegistrationScheduleIds || [],
-  }));
+): ShuttleBusScheduleChangeRow[] => {
+  return requests.map(req => {
+    const scheduleIds = (
+      req.userRetreatShuttleBusRegistrationScheduleIds || []
+    ).map(Number);
+
+    return {
+      id: req.userRetreatShuttleBusRegistrationId.toString(),
+      department: `${req.univGroupNumber}부`,
+      grade: `${req.gradeNumber}학년`,
+      name: req.userName,
+      schedule: schedules.reduce(
+        (acc, cur) => {
+          acc[`schedule_${cur.id}`] = scheduleIds.includes(cur.id);
+          return acc;
+        },
+        {} as Record<string, boolean>
+      ),
+      amount: req.price,
+      createdAt: req.createdAt,
+      status: req.shuttleBusPaymentStatus,
+      issuerName: req.issuerName,
+      paymentConfirmedAt: req.paymentConfirmedAt,
+      memo: req.memo,
+      memoType: req.memoType,
+      memoCreatedAt: req.memoCreatedAt,
+      memoId: req.userRetreatShuttleBusRegistrationHistoryMemoId,
+      scheduleIds,
+    };
+  });
 };
 
 export function ShuttleBusScheduleChangeRequestTable({
   registrations = [],
   schedules = [],
   retreatSlug,
-  payments = [],
+  payments: _payments = [],
   retreatLocation,
   univGroupAndGrade = [],
 }: {
@@ -92,12 +116,15 @@ export function ShuttleBusScheduleChangeRequestTable({
 }) {
   const addToast = useToastStore(state => state.add);
   const confirmDialog = useConfirm();
-  const [data, setData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [data, setData] = useState<ShuttleBusScheduleChangeRow[]>([]);
+  const [filteredData, setFilteredData] = useState<
+    ShuttleBusScheduleChangeRow[]
+  >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<any | null>(null);
+  const [selectedRow, setSelectedRow] =
+    useState<ShuttleBusScheduleChangeRow | null>(null);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {}
   );
@@ -165,7 +192,7 @@ export function ShuttleBusScheduleChangeRequestTable({
   };
 
   // 모달 핸들링
-  const handleProcessSchedule = (row: any) => {
+  const handleProcessSchedule = (row: ShuttleBusScheduleChangeRow) => {
     setSelectedRow(row);
     setMemoText(row.memo || "");
     setSelectedSchedules(row.scheduleIds || []);
@@ -276,7 +303,9 @@ export function ShuttleBusScheduleChangeRequestTable({
   };
 
   // 일정 처리 완료 (메모 기준)
-  const handleResolveScheduleChange = async (row: any) => {
+  const handleResolveScheduleChange = async (
+    row: ShuttleBusScheduleChangeRow
+  ) => {
     if (!row.memoId) {
       addToast({
         title: "오류",
@@ -318,33 +347,18 @@ export function ShuttleBusScheduleChangeRequestTable({
     [schedules]
   );
 
-  // 셔틀버스 일정 변동 후 금액
-  const calculateBusPrice = (newSelectedSchedules: number[]) => {
-    try {
-      // 사용할 스케줄 데이터 결정
-      const schedulesToUse = schedules; // 또는 retreatInfo.shuttleBuses, 상황에 따라
-
-      // 금액 합계 구하기
-      const newPrice = schedulesToUse
-        .filter(bus =>
-          newSelectedSchedules.map(Number).includes(Number(bus.id))
-        )
-        .reduce((sum, bus) => sum + (bus.price || 0), 0);
-
-      // 정책: 이전 금액과 비교 (예: 이전 금액보다 낮아지면 안 된다면)
-      const maxPrice = Math.max(selectedRow.amount || 0, newPrice);
-
-      setCalculatedPrice(maxPrice);
-    } catch (error) {
-      console.error("셔틀버스 가격 계산 중 오류 발생:", error);
-    }
-  };
-
   useEffect(() => {
     if (selectedRow && selectedSchedules.length > 0) {
-      calculateBusPrice(selectedSchedules);
+      try {
+        const newPrice = schedules
+          .filter(bus => selectedSchedules.map(Number).includes(Number(bus.id)))
+          .reduce((sum, bus) => sum + (bus.price || 0), 0);
+
+        setCalculatedPrice(Math.max(selectedRow.amount || 0, newPrice));
+      } catch (error) {
+        console.error("셔틀버스 가격 계산 중 오류 발생:", error);
+      }
     }
-    // schedules도 의존성에 추가하면 더 안전함
   }, [selectedRow, selectedSchedules, schedules]);
 
   return (
@@ -515,7 +529,15 @@ export function ShuttleBusScheduleChangeRequestTable({
                           <StatusBadge status={row.status} />
                         </TableCell>
                         <TableCell className="group-hover:bg-gray-50 text-center whitespace-nowrap">
-                          {row.issuerName || "-"}
+                          <div className="flex flex-col items-center gap-1">
+                            <span>{row.issuerName || "-"}</span>
+                            {row.memoType ===
+                            UserRetreatShuttleBusRegistrationHistoryMemoType.SHUTTLE_BUS_BOARDING_STAFF ? (
+                              <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-700">
+                                부분참 선탑
+                              </span>
+                            ) : null}
+                          </div>
                         </TableCell>
                         <TableCell className="text-gray-600 text-sm group-hover:bg-gray-50 text-center whitespace-nowrap">
                           {formatDate(row.paymentConfirmedAt)}
