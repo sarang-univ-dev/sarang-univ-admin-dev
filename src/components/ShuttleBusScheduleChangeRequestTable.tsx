@@ -5,6 +5,7 @@ import { Search, X, PenLine, Loader2, Check } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { mutate } from "swr";
 
+import { AddBusScheduleChangeRequestModal } from "@/components/AddBusScheduleChangeRequestModal";
 import { StatusBadge } from "@/components/Badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,12 +76,19 @@ export function ShuttleBusScheduleChangeRequestTable({
   retreatSlug,
   payments = [],
   retreatLocation,
+  univGroupAndGrade = [],
 }: {
   registrations: IUserScheduleChangeShuttleBus[];
   schedules: TRetreatShuttleBus[];
   retreatSlug: string;
   payments: TRetreatPaymentSchedule[];
   retreatLocation: string;
+  univGroupAndGrade: {
+    univGroupId: number;
+    univGroupName: string;
+    univGroupNumber: number;
+    grades: { gradeId: number; gradeName: string; gradeNumber: number }[];
+  }[];
 }) {
   const addToast = useToastStore(state => state.add);
   const confirmDialog = useConfirm();
@@ -88,6 +96,7 @@ export function ShuttleBusScheduleChangeRequestTable({
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {}
@@ -348,14 +357,22 @@ export function ShuttleBusScheduleChangeRequestTable({
       </CardHeader>
       <CardContent className="p-4">
         <div className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="검색 (이름, 부서, 학년, 메모 등)..."
-              className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+          <div className="flex items-center justify-between gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="검색 (이름, 부서, 학년, 메모 등)..."
+                className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={() => setIsAddOpen(true)}
+              className="bg-gray-900 text-white hover:bg-gray-800 whitespace-nowrap"
+            >
+              일정 변경 추가
+            </Button>
           </div>
           <div
             className="rounded-md border flex flex-col h-[calc(100vh-300px)]"
@@ -753,6 +770,14 @@ export function ShuttleBusScheduleChangeRequestTable({
           </div>
         </div>
       )}
+
+      <AddBusScheduleChangeRequestModal
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        retreatSlug={retreatSlug}
+        univGroupAndGrade={univGroupAndGrade}
+        onSuccess={() => mutate(registrationsEndpoint)}
+      />
     </Card>
   );
 }
