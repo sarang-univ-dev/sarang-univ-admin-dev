@@ -18,11 +18,11 @@ interface RegistrationLike {
  * 하루(요일) 단위 시간대별 인원.
  * - 식사: breakfast(아) / lunch(점) / dinner(저)
  * - 숙박: sleep(숙)
- * - 집회(식사·숙박에서 파생):
- *   - morning    = 오전집회      = 그 날 아침 신청 인원 (= breakfast)
- *   - evening78  = 저녁집회 7-8시 = 그 날 저녁 신청 인원 (= dinner)
- *   - evening810 = 저녁집회 8-10시 = 그 날 저녁 ∪ 숙박 신청 인원 (중복 제외)
- *   - evening10  = 저녁집회 10시~  = 그 날 숙박 신청 인원 (= sleep)
+ * - 집회(식사·숙박에서 파생, 표는 "저녁 / 저녁 U 숙박 / 숙박" 3행):
+ *   - dinner        = 저녁      = 그 날 저녁 일정 있는 사람 수
+ *   - dinnerOrSleep = 저녁 U 숙박 = 그 날 저녁 ∪ 숙박 일정 있는 사람 수 (중복 제외)
+ *   - sleep         = 숙박      = 그 날 숙박 일정 있는 사람 수
+ *   (저녁·숙박을 둘 다 신청한 사람은 dinner·sleep 양쪽에 집계됨 — dinnerOrSleep 만 중복 제외)
  *
  * 해당 날짜에 그 일정 자체가 없으면 값은 null (표에서 "-"로 표시).
  */
@@ -33,10 +33,8 @@ export interface DaySlotCounts {
   lunch: number | null;
   dinner: number | null;
   sleep: number | null;
-  morning: number | null;
-  evening78: number | null;
-  evening810: number | null;
-  evening10: number | null;
+  /** 저녁 ∪ 숙박 일정 있는 사람 수 (중복 제외). 집회 표 전용 파생값. */
+  dinnerOrSleep: number | null;
 }
 
 export interface TimeSlotStats {
@@ -150,7 +148,7 @@ export function computeTimeSlotStats(
     let lunch = 0;
     let dinner = 0;
     let sleep = 0;
-    let evening810 = 0; // 저녁 ∪ 숙박 (중복 제외)
+    let dinnerOrSleep = 0; // 저녁 ∪ 숙박 (중복 제외)
 
     for (const regSet of regScheduleSets) {
       const inDinner = hasDinner && anyIn(regSet, bucket.dinnerIds);
@@ -160,7 +158,7 @@ export function computeTimeSlotStats(
       if (hasLunch && anyIn(regSet, bucket.lunchIds)) lunch++;
       if (inDinner) dinner++;
       if (inSleep) sleep++;
-      if (inDinner || inSleep) evening810++;
+      if (inDinner || inSleep) dinnerOrSleep++;
     }
 
     return {
@@ -170,10 +168,7 @@ export function computeTimeSlotStats(
       lunch: hasLunch ? lunch : null,
       dinner: hasDinner ? dinner : null,
       sleep: hasSleep ? sleep : null,
-      morning: hasBreakfast ? breakfast : null,
-      evening78: hasDinner ? dinner : null,
-      evening810: hasDinner || hasSleep ? evening810 : null,
-      evening10: hasSleep ? sleep : null,
+      dinnerOrSleep: hasDinner || hasSleep ? dinnerOrSleep : null,
     };
   });
 

@@ -33,8 +33,8 @@ interface MiniRow {
 /**
  * 시간대별 인원 통계 - Server Component
  *
- * 행정 총괄 / 부서 교역자 페이지 상단에 식사·숙박 인원을 표로 보여준다.
- * 표는 피버팅 형태로 **열 = 요일(수/목/금...), 행 = 시간대(아침/점심/저녁, 숙박)**.
+ * 행정 총괄 / 부서 교역자 페이지 상단에 식사·집회·숙박 인원을 한 표로 보여준다.
+ * 피버팅 형태로 **열 = 요일(수/목/금...), 행 = 아침/점심/저녁/집회/숙박**.
  * (입금 완료 기준 집계)
  */
 export function TimeSlotStatisticsSection({
@@ -43,36 +43,19 @@ export function TimeSlotStatisticsSection({
 }: TimeSlotStatisticsSectionProps) {
   const { days, has } = computeTimeSlotStats(registrations, schedules);
 
-  // 피버팅: 열 = 요일(수/목/금...), 행 = 시간대(아침/점심/저녁, 숙박)
-
-  // 식사 표
-  const mealDays = days.filter(
-    d => d.breakfast != null || d.lunch != null || d.dinner != null
-  );
-  const mealColumns = dayColumns(mealDays);
-  const mealRows: MiniRow[] = (
+  // 피버팅: 열 = 요일(수/목/금...), 행 = 아침 / 점심 / 저녁 / 집회 / 숙박
+  // "집회" 행 = 저녁 ∪ 숙박 (dinnerOrSleep). 저녁·숙박을 둘 다 신청한 사람은 저녁·숙박
+  //        행 양쪽에 집계되고, 집회 행만 그 둘을 중복 제외한 union 인원이다.
+  const tableColumns = dayColumns(days);
+  const tableRows: MiniRow[] = (
     [
       has.breakfast && { key: "breakfast", label: "아침" },
       has.lunch && { key: "lunch", label: "점심" },
       has.dinner && { key: "dinner", label: "저녁" },
+      (has.dinner || has.sleep) && { key: "dinnerOrSleep", label: "집회" },
+      has.sleep && { key: "sleep", label: "숙박" },
     ].filter(Boolean) as { key: keyof DaySlotCounts; label: string }[]
-  ).map(t => pivotRow(t.label, mealDays, t.key));
-
-  // 숙박 표
-  const lodgingDays = days.filter(d => d.sleep != null);
-  const lodgingColumns = dayColumns(lodgingDays);
-  const lodgingRows: MiniRow[] = has.sleep
-    ? [pivotRow("숙박", lodgingDays, "sleep")]
-    : [];
-
-  // 집회 표: 오전 / 7-8시 / 8-10시 / 10시~
-  // TODO: 수양회 날짜나 집회 시간대(저녁집회 7-8시 / 8-10시 / 10시~)가 달라졌을 때를 위한
-  //       확장성 고민 필요. 현재 저녁집회 시간 구분이 코드에 고정되어 있어,
-  //       일정/집회 시간이 바뀌면 로직 수정이 필요하다.
-  //       확장성 검토 전까지 집회 인원 표는 임시 비활성화.
-  //       (재활성화 시에도 식사/숙박과 동일하게 열=요일, 행=시간대 로 피버팅할 것)
-  //       (집회 인원 산식은 time-slot-stats.ts 의 DaySlotCounts
-  //        morning/evening78/evening810/evening10 참고)
+  ).map(t => pivotRow(t.label, days, t.key));
 
   return (
     <section className="space-y-3 md:space-y-4">
@@ -90,22 +73,7 @@ export function TimeSlotStatisticsSection({
           스케줄 데이터가 없습니다.
         </div>
       ) : (
-        // 집회 인원 표 임시 비활성화로 2열 (재활성화 시 md:grid-cols-3 으로 복구)
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <StatMiniTable title="식사 인원" columns={mealColumns} rows={mealRows} />
-          <StatMiniTable
-            title="숙박 인원"
-            columns={lodgingColumns}
-            rows={lodgingRows}
-          />
-          {/* TODO: 수양회 날짜·집회 시간대 변경 시 확장성 고민 필요 (위 assembly 계산부 참고).
-              확장성 검토 전까지 집회 인원 표는 임시 비활성화. */}
-          {/* <StatMiniTable
-            title="집회 인원"
-            columns={assemblyColumns}
-            rows={assemblyRows}
-          /> */}
-        </div>
+        <StatMiniTable columns={tableColumns} rows={tableRows} />
       )}
     </section>
   );
@@ -132,13 +100,15 @@ function StatMiniTable({
   columns,
   rows,
 }: {
-  title: string;
+  title?: string;
   columns: MiniColumn[];
   rows: MiniRow[];
 }) {
   return (
     <div className="space-y-2">
-      <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+      {title && (
+        <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+      )}
       {columns.length === 0 || rows.length === 0 ? (
         <div className="p-4 text-center text-gray-400 text-xs rounded-md border">
           해당 일정이 없습니다.
