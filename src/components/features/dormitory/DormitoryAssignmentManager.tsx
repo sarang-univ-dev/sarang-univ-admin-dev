@@ -42,7 +42,9 @@ import { useToastStore } from "@/store/toast-store";
 import {
   Gender,
   RetreatRegistrationScheduleType,
+  UserRetreatRegistrationType,
 } from "@/types";
+import { USER_RETREAT_TYPE_LABELS } from "@/lib/constant/labels";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import type { DormitoryAssignmentPreview } from "@/types/dormitory-assignment";
 
@@ -60,6 +62,7 @@ type PersonRow = {
   department: string;
   grade: string;
   name: string;
+  userType: string;
   gender: Gender;
   scheduleIds: number[];
   scheduleMap: Record<string, boolean>;
@@ -92,6 +95,9 @@ const normalizeSearchText = (value: unknown) =>
   String(value ?? "")
     .trim()
     .toLowerCase();
+
+const userTypeLabel = (type: string) =>
+  USER_RETREAT_TYPE_LABELS[type as UserRetreatRegistrationType] ?? "";
 
 type PreviewGroupMode = "gbs" | "dormitory";
 
@@ -450,6 +456,7 @@ const PersonSelectionRow = memo(function PersonSelectionRow({
       <TableCell className="text-center">{row.department}</TableCell>
       <TableCell className="text-center">{row.grade}</TableCell>
       <TableCell className="text-center">{row.name}</TableCell>
+      <TableCell className="text-center">{userTypeLabel(row.userType)}</TableCell>
       {scheduleColumns.map((schedule) => (
         <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
           <Checkbox
@@ -510,6 +517,7 @@ const PersonSelectionTable = memo(function PersonSelectionTable({
         row.department,
         row.grade,
         row.name,
+        userTypeLabel(row.userType),
       ].some((value) => normalizeSearchText(value).includes(query))
     );
   }, [debouncedSearchTerm, scheduleFilteredRows]);
@@ -649,6 +657,7 @@ const PersonSelectionTable = memo(function PersonSelectionTable({
               <TableHead className="text-center bg-gray-100 whitespace-nowrap">부서</TableHead>
               <TableHead className="text-center bg-gray-100 whitespace-nowrap">학년</TableHead>
               <TableHead className="text-center bg-gray-100 whitespace-nowrap">이름</TableHead>
+              <TableHead className="text-center bg-gray-100 whitespace-nowrap">타입</TableHead>
               {scheduleColumns.map((schedule) => (
                 <TableHead key={schedule.key} className="text-center bg-gray-100 whitespace-nowrap">
                   <div className="flex flex-col items-center gap-1">
@@ -1543,6 +1552,7 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
       department: `${registration.univGroupNumber}부`,
       grade: `${registration.gradeNumber}학년`,
       name: registration.name,
+      userType: registration.userType ?? "",
       gender: registration.gender,
       scheduleIds: registration.userRetreatRegistrationScheduleIds ?? [],
       scheduleMap: buildScheduleMap(
