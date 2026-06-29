@@ -45,6 +45,7 @@ import {
   UserRetreatRegistrationType,
 } from "@/types";
 import { USER_RETREAT_TYPE_LABELS } from "@/lib/constant/labels";
+import { TypeBadge } from "@/components/common/retreat";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import type { DormitoryAssignmentPreview } from "@/types/dormitory-assignment";
 
@@ -456,7 +457,9 @@ const PersonSelectionRow = memo(function PersonSelectionRow({
       <TableCell className="text-center">{row.department}</TableCell>
       <TableCell className="text-center">{row.grade}</TableCell>
       <TableCell className="text-center">{row.name}</TableCell>
-      <TableCell className="text-center">{userTypeLabel(row.userType)}</TableCell>
+      <TableCell className="text-center">
+        <TypeBadge type={row.userType as UserRetreatRegistrationType} />
+      </TableCell>
       {scheduleColumns.map((schedule) => (
         <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
           <Checkbox
@@ -1274,6 +1277,10 @@ function GenderAssignmentPanel({
       ),
     [registrations, dormitories, scheduleColumns, scheduleIds, capacityBasis]
   );
+  const availableRegistrations = useMemo(
+    () => registrations.filter((r) => r.dormitoryLocation === null),
+    [registrations]
+  );
   const scheduleMapById = useMemo(() => {
     const map = new Map<number, Record<string, boolean>>();
     registrations.forEach((registration) => {
@@ -1433,7 +1440,7 @@ function GenderAssignmentPanel({
           </CardHeader>
           <CardContent>
             <PersonSelectionTable
-              rows={registrations}
+              rows={availableRegistrations}
               scheduleColumns={scheduleColumns}
               selectedIds={selectedUserIds}
               setSelectedIds={setSelectedUserIds}
@@ -1568,11 +1575,7 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
   const maleRegistrations = useMemo(
     () =>
       registrations
-        .filter(
-          (registration) =>
-            registration.gender === Gender.MALE &&
-            registration.dormitoryLocation === null
-        )
+        .filter((registration) => registration.gender === Gender.MALE)
         .sort(compareByGbs),
     [registrations]
   );
@@ -1580,11 +1583,7 @@ export function DormitoryAssignmentManager({ retreatSlug }: { retreatSlug: strin
   const femaleRegistrations = useMemo(
     () =>
       registrations
-        .filter(
-          (registration) =>
-            registration.gender === Gender.FEMALE &&
-            registration.dormitoryLocation === null
-        )
+        .filter((registration) => registration.gender === Gender.FEMALE)
         .sort(compareByGbs),
     [registrations]
   );

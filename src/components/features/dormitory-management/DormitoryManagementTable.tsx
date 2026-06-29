@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  ColumnFiltersState,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
@@ -43,11 +44,14 @@ function DormitoryGenderTable({
   globalFilter: string;
   onGlobalFilterChange: (value: string) => void;
 }) {
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
   const table = useReactTable({
     data: rows,
     columns,
-    state: { globalFilter },
+    state: { globalFilter, columnFilters },
     onGlobalFilterChange,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),

@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
+import { ColumnHeader } from "@/components/common/table";
 import { MemoEditor } from "@/components/common/table/MemoEditor";
-import { DormitoryStatusBadge } from "@/components/common/retreat/badges";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { DormitoryUpdateFields } from "@/hooks/dormitory/use-dormitory-management";
+import { arrayIncludesValueFilterFn } from "@/lib/table";
 import { useToastStore } from "@/store/toast-store";
 import { TDormitoryManagementRow } from "@/types";
-import { DormitoryUpdateFields } from "@/hooks/dormitory/use-dormitory-management";
 
 const columnHelper = createColumnHelper<TDormitoryManagementRow>();
 
@@ -74,7 +75,7 @@ function DormitoryCapacityCell({
 
     const nextOptimal =
       field === "optimalCapacity" ? (nextValue as number) : optimalCapacity;
-    const nextMax = field === "maxCapacity" ? nextValue : maxCapacity ?? null;
+    const nextMax = field === "maxCapacity" ? nextValue : (maxCapacity ?? null);
     if (nextMax != null && nextMax < nextOptimal) {
       addToast({
         title: "입력 오류",
@@ -87,7 +88,9 @@ function DormitoryCapacityCell({
 
     setIsPending(true);
     try {
-      await onSave(dormitoryId, { [field]: nextValue } as DormitoryUpdateFields);
+      await onSave(dormitoryId, {
+        [field]: nextValue,
+      } as DormitoryUpdateFields);
     } catch {
       revert();
     } finally {
@@ -169,9 +172,7 @@ function DormitoryDeleteCell({
         className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600"
         disabled={hasAssignments}
         title={
-          hasAssignments
-            ? "배정된 인원이 있어 삭제할 수 없습니다"
-            : "숙소 삭제"
+          hasAssignments ? "배정된 인원이 있어 삭제할 수 없습니다" : "숙소 삭제"
         }
         onClick={() => deleteDormitory(row.id, row.name, row.assignedCount)}
       >
@@ -268,26 +269,26 @@ export function useDormitoryManagementColumns({
         ),
         size: 280,
       }),
-      columnHelper.display({
-        id: "status",
-        header: () => <div className="text-center text-sm">상태</div>,
-        cell: ({ row }) => (
-          <div className="flex justify-center px-1">
-            <DormitoryStatusBadge isDisabled={row.original.isDisabled} />
-          </div>
-        ),
-        size: 100,
-      }),
-      columnHelper.display({
+      columnHelper.accessor("isDisabled", {
         id: "disabledToggle",
-        header: () => <div className="text-center text-sm">활성</div>,
+        header: ({ column, table }) => (
+          <ColumnHeader
+            column={column}
+            table={table}
+            title="활성"
+            enableFiltering
+            formatFilterValue={value => (value ? "비활성" : "활성")}
+            sortFilterValues={(a, b) => Number(a) - Number(b)}
+          />
+        ),
         cell: ({ row }) => (
           <DormitoryDisabledToggleCell
             row={row.original}
             toggleDisabled={toggleDisabled}
           />
         ),
-        size: 80,
+        filterFn: arrayIncludesValueFilterFn,
+        size: 90,
       }),
       columnHelper.display({
         id: "delete",
