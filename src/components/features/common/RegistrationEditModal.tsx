@@ -232,7 +232,7 @@ export function RegistrationEditModal({
                     key={grade.gradeId}
                     value={grade.gradeId.toString()}
                   >
-                    {grade.gradeName}
+                    {`${grade.gradeNumber}학년 ${grade.gradeName}`}
                   </SelectItem>
                 ))}
               </SelectContent>
