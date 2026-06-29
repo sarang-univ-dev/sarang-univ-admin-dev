@@ -589,10 +589,44 @@ const PersonSelectionTable = memo(function PersonSelectionTable({
 
   const gbsIsSelected = (memberIds: number[]) =>
     memberIds.length > 0 && memberIds.every((id) => selectedIds.has(id));
-  const toggleGbs = (memberIds: number[], checked: boolean) => {
+  const gbsAnchorRef = useRef<number | null>(null);
+  const handleGbsRowClick = (
+    gbs: { gbsNumber: number; memberIds: number[] },
+    event: React.MouseEvent
+  ) => {
+    if (event.button !== 0) return;
+
+    if (event.shiftKey && gbsAnchorRef.current != null) {
+      const anchorIndex = visibleGbs.findIndex(
+        (item) => item.gbsNumber === gbsAnchorRef.current
+      );
+      const currentIndex = visibleGbs.findIndex(
+        (item) => item.gbsNumber === gbs.gbsNumber
+      );
+
+      if (anchorIndex !== -1 && currentIndex !== -1) {
+        event.preventDefault();
+        const start = Math.min(anchorIndex, currentIndex);
+        const end = Math.max(anchorIndex, currentIndex);
+        const rangeMemberIds = visibleGbs
+          .slice(start, end + 1)
+          .flatMap((item) => item.memberIds);
+
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          rangeMemberIds.forEach((id) => next.add(id));
+          return next;
+        });
+        return;
+      }
+    }
+
+    gbsAnchorRef.current = gbs.gbsNumber;
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      memberIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      const checked =
+        gbs.memberIds.length > 0 && gbs.memberIds.every((id) => next.has(id));
+      gbs.memberIds.forEach((id) => (checked ? next.delete(id) : next.add(id)));
       return next;
     });
   };
@@ -722,10 +756,10 @@ const PersonSelectionTable = memo(function PersonSelectionTable({
               {visibleGbs.map((g) => (
                 <TableRow
                   key={g.gbsNumber}
+                  data-state={gbsIsSelected(g.memberIds) ? "selected" : undefined}
                   className="cursor-pointer select-none"
-                  onClick={() =>
-                    toggleGbs(g.memberIds, !gbsIsSelected(g.memberIds))
-                  }
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={(event) => handleGbsRowClick(g, event)}
                 >
                   <TableCell className="text-center">
                     <Checkbox
