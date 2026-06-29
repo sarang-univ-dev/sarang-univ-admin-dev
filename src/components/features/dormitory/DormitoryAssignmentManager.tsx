@@ -45,6 +45,7 @@ import {
   UserRetreatRegistrationType,
 } from "@/types";
 import { USER_RETREAT_TYPE_LABELS } from "@/lib/constant/labels";
+import { TypeBadge } from "@/components/common/retreat";
 import { generateScheduleColumns } from "@/utils/retreat-utils";
 import type { DormitoryAssignmentPreview } from "@/types/dormitory-assignment";
 
@@ -456,7 +457,9 @@ const PersonSelectionRow = memo(function PersonSelectionRow({
       <TableCell className="text-center">{row.department}</TableCell>
       <TableCell className="text-center">{row.grade}</TableCell>
       <TableCell className="text-center">{row.name}</TableCell>
-      <TableCell className="text-center">{userTypeLabel(row.userType)}</TableCell>
+      <TableCell className="text-center">
+        <TypeBadge type={row.userType as UserRetreatRegistrationType} />
+      </TableCell>
       {scheduleColumns.map((schedule) => (
         <TableCell key={`${row.id}-${schedule.key}`} className="text-center">
           <Checkbox
