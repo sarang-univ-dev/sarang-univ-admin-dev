@@ -28,8 +28,11 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useSWRConfig } from "swr";
 
 import { GenderBadge } from "@/components/Badge";
+import { ColumnHeader, VirtualizedTable } from "@/components/common/table";
+import { DormitoryAssignmentExcelImportModal } from "@/components/features/dormitory/DormitoryAssignmentExcelImportModal";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -42,26 +45,24 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { ColumnHeader, VirtualizedTable } from "@/components/common/table";
-import { useConfirm } from "@/hooks/use-confirm";
 import {
   TRetreatDormitory,
   useAllDormitories,
   useAssignDormitory,
   useAvailableDormitories,
 } from "@/hooks/use-available-dormitories";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useDormitoryStaff } from "@/hooks/use-dormitory-staff";
 import { webAxios } from "@/lib/api/axios";
+import { arrayIncludesValueFilterFn, EMPTY_FILTER_VALUE } from "@/lib/table";
 import { useToastStore } from "@/store/toast-store";
 import {
   Gender,
   RetreatRegistrationScheduleType,
   TRetreatRegistrationSchedule,
 } from "@/types";
-import { generateScheduleColumns } from "@/utils/retreat-utils";
-import { useSWRConfig } from "swr";
-import { DormitoryAssignmentExcelImportModal } from "@/components/features/dormitory/DormitoryAssignmentExcelImportModal";
 import { downloadDormitoryAssignmentTemplate } from "@/utils/dormitory-assignment-excel/template";
+import { generateScheduleColumns } from "@/utils/retreat-utils";
 
 // Simple debounce hook
 function useDebounce<T>(value: T, delay = 250): T {
@@ -144,7 +145,7 @@ const DormitoryAssignCell = memo(function DormitoryAssignCell({
   // 편집 모드 (한 번에 한 행만): 실제 Radix Select 를 열린 상태로 mount
   const currentDormitoryId =
     row.dormitoryLocation && allDormitories
-      ? allDormitories.find(d => d.name === row.dormitoryLocation)?.id ?? null
+      ? (allDormitories.find(d => d.name === row.dormitoryLocation)?.id ?? null)
       : null;
   const inAvail =
     currentDormitoryId != null &&
@@ -156,7 +157,7 @@ const DormitoryAssignCell = memo(function DormitoryAssignCell({
           ...allDormitories.filter(d => d.id === currentDormitoryId),
           ...(availableDormitories ?? []),
         ]
-      : availableDormitories ?? [];
+      : (availableDormitories ?? []);
 
   return (
     <div className="flex justify-center px-1">
@@ -168,7 +169,10 @@ const DormitoryAssignCell = memo(function DormitoryAssignCell({
           pendingRef.current = true;
           setPending(true);
           try {
-            await onAssign(row.id, value === "null" ? null : parseInt(value, 10));
+            await onAssign(
+              row.id,
+              value === "null" ? null : parseInt(value, 10)
+            );
           } finally {
             pendingRef.current = false;
             setPending(false);
@@ -565,15 +569,11 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
               enableSorting
               enableFiltering
               formatFilterValue={value =>
-                value === null ? "미배정" : `${value}`
+                value === EMPTY_FILTER_VALUE ? "미배정" : `${value}`
               }
             />
           ),
-          filterFn: (row, columnId, filterValue: unknown[]) => {
-            const value = row.getValue<number | null>(columnId);
-            if (filterValue.includes("미배정")) return value === null;
-            return filterValue.includes(String(value));
-          },
+          filterFn: arrayIncludesValueFilterFn,
           cell: info => {
             const value = info.getValue();
             return (
@@ -610,7 +610,12 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
         columnHelper.accessor("gender", {
           id: "gender",
           header: ({ column, table }) => (
-            <ColumnHeader column={column} table={table} title="성별" titleOnly />
+            <ColumnHeader
+              column={column}
+              table={table}
+              title="성별"
+              titleOnly
+            />
           ),
           cell: info => (
             <div className="flex justify-center px-1">
@@ -685,7 +690,9 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
                 <Checkbox
                   checked={row.original.schedule[col.key]}
                   disabled
-                  className={row.original.schedule[col.key] ? col.bgColorClass : ""}
+                  className={
+                    row.original.schedule[col.key] ? col.bgColorClass : ""
+                  }
                 />
               </div>
             ),
@@ -698,9 +705,21 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
               column={column}
               table={table}
               title="현재 숙소"
-              titleOnly
+              enableSorting
+              enableFiltering
+              formatFilterValue={value =>
+                value === EMPTY_FILTER_VALUE ? "미배정" : `${value}`
+              }
             />
           ),
+          filterFn: arrayIncludesValueFilterFn,
+          sortingFn: (rowA, rowB) => {
+            const a = rowA.original.dormitoryLocation?.trim() ?? "";
+            const b = rowB.original.dormitoryLocation?.trim() ?? "";
+            if (!a && b) return 1;
+            if (a && !b) return -1;
+            return a.localeCompare(b, "ko", { numeric: true });
+          },
           cell: info => {
             const loc = info.getValue();
             return (
@@ -767,8 +786,14 @@ const DormitoryTableContent = React.memo<DormitoryTableContentProps>(
     );
 
     const globalFilterFn = useCallback(
-      (row: { original: DormitoryRow }, _columnId: string, filterValue: string) => {
-        const q = String(filterValue ?? "").trim().toLowerCase();
+      (
+        row: { original: DormitoryRow },
+        _columnId: string,
+        filterValue: string
+      ) => {
+        const q = String(filterValue ?? "")
+          .trim()
+          .toLowerCase();
         if (!q) return true;
         const r = row.original;
         return (
@@ -866,7 +891,7 @@ export const DormitoryStaffTable = React.memo<{
     () =>
       generateScheduleColumns(
         schedules.filter(
-          (schedule) => schedule.type === RetreatRegistrationScheduleType.SLEEP
+          schedule => schedule.type === RetreatRegistrationScheduleType.SLEEP
         )
       ),
     [schedules]
@@ -879,7 +904,7 @@ export const DormitoryStaffTable = React.memo<{
 
   const revalidateDormitory = useCallback(async () => {
     await mutate(
-      (key) =>
+      key =>
         typeof key === "string" &&
         key.includes(`/api/v1/retreat/${retreatSlug}/dormitory`)
     );
