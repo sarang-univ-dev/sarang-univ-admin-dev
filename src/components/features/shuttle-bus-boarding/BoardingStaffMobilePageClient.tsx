@@ -15,6 +15,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 
+import { DirectBusRegistrationModal } from "@/components/features/shuttle-bus-payment-confirmation/DirectBusRegistrationModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,10 +44,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { DirectBusRegistrationModal } from "@/components/features/shuttle-bus-payment-confirmation/DirectBusRegistrationModal";
 import { useConfirm } from "@/hooks/use-confirm";
-import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
 import { webAxios } from "@/lib/api/axios";
+import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/store/toast-store";
 import {
@@ -66,6 +66,9 @@ interface BoardingStaffMobilePageClientProps {
   retreatSlug: string;
 }
 
+const CHURCH_LOCATION = "서초 사랑의교회 참나리길";
+const DEFAULT_RETREAT_LOCATION = "수양회장";
+
 type UnivGroupAndGrade = {
   univGroupId: number;
   univGroupName: string;
@@ -83,12 +86,6 @@ function getErrorMessage(error: unknown) {
   }
 
   return "작업 중 오류가 발생했습니다.";
-}
-
-function getDirectionLabel(direction: RetreatShuttleBusDirection) {
-  return direction === RetreatShuttleBusDirection.FROM_CHURCH_TO_RETREAT
-    ? "교회 -> 수양회장"
-    : "수양회장 -> 교회";
 }
 
 function getGenderLabel(gender: Gender) {
@@ -150,16 +147,20 @@ export function BoardingStaffMobilePageClient({
     () => ShuttleBusAPI.getBoardingStaffPassengers(retreatSlug, selectedBusId!)
   );
 
-  const { data: univGroupAndGrade = [], isLoading: isRetreatInfoLoading } =
-    useSWR<UnivGroupAndGrade[]>(
-      `/api/v1/retreat/${retreatSlug}/info`,
-      async () => {
-        const response = await webAxios.get(
-          `/api/v1/retreat/${retreatSlug}/info`
-        );
-        return response.data.retreatInfo.univGroupAndGrade ?? [];
-      }
-    );
+  const { data: retreatInfo, isLoading: isRetreatInfoLoading } = useSWR<{
+    retreatLocation: string;
+    univGroupAndGrade: UnivGroupAndGrade[];
+  }>(`/api/v1/retreat/${retreatSlug}/info`, async () => {
+    const response = await webAxios.get(`/api/v1/retreat/${retreatSlug}/info`);
+    return {
+      retreatLocation:
+        response.data.retreatInfo.retreat?.location ?? DEFAULT_RETREAT_LOCATION,
+      univGroupAndGrade: response.data.retreatInfo.univGroupAndGrade ?? [],
+    };
+  });
+  const retreatLocation =
+    retreatInfo?.retreatLocation ?? DEFAULT_RETREAT_LOCATION;
+  const univGroupAndGrade = retreatInfo?.univGroupAndGrade ?? [];
 
   useEffect(() => {
     if (assignedBuses.length === 0) {
@@ -177,6 +178,12 @@ export function BoardingStaffMobilePageClient({
     () => assignedBuses.find(bus => bus.id === selectedBusId) ?? null,
     [assignedBuses, selectedBusId]
   );
+  const selectedBusDirectionLabel = selectedBus
+    ? selectedBus.direction ===
+      RetreatShuttleBusDirection.FROM_CHURCH_TO_RETREAT
+      ? `${CHURCH_LOCATION} → ${retreatLocation}`
+      : `${retreatLocation} → ${CHURCH_LOCATION}`
+    : "";
 
   const registrationSchedules = useMemo(
     () => assignedBuses.map(toRegistrationSchedule),
@@ -366,7 +373,7 @@ export function BoardingStaffMobilePageClient({
             <h1 className="truncate text-lg font-semibold">부분참 선탑 확인</h1>
             <p className="mt-1 truncate text-xs text-muted-foreground">
               {selectedBus
-                ? `${selectedBus.name} · ${getDirectionLabel(selectedBus.direction)}`
+                ? `${selectedBus.name} · ${selectedBusDirectionLabel}`
                 : "배정된 셔틀버스가 없습니다."}
             </p>
           </div>

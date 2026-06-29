@@ -23,14 +23,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { webAxios } from "@/lib/api/axios";
 import { ShuttleBusAPI } from "@/lib/api/shuttle-bus-api";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/store/toast-store";
+import { RetreatShuttleBusDirection } from "@/types";
 import {
   IBoardingStaffAssignmentBus,
   IBoardingStaffCandidate,
 } from "@/types/shuttle-bus-boarding";
 import { formatDate } from "@/utils/formatDate";
+
+const CHURCH_LOCATION = "서초 사랑의교회 참나리길";
+const DEFAULT_RETREAT_LOCATION = "수양회장";
 
 interface BoardingStaffAssignmentPageClientProps {
   retreatSlug: string;
@@ -42,12 +47,6 @@ function getErrorMessage(error: unknown) {
   }
 
   return "작업 중 오류가 발생했습니다.";
-}
-
-function getDirectionLabel(direction: string) {
-  return direction === "FROM_CHURCH_TO_RETREAT"
-    ? "교회 -> 수양회장"
-    : "수양회장 -> 교회";
 }
 
 export function BoardingStaffAssignmentPageClient({
@@ -79,6 +78,18 @@ export function BoardingStaffAssignmentPageClient({
   } = useSWR(
     `/api/v1/retreat/${retreatSlug}/shuttle-bus/boarding-staff-candidates`,
     () => ShuttleBusAPI.getBoardingStaffCandidates(retreatSlug)
+  );
+
+  const { data: retreatLocation = DEFAULT_RETREAT_LOCATION } = useSWR(
+    `/api/v1/retreat/${retreatSlug}/info`,
+    async () => {
+      const response = await webAxios.get(
+        `/api/v1/retreat/${retreatSlug}/info`
+      );
+      return (
+        response.data.retreatInfo.retreat?.location ?? DEFAULT_RETREAT_LOCATION
+      );
+    }
   );
 
   useEffect(() => {
@@ -194,7 +205,10 @@ export function BoardingStaffAssignmentPageClient({
                       <div>
                         <div className="font-medium">{bus.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {getDirectionLabel(bus.direction)}
+                          {bus.direction ===
+                          RetreatShuttleBusDirection.FROM_CHURCH_TO_RETREAT
+                            ? `${CHURCH_LOCATION} → ${retreatLocation}`
+                            : `${retreatLocation} → ${CHURCH_LOCATION}`}
                         </div>
                       </div>
                     </div>
