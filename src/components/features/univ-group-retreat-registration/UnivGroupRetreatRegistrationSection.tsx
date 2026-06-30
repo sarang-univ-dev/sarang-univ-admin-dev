@@ -4,11 +4,12 @@ import { useState } from "react";
 import { UnivGroupRetreatRegistrationTable } from "./UnivGroupRetreatRegistrationTable";
 import { UnivGroupRetreatRegistrationHeader } from "./UnivGroupRetreatRegistrationHeader";
 import { IUnivGroupAdminStaffRetreat } from "@/types/univ-group-admin-staff";
-import { TRetreatRegistrationSchedule } from "@/types";
+import { TRetreatRegistrationSchedule, TRetreatShuttleBus } from "@/types";
 
 interface UnivGroupRetreatRegistrationSectionProps {
   initialData: IUnivGroupAdminStaffRetreat[];
   schedules: TRetreatRegistrationSchedule[];
+  shuttleBusSchedules: TRetreatShuttleBus[];
   retreatSlug: string;
 }
 
@@ -22,6 +23,7 @@ interface UnivGroupRetreatRegistrationSectionProps {
 export function UnivGroupRetreatRegistrationSection({
   initialData,
   schedules,
+  shuttleBusSchedules,
   retreatSlug,
 }: UnivGroupRetreatRegistrationSectionProps) {
   const [filteredCount, setFilteredCount] = useState<number | undefined>(undefined);
@@ -32,6 +34,7 @@ export function UnivGroupRetreatRegistrationSection({
       <UnivGroupRetreatRegistrationTable
         initialData={initialData}
         schedules={schedules}
+        shuttleBusSchedules={shuttleBusSchedules}
         retreatSlug={retreatSlug}
         onFilteredCountChange={setFilteredCount}
       />

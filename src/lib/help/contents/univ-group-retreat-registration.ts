@@ -27,7 +27,7 @@ export const univGroupRetreatRegistrationHelp: PageHelpContent = {
       id: "overview",
       title: "페이지 개요",
       description:
-        "부서원들의 수양회 신청 현황, 입금 상태, 셔틀버스 신청 여부 등을 한눈에 확인하고 관리할 수 있습니다.",
+        "부서원들의 수양회 신청 현황, 입금 상태, 셔틀 신청 현황 등을 한눈에 확인하고 관리할 수 있습니다.",
       items: [
         {
           label: "입금 현황 요약",
@@ -282,9 +282,12 @@ export const univGroupRetreatRegistrationHelp: PageHelpContent = {
     },
     {
       columnId: "shuttleBus",
-      title: "셔틀버스 신청 여부",
-      description: "셔틀버스 탑승 신청 여부입니다.",
-      tips: ["셔틀버스 관리 페이지에서 상세 탑승 정보를 확인할 수 있습니다."],
+      title: "셔틀 신청 현황",
+      description: "셔틀버스 신청 현황과 수양회 일정 확인 필요 여부입니다.",
+      tips: [
+        "일정 확인 필요 상태는 수양회 신청 일정과 셔틀버스 입퇴장 일정이 맞지 않을 수 있음을 의미합니다.",
+        "셔틀버스 관리 페이지에서 상세 탑승 정보를 확인할 수 있습니다.",
+      ],
     },
     {
       columnId: "scheduleMemo",
@@ -433,20 +436,30 @@ export const univGroupRetreatRegistrationHelp: PageHelpContent = {
     shuttleBus: [
       {
         status: "registered",
-        title: "신청함",
+        title: "셔틀 신청 완료",
         description: "셔틀버스 탑승을 신청했습니다.",
         preview: {
           component: "ShuttleBusStatusBadge",
-          props: { hasRegistered: true },
+          props: { status: "REGISTERED" },
+        },
+      },
+      {
+        status: "scheduleReviewRequired",
+        title: "일정 확인 필요",
+        description:
+          "셔틀버스 신청 일정과 수양회 신청 일정이 맞지 않을 수 있습니다.",
+        preview: {
+          component: "ShuttleBusStatusBadge",
+          props: { status: "SCHEDULE_REVIEW_REQUIRED" },
         },
       },
       {
         status: "notRegistered",
-        title: "신청 안함",
+        title: "셔틀 신청 안 함",
         description: "셔틀버스를 이용하지 않습니다. (자차 이용 등)",
         preview: {
           component: "ShuttleBusStatusBadge",
-          props: { hasRegistered: false },
+          props: { status: "NOT_REGISTERED" },
         },
       },
     ],

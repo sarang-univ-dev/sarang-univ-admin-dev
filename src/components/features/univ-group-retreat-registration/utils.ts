@@ -43,6 +43,11 @@ export function transformUnivGroupAdminStaffData(
       confirmedBy: reg.paymentConfirmUserName || null,
       paymentConfirmedAt: reg.paymentConfirmedAt || null,
       hadRegisteredShuttleBus: reg.hadRegisteredShuttleBus,
+      shuttleBusStatus: reg.shuttleBusStatus,
+      shuttleBusRegistrationId: reg.userRetreatShuttleBusRegistrationId || null,
+      shuttleBusScheduleIds:
+        reg.userRetreatShuttleBusRegistrationScheduleIds || [],
+      shuttleBusScheduleMemo: reg.univGroupStaffShuttleBusHistoryMemo || null,
       qrUrl: reg.qrUrl || null,
       memo: reg.univGroupStaffScheduleHistoryMemo || null,
       historyMemoId: reg.retreatRegistrationHistoryMemoId || null,

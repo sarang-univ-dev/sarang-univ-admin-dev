@@ -430,6 +430,12 @@ export enum UserRetreatShuttleBusPaymentStatus {
   REFUNDED = "REFUNDED", // 환불 완료
 }
 
+export enum UserRetreatShuttleBusStatus {
+  REGISTERED = "REGISTERED", // 셔틀 신청 완료
+  SCHEDULE_REVIEW_REQUIRED = "SCHEDULE_REVIEW_REQUIRED", // 일정 확인 필요
+  NOT_REGISTERED = "NOT_REGISTERED", // 셔틀 신청 안 함
+}
+
 // TODO: 셔틀 버스 명단에 없는데 탑승한 경우 메모만 생성 (SHUTTLE_BUS_STAFF에 대해)
 export enum UserRetreatShuttleBusRegistrationHistoryMemoType {
   UNIV_GROUP_ADMIN_STAFF = "UNIV_GROUP_ADMIN_STAFF", // 부서 행정 간사

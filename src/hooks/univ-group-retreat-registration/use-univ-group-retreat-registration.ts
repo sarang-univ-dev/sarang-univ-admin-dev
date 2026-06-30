@@ -424,6 +424,123 @@ export function useUnivGroupRetreatRegistration(
   };
 
   /**
+   * 셔틀 일정 변경 메모 저장/수정
+   *
+   * @param shuttleBusRegistrationId - 셔틀 신청 ID
+   * @param memo - 메모 내용
+   */
+  const saveShuttleBusScheduleMemo = async (
+    shuttleBusRegistrationId: string,
+    memo: string
+  ) => {
+    const numericId = Number(shuttleBusRegistrationId);
+
+    setIsMutating(true);
+    try {
+      const createdMemo =
+        await UnivGroupRetreatRegistrationAPI.saveShuttleBusScheduleMemo(
+          retreatSlug,
+          shuttleBusRegistrationId,
+          memo
+        );
+
+      await mutate(
+        (currentData) =>
+          currentData?.map((item) =>
+            item.userRetreatShuttleBusRegistrationId === numericId
+              ? {
+                  ...item,
+                  univGroupStaffShuttleBusHistoryMemo: createdMemo.memo,
+                }
+              : item
+          ),
+        { revalidate: false }
+      );
+
+      addToast({
+        title: "성공",
+        description: "셔틀 일정 변경 메모가 저장되었습니다.",
+        variant: "success",
+      });
+    } catch (error) {
+      await mutate();
+
+      const message =
+        error instanceof AxiosError
+          ? error.response?.data?.message || "메모 저장 중 오류가 발생했습니다."
+          : "메모 저장 중 오류가 발생했습니다.";
+
+      addToast({
+        title: "오류 발생",
+        description: message,
+        variant: "destructive",
+      });
+
+      throw error;
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  /**
+   * 셔틀 일정 변경 메모 삭제
+   *
+   * @param shuttleBusRegistrationId - 셔틀 신청 ID
+   */
+  const deleteShuttleBusScheduleMemo = async (
+    shuttleBusRegistrationId: string
+  ) => {
+    const numericId = Number(shuttleBusRegistrationId);
+
+    await confirm.open({
+      title: "메모 삭제",
+      description: "정말로 메모를 삭제하시겠습니까?",
+      onConfirm: async () => {
+        setIsMutating(true);
+        try {
+          await UnivGroupRetreatRegistrationAPI.deleteShuttleBusScheduleMemo(
+            retreatSlug,
+            shuttleBusRegistrationId
+          );
+
+          await mutate(
+            (currentData) =>
+              currentData?.map((item) =>
+                item.userRetreatShuttleBusRegistrationId === numericId
+                  ? { ...item, univGroupStaffShuttleBusHistoryMemo: null }
+                  : item
+              ),
+            { revalidate: false }
+          );
+
+          addToast({
+            title: "성공",
+            description: "셔틀 일정 변경 메모가 삭제되었습니다.",
+            variant: "success",
+          });
+        } catch (error) {
+          await mutate();
+
+          const message =
+            error instanceof AxiosError
+              ? error.response?.data?.message || "메모 삭제 중 오류가 발생했습니다."
+              : "메모 삭제 중 오류가 발생했습니다.";
+
+          addToast({
+            title: "오류 발생",
+            description: message,
+            variant: "destructive",
+          });
+
+          throw error;
+        } finally {
+          setIsMutating(false);
+        }
+      },
+    });
+  };
+
+  /**
    * 행정간사 메모 저장 (Optimistic Update)
    *
    * @param registrationId - 신청 ID (string으로 전달됨, 내부에서 number로 변환)
@@ -768,6 +885,9 @@ export function useUnivGroupRetreatRegistration(
     saveScheduleMemo,
     updateScheduleMemo,
     deleteScheduleMemo,
+    saveShuttleBusScheduleMemo,
+    updateShuttleBusScheduleMemo: saveShuttleBusScheduleMemo,
+    deleteShuttleBusScheduleMemo,
     saveAdminMemo,
     updateAdminMemo,
     deleteAdminMemo,

@@ -17,8 +17,12 @@ import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
 import { usePagination } from "@/hooks/use-pagination";
 import { MobileColumnHeader } from "@/components/common/table/MobileColumnHeader";
 import { MobileAllFiltersDrawer } from "@/components/common/table/MobileAllFiltersDrawer";
-import { PAYMENT_STATUS_LABELS } from "@/lib/constant/labels";
+import {
+  PAYMENT_STATUS_LABELS,
+  SHUTTLE_BUS_STATUS_LABELS,
+} from "@/lib/constant/labels";
 import { gradeFilterSort } from "@/utils/sorting";
+import { UserRetreatShuttleBusStatus } from "@/types";
 
 interface UnivGroupRetreatRegistrationMobileTableProps {
   data: UnivGroupAdminStaffData[];
@@ -66,8 +70,10 @@ const FILTER_COLUMNS = [
   },
   {
     id: "shuttleBus",
-    title: "셔틀버스",
-    formatValue: (value: boolean) => (value ? "신청함" : "신청 안함"),
+    title: "셔틀 신청 현황",
+    formatValue: (value: string) =>
+      SHUTTLE_BUS_STATUS_LABELS[value as UserRetreatShuttleBusStatus] ||
+      value,
   },
   {
     id: "adminMemo",

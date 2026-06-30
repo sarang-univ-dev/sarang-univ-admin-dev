@@ -175,7 +175,7 @@ export function UnivGroupRetreatRegistrationTableToolbar({
                       paymentConfirmedAt: "처리시각",
                       gbs: "GBS",
                       accommodation: "숙소",
-                      shuttleBus: "셔틀버스 신청 여부",
+                      shuttleBus: "셔틀 신청 현황",
                       scheduleMemo: "일정 변동 메모",
                       adminMemo: "행정간사 메모",
                       detailInfo: "상세보기",

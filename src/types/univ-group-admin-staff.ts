@@ -2,6 +2,7 @@ import {
   Gender,
   UserRetreatRegistrationType,
   UserRetreatRegistrationPaymentStatus,
+  UserRetreatShuttleBusStatus,
 } from "./index";
 
 /**
@@ -33,6 +34,10 @@ export interface IUnivGroupAdminStaffRetreat {
   univGroupStaffScheduleHistoryResolvedAt?: string | null;
   univGroupStaffScheduleHistoryResolvedUserName?: string | null;
   hadRegisteredShuttleBus: boolean;
+  shuttleBusStatus: UserRetreatShuttleBusStatus;
+  userRetreatShuttleBusRegistrationId?: number | null;
+  userRetreatShuttleBusRegistrationScheduleIds?: number[];
+  univGroupStaffShuttleBusHistoryMemo?: string | null;
   adminMemo?: string | null;
   adminMemoId?: number | null;
 }
@@ -58,6 +63,10 @@ export interface UnivGroupAdminStaffData {
   confirmedBy: string | null;
   paymentConfirmedAt: string | null;
   hadRegisteredShuttleBus: boolean;
+  shuttleBusStatus: UserRetreatShuttleBusStatus;
+  shuttleBusRegistrationId: number | null;
+  shuttleBusScheduleIds: number[];
+  shuttleBusScheduleMemo: string | null;
   qrUrl: string | null;
   memo: string | null; // 일정 변동 요청 메모
   historyMemoId: number | null; // 일정 변동 요청 메모 ID

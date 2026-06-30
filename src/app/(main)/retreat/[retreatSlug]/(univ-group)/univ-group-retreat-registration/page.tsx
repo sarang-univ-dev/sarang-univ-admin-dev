@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchUnivGroupAdminStaffData,
   fetchRetreatSchedules,
+  fetchShuttleBusSchedules,
 } from "@/lib/api/server-actions";
 
 interface PageProps {
@@ -32,9 +33,10 @@ export default async function UnivGroupRetreatRegistrationPage({
   const { retreatSlug } = await params;
 
   // ✅ 서버에서 병렬 데이터 페칭 (Promise.all)
-  const [registrations, schedules] = await Promise.all([
+  const [registrations, schedules, shuttleBusSchedules] = await Promise.all([
     fetchUnivGroupAdminStaffData(retreatSlug),
     fetchRetreatSchedules(retreatSlug),
+    fetchShuttleBusSchedules(retreatSlug),
   ]);
 
   return (
@@ -52,6 +54,7 @@ export default async function UnivGroupRetreatRegistrationPage({
         <UnivGroupRetreatRegistrationSection
           initialData={registrations}
           schedules={schedules}
+          shuttleBusSchedules={shuttleBusSchedules}
           retreatSlug={retreatSlug}
         />
       </Suspense>

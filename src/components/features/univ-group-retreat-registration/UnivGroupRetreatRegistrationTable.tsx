@@ -23,13 +23,14 @@ import {
   IUnivGroupAdminStaffRetreat,
   UnivGroupAdminStaffData,
 } from "@/types/univ-group-admin-staff";
-import { TRetreatRegistrationSchedule } from "@/types";
+import { TRetreatRegistrationSchedule, TRetreatShuttleBus } from "@/types";
 import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
 import { UnivGroupRetreatRegistrationDetailContent } from "./UnivGroupRetreatRegistrationDetailContent";
 import { webAxios } from "@/lib/api/axios";
 import {
   PAYMENT_STATUS_LABELS,
   USER_RETREAT_TYPE_LABELS,
+  SHUTTLE_BUS_STATUS_LABELS,
 } from "@/lib/constant/labels";
 import { DirectRetreatRegistrationModal } from "./DirectRetreatRegistrationModal";
 import { TRetreatPaymentSchedule } from "@/types";
@@ -44,6 +45,7 @@ interface Grade {
 interface UnivGroupRetreatRegistrationTableProps {
   initialData: IUnivGroupAdminStaffRetreat[];
   schedules: TRetreatRegistrationSchedule[];
+  shuttleBusSchedules: TRetreatShuttleBus[];
   retreatSlug: string;
   /**
    * 필터링된 데이터 개수가 변경될 때 호출되는 콜백
@@ -66,6 +68,7 @@ interface UnivGroupRetreatRegistrationTableProps {
 export function UnivGroupRetreatRegistrationTable({
   initialData,
   schedules,
+  shuttleBusSchedules,
   retreatSlug,
   onFilteredCountChange,
 }: UnivGroupRetreatRegistrationTableProps) {
@@ -75,6 +78,9 @@ export function UnivGroupRetreatRegistrationTable({
     saveScheduleMemo,
     updateScheduleMemo,
     deleteScheduleMemo,
+    saveShuttleBusScheduleMemo,
+    updateShuttleBusScheduleMemo,
+    deleteShuttleBusScheduleMemo,
     saveAdminMemo,
     updateAdminMemo,
     deleteAdminMemo,
@@ -201,7 +207,9 @@ export function UnivGroupRetreatRegistrationTable({
         mode: "contains",
       },
       {
-        value: row => (row.hadRegisteredShuttleBus ? "신청함" : "신청 안함"),
+        value: row =>
+          SHUTTLE_BUS_STATUS_LABELS[row.shuttleBusStatus] ||
+          row.shuttleBusStatus,
         mode: "contains",
       },
     ]),
@@ -273,10 +281,14 @@ export function UnivGroupRetreatRegistrationTable({
             data={data}
             retreatSlug={retreatSlug}
             schedules={schedules}
+            shuttleBusSchedules={shuttleBusSchedules}
             grades={grades}
             onSaveScheduleMemo={saveScheduleMemo}
             onUpdateScheduleMemo={updateScheduleMemo}
             onDeleteScheduleMemo={deleteScheduleMemo}
+            onSaveShuttleBusScheduleMemo={saveShuttleBusScheduleMemo}
+            onUpdateShuttleBusScheduleMemo={updateShuttleBusScheduleMemo}
+            onDeleteShuttleBusScheduleMemo={deleteShuttleBusScheduleMemo}
             onSaveAdminMemo={saveAdminMemo}
             onUpdateAdminMemo={updateAdminMemo}
             onDeleteAdminMemo={deleteAdminMemo}
