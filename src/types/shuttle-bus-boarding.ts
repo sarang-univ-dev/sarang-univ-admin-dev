@@ -45,6 +45,7 @@ export interface IBoardingStaffPassenger {
   id: number;
   shuttleBusRegistrationScheduleId: number;
   univGroupNumber: number;
+  univGroupName: string;
   gender: Gender;
   gradeNumber: number;
   name: string;
