@@ -76,6 +76,9 @@ export function UnivGroupRetreatRegistrationTable({
     saveScheduleMemo,
     updateScheduleMemo,
     deleteScheduleMemo,
+    saveShuttleBusScheduleMemo,
+    updateShuttleBusScheduleMemo,
+    deleteShuttleBusScheduleMemo,
     saveAdminMemo,
     updateAdminMemo,
     deleteAdminMemo,
@@ -280,6 +283,9 @@ export function UnivGroupRetreatRegistrationTable({
             onSaveScheduleMemo={saveScheduleMemo}
             onUpdateScheduleMemo={updateScheduleMemo}
             onDeleteScheduleMemo={deleteScheduleMemo}
+            onSaveShuttleBusScheduleMemo={saveShuttleBusScheduleMemo}
+            onUpdateShuttleBusScheduleMemo={updateShuttleBusScheduleMemo}
+            onDeleteShuttleBusScheduleMemo={deleteShuttleBusScheduleMemo}
             onSaveAdminMemo={saveAdminMemo}
             onUpdateAdminMemo={updateAdminMemo}
             onDeleteAdminMemo={deleteAdminMemo}

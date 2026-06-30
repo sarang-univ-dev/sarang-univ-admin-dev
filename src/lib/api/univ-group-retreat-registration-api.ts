@@ -14,6 +14,14 @@ export interface IScheduleHistoryMemoResponse {
   updatedAt: string;
 }
 
+export interface IShuttleBusScheduleHistoryMemoResponse {
+  id: number;
+  userRetreatShuttleBusRegistrationId: number;
+  memo: string;
+  createdAdminUserId: number;
+  createdAt: string;
+}
+
 /**
  * 부서 수양회 신청 API 클라이언트
  *
@@ -159,6 +167,40 @@ export const UnivGroupRetreatRegistrationAPI = {
   ): Promise<void> => {
     await webAxios.delete(
       `/api/v1/retreat/${retreatSlug}/registration/schedule-change-request-memo/${historyMemoId}`
+    );
+  },
+
+  /**
+   * 셔틀 일정 변경 요청 메모 저장/수정
+   *
+   * @param retreatSlug - 수양회 슬러그
+   * @param shuttleBusRegistrationId - 셔틀 신청 ID
+   * @param memo - 메모 내용
+   */
+  saveShuttleBusScheduleMemo: async (
+    retreatSlug: string,
+    shuttleBusRegistrationId: string,
+    memo: string
+  ): Promise<IShuttleBusScheduleHistoryMemoResponse> => {
+    const response = await webAxios.post(
+      `/api/v1/retreat/${retreatSlug}/shuttle-bus/${shuttleBusRegistrationId}/schedule-change-memo`,
+      { memo }
+    );
+    return response.data.userRetreatRegistrationHistoryMemo;
+  },
+
+  /**
+   * 셔틀 일정 변경 요청 메모 삭제
+   *
+   * @param retreatSlug - 수양회 슬러그
+   * @param shuttleBusRegistrationId - 셔틀 신청 ID
+   */
+  deleteShuttleBusScheduleMemo: async (
+    retreatSlug: string,
+    shuttleBusRegistrationId: string
+  ): Promise<void> => {
+    await webAxios.delete(
+      `/api/v1/retreat/${retreatSlug}/shuttle-bus/${shuttleBusRegistrationId}/schedule-change-memo`
     );
   },
 

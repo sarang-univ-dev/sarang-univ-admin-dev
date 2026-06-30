@@ -11,6 +11,7 @@ import { formatDate } from "@/utils/formatDate";
 import { useMemo, useState } from "react";
 import {
   UserCircle,
+  Bus,
   CreditCard,
   Calendar,
   Info,
@@ -38,6 +39,9 @@ interface UnivGroupRetreatRegistrationDetailContentProps {
   onSaveScheduleMemo: (id: string, memo: string) => Promise<void>;
   onUpdateScheduleMemo: (historyMemoId: number, memo: string) => Promise<void>;
   onDeleteScheduleMemo: (historyMemoId: number) => Promise<void>;
+  onSaveShuttleBusScheduleMemo: (id: string, memo: string) => Promise<void>;
+  onUpdateShuttleBusScheduleMemo: (id: string, memo: string) => Promise<void>;
+  onDeleteShuttleBusScheduleMemo: (id: string) => Promise<void>;
   onSaveAdminMemo: (id: string, memo: string) => Promise<unknown>;
   onUpdateAdminMemo: (memoId: number, memo: string) => Promise<unknown>;
   onDeleteAdminMemo: (memoId: number) => Promise<unknown>;
@@ -75,6 +79,9 @@ export function UnivGroupRetreatRegistrationDetailContent({
   onSaveScheduleMemo,
   onUpdateScheduleMemo,
   onDeleteScheduleMemo,
+  onSaveShuttleBusScheduleMemo,
+  onUpdateShuttleBusScheduleMemo,
+  onDeleteShuttleBusScheduleMemo,
   onSaveAdminMemo,
   onUpdateAdminMemo,
   onDeleteAdminMemo,
@@ -174,9 +181,9 @@ export function UnivGroupRetreatRegistrationDetailContent({
         )}
       </InfoSection>
 
-      {/* 신청 스케줄 */}
+      {/* 수양회 신청 일정 */}
       {schedules.length > 0 && (
-        <InfoSection title="신청 스케줄" icon={Calendar}>
+        <InfoSection title="수양회 신청 일정" icon={Calendar}>
           <RetreatScheduleTable
             schedules={schedules}
             selectedScheduleIds={selectedScheduleIds}
@@ -185,8 +192,8 @@ export function UnivGroupRetreatRegistrationDetailContent({
         </InfoSection>
       )}
 
-      {/* 일정 변동 요청 메모 */}
-      <InfoSection title="일정 변동 요청 메모" icon={FileText}>
+      {/* 수양회 일정 변동 요청 메모 */}
+      <InfoSection title="수양회 일정 변동 요청 메모" icon={FileText}>
         <div className="space-y-2">
           <p className="text-xs text-gray-500">
             * 재정 간사가 처리하면 메모가 사라집니다
@@ -210,6 +217,59 @@ export function UnivGroupRetreatRegistrationDetailContent({
             hasExistingMemo={(r) => !!r.memo && !!r.historyMemoId}
           />
         </div>
+      </InfoSection>
+
+      {/* 셔틀 신청 일정 */}
+      <InfoSection title="셔틀 신청 일정" icon={Bus}>
+        {data.shuttleBusSchedules.length === 0 ? (
+          <p className="text-sm text-gray-500">셔틀 신청 일정이 없습니다.</p>
+        ) : (
+          <div className="space-y-2">
+            {data.shuttleBusSchedules.map(schedule => (
+              <div
+                key={schedule.id}
+                className="rounded-md border border-gray-200 bg-gray-50 p-3"
+              >
+                <p className="text-sm font-medium text-gray-900">
+                  {schedule.name}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {formatDate(schedule.departureTime)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </InfoSection>
+
+      {/* 셔틀 일정 변동 요청 메모 */}
+      <InfoSection title="셔틀 일정 변동 요청 메모" icon={FileText}>
+        {data.shuttleBusRegistrationId ? (
+          <div className="space-y-2">
+            <p className="text-xs text-gray-500">
+              * 버스 간사가 처리하면 메모가 사라집니다
+            </p>
+            <MemoEditor
+              row={{ id: data.shuttleBusRegistrationId.toString() }}
+              memoValue={data.shuttleBusScheduleMemo}
+              onSave={async (id, memo) => {
+                await onSaveShuttleBusScheduleMemo(id, memo);
+              }}
+              onUpdate={async (id, memo) => {
+                await onUpdateShuttleBusScheduleMemo(id, memo);
+              }}
+              onDelete={async id => {
+                await onDeleteShuttleBusScheduleMemo(id);
+              }}
+              hasExistingMemo={() => !!data.shuttleBusScheduleMemo}
+              placeholder="셔틀 일정 변동 요청 메모를 입력하세요..."
+            />
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">
+            셔틀 신청 내역이 없어 메모를 작성할 수 없습니다.
+          </p>
+        )}
       </InfoSection>
 
       {/* 행정간사 메모 */}
