@@ -90,6 +90,29 @@ export const ShuttleBusAPI = {
     return response.data;
   },
 
+  getAdminShuttleBusPassengers: async (
+    retreatSlug: string,
+    shuttleBusId: number
+  ): Promise<IBoardingStaffPassengerResponse> => {
+    const response = await webAxios.get(
+      `/api/v1/retreat/${retreatSlug}/shuttle-bus/admin/buses/${shuttleBusId}/passengers`
+    );
+    return response.data;
+  },
+
+  downloadAdminShuttleBusPassengersExcel: async (
+    retreatSlug: string,
+    shuttleBusId: number,
+    rowIds?: number[]
+  ): Promise<Blob> => {
+    const response = await webAxios.post(
+      `/api/v1/retreat/${retreatSlug}/shuttle-bus/admin/buses/${shuttleBusId}/passengers/excel`,
+      { rowIds },
+      { responseType: "blob" }
+    );
+    return response.data;
+  },
+
   confirmBoardingStaffPassenger: async (
     retreatSlug: string,
     shuttleBusId: number,
