@@ -23,7 +23,7 @@ import {
   IUnivGroupAdminStaffRetreat,
   UnivGroupAdminStaffData,
 } from "@/types/univ-group-admin-staff";
-import { TRetreatRegistrationSchedule } from "@/types";
+import { TRetreatRegistrationSchedule, TRetreatShuttleBus } from "@/types";
 import { DetailSidebar, useDetailSidebar } from "@/components/common/detail-sidebar";
 import { UnivGroupRetreatRegistrationDetailContent } from "./UnivGroupRetreatRegistrationDetailContent";
 import { webAxios } from "@/lib/api/axios";
@@ -45,6 +45,7 @@ interface Grade {
 interface UnivGroupRetreatRegistrationTableProps {
   initialData: IUnivGroupAdminStaffRetreat[];
   schedules: TRetreatRegistrationSchedule[];
+  shuttleBusSchedules: TRetreatShuttleBus[];
   retreatSlug: string;
   /**
    * 필터링된 데이터 개수가 변경될 때 호출되는 콜백
@@ -67,6 +68,7 @@ interface UnivGroupRetreatRegistrationTableProps {
 export function UnivGroupRetreatRegistrationTable({
   initialData,
   schedules,
+  shuttleBusSchedules,
   retreatSlug,
   onFilteredCountChange,
 }: UnivGroupRetreatRegistrationTableProps) {
@@ -279,6 +281,7 @@ export function UnivGroupRetreatRegistrationTable({
             data={data}
             retreatSlug={retreatSlug}
             schedules={schedules}
+            shuttleBusSchedules={shuttleBusSchedules}
             grades={grades}
             onSaveScheduleMemo={saveScheduleMemo}
             onUpdateScheduleMemo={updateScheduleMemo}

@@ -1,6 +1,5 @@
 import {
   Gender,
-  RetreatShuttleBusDirection,
   UserRetreatRegistrationType,
   UserRetreatRegistrationPaymentStatus,
   UserRetreatShuttleBusStatus,
@@ -37,13 +36,8 @@ export interface IUnivGroupAdminStaffRetreat {
   hadRegisteredShuttleBus: boolean;
   shuttleBusStatus: UserRetreatShuttleBusStatus;
   userRetreatShuttleBusRegistrationId?: number | null;
+  userRetreatShuttleBusRegistrationScheduleIds?: number[];
   univGroupStaffShuttleBusHistoryMemo?: string | null;
-  shuttleBusSchedules?: {
-    id: number;
-    name: string;
-    direction: RetreatShuttleBusDirection;
-    departureTime: string;
-  }[];
   adminMemo?: string | null;
   adminMemoId?: number | null;
 }
@@ -71,13 +65,8 @@ export interface UnivGroupAdminStaffData {
   hadRegisteredShuttleBus: boolean;
   shuttleBusStatus: UserRetreatShuttleBusStatus;
   shuttleBusRegistrationId: number | null;
+  shuttleBusScheduleIds: number[];
   shuttleBusScheduleMemo: string | null;
-  shuttleBusSchedules: {
-    id: number;
-    name: string;
-    direction: RetreatShuttleBusDirection;
-    departureTime: string;
-  }[];
   qrUrl: string | null;
   memo: string | null; // 일정 변동 요청 메모
   historyMemoId: number | null; // 일정 변동 요청 메모 ID

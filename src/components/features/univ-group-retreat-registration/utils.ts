@@ -45,8 +45,9 @@ export function transformUnivGroupAdminStaffData(
       hadRegisteredShuttleBus: reg.hadRegisteredShuttleBus,
       shuttleBusStatus: reg.shuttleBusStatus,
       shuttleBusRegistrationId: reg.userRetreatShuttleBusRegistrationId || null,
+      shuttleBusScheduleIds:
+        reg.userRetreatShuttleBusRegistrationScheduleIds || [],
       shuttleBusScheduleMemo: reg.univGroupStaffShuttleBusHistoryMemo || null,
-      shuttleBusSchedules: reg.shuttleBusSchedules || [],
       qrUrl: reg.qrUrl || null,
       memo: reg.univGroupStaffScheduleHistoryMemo || null,
       historyMemoId: reg.retreatRegistrationHistoryMemoId || null,

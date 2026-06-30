@@ -2,7 +2,7 @@
 
 import { InfoSection, InfoItem } from "@/components/common/detail-sidebar";
 import { UnivGroupAdminStaffData } from "@/types/univ-group-admin-staff";
-import { TRetreatRegistrationSchedule, Gender } from "@/types";
+import { TRetreatRegistrationSchedule, TRetreatShuttleBus, Gender } from "@/types";
 import { GenderBadge, StatusBadge, TypeBadge } from "@/components/Badge";
 import { ShuttleBusStatusBadge } from "./ShuttleBusStatusBadge";
 import { QrDownloadButton } from "./QrDownloadButton";
@@ -35,6 +35,7 @@ interface UnivGroupRetreatRegistrationDetailContentProps {
   data: UnivGroupAdminStaffData;
   retreatSlug: string;
   schedules: TRetreatRegistrationSchedule[];
+  shuttleBusSchedules: TRetreatShuttleBus[];
   grades: Grade[];
   onSaveScheduleMemo: (id: string, memo: string) => Promise<void>;
   onUpdateScheduleMemo: (historyMemoId: number, memo: string) => Promise<void>;
@@ -75,6 +76,7 @@ export function UnivGroupRetreatRegistrationDetailContent({
   data,
   retreatSlug,
   schedules,
+  shuttleBusSchedules,
   grades,
   onSaveScheduleMemo,
   onUpdateScheduleMemo,
@@ -110,6 +112,12 @@ export function UnivGroupRetreatRegistrationDetailContent({
       .filter((schedule) => data.schedules[`schedule_${schedule.id}`])
       .map((schedule) => schedule.id);
   }, [schedules, data.schedules]);
+
+  const selectedShuttleBusSchedules = useMemo(() => {
+    return shuttleBusSchedules.filter((schedule) =>
+      data.shuttleBusScheduleIds.includes(schedule.id)
+    );
+  }, [shuttleBusSchedules, data.shuttleBusScheduleIds]);
 
   return (
     <>
@@ -221,11 +229,11 @@ export function UnivGroupRetreatRegistrationDetailContent({
 
       {/* 셔틀 신청 일정 */}
       <InfoSection title="셔틀 신청 일정" icon={Bus}>
-        {data.shuttleBusSchedules.length === 0 ? (
+        {selectedShuttleBusSchedules.length === 0 ? (
           <p className="text-sm text-gray-500">셔틀 신청 일정이 없습니다.</p>
         ) : (
           <div className="space-y-2">
-            {data.shuttleBusSchedules.map(schedule => (
+            {selectedShuttleBusSchedules.map(schedule => (
               <div
                 key={schedule.id}
                 className="rounded-md border border-gray-200 bg-gray-50 p-3"
