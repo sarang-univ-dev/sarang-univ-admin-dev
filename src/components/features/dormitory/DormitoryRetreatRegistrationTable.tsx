@@ -41,6 +41,8 @@ interface DormitoryRetreatRegistrationTableProps {
   retreatSlug: string;
 }
 
+type AttendanceFilter = "ALL" | "PRESENT" | "ABSENT";
+
 /**
  * 데이터 변환 함수: API 응답 -> 테이블 데이터
  */
@@ -101,6 +103,8 @@ export function DormitoryRetreatRegistrationTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
   const [scheduleFilter, setScheduleFilter] = useState<Set<number>>(new Set());
+  const [attendanceFilter, setAttendanceFilter] =
+    useState<AttendanceFilter>("ALL");
 
   // 컬럼 훅으로 컬럼 정의 가져오기 (mutate 전달하여 캐시 갱신 가능하게)
   const columns = useDormitoryRetreatRegistrationColumns(
@@ -132,9 +136,20 @@ export function DormitoryRetreatRegistrationTable({
     );
   }, [data, scheduleFilter]);
 
+  const attendanceFilteredData = useMemo(() => {
+    if (attendanceFilter === "ALL") {
+      return scheduleFilteredData;
+    }
+
+    return scheduleFilteredData.filter(row => {
+      const isConfirmed = !!row.attendanceConfirmedAt;
+      return attendanceFilter === "PRESENT" ? isConfirmed : !isConfirmed;
+    });
+  }, [attendanceFilter, scheduleFilteredData]);
+
   const attendanceSummary = useMemo(() => {
-    const totalCount = scheduleFilteredData.length;
-    const confirmedCount = scheduleFilteredData.filter(
+    const totalCount = attendanceFilteredData.length;
+    const confirmedCount = attendanceFilteredData.filter(
       row => !!row.attendanceConfirmedAt
     ).length;
 
@@ -153,7 +168,7 @@ export function DormitoryRetreatRegistrationTable({
       confirmedCount,
       scheduleCounts,
     };
-  }, [data, scheduleFilteredData, scheduleFilterColumns]);
+  }, [attendanceFilteredData, data, scheduleFilterColumns]);
 
   const toggleScheduleFilter = (scheduleId: number) => {
     setScheduleFilter(prev => {
@@ -169,7 +184,7 @@ export function DormitoryRetreatRegistrationTable({
 
   // TanStack Table 초기화
   const table = useReactTable<DormitoryRetreatRegistrationTableData>({
-    data: scheduleFilteredData,
+    data: attendanceFilteredData,
     columns,
     state: {
       sorting,
@@ -297,6 +312,39 @@ export function DormitoryRetreatRegistrationTable({
                 </Button>
               );
             })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              출석 여부
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant={attendanceFilter === "ALL" ? "secondary" : "outline"}
+              onClick={() => setAttendanceFilter("ALL")}
+              className="h-8 text-xs"
+            >
+              전체
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={attendanceFilter === "PRESENT" ? "secondary" : "outline"}
+              onClick={() => setAttendanceFilter("PRESENT")}
+              className="h-8 text-xs"
+            >
+              출석 O
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={attendanceFilter === "ABSENT" ? "secondary" : "outline"}
+              onClick={() => setAttendanceFilter("ABSENT")}
+              className="h-8 text-xs"
+            >
+              출석 X
+            </Button>
           </div>
 
           {/* 통합 검색 */}
