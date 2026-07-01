@@ -65,6 +65,12 @@ function normalizeSearchValue(value: unknown) {
   return String(value ?? "").toLowerCase();
 }
 
+function buildDefaultApprovalMemo(row: ILeaderScheduleChangeRequest) {
+  const leaderMemo = row.reason?.trim() || "-";
+  const dormitoryMemo = row.memo?.trim() || "-";
+  return `리더: ${leaderMemo}\n인원관리팀: ${dormitoryMemo}`;
+}
+
 export function LeaderScheduleChangeRequestTable({
   initialData,
   schedules,
@@ -140,7 +146,7 @@ export function LeaderScheduleChangeRequestTable({
   const handleApprove = useCallback(
     (row: ILeaderScheduleChangeRequest) => {
       setApprovalTarget(row);
-      setApprovalMemo("");
+      setApprovalMemo(buildDefaultApprovalMemo(row));
       setApprovalAfterScheduleIds(row.afterScheduleIds.map(Number));
     },
     []
@@ -165,7 +171,6 @@ export function LeaderScheduleChangeRequestTable({
     if (!approvalTarget) return;
 
     const memo = approvalMemo.trim();
-    if (!memo) return;
 
     await approveRequest(approvalTarget.id, memo, approvalAfterScheduleIds);
     setApprovalTarget(null);
@@ -682,7 +687,7 @@ export function LeaderScheduleChangeRequestTable({
             <Button
               type="button"
               onClick={() => void handleSubmitApproval()}
-              disabled={!approvalMemo.trim() || isMutating}
+              disabled={isMutating}
             >
               {isMutating ? "승인 중..." : "승인"}
             </Button>
