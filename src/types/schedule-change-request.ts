@@ -22,4 +22,5 @@ export interface IUserScheduleChangeRetreat {
   memo: string;
   issuerName: string;
   memoCreatedAt: string;
+  hasUnresolvedScheduleHistory?: boolean;
 }

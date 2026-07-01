@@ -80,6 +80,9 @@ export function LeaderScheduleChangeRequestTable({
   const [approvalTarget, setApprovalTarget] =
     useState<ILeaderScheduleChangeRequest | null>(null);
   const [approvalMemo, setApprovalMemo] = useState("");
+  const [approvalAfterScheduleIds, setApprovalAfterScheduleIds] = useState<
+    number[]
+  >([]);
 
   const isAllView = view === "all";
   const statusLabel =
@@ -138,6 +141,7 @@ export function LeaderScheduleChangeRequestTable({
     (row: ILeaderScheduleChangeRequest) => {
       setApprovalTarget(row);
       setApprovalMemo("");
+      setApprovalAfterScheduleIds(row.afterScheduleIds.map(Number));
     },
     []
   );
@@ -146,7 +150,16 @@ export function LeaderScheduleChangeRequestTable({
     if (isMutating) return;
     setApprovalTarget(null);
     setApprovalMemo("");
+    setApprovalAfterScheduleIds([]);
   }, [isMutating]);
+
+  const handleApprovalAfterScheduleToggle = useCallback((scheduleId: number) => {
+    setApprovalAfterScheduleIds(prev =>
+      prev.includes(scheduleId)
+        ? prev.filter(id => id !== scheduleId)
+        : [...prev, scheduleId].sort((a, b) => a - b)
+    );
+  }, []);
 
   const handleSubmitApproval = useCallback(async () => {
     if (!approvalTarget) return;
@@ -154,10 +167,11 @@ export function LeaderScheduleChangeRequestTable({
     const memo = approvalMemo.trim();
     if (!memo) return;
 
-    await approveRequest(approvalTarget.id, memo);
+    await approveRequest(approvalTarget.id, memo, approvalAfterScheduleIds);
     setApprovalTarget(null);
     setApprovalMemo("");
-  }, [approvalMemo, approvalTarget, approveRequest]);
+    setApprovalAfterScheduleIds([]);
+  }, [approvalAfterScheduleIds, approvalMemo, approvalTarget, approveRequest]);
 
   const handleReject = useCallback(
     (row: ILeaderScheduleChangeRequest) => {
@@ -617,10 +631,17 @@ export function LeaderScheduleChangeRequestTable({
 
               <ScheduleChangeCheckboxRows
                 beforeScheduleIds={approvalTarget.beforeScheduleIds}
-                afterScheduleIds={approvalTarget.afterScheduleIds}
+                afterScheduleIds={approvalAfterScheduleIds}
                 schedules={schedules}
                 fitContainer
+                editableAfterScheduleIds={approvalAfterScheduleIds}
+                onAfterScheduleToggle={handleApprovalAfterScheduleToggle}
+                disabled={isMutating}
               />
+              <p className="text-xs text-muted-foreground">
+                변경 후 일정을 여기서 조정한 값으로 승인합니다. 모두 해제하면
+                전체 취소 요청으로 재정에서 취소/환불 여부를 선택합니다.
+              </p>
 
               {approvalTarget.reason ? (
                 <div className="rounded-md border bg-white p-3">

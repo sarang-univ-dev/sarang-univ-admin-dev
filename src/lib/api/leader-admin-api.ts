@@ -60,11 +60,12 @@ export const LeaderAdminAPI = {
   approveScheduleChangeRequest: async (
     retreatSlug: string,
     requestId: number,
-    memo: string
+    memo: string,
+    afterScheduleIds: number[]
   ): Promise<ILeaderScheduleChangeRequest> => {
     const response = await webAxios.post(
       `/api/v1/retreat/${retreatSlug}/leader/admin/schedule-change-requests/${requestId}/approve`,
-      { memo }
+      { memo, afterScheduleIds }
     );
     return response.data.request;
   },
