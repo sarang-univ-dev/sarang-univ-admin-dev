@@ -41,6 +41,7 @@ interface DormitoryRetreatRegistrationTableProps {
   retreatSlug: string;
 }
 
+
 /**
  * 데이터 변환 함수: API 응답 -> 테이블 데이터
  */
@@ -71,6 +72,7 @@ function transformRegistrationsForTable(
       attendanceConfirmedAt: registration.attendanceConfirmedAt ?? null,
       attendanceConfirmedAdminUserName:
         registration.attendanceConfirmedAdminUserName ?? null,
+      attendanceStatus: registration.attendanceConfirmedAt ? "PRESENT" : "ABSENT",
     };
   });
 }
@@ -132,6 +134,7 @@ export function DormitoryRetreatRegistrationTable({
     );
   }, [data, scheduleFilter]);
 
+
   const attendanceSummary = useMemo(() => {
     const totalCount = scheduleFilteredData.length;
     const confirmedCount = scheduleFilteredData.filter(
@@ -153,7 +156,7 @@ export function DormitoryRetreatRegistrationTable({
       confirmedCount,
       scheduleCounts,
     };
-  }, [data, scheduleFilteredData, scheduleFilterColumns]);
+  }, [scheduleFilteredData, data, scheduleFilterColumns]);
 
   const toggleScheduleFilter = (scheduleId: number) => {
     setScheduleFilter(prev => {
@@ -298,6 +301,7 @@ export function DormitoryRetreatRegistrationTable({
               );
             })}
           </div>
+
 
           {/* 통합 검색 */}
           <div className="relative max-w-sm">

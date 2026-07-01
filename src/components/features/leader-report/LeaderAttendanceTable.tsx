@@ -13,8 +13,9 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import debounce from "lodash/debounce";
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import * as XLSX from "xlsx-js-style";
 
 import { GenderBadge } from "@/components/Badge";
 import { LeaderAttendanceBadge } from "@/components/common/retreat";
@@ -22,6 +23,7 @@ import {
   UnifiedColumnHeader,
   VirtualizedTable,
 } from "@/components/common/table";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLeaderAttendance } from "@/hooks/leader-report/use-leader-attendance";
 import { LeaderAdminView } from "@/lib/api/leader-admin-api";
@@ -43,6 +45,76 @@ interface LeaderAttendanceTableProps {
 }
 
 const columnHelper = createColumnHelper<ILeaderAttendance>();
+
+function formatGender(gender: ILeaderAttendance["gender"]) {
+  return gender === "MALE" ? "남" : "여";
+}
+
+function formatAttendanceStatus(status: ILeaderAttendance["attendanceStatus"]) {
+  if (status === "PRESENT") return "출석 O";
+  if (status === "ABSENT") return "출석 X";
+  return "미체크";
+}
+
+function downloadLeaderAttendanceExcel(
+  rows: ILeaderAttendance[],
+  date: string | null | undefined
+) {
+  const header = ["부서", "학년", "성별", "이름", "GBS", "출석"];
+  const aoa = [
+    ["리더 출석체크 목록"],
+    [`기준 일자: ${date ?? "-"} / 총 ${rows.length}명`],
+    [],
+    header,
+    ...rows.map(row => [
+      `${row.univGroupNumber}부`,
+      `${row.gradeNumber}학년`,
+      formatGender(row.gender),
+      row.name,
+      row.gbsNumber ?? "-",
+      formatAttendanceStatus(row.attendanceStatus),
+    ]),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [
+    { wch: 8 },
+    { wch: 8 },
+    { wch: 8 },
+    { wch: 14 },
+    { wch: 10 },
+    { wch: 12 },
+  ];
+  ws["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: header.length - 1 } },
+  ];
+
+  const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1:F1");
+  for (let c = range.s.c; c <= range.e.c; c += 1) {
+    const headerCell = ws[XLSX.utils.encode_cell({ r: 3, c })];
+    if (headerCell) {
+      headerCell.s = {
+        font: { bold: true, color: { rgb: "111827" } },
+        fill: { fgColor: { rgb: "E5E7EB" } },
+        alignment: { horizontal: "center" },
+      };
+    }
+  }
+  if (ws.A1) {
+    ws.A1.s = { font: { bold: true, sz: 16, color: { rgb: "111827" } } };
+  }
+  if (ws.A2) {
+    ws.A2.s = { font: { color: { rgb: "374151" } } };
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "출석체크 목록");
+  XLSX.writeFile(
+    wb,
+    `리더_출석체크_목록_${date ?? new Date().toISOString().split("T")[0]}.xlsx`
+  );
+}
 
 /**
  * 리더 출석 현황 (리더보고서 간사 / LEADER_STAFF)
@@ -261,6 +333,13 @@ export function LeaderAttendanceTable({
     },
   });
 
+  const handleDownload = () => {
+    downloadLeaderAttendanceExcel(
+      table.getRowModel().rows.map(row => row.original),
+      date
+    );
+  };
+
   return (
     <div className="space-y-5">
       {showDateControls ? (
@@ -290,14 +369,26 @@ export function LeaderAttendanceTable({
           </div>
         </div>
 
-        <div className="relative max-w-md">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="검색 (이름, 부서, 학년, GBS)..."
-            className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
-            defaultValue={globalFilter}
-            onChange={e => debouncedSetGlobalFilter(e.target.value)}
-          />
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="relative w-full md:max-w-md">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="검색 (이름, 부서, 학년, GBS)..."
+              className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
+              defaultValue={globalFilter}
+              onChange={e => debouncedSetGlobalFilter(e.target.value)}
+            />
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleDownload}
+            className="h-8 gap-1.5 whitespace-nowrap self-start md:self-auto"
+          >
+            <Download className="h-4 w-4" />
+            엑셀 다운로드
+          </Button>
         </div>
 
         <VirtualizedTable
