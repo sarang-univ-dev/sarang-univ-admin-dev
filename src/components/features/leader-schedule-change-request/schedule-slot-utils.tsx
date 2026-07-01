@@ -80,6 +80,9 @@ interface ScheduleChangeCheckboxRowsProps {
   afterScheduleIds: number[];
   schedules: TRetreatRegistrationSchedule[];
   fitContainer?: boolean;
+  editableAfterScheduleIds?: number[];
+  onAfterScheduleToggle?: (scheduleId: number) => void;
+  disabled?: boolean;
 }
 
 function hasSchedule(scheduleIds: number[], scheduleId: number) {
@@ -94,6 +97,9 @@ export function ScheduleChangeCheckboxRows({
   afterScheduleIds,
   schedules,
   fitContainer = false,
+  editableAfterScheduleIds,
+  onAfterScheduleToggle,
+  disabled = false,
 }: ScheduleChangeCheckboxRowsProps) {
   const scheduleColumns = generateScheduleColumns(schedules);
 
@@ -102,8 +108,12 @@ export function ScheduleChangeCheckboxRows({
   }
 
   const rows = [
-    { label: "변경 전", scheduleIds: beforeScheduleIds },
-    { label: "변경 후", scheduleIds: afterScheduleIds },
+    { label: "변경 전", scheduleIds: beforeScheduleIds, editable: false },
+    {
+      label: "변경 후",
+      scheduleIds: editableAfterScheduleIds ?? afterScheduleIds,
+      editable: Boolean(onAfterScheduleToggle),
+    },
   ];
 
   return (
@@ -177,7 +187,12 @@ export function ScheduleChangeCheckboxRows({
                   >
                     <Checkbox
                       checked={checked}
-                      disabled
+                      disabled={!row.editable || disabled}
+                      onCheckedChange={() => {
+                        if (row.editable) {
+                          onAfterScheduleToggle?.(col.id);
+                        }
+                      }}
                       className={checked ? col.bgColorClass : ""}
                     />
                   </td>

@@ -104,13 +104,18 @@ export function useLeaderScheduleChangeRequest(
     }
   };
 
-  const approveRequest = async (requestId: number, memo: string) => {
+  const approveRequest = async (
+    requestId: number,
+    memo: string,
+    afterScheduleIds: number[]
+  ) => {
     await runMutation(
       () =>
         LeaderAdminAPI.approveScheduleChangeRequest(
           retreatSlug,
           requestId,
-          memo
+          memo,
+          afterScheduleIds
         ),
       requestId,
       "일정 변경 요청을 승인했습니다.",

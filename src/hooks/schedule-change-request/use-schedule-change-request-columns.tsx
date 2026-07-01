@@ -24,6 +24,7 @@ export interface ScheduleChangeRequestTableData {
   memo: string | null;
   memoId: number | null;
   scheduleIds: number[];
+  hasUnresolvedScheduleHistory: boolean;
 }
 
 const columnHelper = createColumnHelper<ScheduleChangeRequestTableData>();
@@ -218,6 +219,10 @@ export function useScheduleChangeRequestColumns(
         header: () => <div className="text-center whitespace-nowrap">액션</div>,
         cell: (props) => {
           const row = props.row.original;
+          const shouldChooseCancellationFlow =
+            row.status === "PAID" &&
+            row.scheduleIds.length === 0 &&
+            row.hasUnresolvedScheduleHistory;
           return (
             <div className="flex flex-col items-center gap-1 px-2 py-1">
               {onProcessSchedule && (
@@ -237,8 +242,15 @@ export function useScheduleChangeRequestColumns(
                 <Button
                   size="sm"
                   variant="outline"
+                  disabled={shouldChooseCancellationFlow}
+                  title={
+                    shouldChooseCancellationFlow
+                      ? "전체 취소 요청은 일정 처리에서 취소/환불 여부를 먼저 선택해주세요."
+                      : undefined
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (shouldChooseCancellationFlow) return;
                     onResolveSchedule(row);
                   }}
                   className="h-8 px-3 whitespace-nowrap hover:bg-green-600 hover:text-white transition-colors text-xs"

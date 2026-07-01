@@ -34,6 +34,7 @@ export function transformScheduleChangeRequestForTable(
     memo: req.memo,
     memoId: req.userRetreatRegistrationHistoryMemoId,
     scheduleIds: req.userRetreatRegistrationScheduleIds || [],
+    hasUnresolvedScheduleHistory: Boolean(req.hasUnresolvedScheduleHistory),
   }));
 }
 
