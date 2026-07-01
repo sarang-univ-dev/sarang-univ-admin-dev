@@ -13,8 +13,9 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import debounce from "lodash/debounce";
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import * as XLSX from "xlsx-js-style";
 
 import { GenderBadge } from "@/components/Badge";
 import { LeaderAttendanceBadge } from "@/components/common/retreat";
@@ -22,6 +23,7 @@ import {
   UnifiedColumnHeader,
   VirtualizedTable,
 } from "@/components/common/table";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLeaderMemberMemos } from "@/hooks/leader-report/use-leader-member-memos";
 import { ILeaderMemberMemo } from "@/types/leader-report";
@@ -33,6 +35,88 @@ interface LeaderMemberMemoTableProps {
 }
 
 const columnHelper = createColumnHelper<ILeaderMemberMemo>();
+
+function formatGender(gender: ILeaderMemberMemo["gender"]) {
+  return gender === "MALE" ? "남" : "여";
+}
+
+function formatAttendanceStatus(status: ILeaderMemberMemo["attendanceStatus"]) {
+  if (status === "PRESENT") return "출석 O";
+  if (status === "ABSENT") return "출석 X";
+  return "미체크";
+}
+
+function downloadLeaderMemberMemoExcel(
+  rows: ILeaderMemberMemo[],
+  date: string | null | undefined
+) {
+  const header = ["부서", "학년", "성별", "이름", "GBS", "출석", "비고"];
+  const aoa = [
+    ["리더 전체 비고"],
+    [`기준 일자: ${date ?? "-"} / 총 ${rows.length}건`],
+    [],
+    header,
+    ...rows.map(row => [
+      `${row.univGroupNumber}부`,
+      `${row.gradeNumber}학년`,
+      formatGender(row.gender),
+      row.name,
+      row.gbsNumber ?? "-",
+      formatAttendanceStatus(row.attendanceStatus),
+      row.memo,
+    ]),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [
+    { wch: 8 },
+    { wch: 8 },
+    { wch: 8 },
+    { wch: 14 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 48 },
+  ];
+  ws["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: header.length - 1 } },
+  ];
+
+  const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1:G1");
+  for (let c = range.s.c; c <= range.e.c; c += 1) {
+    const headerCell = ws[XLSX.utils.encode_cell({ r: 3, c })];
+    if (headerCell) {
+      headerCell.s = {
+        font: { bold: true, color: { rgb: "111827" } },
+        fill: { fgColor: { rgb: "E5E7EB" } },
+        alignment: { horizontal: "center" },
+      };
+    }
+  }
+
+  for (let r = 4; r <= range.e.r; r += 1) {
+    const memoCell = ws[XLSX.utils.encode_cell({ r, c: 6 })];
+    if (memoCell) {
+      memoCell.s = {
+        alignment: { vertical: "top", wrapText: true },
+      };
+    }
+  }
+
+  if (ws.A1) {
+    ws.A1.s = { font: { bold: true, sz: 16, color: { rgb: "111827" } } };
+  }
+  if (ws.A2) {
+    ws.A2.s = { font: { color: { rgb: "374151" } } };
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "전체 비고");
+  XLSX.writeFile(
+    wb,
+    `리더_전체_비고_${date ?? new Date().toISOString().split("T")[0]}.xlsx`
+  );
+}
 
 /**
  * 리더 비고(특이사항) 모아보기 (리더보고서 간사 / LEADER_STAFF)
@@ -227,6 +311,13 @@ export function LeaderMemberMemoTable({
     },
   });
 
+  const handleDownload = () => {
+    downloadLeaderMemberMemoExcel(
+      table.getRowModel().rows.map(row => row.original),
+      date
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
@@ -245,14 +336,26 @@ export function LeaderMemberMemoTable({
         </div>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="검색 (이름, 비고, 부서, 학년, GBS)..."
-          className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
-          defaultValue={globalFilter}
-          onChange={e => debouncedSetGlobalFilter(e.target.value)}
-        />
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="relative w-full md:max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="검색 (이름, 비고, 부서, 학년, GBS)..."
+            className="pl-8 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary rounded-md"
+            defaultValue={globalFilter}
+            onChange={e => debouncedSetGlobalFilter(e.target.value)}
+          />
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={handleDownload}
+          className="h-8 gap-1.5 whitespace-nowrap self-start md:self-auto"
+        >
+          <Download className="h-4 w-4" />
+          엑셀 다운로드
+        </Button>
       </div>
 
       <VirtualizedTable
