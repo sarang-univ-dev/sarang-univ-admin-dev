@@ -31,6 +31,7 @@ export interface DormitoryRetreatRegistrationTableData {
   isLeader: boolean;
   attendanceConfirmedAt: string | null;
   attendanceConfirmedAdminUserName: string | null;
+  attendanceStatus: "PRESENT" | "ABSENT";
 }
 
 /**
@@ -399,12 +400,18 @@ export function useDormitoryRetreatRegistrationColumns(
         size: 120,
       }),
 
-      columnHelper.accessor("attendanceConfirmedAt", {
-        id: "attendance",
-        header: () => (
-          <div className="text-center text-sm whitespace-normal">
-            출석 체크
-          </div>
+      columnHelper.accessor("attendanceStatus", {
+        id: "attendanceStatus",
+        header: ({ column, table }) => (
+          <UnifiedColumnHeader
+            column={column}
+            table={table}
+            title="출석 체크"
+            enableFiltering
+            formatFilterValue={value =>
+              value === "PRESENT" ? "출석 O" : "출석 X"
+            }
+          />
         ),
         cell: (props) => {
           const row = props.row.original;
@@ -416,9 +423,10 @@ export function useDormitoryRetreatRegistrationColumns(
             />
           );
         },
+        filterFn: arrayIncludesFilterFn,
         size: 120,
         enableSorting: false,
-        enableColumnFilter: false,
+        enableColumnFilter: true,
       }),
     ];
 
